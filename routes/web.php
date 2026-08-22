@@ -1,7 +1,31 @@
 <?php
 
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
+/*
+|--------------------------------------------------------------------------
+| Web Routes & SPA Fallback for Single Page Application
+|--------------------------------------------------------------------------
+|
+| Any web request that is not handled by the API will serve the compiled
+| SPA index.html so direct URL reloads and client routes work on Hostinger.
+|
+*/
+
+Route::get('/{any}', function () {
+    // Check if dist/index.html or public/index.html exists
+    $spaPath = public_path('index.html');
+    if (! File::exists($spaPath)) {
+        $spaPath = base_path('dist/index.html');
+    }
+
+    if (File::exists($spaPath)) {
+        return Response::file($spaPath, [
+            'Content-Type' => 'text/html; charset=UTF-8',
+        ]);
+    }
+
     return view('welcome');
-});
+})->where('any', '^(?!api/).*$');
