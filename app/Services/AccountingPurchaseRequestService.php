@@ -23,7 +23,7 @@ class AccountingPurchaseRequestService
             ->with([
                 'requester:id,name,email',
                 'department:id,name,code',
-                'directSupplier:id,company_name,code',
+                'directSupplier:id,company_name',
                 'assignedReviewer:id,name,email,department_id',
                 'siteEngineer:id,name,email,department_id',
                 'items.item',
@@ -168,7 +168,7 @@ class AccountingPurchaseRequestService
         return Supplier::query()
             ->where('is_active', true)
             ->orderBy('company_name')
-            ->get(['id', 'code', 'company_name', 'contact_person', 'email', 'phone', 'is_active']);
+            ->get(['id', 'company_name', 'email', 'phone', 'is_active']);
     }
 
     private function applyFinancialData(User $accountant, PurchaseRequest $pr, array $financialData): float
