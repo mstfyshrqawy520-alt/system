@@ -86,6 +86,7 @@ export const NotificationsPage: React.FC = () => {
     const notifiableType = notification.notifiable_type || '';
     const isPurchaseRequest = type.includes('purchase_request') || notifiableType.includes('PurchaseRequest');
     const isPurchaseOrder = type.includes('purchase_order') || notifiableType.includes('PurchaseOrder');
+    const isPurchaseReceipt = type.includes('purchase_receipt') || notifiableType.includes('PurchaseReceipt');
     const isCombinedAccountingDocuments = type === 'purchase_order_and_receipt_ready_accounting'
       || Boolean(notification.data?.purchase_order_id && notification.data?.purchase_receipt_id);
 
@@ -106,6 +107,12 @@ export const NotificationsPage: React.FC = () => {
         return `/accounting/supplier-payments?purchase_order_id=${purchaseOrderId}&purchase_receipt_id=${purchaseReceiptId}`;
       }
       return '/accounting/supplier-payments';
+    }
+
+    if (isPurchaseReceipt) {
+      if (roleSlugs.includes('site_engineer')) return '/site-engineer';
+      if (roleSlugs.includes('warehouse_keeper')) return '/warehouse';
+      if (roleSlugs.includes('accountant')) return '/accounting/supplier-payments';
     }
 
     if (isPurchaseRequest) {
