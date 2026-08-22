@@ -512,15 +512,16 @@ class PurchaseOrderService
                 $lockedPo
             );
 
-            // Notify General Managers (Read-only access notification)
-            $gms = $notificationService->resolveUsersWithPermission('purchase_order.view_gm');
-            $notificationService->queueUsers(
-                $gms,
-                'purchase_order_issued_gm',
-                'تم إصدار أمر شراء جديد',
-                "تم إصدار أمر الشراء {$lockedPo->po_number} للاطلاع الإداري.",
-                $lockedPo
-            );
+            // Notify requester if the request was created by the General Manager or user
+            if ($lockedPo->purchaseRequest && $lockedPo->purchaseRequest->user_id) {
+                $notificationService->queueNotification(
+                    $lockedPo->purchaseRequest->user_id,
+                    'purchase_order_issued_requester',
+                    'تم إصدار أمر الشراء لطلبك',
+                    "تم إصدار أمر الشراء {$lockedPo->po_number} لطلب الشراء {$lockedPo->purchaseRequest->request_number}.",
+                    $lockedPo
+                );
+            }
 
             return $lockedPo->fresh(['purchaseRequest.requester', 'purchaseRequest.department', 'purchaseRequest.assignedReviewer', 'purchaseRequest.approvalHistory.actor', 'selectedQuote', 'supplier', 'createdBy', 'items.item']);
         });

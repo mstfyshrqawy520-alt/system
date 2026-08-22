@@ -379,13 +379,13 @@ class NotificationTest extends TestCase
         $po = app(PurchaseOrderService::class)->createPoFromPr($this->procurementManager, $pr->id, $this->supplier->id);
         app(PurchaseOrderService::class)->submitToAccounting($this->procurementManager, $po);
 
-        // Event 4: Accountant and GM receive notifications on PO issue
+        // Event 4: Accountant receives notification on PO issue, and GM is not spammed for view-only
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->accountant->id,
             'type' => 'purchase_order_issued_accounting',
         ]);
 
-        $this->assertDatabaseHas('notifications', [
+        $this->assertDatabaseMissing('notifications', [
             'user_id' => $this->gmUser->id,
             'type' => 'purchase_order_issued_gm',
         ]);

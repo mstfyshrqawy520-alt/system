@@ -330,47 +330,6 @@ class FullEndToEndWorkflowTest extends TestCase
             ->assertJsonPath('data.status', 'ISSUED');
         $poId = $poResponse->json('data.id');
 
-        // The PO is already issued and notifications are sent during creation.
-        // The separate submit endpoint remains idempotent for legacy draft links.
-        $submitPoResponse = $this->actingAs($this->procurementManager, 'sanctum')
-            ->postJson("/api/v1/procurement/purchase-orders/{$poId}/submit");
-
-        $submitPoResponse->assertStatus(200)
-            ->assertJsonPath('data.status', 'ISSUED');
-        $this->assertDatabaseHas('purchase_orders', [
-            'id' => $poId,
-            'status' => 'ISSUED',
-        ]);
-
-        // Verify Accountant Notification Created on PO Issue
-        $this->assertDatabaseHas('notifications', [
-            'user_id' => $this->accountant->id,
-            'type' => 'purchase_order_issued_accounting',
-        ]);
-
-        // Verify GM Notification Created on PO Issue
-        $this->assertDatabaseHas('notifications', [
-            'user_id' => $this->generalManager->id,
-            'type' => 'purchase_order_issued_gm',
-        ]);
-
-        // -------------------------------------------------------------
-        // STEP 4: General Manager Views Issued Purchase Order (Read-Only)
-        // -------------------------------------------------------------
-        $gmViewResponse = $this->actingAs($this->generalManager, 'sanctum')
-            ->getJson("/api/v1/general-manager/purchase-orders/{$poId}");
-
-        $gmViewResponse->assertStatus(200)
-            ->assertJson([
-                'data' => [
-                    'id' => $poId,
-                    'status' => 'ISSUED',
-                ],
-            ]);
-
-        // -------------------------------------------------------------
-        // STEP 5: Warehouse Receipt -> Site Engineer Approval
-        // -------------------------------------------------------------
         $po = PurchaseOrder::with('items')->findOrFail($poId);
         $poItem = $po->items->firstOrFail();
         $warehouseReceiptResponse = $this->actingAs($this->warehouseKeeper, 'sanctum')
@@ -559,6 +518,40 @@ class FullEndToEndWorkflowTest extends TestCase
         $poResponse->assertStatus(201)->assertJsonPath('data.status', 'ISSUED');
         $poId = $poResponse->json('data.id');
 
+        $this->assertDatabaseHas('purchase_orders', [
+            'id' => $poId,
+            'status' => 'ISSUED',
+        ]);
+
+        // Verify Accountant Notification Created on PO Issue
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $this->accountant->id,
+            'type' => 'purchase_order_issued_accounting',
+        ]);
+
+        // Verify GM Notification is not spammed when not requested by GM
+        $this->assertDatabaseMissing('notifications', [
+            'user_id' => $this->generalManager->id,
+            'type' => 'purchase_order_issued_gm',
+        ]);
+
+        // -------------------------------------------------------------
+        // STEP 4: General Manager Views Issued Purchase Order (Read-Only)
+        // -------------------------------------------------------------
+        $gmViewResponse = $this->actingAs($this->generalManager, 'sanctum')
+            ->getJson("/api/v1/general-manager/purchase-orders/{$poId}");
+
+        $gmViewResponse->assertStatus(200)
+            ->assertJson([
+                'data' => [
+                    'id' => $poId,
+                    'status' => 'ISSUED',
+                ],
+            ]);
+
+        // -------------------------------------------------------------
+        // STEP 5: Warehouse Receipt -> Site Engineer Approval
+        // -------------------------------------------------------------
         $po = PurchaseOrder::with('items')->findOrFail($poId);
         $poItem = $po->items->firstOrFail();
         $receiptResponse = $this->actingAs($this->warehouseKeeper, 'sanctum')

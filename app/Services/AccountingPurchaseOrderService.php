@@ -61,17 +61,17 @@ class AccountingPurchaseOrderService
                 'new_value' => 'APPROVED_BY_ACCOUNTING',
             ]);
 
-            // Notify General Manager (view-only notification — no approval required)
+            // Notify Requester (if the request belongs to GM or user)
             $notificationService = app(NotificationService::class);
-            $gms = $notificationService->resolveUsersWithPermission('purchase_order.view_gm');
-            $notificationService->queueUsers(
-                $gms,
-                'purchase_order_approved_accounting',
-                'تمت الموافقة المحاسبية على أمر الشراء',
-                "أمر الشراء {$lockedPo->po_number} اعتُمد محاسبياً. يمكنك الاطلاع على التفاصيل.",
-                $lockedPo
-            );
-
+            if ($lockedPo->purchaseRequest && $lockedPo->purchaseRequest->user_id) {
+                $notificationService->queueNotification(
+                    $lockedPo->purchaseRequest->user_id,
+                    'purchase_order_approved_accounting',
+                    'تمت الموافقة المحاسبية على أمر الشراء',
+                    "أمر الشراء {$lockedPo->po_number} لطلبك {$lockedPo->purchaseRequest->request_number} اعتُمد محاسبياً.",
+                    $lockedPo
+                );
+            }
 
             return $lockedPo->fresh(['purchaseRequest.requester', 'purchaseRequest.department', 'purchaseRequest.assignedReviewer', 'purchaseRequest.approvalHistory.actor', 'supplier', 'createdBy', 'accountingReviewer', 'items.item:id,name,sku']);
         });

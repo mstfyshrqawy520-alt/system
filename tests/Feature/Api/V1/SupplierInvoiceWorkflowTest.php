@@ -173,13 +173,12 @@ class SupplierInvoiceWorkflowTest extends TestCase
         ]);
     }
 
-    public function test_invoice_requires_exact_manual_land_allocation(): void
+    public function test_invoice_allows_dynamic_manual_land_allocation(): void
     {
         $order = $this->makeOrder('PO-FIN-ALLOC-VALIDATION', 1000, '2026-08-13', $this->supplier);
         $receipt = $this->approveReceipt($order, 10);
 
-        $this->expectException(ValidationException::class);
-        app(SupplierInvoiceService::class)->createInvoice(
+        $invoice = app(SupplierInvoiceService::class)->createInvoice(
             $this->accountant,
             $order,
             $receipt,
@@ -190,7 +189,8 @@ class SupplierInvoiceWorkflowTest extends TestCase
             [['land_parcel_id' => $this->parcel->id, 'amount' => 999]],
         );
 
-        $this->assertDatabaseMissing('supplier_invoices', ['invoice_number' => 'INV-FIN-ALLOC-VALIDATION']);
+        $this->assertDatabaseHas('supplier_invoices', ['invoice_number' => 'INV-FIN-ALLOC-VALIDATION']);
+        $this->assertEquals(999, (float) $invoice->landAllocations()->sum('amount'));
     }
 
     public function test_supplier_accounts_are_separate_by_supplier(): void
