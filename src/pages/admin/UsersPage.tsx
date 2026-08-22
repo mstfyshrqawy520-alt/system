@@ -209,88 +209,162 @@ export const UsersPage: React.FC = () => {
       <TableColumnFilters filters={[{ key: 'name', label: 'الاسم', value: columnFilters.name, onChange: (value) => setColumnFilters(current => ({ ...current, name: value })) }, { key: 'email', label: 'البريد الإلكتروني', value: columnFilters.email, onChange: (value) => setColumnFilters(current => ({ ...current, email: value })) }, { key: 'roles', label: 'الأدوار', value: columnFilters.roles, onChange: (value) => setColumnFilters(current => ({ ...current, roles: value })) }, { key: 'department', label: 'القسم', value: columnFilters.department, onChange: (value) => setColumnFilters(current => ({ ...current, department: value })) }, { key: 'status', label: 'الحالة', value: columnFilters.status, onChange: (value) => setColumnFilters(current => ({ ...current, status: value })) }, { key: 'action', label: 'الإجراءات', value: columnFilters.action, onChange: (value) => setColumnFilters(current => ({ ...current, action: value })) }]} hasActiveFilters={Object.values(columnFilters).some(Boolean)} onClear={() => setColumnFilters({ name: '', email: '', roles: '', department: '', status: '', action: '' })} />
 
       {/* Table */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>الاسم</TableHead>
-            <TableHead>البريد الإلكتروني</TableHead>
-            <TableHead>الأدوار</TableHead>
-            <TableHead>القسم</TableHead>
-            <TableHead>الحالة</TableHead>
-            <TableHead className="text-center">الإجراءات</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredUsers.map((u) => (
-            <TableRow key={u.id}>
-              <TableCell className="font-bold text-slate-100">{u.name}</TableCell>
-              <TableCell className="font-mono text-cyan-400">{u.email}</TableCell>
-              <TableCell>
-                <div className="flex flex-wrap gap-1">
-                  {u.roles?.map((r, idx) => {
-                    const roleSlug = typeof r === 'string' ? r : (r as any).slug || (r as any).name;
-                    const roleName = ROLE_LABELS[roleSlug] || 'مستخدم';
-                    return (
-                      <span
-                        key={typeof r === 'object' && r ? (r as any).id || idx : idx}
-                        className="px-2 py-0.5 text-[10px] font-semibold bg-cyan-950 text-cyan-300 border border-cyan-800/60 rounded"
-                      >
-                        {roleName}
-                      </span>
-                    );
-                  })}
-                </div>
-              </TableCell>
-              <TableCell className="text-slate-300 font-bold">
-                <div>{u.department?.name || 'غير معين'}</div>
-                {u.site_engineer_departments && u.site_engineer_departments.length > 0 && (
-                  <div className="mt-1 text-[10px] font-normal text-amber-300">
-                    مهندس موقع لأقسام: {u.site_engineer_departments.map((department) => department.name).join('، ')}
-                  </div>
-                )}
-              </TableCell>
-              <TableCell>
-                {u.is_active ? (
-                  <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/60 rounded">
-                    نشط
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-rose-950 text-rose-400 border border-rose-800/60 rounded">
-                    معطل
-                  </span>
-                )}
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleOpenEdit(u)}
-                    className="px-2.5 py-1 text-[11px]"
-                  >
-                    تعديل
-                  </Button>
-                  <Button
-                    variant={u.is_active ? 'warning' : 'success'}
-                    size="sm"
-                    onClick={() => handleToggleActive(u)}
-                    className="px-2.5 py-1 text-[11px]"
-                  >
-                    {u.is_active ? 'تعطيل' : 'تفعيل'}
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-          {filteredUsers.length === 0 && (
+      <div className="hidden min-w-0 md:block">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={6} className="p-8 text-center text-slate-400 text-xs">
-                {users.length === 0 ? 'لا يوجد مستخدمون مسجلون حتى الآن.' : 'لم نجد مستخدمين مطابقين للبحث الحالي.'}
-              </TableCell>
+              <TableHead>الاسم</TableHead>
+              <TableHead>البريد الإلكتروني</TableHead>
+              <TableHead>الأدوار</TableHead>
+              <TableHead>القسم</TableHead>
+              <TableHead>الحالة</TableHead>
+              <TableHead className="text-center">الإجراءات</TableHead>
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {filteredUsers.map((u) => (
+              <TableRow key={u.id}>
+                <TableCell className="font-bold text-slate-100">{u.name}</TableCell>
+                <TableCell className="font-mono text-cyan-400">{u.email}</TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {u.roles?.map((r, idx) => {
+                      const roleSlug = typeof r === 'string' ? r : (r as any).slug || (r as any).name;
+                      const roleName = ROLE_LABELS[roleSlug] || 'مستخدم';
+                      return (
+                        <span
+                          key={typeof r === 'object' && r ? (r as any).id || idx : idx}
+                          className="px-2 py-0.5 text-[10px] font-semibold bg-cyan-950 text-cyan-300 border border-cyan-800/60 rounded"
+                        >
+                          {roleName}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </TableCell>
+                <TableCell className="text-slate-300 font-bold">
+                  <div>{u.department?.name || 'غير معين'}</div>
+                  {u.site_engineer_departments && u.site_engineer_departments.length > 0 && (
+                    <div className="mt-1 text-[10px] font-normal text-amber-300">
+                      مهندس موقع لأقسام: {u.site_engineer_departments.map((department) => department.name).join('، ')}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {u.is_active ? (
+                    <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/60 rounded">
+                      نشط
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-rose-950 text-rose-400 border border-rose-800/60 rounded">
+                      معطل
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleOpenEdit(u)}
+                      className="px-2.5 py-1 text-[11px]"
+                    >
+                      تعديل
+                    </Button>
+                    <Button
+                      variant={u.is_active ? 'warning' : 'success'}
+                      size="sm"
+                      onClick={() => handleToggleActive(u)}
+                      className="px-2.5 py-1 text-[11px]"
+                    >
+                      {u.is_active ? 'تعطيل' : 'تفعيل'}
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {filteredUsers.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="p-8 text-center text-slate-400 text-xs">
+                  {users.length === 0 ? 'لا يوجد مستخدمون مسجلون حتى الآن.' : 'لم نجد مستخدمين مطابقين للبحث الحالي.'}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="space-y-3 md:hidden">
+        {filteredUsers.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-800 bg-slate-900/50 p-8 text-center text-xs text-slate-400">
+            {users.length === 0 ? 'لا يوجد مستخدمون مسجلون حتى الآن.' : 'لم نجد مستخدمين مطابقين للبحث الحالي.'}
+          </div>
+        ) : (
+          filteredUsers.map((u) => (
+            <article key={`mobile-user-${u.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+              <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-3">
+                <div className="min-w-0">
+                  <h3 className="break-normal font-bold text-sm text-slate-100">{u.name}</h3>
+                  <span className="font-mono text-xs text-cyan-400 break-all">{u.email}</span>
+                </div>
+                <span className={`shrink-0 inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded ${
+                  u.is_active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/60' : 'bg-rose-950 text-rose-400 border border-rose-800/60'
+                }`}>
+                  {u.is_active ? 'نشط' : 'معطل'}
+                </span>
+              </div>
+              <dl className="mt-3 space-y-2 text-xs">
+                <div>
+                  <dt className="text-slate-500">الأدوار</dt>
+                  <dd className="mt-1 flex flex-wrap gap-1">
+                    {u.roles?.map((r, idx) => {
+                      const roleSlug = typeof r === 'string' ? r : (r as any).slug || (r as any).name;
+                      const roleName = ROLE_LABELS[roleSlug] || 'مستخدم';
+                      return (
+                        <span
+                          key={typeof r === 'object' && r ? (r as any).id || idx : idx}
+                          className="px-2 py-0.5 text-[10px] font-semibold bg-cyan-950 text-cyan-300 border border-cyan-800/60 rounded"
+                        >
+                          {roleName}
+                        </span>
+                      );
+                    })}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">القسم</dt>
+                  <dd className="mt-1 text-slate-200 font-medium">
+                    {u.department?.name || 'غير معين'}
+                    {u.site_engineer_departments && u.site_engineer_departments.length > 0 && (
+                      <div className="mt-1 text-[10px] text-amber-300">
+                        مهندس موقع لأقسام: {u.site_engineer_departments.map((department) => department.name).join('، ')}
+                      </div>
+                    )}
+                  </dd>
+                </div>
+              </dl>
+              <div className="mt-4 flex items-center gap-2 border-t border-slate-800 pt-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleOpenEdit(u)}
+                  className="flex-1 min-h-10 text-xs font-bold"
+                >
+                  تعديل
+                </Button>
+                <Button
+                  variant={u.is_active ? 'warning' : 'success'}
+                  size="sm"
+                  onClick={() => handleToggleActive(u)}
+                  className="flex-1 min-h-10 text-xs font-bold"
+                >
+                  {u.is_active ? 'تعطيل' : 'تفعيل'}
+                </Button>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
 
       {/* Modal */}
       <Modal
