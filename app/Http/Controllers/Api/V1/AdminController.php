@@ -360,9 +360,11 @@ class AdminController extends Controller
     // ITEMS / CATALOG MANAGEMENT
     // =========================================================================
 
-    public function indexItems(): JsonResponse
+    public function indexItems(Request $request): JsonResponse
     {
-        $items = Item::with('category')->orderBy('id', 'desc')->get()->map(function ($item) {
+        $perPage = min(max((int) $request->query('per_page', 50), 1), 200);
+        $paginator = Item::with('category')->orderBy('id', 'desc')->paginate($perPage);
+        $items = $paginator->getCollection()->map(function ($item) {
             return [
                 'id' => $item->id,
                 'sku' => $item->sku,
@@ -378,7 +380,15 @@ class AdminController extends Controller
             ];
         });
 
-        return response()->json(['data' => $items]);
+        return response()->json([
+            'data' => $items->values(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
+            ],
+        ]);
     }
 
     public function storeItem(Request $request): JsonResponse
