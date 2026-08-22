@@ -48,9 +48,9 @@ export const TableFilterBar: React.FC<TableFilterBarProps> = ({
   totalCount,
   resultLabel = 'سجل',
   className = '',
-  defaultExpanded = true,
+  defaultExpanded = false,
 }) => {
-  const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded);
+  const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded || hasActiveFilters);
   const hasDateFilter = onDateFromChange || onDateToChange;
   const invalidDateRange = Boolean(dateFrom && dateTo && dateFrom > dateTo);
   const hasExtraFilters = selects.length > 0 || Boolean(hasDateFilter);
@@ -109,8 +109,8 @@ export const TableFilterBar: React.FC<TableFilterBarProps> = ({
       </div>
 
       {/* Collapsible Advanced Filters Section */}
-      {hasExtraFilters && isExpanded && (
-        <div className="pt-2 border-t border-slate-800/80 animate-fade-in">
+      {hasExtraFilters && (
+        <div className={isExpanded ? 'pt-2 border-t border-slate-800/80 animate-fade-in block' : 'hidden'}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {selects.map((filter) => (
               <label key={filter.label} className="flex min-w-0 flex-col gap-1.5 text-[11px] font-bold text-slate-400">

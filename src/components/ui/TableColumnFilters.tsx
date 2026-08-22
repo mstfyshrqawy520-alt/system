@@ -62,10 +62,9 @@ export const TableColumnFilters: React.FC<TableColumnFiltersProps> = ({
         )}
       </div>
 
-      {isExpanded && (
-        <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 border-t border-slate-800/80 animate-fade-in">
-          {filters.map((filter) => (
-            <label key={filter.key} className="flex min-w-0 flex-col gap-1.5 text-[11px] font-bold text-slate-400">
+      <div className={isExpanded ? 'grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 border-t border-slate-800/80 animate-fade-in block' : 'hidden'}>
+        {filters.map((filter) => (
+          <label key={filter.key} className="flex min-w-0 flex-col gap-1.5 text-[11px] font-bold text-slate-400">
               <span>{filter.label}</span>
               {filter.type === 'select' ? (
                 <Select value={filter.value} onChange={(event) => filter.onChange(event.target.value)}>
@@ -87,9 +86,8 @@ export const TableColumnFilters: React.FC<TableColumnFiltersProps> = ({
             </label>
           ))}
         </div>
-      )}
-    </Card>
-  );
-};
+      </Card>
+    );
+  };
 
-export default TableColumnFilters;
+  export default TableColumnFilters;
