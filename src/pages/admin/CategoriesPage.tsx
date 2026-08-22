@@ -154,55 +154,101 @@ export const CategoriesPage: React.FC = () => {
       <TableColumnFilters filters={[{ key: 'code', label: 'رمز التصنيف', value: columnFilters.code, onChange: (value) => setColumnFilters(current => ({ ...current, code: value })) }, { key: 'name', label: 'اسم التصنيف', value: columnFilters.name, onChange: (value) => setColumnFilters(current => ({ ...current, name: value })) }, { key: 'count', label: 'عدد الأصناف', type: 'number', value: columnFilters.count, onChange: (value) => setColumnFilters(current => ({ ...current, count: value })) }, { key: 'action', label: 'الإجراءات', value: columnFilters.action, onChange: (value) => setColumnFilters(current => ({ ...current, action: value })) }]} hasActiveFilters={Object.values(columnFilters).some(Boolean)} onClear={() => setColumnFilters({ code: '', name: '', count: '', action: '' })} />
 
       {/* التصنيفات Table */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>رمز التصنيف</TableHead>
-            <TableHead>اسم التصنيف</TableHead>
-            <TableHead>عدد الأصناف</TableHead>
-            <TableHead className="text-center">الإجراءات</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredCategories.map((cat) => (
-            <TableRow key={cat.id}>
-              <TableCell className="font-mono font-bold text-cyan-400">{cat.code}</TableCell>
-              <TableCell className="font-bold text-slate-100">
-                <div>{cat.name}</div>
-                <div className="text-[11px] text-slate-400 font-normal">{cat.description}</div>
-              </TableCell>
-              <TableCell className="font-mono font-bold text-slate-200">{cat.items_count} صنف</TableCell>
-              <TableCell className="text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleOpenEdit(cat)}
-                    className="px-2.5 py-1 text-[11px]"
-                  >
-                    تعديل
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handleDelete(cat)}
-                    className="px-2.5 py-1 text-[11px]"
-                  >
-                    حذف
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-          {filteredCategories.length === 0 && (
+      <div className="hidden min-w-0 md:block">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={4} className="p-8 text-center text-slate-400 text-xs">
-                {categories.length === 0 ? 'لا توجد تصنيفات مسجلة حتى الآن.' : 'لم نجد تصنيفات مطابقة للبحث الحالي.'}
-              </TableCell>
+              <TableHead>رمز التصنيف</TableHead>
+              <TableHead>اسم التصنيف</TableHead>
+              <TableHead>عدد الأصناف</TableHead>
+              <TableHead className="text-center">الإجراءات</TableHead>
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {filteredCategories.map((cat) => (
+              <TableRow key={cat.id}>
+                <TableCell className="font-mono font-bold text-cyan-400">{cat.code}</TableCell>
+                <TableCell className="font-bold text-slate-100">
+                  <div>{cat.name}</div>
+                  <div className="text-[11px] text-slate-400 font-normal">{cat.description}</div>
+                </TableCell>
+                <TableCell className="font-mono font-bold text-slate-200">{cat.items_count} صنف</TableCell>
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleOpenEdit(cat)}
+                      className="px-2.5 py-1 text-[11px]"
+                    >
+                      تعديل
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleDelete(cat)}
+                      className="px-2.5 py-1 text-[11px]"
+                    >
+                      حذف
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {filteredCategories.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="p-8 text-center text-slate-400 text-xs">
+                  {categories.length === 0 ? 'لا توجد تصنيفات مسجلة حتى الآن.' : 'لم نجد تصنيفات مطابقة للبحث الحالي.'}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="space-y-3 md:hidden">
+        {filteredCategories.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-800 bg-slate-900/50 p-8 text-center text-xs text-slate-400">
+            {categories.length === 0 ? 'لا توجد تصنيفات مسجلة حتى الآن.' : 'لم نجد تصنيفات مطابقة للبحث الحالي.'}
+          </div>
+        ) : (
+          filteredCategories.map((cat) => (
+            <article key={`mobile-cat-${cat.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+              <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-3">
+                <div className="min-w-0">
+                  <h3 className="break-normal font-bold text-sm text-slate-100">{cat.name}</h3>
+                  {cat.description && <p className="text-[11px] text-slate-400 mt-0.5">{cat.description}</p>}
+                </div>
+                <span className="shrink-0 font-mono text-xs font-bold text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded border border-cyan-800/60">
+                  {cat.code}
+                </span>
+              </div>
+              <div className="mt-3 text-xs">
+                <span className="text-slate-500">عدد الأصناف: </span>
+                <span className="font-mono font-bold text-slate-200">{cat.items_count} صنف</span>
+              </div>
+              <div className="mt-4 flex items-center gap-2 border-t border-slate-800 pt-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleOpenEdit(cat)}
+                  className="flex-1 min-h-10 text-xs font-bold"
+                >
+                  تعديل
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => handleDelete(cat)}
+                  className="flex-1 min-h-10 text-xs font-bold"
+                >
+                  حذف
+                </Button>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
 
       {/* إضافة*/}
       <Modal
