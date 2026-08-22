@@ -47,7 +47,7 @@ export const GeneralManagerPurchaseOrderDetailsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in" dir="rtl">
+    <div className="space-y-6 pb-24 md:pb-0 animate-fade-in" dir="rtl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div className="flex items-center gap-3 flex-wrap">
@@ -62,7 +62,7 @@ export const GeneralManagerPurchaseOrderDetailsPage: React.FC = () => {
             👑 للاطلاع الإداري التنفيذي (Read-Only)
           </span>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="hidden md:flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setPrintPo(po)}
             className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded text-xs font-bold transition-colors flex items-center gap-1"
@@ -81,6 +81,25 @@ export const GeneralManagerPurchaseOrderDetailsPage: React.FC = () => {
             </Button>
           </Link>
         </div>
+      </div>
+
+      {/* Sticky Mobile Bottom Action Bar */}
+      <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-between gap-2 border-t border-slate-800 bg-slate-900/95 p-3 shadow-2xl backdrop-blur md:hidden">
+        <Link to="/general-manager/purchase-orders" className="flex-1">
+          <Button variant="secondary" size="md" className="w-full min-h-10 text-xs">← القائمة</Button>
+        </Link>
+        <button
+          onClick={() => setPrintPo(po)}
+          className="flex-1 min-h-10 px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-lg shadow-emerald-950/50"
+        >
+          🖨️ طباعة PO
+        </button>
+        <button
+          onClick={handleExportJson}
+          className="flex-1 min-h-10 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1"
+        >
+          📥 تصدير
+        </button>
       </div>
 
       {/* Metadata */}
