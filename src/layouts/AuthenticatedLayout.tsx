@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import NotificationBell from "../components/notifications/NotificationBell";
+import GlobalSearchBar from "../components/search/GlobalSearchBar";
 import { getPrimaryRoleSlug, getRoleLabel } from "../routes/roleRouting";
 import PageHeader from "../components/ui/PageHeader";
 import { usePersistedState } from "../hooks/usePersistedState";
@@ -269,6 +270,11 @@ export const AuthenticatedLayout: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Global Search Bar (Desktop Center) */}
+                        <div className="hidden md:flex flex-1 justify-center px-4 max-w-lg">
+                            <GlobalSearchBar />
+                        </div>
+
                         {/* User الملف الشخصي & الإجراءات */}
                         <div className="hidden md:flex items-center space-x-4 space-x-reverse">
                             <NotificationBell />
@@ -300,6 +306,7 @@ export const AuthenticatedLayout: React.FC = () => {
 
                         {/* Mobile Toggle Button */}
                         <div className="md:hidden flex items-center gap-2">
+                            <GlobalSearchBar />
                             <NotificationBell />
                             <button
                                 type="button"
