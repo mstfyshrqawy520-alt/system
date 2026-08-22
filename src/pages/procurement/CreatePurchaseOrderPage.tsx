@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getApprovedPurchaseRequestApi } from '../../api/procurement';
 import { getSuppliersApi } from '../../api/suppliers';
@@ -244,10 +244,11 @@ export const CreatePurchaseOrderPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Read-Only PR البنود List */}
+            {/* Read-Only PR Items List */}
             <div className="space-y-2 pt-2">
               <h3 className="text-xs font-bold text-slate-300">عناصر الطلب المعتمدة بالمواصفات الفنية:</h3>
-              <div className="overflow-x-auto rounded-lg border border-slate-800">
+              {/* Desktop Table */}
+              <div className="hidden min-w-0 md:block overflow-x-auto rounded-lg border border-slate-800">
                 <table className="w-full text-right text-xs text-slate-300">
                   <thead className="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
                     <tr>
@@ -275,6 +276,29 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+
+              {/* Mobile Cards */}
+              <div className="space-y-3 md:hidden">
+                {pr.items?.map((item, idx) => (
+                  <article key={`mobile-pr-item-${item.id}`} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs">
+                    <div className="flex items-start justify-between gap-2 border-b border-slate-800/80 pb-2">
+                      <span className="font-bold text-slate-100">{item.item?.name || item.item_description}</span>
+                      <span className="shrink-0 rounded bg-slate-800 px-2 py-0.5 font-mono text-[11px] font-bold text-cyan-300">
+                        #{idx + 1}
+                      </span>
+                    </div>
+                    <dl className="mt-2.5 grid grid-cols-2 gap-2 text-[11px]">
+                      <div><dt className="text-slate-400">رقم قطعة الأرض</dt><dd className="mt-0.5 font-mono font-bold text-slate-200">{item.item_reference || '-'}</dd></div>
+                      <div><dt className="text-slate-400">المنطقة</dt><dd className="mt-0.5 text-slate-200">{item.region || '-'}</dd></div>
+                      <div><dt className="text-slate-400">الوحدة</dt><dd className="mt-0.5 text-slate-300">{getUnitLabel(item.uom)}</dd></div>
+                      <div><dt className="text-slate-400">الكمية المطلوبة</dt><dd className="mt-0.5 font-mono font-bold text-cyan-300">{parseFloat(item.quantity).toLocaleString()}</dd></div>
+                      {item.specifications && (
+                        <div className="col-span-2"><dt className="text-slate-400">المواصفات الفنية</dt><dd className="mt-0.5 text-slate-300">{item.specifications}</dd></div>
+                      )}
+                    </dl>
+                  </article>
+                ))}
+              </div>
             </div>
           </Card>
         )}
@@ -296,7 +320,7 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                 value={supplierId}
                 disabled={Boolean(pr?.selected_quote?.id || pr?.procurement_route === 'DIRECT')}
                 onChange={(e) => setSupplierId(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-bold"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-bold min-h-10"
               >
                 <option value="">-- اختر المورد النشط من القائمة --</option>
                 {suppliers.map((s) => (
@@ -316,7 +340,7 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                 type="date"
                 value={deliveryDate}
                 onChange={(e) => setDeliveryDate(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono min-h-10"
               />
             </div>
 
@@ -327,7 +351,7 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                 value={paymentTerms}
                 onChange={(e) => setPaymentTerms(e.target.value)}
                 placeholder="مثال: دفع عند الاستلام، آجل 30 يوم"
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 min-h-10"
               />
             </div>
 
@@ -338,22 +362,24 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="ملاحظات توريد أو شروط استلام..."
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 min-h-10"
               />
             </div>
           </div>
 
-          {/* Commercial Line البنود Table */}
+          {/* Commercial Line Items */}
           <div className="space-y-3 pt-2">
             <h3 className="text-xs font-bold text-slate-200">جدول البنود التجارية والأسعار (بالجنيه المصري EGP / ج.م):</h3>
-            <div className="overflow-x-auto rounded-lg border border-slate-800 bg-slate-900/60">
+            
+            {/* Desktop Table */}
+            <div className="hidden min-w-0 md:block overflow-x-auto rounded-lg border border-slate-800 bg-slate-900/60">
               <table className="w-full text-right text-xs text-slate-200 border-collapse">
                 <thead className="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
-                    <tr>
-                      <th className="p-3">#</th>
-                      <th className="p-3">رقم قطعة الأرض</th>
-                      <th className="p-3">المنطقة</th>
-                      <th className="p-3">الصنف</th>
+                  <tr>
+                    <th className="p-3">#</th>
+                    <th className="p-3">رقم قطعة الأرض</th>
+                    <th className="p-3">المنطقة</th>
+                    <th className="p-3">الصنف</th>
                     <th className="p-3">الوحدة</th>
                     <th className="p-3">كمية طلب الشراء (PR)</th>
                     <th className="p-3">كمية أمر الشراء (PO)</th>
@@ -450,6 +476,109 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                   })}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Commercial Cards */}
+            <div className="space-y-3 md:hidden">
+              {poItems.map((item, index) => {
+                const lineTotal = item.quantity * item.unit_price;
+                const diff = item.quantity - item.original_quantity;
+                const isQtyChanged = diff !== 0;
+
+                return (
+                  <article key={`mobile-commercial-item-${index}`} className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 space-y-3 shadow-lg">
+                    <div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-2.5">
+                      <div>
+                        <span className="inline-block rounded bg-cyan-950 border border-cyan-800/60 px-2 py-0.5 text-[10px] font-bold text-cyan-300 font-mono mb-1">
+                          بند {index + 1}
+                        </span>
+                        <h4 className="font-bold text-slate-100 text-xs">{item.item_description}</h4>
+                        {item.specifications && (
+                          <p className="text-[11px] text-slate-400 mt-0.5">المواصفات: {item.specifications}</p>
+                        )}
+                      </div>
+                      <span className="shrink-0 rounded bg-slate-800 px-2 py-0.5 text-[11px] text-slate-300">
+                        {item.uom}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <label className="block text-[10px] text-slate-400 font-semibold mb-1">رقم قطعة الأرض</label>
+                        <input
+                          type="text"
+                          required
+                          value={item.item_reference}
+                          readOnly
+                          aria-readonly="true"
+                          placeholder="رقم القطعة"
+                          dir="ltr"
+                          className="h-10 w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-400 font-semibold mb-1">المنطقة</label>
+                        <input
+                          type="text"
+                          required
+                          value={item.region}
+                          readOnly
+                          aria-readonly="true"
+                          placeholder="المنطقة"
+                          className="h-10 w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 text-xs text-slate-100"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[10px] text-slate-400 font-semibold">كمية أمر الشراء</label>
+                          <span className="text-[10px] text-slate-500 font-mono">PR: {item.original_quantity}</span>
+                        </div>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          required
+                          value={item.quantity}
+                          onChange={(e) => handleItemQuantityChange(index, e.target.value)}
+                          className="h-10 w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 text-xs text-slate-100 font-mono font-bold"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[10px] text-slate-400 font-semibold">سعر الوحدة (ج.م)</label>
+                          {isQtyChanged && (
+                            <span className={`text-[10px] font-mono font-bold ${diff > 0 ? 'text-amber-400' : 'text-rose-400'}`}>
+                              {diff > 0 ? `+${diff.toFixed(2)}` : diff.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          required
+                          value={item.unit_price}
+                          readOnly={Boolean(pr?.selected_quote?.id)}
+                          onChange={(e) => handleItemPriceChange(index, e.target.value)}
+                          placeholder="0.00"
+                          className="h-10 w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 text-xs text-emerald-400 font-mono font-bold"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-slate-950/80 rounded-xl px-3 py-2 border border-slate-800/80">
+                      <span className="text-[11px] text-slate-400 font-semibold">إجمالي البند:</span>
+                      <CurrencyDisplay
+                        amount={lineTotal}
+                        amountClassName="font-mono text-emerald-400 font-black text-sm"
+                      />
+                    </div>
+                  </article>
+                );
+              })}
             </div>
 
             {/* Grand الإجمالي Summary Box (EGP) */}
