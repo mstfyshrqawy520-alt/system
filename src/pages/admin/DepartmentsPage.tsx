@@ -179,71 +179,131 @@ export const DepartmentsPage: React.FC = () => {
       />
 
       {/* الأقسام Table */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>رمز القسم</TableHead>
-            <TableHead>اسم القسم</TableHead>
-            <TableHead>مدير القسم</TableHead>
-            <TableHead>مهندس الموقع</TableHead>
-            <TableHead>عدد الموظفين</TableHead>
-            <TableHead className="text-center">الإجراءات</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredDepartments.map((dept) => (
-            <TableRow key={dept.id}>
-              <TableCell className="font-mono font-bold text-cyan-400">{dept.code}</TableCell>
-              <TableCell className="font-bold text-slate-100">
-                <div>{dept.name}</div>
-                <div className="text-[11px] text-slate-400 font-normal">{dept.description}</div>
-              </TableCell>
-              <TableCell>
-                {dept.manager ? (
-                  <span className="text-slate-200 font-bold">{dept.manager.name}</span>
-                ) : (
-                  <span className="text-slate-500 italic">غير معين</span>
-                )}
-              </TableCell>
-              <TableCell>
-                {dept.site_engineer ? (
-                  <span className="text-slate-200 font-bold">{dept.site_engineer.name}</span>
-                ) : (
-                  <span className="text-slate-500 italic">غير معين</span>
-                )}
-              </TableCell>
-              <TableCell className="font-mono font-bold text-slate-200">{dept.users_count} موظف</TableCell>
-              <TableCell className="text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleOpenEdit(dept)}
-                    className="px-2.5 py-1 text-[11px]"
-                  >
-                    تعديل
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handleDelete(dept)}
-                    className="px-2.5 py-1 text-[11px]"
-                  >
-                    حذف
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-          {filteredDepartments.length === 0 && (
+      <div className="hidden min-w-0 md:block">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={6} className="p-8 text-center text-slate-400 text-xs">
-                {departments.length === 0 ? 'لا توجد أقسام مسجلة حتى الآن.' : 'لم نجد أقسامًا مطابقة للبحث الحالي.'}
-              </TableCell>
+              <TableHead>رمز القسم</TableHead>
+              <TableHead>اسم القسم</TableHead>
+              <TableHead>مدير القسم</TableHead>
+              <TableHead>مهندس الموقع</TableHead>
+              <TableHead>عدد الموظفين</TableHead>
+              <TableHead className="text-center">الإجراءات</TableHead>
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {filteredDepartments.map((dept) => (
+              <TableRow key={dept.id}>
+                <TableCell className="font-mono font-bold text-cyan-400">{dept.code}</TableCell>
+                <TableCell className="font-bold text-slate-100">
+                  <div>{dept.name}</div>
+                  <div className="text-[11px] text-slate-400 font-normal">{dept.description}</div>
+                </TableCell>
+                <TableCell>
+                  {dept.manager ? (
+                    <span className="text-slate-200 font-bold">{dept.manager.name}</span>
+                  ) : (
+                    <span className="text-slate-500 italic">غير معين</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {dept.site_engineer ? (
+                    <span className="text-slate-200 font-bold">{dept.site_engineer.name}</span>
+                  ) : (
+                    <span className="text-slate-500 italic">غير معين</span>
+                  )}
+                </TableCell>
+                <TableCell className="font-mono font-bold text-slate-200">{dept.users_count} موظف</TableCell>
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleOpenEdit(dept)}
+                      className="px-2.5 py-1 text-[11px]"
+                    >
+                      تعديل
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleDelete(dept)}
+                      className="px-2.5 py-1 text-[11px]"
+                    >
+                      حذف
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {filteredDepartments.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="p-8 text-center text-slate-400 text-xs">
+                  {departments.length === 0 ? 'لا توجد أقسام مسجلة حتى الآن.' : 'لم نجد أقسامًا مطابقة للبحث الحالي.'}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="space-y-3 md:hidden">
+        {filteredDepartments.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-800 bg-slate-900/50 p-8 text-center text-xs text-slate-400">
+            {departments.length === 0 ? 'لا توجد أقسام مسجلة حتى الآن.' : 'لم نجد أقسامًا مطابقة للبحث الحالي.'}
+          </div>
+        ) : (
+          filteredDepartments.map((dept) => (
+            <article key={`mobile-dept-${dept.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+              <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-3">
+                <div className="min-w-0">
+                  <h3 className="break-normal font-bold text-sm text-slate-100">{dept.name}</h3>
+                  {dept.description && <p className="text-[11px] text-slate-400 mt-0.5">{dept.description}</p>}
+                </div>
+                <span className="shrink-0 font-mono text-xs font-bold text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded border border-cyan-800/60">
+                  {dept.code}
+                </span>
+              </div>
+              <dl className="mt-3 grid min-w-0 grid-cols-1 gap-2 text-xs min-[420px]:grid-cols-2">
+                <div>
+                  <dt className="text-slate-500">مدير القسم</dt>
+                  <dd className="mt-1 font-bold text-slate-200">
+                    {dept.manager ? dept.manager.name : <span className="text-slate-500 italic">غير معين</span>}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">مهندس الموقع</dt>
+                  <dd className="mt-1 font-bold text-slate-200">
+                    {dept.site_engineer ? dept.site_engineer.name : <span className="text-slate-500 italic">غير معين</span>}
+                  </dd>
+                </div>
+                <div className="min-[420px]:col-span-2">
+                  <dt className="text-slate-500">عدد الموظفين</dt>
+                  <dd className="mt-1 font-mono font-bold text-slate-200">{dept.users_count} موظف</dd>
+                </div>
+              </dl>
+              <div className="mt-4 flex items-center gap-2 border-t border-slate-800 pt-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleOpenEdit(dept)}
+                  className="flex-1 min-h-10 text-xs font-bold"
+                >
+                  تعديل
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => handleDelete(dept)}
+                  className="flex-1 min-h-10 text-xs font-bold"
+                >
+                  حذف
+                </Button>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
 
       {/* إضافة*/}
       <Modal
