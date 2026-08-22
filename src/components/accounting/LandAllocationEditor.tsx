@@ -55,8 +55,11 @@ export const LandAllocationEditor: React.FC<LandAllocationEditorProps> = ({
   const addRow = () => onChange([...allocations, { land_parcel_id: '', amount: '', notes: '' }]);
   const removeRow = (index: number) => onChange(allocations.filter((_, allocationIndex) => allocationIndex !== index));
 
-  const handleCreateParcel = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateParcel = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!newParcelRef.trim() || !newParcelRegion.trim()) {
       setParcelCreateError('رقم قطعة الأرض والمنطقة مطلوبان.');
       return;
@@ -78,9 +81,15 @@ export const LandAllocationEditor: React.FC<LandAllocationEditorProps> = ({
       // Auto-assign the newly created parcel to the first empty row or a new row
       const emptyRowIndex = allocations.findIndex((a) => a.land_parcel_id === '');
       if (emptyRowIndex >= 0) {
-        updateAllocation(emptyRowIndex, 'land_parcel_id', String(created.id));
+        const nextAllocations = [...allocations];
+        nextAllocations[emptyRowIndex] = {
+          ...nextAllocations[emptyRowIndex],
+          land_parcel_id: created.id,
+          amount: nextAllocations[emptyRowIndex].amount || (nextAllocations.length === 1 ? String(invoiceAmount || '') : ''),
+        };
+        onChange(nextAllocations);
       } else {
-        onChange([...allocations, { land_parcel_id: created.id, amount: '', notes: '' }]);
+        onChange([...allocations, { land_parcel_id: created.id, amount: allocations.length === 0 ? String(invoiceAmount || '') : '', notes: '' }]);
       }
 
       // Reset form
@@ -112,7 +121,7 @@ export const LandAllocationEditor: React.FC<LandAllocationEditorProps> = ({
 
       {/* Quick Add Parcel Form */}
       {isAddingParcel && (
-        <form onSubmit={handleCreateParcel} className="rounded-xl border border-cyan-700/70 bg-slate-900/95 p-4 space-y-3 shadow-xl">
+        <div className="rounded-xl border border-cyan-700/70 bg-slate-900/95 p-4 space-y-3 shadow-xl">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2">
             <h4 className="text-xs font-bold text-cyan-300">🏢 إنشاء حساب قطعة أرض جديدة سريعاً</h4>
             <button
@@ -171,11 +180,18 @@ export const LandAllocationEditor: React.FC<LandAllocationEditorProps> = ({
             <Button type="button" size="sm" variant="secondary" onClick={() => setIsAddingParcel(false)}>
               إلغاء
             </Button>
-            <Button type="submit" size="sm" variant="primary" isLoading={isSavingParcel} className="font-bold">
+            <Button
+              type="button"
+              size="sm"
+              variant="primary"
+              isLoading={isSavingParcel}
+              onClick={() => void handleCreateParcel()}
+              className="font-bold"
+            >
               حفظ القطعة واختيارها فوراً
             </Button>
           </div>
-        </form>
+        </div>
       )}
 
       {parcels.length === 0 && !isAddingParcel ? (
