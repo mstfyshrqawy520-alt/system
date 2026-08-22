@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getPrimaryRoleSlug } from '../../routes/roleRouting';
-import apiClient from '../../api/client';
+import { cachedGetData } from '../../api/client';
 import { PurchaseRequest } from '../../types/purchaseRequest';
 import { PurchaseOrder } from '../../types/purchaseOrder';
 import { LandParcel, SupplierAccountSummary, getLandParcelsApi, getSupplierAccountsApi } from '../../api/supplierFinance';
@@ -76,7 +76,7 @@ export const GlobalSearchBar: React.FC = () => {
     setLoading(true);
     try {
       const [prRes, poRes, suppRes, parcelRes] = await Promise.allSettled([
-        apiClient.get<{ data: PurchaseRequest[] }>('/purchase-requests').then((r) => r.data.data),
+        cachedGetData<{ data: PurchaseRequest[] }>('/purchase-requests').then((r) => r.data),
         getPurchaseOrdersApi({ per_page: 50 }).then((r) => r.data),
         getSupplierAccountsApi(),
         getLandParcelsApi(),

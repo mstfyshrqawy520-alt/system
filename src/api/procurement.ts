@@ -1,4 +1,4 @@
-import apiClient from './client';
+import apiClient, { cachedGetData, invalidateCachedGet } from './client';
 import { PurchaseRequest } from '../types/purchaseRequest';
 import { PurchaseOrder } from '../types/purchaseOrder';
 
@@ -118,7 +118,7 @@ export interface ProcurementDepartmentOption {
 }
 
 export const getProcurementDepartmentsApi = async (): Promise<ProcurementDepartmentOption[]> =>
-  (await apiClient.get<{ data: ProcurementDepartmentOption[] }>('/procurement/departments')).data.data;
+  (await cachedGetData<{ data: ProcurementDepartmentOption[] }>('/procurement/departments')).data;
 
 export interface ProcurementSiteEngineerOption {
   id: number;
@@ -129,7 +129,7 @@ export interface ProcurementSiteEngineerOption {
 }
 
 export const getProcurementSiteEngineersApi = async (): Promise<ProcurementSiteEngineerOption[]> =>
-  (await apiClient.get<{ data: ProcurementSiteEngineerOption[] }>('/procurement/site-engineers')).data.data;
+  (await cachedGetData<{ data: ProcurementSiteEngineerOption[] }>('/procurement/site-engineers')).data;
 
 export interface ProcurementCatalogItemOption {
   id: number;
@@ -141,7 +141,7 @@ export interface ProcurementCatalogItemOption {
 }
 
 export const getProcurementCatalogItemsApi = async (): Promise<ProcurementCatalogItemOption[]> =>
-  (await apiClient.get<{ data: ProcurementCatalogItemOption[] }>('/catalog-items')).data.data;
+  (await cachedGetData<{ data: ProcurementCatalogItemOption[] }>('/catalog-items')).data;
 
 /** PRs pending Procurement Manager approval (PENDING_PROCUREMENT_APPROVAL) */
 export const getPendingProcurementApprovalApi = async (): Promise<PurchaseRequest[]> =>
@@ -212,6 +212,7 @@ export const updateDeliveryStatusApi = async (
   }
 ): Promise<PurchaseOrder> => {
   const response = await apiClient.put<{ data: PurchaseOrder }>(`/procurement/purchase-orders/${id}/delivery`, payload);
+  invalidateCachedGet('/procurement/purchase-orders');
   return response.data.data;
 };
 

@@ -81,20 +81,40 @@ export const SupplierPaymentsPage: React.FC = () => {
     return null;
   };
 
+  const refreshReceipts = async () => {
+    const data = await getApprovedReceiptsForAccountingApi();
+    setReceipts(data);
+    return data;
+  };
+
+  const refreshInvoices = async () => {
+    const data = await getSupplierInvoicesApi();
+    setInvoices(data);
+    return data;
+  };
+
+  const refreshAccounts = async () => {
+    const data = await getSupplierAccountsApi();
+    setAccounts(data);
+    return data;
+  };
+
+  const refreshParcels = async () => {
+    const data = await getLandParcelsApi();
+    setParcels(data);
+    return data;
+  };
+
   const load = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [approvedReceipts, supplierInvoices, supplierAccounts, landParcels] = await Promise.all([
-        getApprovedReceiptsForAccountingApi(),
-        getSupplierInvoicesApi(),
-        getSupplierAccountsApi(),
-        getLandParcelsApi(),
+      const [approvedReceipts] = await Promise.all([
+        refreshReceipts(),
+        refreshInvoices(),
+        refreshAccounts(),
+        refreshParcels(),
       ]);
-      setReceipts(approvedReceipts);
-      setInvoices(supplierInvoices);
-      setAccounts(supplierAccounts);
-      setParcels(landParcels);
       const requestedReceiptId = Number(searchParams.get('purchase_receipt_id') || 0);
       if (requestedReceiptId > 0) {
         const requestedReceipt = approvedReceipts.find((receipt) => receipt.id === requestedReceiptId);
@@ -206,7 +226,7 @@ export const SupplierPaymentsPage: React.FC = () => {
       } else {
         setNotice('تم تسجيل فاتورة المورد وترحيل مصروفها على قطع الأراضي. يجب تنفيذ المطابقة الثلاثية قبل تسجيل الدفع.');
       }
-      await load();
+      await Promise.all([refreshReceipts(), refreshInvoices(), refreshAccounts(), refreshParcels()]);
     } catch (err) {
       setError(parseApiError(err).message);
     } finally {
@@ -220,7 +240,7 @@ export const SupplierPaymentsPage: React.FC = () => {
     try {
       await matchSupplierInvoiceApi(invoice.id);
       setNotice(`تمت مطابقة الفاتورة ${invoice.invoice_number} مع أمر الشراء وإذن الاستلام.`);
-      await load();
+      await refreshInvoices();
     } catch (err) {
       setError(parseApiError(err).message);
     } finally {
@@ -264,7 +284,7 @@ export const SupplierPaymentsPage: React.FC = () => {
       });
       setNotice(result.overpayment_warning ? `تحذير: ${result.message}` : result.message);
       setPaymentAccount(null);
-      await load();
+      await Promise.all([refreshInvoices(), refreshAccounts()]);
     } catch (err) {
       setError(parseApiError(err).message);
     } finally {
@@ -299,7 +319,7 @@ export const SupplierPaymentsPage: React.FC = () => {
       });
       setParcelFormOpen(false);
       setNotice('تم إنشاء حساب قطعة الأرض وتسجيل رصيد العميل الافتتاحي.');
-      await load();
+      await refreshParcels();
     } catch (err) {
       setParcelFormError(parseApiError(err).message);
     } finally {
@@ -362,7 +382,7 @@ export const SupplierPaymentsPage: React.FC = () => {
       });
       setFundingParcel(null);
       setNotice('تم تسجيل تمويل العميل وإضافته إلى رصيد قطعة الأرض.');
-      await load();
+      await refreshParcels();
     } catch (err) {
       setFundingFormError(parseApiError(err).message);
     } finally {

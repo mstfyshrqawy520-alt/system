@@ -1,4 +1,4 @@
-import apiClient from './client';
+import apiClient, { cachedGetData, invalidateCachedGet } from './client';
 import { PurchaseOrder, المورد } from '../types/purchaseOrder';
 
 export interface ApprovedReceiptItem {
@@ -219,13 +219,19 @@ export interface CreateSupplierPaymentPayload {
 const accountingBase = '/accounting';
 
 export const getLandParcelsApi = async (): Promise<LandParcel[]> =>
-  (await apiClient.get<{ data: LandParcel[] }>(`${accountingBase}/land-parcels`)).data.data;
+  (await cachedGetData<{ data: LandParcel[] }>(`${accountingBase}/land-parcels`)).data;
 
-export const createLandParcelApi = async (payload: CreateLandParcelPayload): Promise<LandParcel> =>
-  (await apiClient.post<{ data: LandParcel }>(`${accountingBase}/land-parcels`, payload)).data.data;
+export const createLandParcelApi = async (payload: CreateLandParcelPayload): Promise<LandParcel> => {
+  const response = await apiClient.post<{ data: LandParcel }>(`${accountingBase}/land-parcels`, payload);
+  invalidateCachedGet(`${accountingBase}/land-parcels`);
+  return response.data.data;
+};
 
-export const addCustomerFundingApi = async (parcelId: number, payload: CreateLandParcelFundingPayload): Promise<LandParcel> =>
-  (await apiClient.post<{ data: LandParcel }>(`${accountingBase}/land-parcels/${parcelId}/fund`, payload)).data.data;
+export const addCustomerFundingApi = async (parcelId: number, payload: CreateLandParcelFundingPayload): Promise<LandParcel> => {
+  const response = await apiClient.post<{ data: LandParcel }>(`${accountingBase}/land-parcels/${parcelId}/fund`, payload);
+  invalidateCachedGet(`${accountingBase}/land-parcels`);
+  return response.data.data;
+};
 
 export const getLandParcelAccountApi = async (parcelId: number): Promise<LandParcelAccountDetails> =>
   (await apiClient.get<{ data: LandParcelAccountDetails }>(`${accountingBase}/land-parcels/${parcelId}`)).data.data;
@@ -238,8 +244,12 @@ export const getSupplierInvoicesApi = async (supplierId?: number) =>
     params: supplierId ? { supplier_id: supplierId } : undefined,
   })).data.data;
 
-export const createSupplierInvoiceApi = async (payload: CreateSupplierInvoicePayload) =>
-  (await apiClient.post<{ data: SupplierInvoice }>(`${accountingBase}/invoices`, payload)).data.data;
+export const createSupplierInvoiceApi = async (payload: CreateSupplierInvoicePayload) => {
+  const response = await apiClient.post<{ data: SupplierInvoice }>(`${accountingBase}/invoices`, payload);
+  invalidateCachedGet(`${accountingBase}/land-parcels`);
+  invalidateCachedGet(`${accountingBase}/suppliers/accounts`);
+  return response.data.data;
+};
 
 export const matchSupplierInvoiceApi = async (invoiceId: number) =>
   (await apiClient.post<{ data: SupplierInvoice }>(`${accountingBase}/invoices/${invoiceId}/match`)).data.data;
@@ -251,15 +261,21 @@ export interface SupplierPaymentResult {
   message: string;
 }
 
-export const recordSupplierPaymentApi = async (supplierId: number, payload: CreateSupplierPaymentPayload): Promise<SupplierPaymentResult> =>
-  (await apiClient.post<SupplierPaymentResult>(`${accountingBase}/suppliers/${supplierId}/payments`, payload)).data;
+export const recordSupplierPaymentApi = async (supplierId: number, payload: CreateSupplierPaymentPayload): Promise<SupplierPaymentResult> => {
+  const response = await apiClient.post<SupplierPaymentResult>(`${accountingBase}/suppliers/${supplierId}/payments`, payload);
+  invalidateCachedGet(`${accountingBase}/suppliers/accounts`);
+  return response.data;
+};
 
 /** Backward-compatible invoice route; new screens should use the supplier-level endpoint above. */
-export const recordSupplierPaymentForInvoiceApi = async (invoiceId: number, payload: CreateSupplierPaymentPayload): Promise<SupplierPaymentResult> =>
-  (await apiClient.post<SupplierPaymentResult>(`${accountingBase}/invoices/${invoiceId}/payments`, payload)).data;
+export const recordSupplierPaymentForInvoiceApi = async (invoiceId: number, payload: CreateSupplierPaymentPayload): Promise<SupplierPaymentResult> => {
+  const response = await apiClient.post<SupplierPaymentResult>(`${accountingBase}/invoices/${invoiceId}/payments`, payload);
+  invalidateCachedGet(`${accountingBase}/suppliers/accounts`);
+  return response.data;
+};
 
 export const getSupplierAccountsApi = async () =>
-  (await apiClient.get<{ data: SupplierAccountSummary[] }>(`${accountingBase}/suppliers/accounts`)).data.data;
+  (await cachedGetData<{ data: SupplierAccountSummary[] }>(`${accountingBase}/suppliers/accounts`)).data;
 
 export const getSupplierAccountApi = async (supplierId: number) =>
   (await apiClient.get<{ data: SupplierAccountDetails }>(`${accountingBase}/suppliers/${supplierId}/account`)).data.data;

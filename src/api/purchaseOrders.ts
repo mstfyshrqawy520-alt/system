@@ -1,4 +1,4 @@
-import apiClient from './client';
+import apiClient, { cachedGetData, invalidateCachedGet } from './client';
 import { PurchaseOrder, PurchaseOrderItemPayload, PurchaseOrderPayload } from '../types/purchaseOrder';
 
 const base = '/procurement/purchase-orders';
@@ -35,25 +35,43 @@ export interface PurchaseOrderPage {
 }
 
 export const getPurchaseOrdersApi = async (params: PurchaseOrderQueryParams = {}): Promise<PurchaseOrderPage> =>
-  (await apiClient.get<PurchaseOrderPage>(base, { params })).data;
+  cachedGetData<PurchaseOrderPage>(base, { params });
 
 export const getPurchaseOrderApi = async (id: number) =>
   (await apiClient.get<{ data: PurchaseOrder }>(`${base}/${id}`)).data.data;
 
-export const createPurchaseOrderApi = async (p: PurchaseOrderPayload) =>
-  (await apiClient.post<{ data: PurchaseOrder }>(base, p)).data.data;
+export const createPurchaseOrderApi = async (p: PurchaseOrderPayload) => {
+  const response = await apiClient.post<{ data: PurchaseOrder }>(base, p);
+  invalidateCachedGet(base);
+  return response.data.data;
+};
 
-export const updatePurchaseOrderApi = async (id: number, p: PurchaseOrderPayload) =>
-  (await apiClient.put<{ data: PurchaseOrder }>(`${base}/${id}`, p)).data.data;
+export const updatePurchaseOrderApi = async (id: number, p: PurchaseOrderPayload) => {
+  const response = await apiClient.put<{ data: PurchaseOrder }>(`${base}/${id}`, p);
+  invalidateCachedGet(base);
+  return response.data.data;
+};
 
-export const addPurchaseOrderItemApi = async (id: number, p: PurchaseOrderItemPayload) =>
-  (await apiClient.post<{ data: PurchaseOrder }>(`${base}/${id}/items`, p)).data.data;
+export const addPurchaseOrderItemApi = async (id: number, p: PurchaseOrderItemPayload) => {
+  const response = await apiClient.post<{ data: PurchaseOrder }>(`${base}/${id}/items`, p);
+  invalidateCachedGet(base);
+  return response.data.data;
+};
 
-export const updatePurchaseOrderItemApi = async (id: number, itemId: number, p: Partial<PurchaseOrderItemPayload>) =>
-  (await apiClient.put<{ data: PurchaseOrder }>(`${base}/${id}/items/${itemId}`, p)).data.data;
+export const updatePurchaseOrderItemApi = async (id: number, itemId: number, p: Partial<PurchaseOrderItemPayload>) => {
+  const response = await apiClient.put<{ data: PurchaseOrder }>(`${base}/${id}/items/${itemId}`, p);
+  invalidateCachedGet(base);
+  return response.data.data;
+};
 
-export const removePurchaseOrderItemApi = async (id: number, itemId: number) =>
-  (await apiClient.delete<{ data: PurchaseOrder }>(`${base}/${id}/items/${itemId}`)).data.data;
+export const removePurchaseOrderItemApi = async (id: number, itemId: number) => {
+  const response = await apiClient.delete<{ data: PurchaseOrder }>(`${base}/${id}/items/${itemId}`);
+  invalidateCachedGet(base);
+  return response.data.data;
+};
 
-export const submitPurchaseOrderApi = async (id: number) =>
-  (await apiClient.post<{ data: PurchaseOrder }>(`${base}/${id}/submit`)).data.data;
+export const submitPurchaseOrderApi = async (id: number) => {
+  const response = await apiClient.post<{ data: PurchaseOrder }>(`${base}/${id}/submit`);
+  invalidateCachedGet(base);
+  return response.data.data;
+};

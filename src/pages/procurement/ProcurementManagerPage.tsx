@@ -175,22 +175,24 @@ export const ProcurementManagerPage: React.FC = () => {
     };
 
     try {
-      const pending = await safeLoad('طلبات الاعتماد', getPendingProcurementApprovalApi(), []);
-      const quotePending = await safeLoad('عروض الأسعار', getPendingQuoteRequestsApi(), []);
-      const approved = await safeLoad('الطلبات المعتمدة', getApprovedByProcurementPrsApi(), []);
-      const ordersPage = await safeLoad('أوامر الشراء', getPurchaseOrdersApi({
-        page: poPage,
-        per_page: 15,
-        ...(poSearch.trim() ? { search: poSearch.trim() } : {}),
-        ...(poStatus !== 'ALL' ? { status: poStatus } : {}),
-        ...(poSupplier !== 'ALL' ? { supplier_id: Number(poSupplier) } : {}),
-        ...(poDateFrom && !ignoreDefaultPoDateForSearch ? { date_from: poDateFrom } : {}),
-        ...(poDateTo && !ignoreDefaultPoDateForSearch ? { date_to: poDateTo } : {}),
-      }), null);
-      const supplierData = await safeLoad('الموردون', getSuppliersApi(), []);
-      const departmentData = await safeLoad('الأقسام', getProcurementDepartmentsApi(), []);
-      const catalogData = await safeLoad('كتالوج الأصناف', getProcurementCatalogItemsApi(), []);
-      const report = await safeLoad('تحليلات المشتريات', getProcurementAnalyticsApi(reportPeriod, reportStatus || undefined), null);
+      const [pending, quotePending, approved, ordersPage, supplierData, departmentData, catalogData, report] = await Promise.all([
+        safeLoad('طلبات الاعتماد', getPendingProcurementApprovalApi(), []),
+        safeLoad('عروض الأسعار', getPendingQuoteRequestsApi(), []),
+        safeLoad('الطلبات المعتمدة', getApprovedByProcurementPrsApi(), []),
+        safeLoad('أوامر الشراء', getPurchaseOrdersApi({
+          page: poPage,
+          per_page: 15,
+          ...(poSearch.trim() ? { search: poSearch.trim() } : {}),
+          ...(poStatus !== 'ALL' ? { status: poStatus } : {}),
+          ...(poSupplier !== 'ALL' ? { supplier_id: Number(poSupplier) } : {}),
+          ...(poDateFrom && !ignoreDefaultPoDateForSearch ? { date_from: poDateFrom } : {}),
+          ...(poDateTo && !ignoreDefaultPoDateForSearch ? { date_to: poDateTo } : {}),
+        }), null),
+        safeLoad('الموردون', getSuppliersApi(), []),
+        safeLoad('الأقسام', getProcurementDepartmentsApi(), []),
+        safeLoad('كتالوج الأصناف', getProcurementCatalogItemsApi(), []),
+        safeLoad('تحليلات المشتريات', getProcurementAnalyticsApi(reportPeriod, reportStatus || undefined), null),
+      ]);
 
       setPendingPrs(pending || []);
       setQuotePrs(quotePending || []);
