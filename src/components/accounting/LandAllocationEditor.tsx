@@ -5,12 +5,14 @@ import { parseApiError } from '../../utils/apiError';
 
 export interface LandAllocationDraft {
   land_parcel_id: number | '';
+  department_id?: number | '';
   amount: string;
   notes: string;
 }
 
 interface LandAllocationEditorProps {
   parcels: LandParcel[];
+  departments?: Array<{ id: number; name: string; code?: string }>;
   allocations: LandAllocationDraft[];
   invoiceAmount: number;
   disabled?: boolean;
@@ -23,6 +25,7 @@ const money = (value: number) => `${value.toLocaleString('ar-EG', { minimumFract
 
 export const LandAllocationEditor: React.FC<LandAllocationEditorProps> = ({
   parcels,
+  departments = [],
   allocations,
   invoiceAmount,
   disabled = false,
@@ -42,17 +45,21 @@ export const LandAllocationEditor: React.FC<LandAllocationEditorProps> = ({
     () => allocations.reduce((sum, allocation) => sum + Number(allocation.amount || 0), 0),
     [allocations],
   );
-  const difference = Math.round((invoiceAmount - allocatedTotal) * 100) / 100;
 
   const updateAllocation = (index: number, field: keyof LandAllocationDraft, value: string) => {
     onChange(allocations.map((allocation, allocationIndex) => (
       allocationIndex === index
-        ? { ...allocation, [field]: field === 'land_parcel_id' ? (value ? Number(value) : '') : value }
+        ? {
+            ...allocation,
+            [field]: field === 'land_parcel_id' || field === 'department_id'
+              ? (value ? Number(value) : '')
+              : value,
+          }
         : allocation
     )));
   };
 
-  const addRow = () => onChange([...allocations, { land_parcel_id: '', amount: '', notes: '' }]);
+  const addRow = () => onChange([...allocations, { land_parcel_id: '', department_id: departments[0]?.id || '', amount: '', notes: '' }]);
   const removeRow = (index: number) => onChange(allocations.filter((_, allocationIndex) => allocationIndex !== index));
 
   const handleCreateParcel = async (e?: React.FormEvent) => {
@@ -211,15 +218,15 @@ export const LandAllocationEditor: React.FC<LandAllocationEditorProps> = ({
       ) : (
         <div className="mt-4 space-y-3">
           {allocations.map((allocation, index) => (
-            <div key={`${index}-${allocation.land_parcel_id}`} className="grid grid-cols-1 gap-2 rounded-lg border border-slate-700 bg-slate-950/60 p-3 md:grid-cols-[1.3fr_0.8fr_1.5fr_auto] md:items-end">
+            <div key={`${index}-${allocation.land_parcel_id}`} className="grid grid-cols-1 gap-2.5 rounded-xl border border-slate-700/80 bg-slate-950/80 p-3.5 sm:grid-cols-[1.2fr_1fr_0.8fr_1.2fr_auto] items-end">
               <label className="text-[11px] font-bold text-slate-300">
-                قطعة الأرض
+                قطعة الأرض <span className="text-amber-400">*</span>
                 <select
                   aria-label={`قطعة الأرض للتوزيع ${index + 1}`}
                   value={allocation.land_parcel_id}
                   onChange={(event) => updateAllocation(index, 'land_parcel_id', event.target.value)}
                   disabled={disabled}
-                  className="mt-1 h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-2 text-xs text-slate-100 outline-none focus:border-amber-400 disabled:opacity-60"
+                  className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 text-xs text-slate-100 outline-none focus:border-amber-400 disabled:opacity-60 font-semibold"
                 >
                   <option value="">اختر القطعة...</option>
                   {parcels.map((parcel) => (
@@ -229,8 +236,27 @@ export const LandAllocationEditor: React.FC<LandAllocationEditorProps> = ({
                   ))}
                 </select>
               </label>
+
               <label className="text-[11px] font-bold text-slate-300">
-                مبلغ المصروف (ج.م)
+                القسم / بند الصرف
+                <select
+                  aria-label={`القسم للتوزيع ${index + 1}`}
+                  value={allocation.department_id ?? ''}
+                  onChange={(event) => updateAllocation(index, 'department_id', event.target.value)}
+                  disabled={disabled}
+                  className="mt-1 h-10 w-full rounded-lg border border-cyan-800/70 bg-slate-900 px-2.5 text-xs text-cyan-200 outline-none focus:border-cyan-400 disabled:opacity-60 font-semibold"
+                >
+                  <option value="">(عام / بدون تحديد قسم)</option>
+                  {departments.map((dept) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.name} {dept.code ? `(${dept.code})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="text-[11px] font-bold text-slate-300">
+                مبلغ المصروف (ج.م) <span className="text-amber-400">*</span>
                 <input
                   aria-label={`مبلغ توزيع القطعة ${index + 1}`}
                   type="number"
@@ -239,20 +265,23 @@ export const LandAllocationEditor: React.FC<LandAllocationEditorProps> = ({
                   value={allocation.amount}
                   onChange={(event) => updateAllocation(index, 'amount', event.target.value)}
                   disabled={disabled}
-                  className="mt-1 h-10 w-full rounded-md border border-amber-500/60 bg-slate-900 px-2 text-center font-mono text-xs text-slate-100 outline-none focus:border-amber-300 disabled:opacity-60"
+                  placeholder="0.00"
+                  className="mt-1 h-10 w-full rounded-lg border border-amber-500/60 bg-slate-900 px-2 text-center font-mono text-xs text-slate-100 outline-none focus:border-amber-300 disabled:opacity-60 font-bold"
                 />
               </label>
+
               <label className="text-[11px] font-bold text-slate-300">
-                ملاحظة التوزيع
+                ملاحظة الصرف
                 <input
                   aria-label={`ملاحظة توزيع القطعة ${index + 1}`}
                   value={allocation.notes}
                   onChange={(event) => updateAllocation(index, 'notes', event.target.value)}
                   disabled={disabled}
-                  placeholder="اختياري"
-                  className="mt-1 h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-2 text-xs text-slate-100 outline-none focus:border-amber-400 disabled:opacity-60"
+                  placeholder="مثال: أعمال تطوير / تشطيب..."
+                  className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 text-xs text-slate-100 outline-none focus:border-amber-400 disabled:opacity-60"
                 />
               </label>
+
               <Button type="button" size="sm" variant="danger" onClick={() => removeRow(index)} disabled={disabled || allocations.length <= 1} className="min-h-10">
                 حذف
               </Button>

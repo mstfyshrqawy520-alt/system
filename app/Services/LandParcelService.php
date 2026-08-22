@@ -97,8 +97,23 @@ class LandParcelService
 
     public function getParcelAccount(LandParcel $parcel): array
     {
+        $allocations = $parcel->invoiceAllocations()
+            ->with(['invoice.supplier', 'invoice.purchaseOrder', 'department', 'createdBy'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        $departmentBreakdown = $allocations->groupBy(function ($allocation) {
+            return $allocation->department ? $allocation->department->name : 'مصروفات عامة غير مصنفة';
+        })->map(function ($items, $deptName) {
+            return [
+                'department_name' => $deptName,
+                'total_amount' => round($items->sum('amount'), 2),
+                'invoices_count' => $items->count(),
+            ];
+        })->values();
+
         return [
-            'parcel' => $parcel->load(['transactions.createdBy', 'invoiceAllocations.invoice.supplier']),
+            'parcel' => $parcel->load(['transactions.createdBy', 'invoiceAllocations.invoice.supplier', 'invoiceAllocations.department']),
             'summary' => [
                 'opening_balance' => (float) $parcel->opening_balance,
                 'funded_total' => (float) $parcel->funded_total,
@@ -106,27 +121,26 @@ class LandParcelService
                 'balance' => (float) $parcel->balance,
                 'is_negative' => (float) $parcel->balance < 0,
             ],
+            'department_breakdown' => $departmentBreakdown,
             'transactions' => $parcel->transactions()->with('createdBy')->orderByDesc('transaction_date')->orderByDesc('id')->get(),
-            'invoice_allocations' => $parcel->invoiceAllocations()->with(['invoice.supplier', 'invoice.purchaseOrder'])->orderByDesc('created_at')->get(),
+            'invoice_allocations' => $allocations,
         ];
     }
 
     public function recordInvoiceAllocations(User $accountant, SupplierInvoice $invoice, array $allocations): void
     {
         if (count($allocations) === 0) {
-            throw ValidationException::withMessages(['land_allocations' => ['يجب توزيع قيمة الفاتورة على قطعة أرض واحدة على الأقل.']]);
+            return;
         }
 
         $normalized = collect($allocations)->map(function (array $allocation): array {
             return [
                 'land_parcel_id' => (int) ($allocation['land_parcel_id'] ?? 0),
+                'department_id' => ! empty($allocation['department_id']) ? (int) $allocation['department_id'] : null,
                 'amount' => round((float) ($allocation['amount'] ?? 0), 2),
                 'notes' => $allocation['notes'] ?? null,
             ];
         });
-        if ($normalized->pluck('land_parcel_id')->filter()->unique()->count() !== $normalized->count()) {
-            throw ValidationException::withMessages(['land_allocations' => ['يجب اختيار قطعة واحدة فقط لكل سطر توزيع وعدم تكرار القطعة.']]);
-        }
         if ($normalized->contains(fn (array $allocation): bool => $allocation['land_parcel_id'] <= 0 || $allocation['amount'] <= 0)) {
             throw ValidationException::withMessages(['land_allocations' => ['قيمة كل توزيع يجب أن تكون أكبر من صفر مع اختيار قطعة صحيحة.']]);
         }
@@ -146,6 +160,7 @@ class LandParcelService
             $invoiceAllocation = SupplierInvoiceLandAllocation::create([
                 'supplier_invoice_id' => $invoice->id,
                 'land_parcel_id' => $parcel->id,
+                'department_id' => $allocation['department_id'],
                 'created_by_user_id' => $accountant->id,
                 'amount' => $allocation['amount'],
                 'notes' => $allocation['notes'],

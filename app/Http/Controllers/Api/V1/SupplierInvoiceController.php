@@ -42,9 +42,10 @@ class SupplierInvoiceController extends Controller
             'invoice_date' => ['nullable', 'date'],
             'due_date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:2000'],
-            'land_allocations' => ['required', 'array', 'min:1'],
+            'land_allocations' => ['nullable', 'array'],
             'land_allocations.*' => ['array'],
             'land_allocations.*.land_parcel_id' => ['required', 'integer', 'exists:land_parcels,id'],
+            'land_allocations.*.department_id' => ['nullable', 'integer', 'exists:departments,id'],
             'land_allocations.*.amount' => ['required', 'numeric', 'gt:0'],
             'land_allocations.*.notes' => ['nullable', 'string', 'max:1000'],
         ]);

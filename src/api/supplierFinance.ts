@@ -91,10 +91,12 @@ export interface SupplierInvoiceLandAllocation {
   id: number;
   supplier_invoice_id: number;
   land_parcel_id: number;
+  department_id?: number | null;
   created_by_user_id: number;
   amount: string | number;
   notes?: string | null;
   parcel?: LandParcel | null;
+  department?: { id: number; name: string; code?: string | null } | null;
   invoice?: SupplierInvoice | null;
 }
 
@@ -173,6 +175,7 @@ export interface CreateSupplierInvoicePayload {
   due_date?: string;
   land_allocations: Array<{
     land_parcel_id: number;
+    department_id?: number | null;
     amount: number;
     notes?: string;
   }>;
@@ -195,6 +198,12 @@ export interface CreateLandParcelFundingPayload {
   notes?: string;
 }
 
+export interface LandParcelDepartmentSpending {
+  department_name: string;
+  total_amount: number;
+  invoices_count: number;
+}
+
 export interface LandParcelAccountDetails {
   parcel: LandParcel;
   summary: {
@@ -204,6 +213,7 @@ export interface LandParcelAccountDetails {
     balance: number;
     is_negative: boolean;
   };
+  department_breakdown?: LandParcelDepartmentSpending[];
   transactions: LandParcelTransaction[];
   invoice_allocations: SupplierInvoiceLandAllocation[];
 }
@@ -217,6 +227,9 @@ export interface CreateSupplierPaymentPayload {
 }
 
 const accountingBase = '/accounting';
+
+export const getAccountingDepartmentsApi = async (): Promise<Array<{ id: number; name: string; code: string }>> =>
+  (await cachedGetData<{ data: Array<{ id: number; name: string; code: string }> }>(`${accountingBase}/departments`)).data;
 
 export const getLandParcelsApi = async (): Promise<LandParcel[]> =>
   (await cachedGetData<{ data: LandParcel[] }>(`${accountingBase}/land-parcels`)).data;

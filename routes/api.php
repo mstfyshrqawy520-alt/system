@@ -240,6 +240,8 @@ Route::middleware('auth:sanctum')->prefix('accounting')->group(function () {
     Route::post('/purchase-requests/{id}/direct-reject', [AccountingPurchaseRequestController::class, 'reject'])
         ->middleware('permission:purchase_request.accounting_reject');
 
+    Route::get('/departments', [AdminController::class, 'indexDepartments'])
+        ->middleware('permission:accounting.invoice.view');
     Route::get('/land-parcels', [LandParcelController::class, 'index'])
         ->middleware('permission:accounting.invoice.view');
     Route::post('/land-parcels', [LandParcelController::class, 'store'])

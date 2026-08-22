@@ -13,6 +13,7 @@ class SupplierInvoiceLandAllocation extends Model
     protected $fillable = [
         'supplier_invoice_id',
         'land_parcel_id',
+        'department_id',
         'created_by_user_id',
         'amount',
         'notes',
@@ -22,6 +23,7 @@ class SupplierInvoiceLandAllocation extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'department_id' => 'integer',
         ];
     }
 
@@ -33,6 +35,11 @@ class SupplierInvoiceLandAllocation extends Model
     public function parcel(): BelongsTo
     {
         return $this->belongsTo(LandParcel::class, 'land_parcel_id');
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
     }
 
     public function createdBy(): BelongsTo
