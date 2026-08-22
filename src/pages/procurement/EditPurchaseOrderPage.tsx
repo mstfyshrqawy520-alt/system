@@ -280,17 +280,19 @@ export const EditPurchaseOrderPage: React.FC = () => {
 
         {/* إضافة New Line Item Row */}
         {isEditable && (
-          <form onSubmit={handleAddItem} className="bg-slate-900 p-3 rounded-lg border border-slate-800 grid grid-cols-12 gap-2 items-center">
-            <div className="col-span-3">
+          <form onSubmit={handleAddItem} className="bg-slate-900 p-4 rounded-xl border border-slate-800 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 items-end">
+            <div className="sm:col-span-2 md:col-span-3">
+              <label className="block text-[11px] font-semibold text-slate-400 mb-1">وصف البند الجديد *</label>
               <input
                 type="text"
                 placeholder="وصف البند الجديد *"
                 value={newItemDesc}
                 onChange={e => setNewItemDesc(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-slate-200"
+                className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-2 text-xs text-slate-200 min-h-10"
               />
             </div>
-            <div className="col-span-2">
+            <div className="md:col-span-2">
+              <label className="block text-[11px] font-semibold text-slate-400 mb-1">رقم قطعة الأرض *</label>
               <input
                 type="text"
                 required
@@ -298,30 +300,33 @@ export const EditPurchaseOrderPage: React.FC = () => {
                 value={newItemReference}
                 onChange={e => setNewItemReference(e.target.value)}
                 dir="ltr"
-                className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-slate-200 font-mono"
+                className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-2 text-xs text-slate-200 font-mono min-h-10"
               />
             </div>
-            <div className="col-span-2">
+            <div className="md:col-span-2">
+              <label className="block text-[11px] font-semibold text-slate-400 mb-1">المنطقة *</label>
               <input
                 type="text"
                 required
                 placeholder="المنطقة *"
                 value={newItemRegion}
                 onChange={e => setNewItemRegion(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-slate-200"
+                className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-2 text-xs text-slate-200 min-h-10"
               />
             </div>
-            <div className="col-span-1">
+            <div className="md:col-span-1">
+              <label className="block text-[11px] font-semibold text-slate-400 mb-1">الكمية</label>
               <input
                 type="number"
                 min="1"
                 placeholder="الكمية"
                 value={newItemQty}
                 onChange={e => setNewItemQty(Number(e.target.value))}
-                className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-slate-200 font-mono"
+                className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-2 text-xs text-slate-200 font-mono min-h-10"
               />
             </div>
-            <div className="col-span-2">
+            <div className="md:col-span-2">
+              <label className="block text-[11px] font-semibold text-slate-400 mb-1">السعر</label>
               <input
                 type="number"
                 min="0"
@@ -329,23 +334,24 @@ export const EditPurchaseOrderPage: React.FC = () => {
                 placeholder="السعر"
                 value={newItemPrice}
                 onChange={e => setNewItemPrice(Number(e.target.value))}
-                className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-slate-200 font-mono"
+                className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-2 text-xs text-slate-200 font-mono min-h-10"
               />
             </div>
-            <div className="col-span-2">
+            <div className="md:col-span-2">
+              <label className="block text-[11px] font-semibold text-slate-400 mb-1">الوحدة</label>
               <input
                 type="text"
                 placeholder="الوحدة"
                 value={newItemUom}
                 onChange={e => setNewItemUom(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-slate-200"
+                className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-2 text-xs text-slate-200 min-h-10"
               />
             </div>
-            <div className="col-span-2 text-left">
+            <div className="sm:col-span-2 md:col-span-12 text-left mt-2">
               <button
                 type="submit"
                 disabled={busy}
-                className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs px-3 py-1.5 rounded"
+                className="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs px-5 py-2.5 rounded-lg min-h-10"
               >
                 + إضافة بند
               </button>
@@ -353,8 +359,8 @@ export const EditPurchaseOrderPage: React.FC = () => {
           </form>
         )}
 
-        {/* Existing البنود Table */}
-        <div className="overflow-x-auto">
+        {/* Existing البنود Table (Desktop) */}
+        <div className="hidden min-w-0 md:block overflow-x-auto">
           <table className="w-full text-right text-xs">
             <thead className="bg-slate-900 text-slate-400 font-bold uppercase border-b border-slate-800">
               <tr>
@@ -419,7 +425,7 @@ export const EditPurchaseOrderPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleRemoveItem(item.id)}
-                        className="text-rose-400 hover:text-rose-300 font-bold"
+                        className="text-rose-400 hover:text-rose-300 font-bold p-2"
                       >
                         ✕
                       </button>
@@ -429,6 +435,85 @@ export const EditPurchaseOrderPage: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Existing البنود Mobile Cards */}
+        <div className="space-y-3 md:hidden">
+          {po.items?.map((item, idx) => (
+            <article key={`mobile-edit-po-item-${item.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+              <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-3">
+                <span className="shrink-0 rounded-md bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-300">
+                  بند {idx + 1}
+                </span>
+                <span className="min-w-0 break-normal font-bold text-slate-200 text-xs">
+                  {item.item_description}
+                </span>
+                {isEditable && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveItem(item.id)}
+                    className="shrink-0 text-rose-400 hover:text-rose-300 font-bold p-1 text-sm"
+                    aria-label="حذف البند"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-3 space-y-3">
+                <div>
+                  <label className="block text-[11px] text-slate-500 mb-1">رقم قطعة الأرض</label>
+                  <input
+                    type="text"
+                    required
+                    disabled={!isEditable || busy}
+                    defaultValue={item.item_reference || ''}
+                    onBlur={e => handleUpdateItemField(item.id, 'item_reference', e.target.value)}
+                    dir="ltr"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 min-h-10"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-slate-500 mb-1">المنطقة</label>
+                  <input
+                    type="text"
+                    required
+                    disabled={!isEditable || busy}
+                    defaultValue={item.region || ''}
+                    onBlur={e => handleUpdateItemField(item.id, 'region', e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 min-h-10"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] text-slate-500 mb-1">الكمية</label>
+                    <input
+                      type="number"
+                      disabled={!isEditable || busy}
+                      defaultValue={item.quantity}
+                      onBlur={e => handleUpdateItemField(item.id, 'quantity', e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 min-h-10"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-slate-500 mb-1">سعر الوحدة</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      disabled={!isEditable || busy}
+                      defaultValue={item.unit_price}
+                      onBlur={e => handleUpdateItemField(item.id, 'unit_price', e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 min-h-10"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between items-center bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80">
+                  <span className="text-xs text-slate-400">الإجمالي:</span>
+                  <span className="font-mono font-bold text-cyan-400 text-sm">{Number(item.line_total).toFixed(2)} ج.م</span>
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
 
         {/* Calculated Totals Box */}
