@@ -163,36 +163,131 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
             );
           })()}
           <TableColumnFilters filters={[{ key: 'item', label: 'الصنف / القطعة / المنطقة', value: quoteFilters.item, onChange: (value) => setQuoteFilters(current => ({ ...current, item: value })) }, { key: 'supplier', label: 'المورد', value: quoteFilters.supplier, onChange: (value) => setQuoteFilters(current => ({ ...current, supplier: value })) }, { key: 'unitPrice', label: 'سعر الوحدة', type: 'number', value: quoteFilters.unitPrice, onChange: (value) => setQuoteFilters(current => ({ ...current, unitPrice: value })) }, { key: 'total', label: 'الإجمالي', type: 'number', value: quoteFilters.total, onChange: (value) => setQuoteFilters(current => ({ ...current, total: value })) }, { key: 'currency', label: 'العملة', value: quoteFilters.currency, onChange: (value) => setQuoteFilters(current => ({ ...current, currency: value })) }, { key: 'accounting', label: 'ترشيح الحسابات', value: quoteFilters.accounting, onChange: (value) => setQuoteFilters(current => ({ ...current, accounting: value })) }, { key: 'department', label: 'ترشيح القسم', value: quoteFilters.department, onChange: (value) => setQuoteFilters(current => ({ ...current, department: value })) }, { key: 'action', label: 'الإجراء', value: quoteFilters.action, onChange: (value) => setQuoteFilters(current => ({ ...current, action: value })) }, { key: 'dateFrom', label: 'من تاريخ الطلب', type: 'date', value: quoteFilters.dateFrom, onChange: (value) => setQuoteFilters(current => ({ ...current, dateFrom: value })) }, { key: 'dateTo', label: 'إلى تاريخ الطلب', type: 'date', value: quoteFilters.dateTo, onChange: (value) => setQuoteFilters(current => ({ ...current, dateTo: value })) }]} hasActiveFilters={Boolean(hasNonDateQuoteFilter || quoteFilters.dateFrom !== defaultDateFrom || quoteFilters.dateTo !== today)} onClear={() => setQuoteFilters({ item: '', supplier: '', unitPrice: '', total: '', currency: '', accounting: '', department: '', action: '', dateFrom: defaultDateFrom, dateTo: today })} />
-          <div className="overflow-x-auto">
-            <Table className="min-w-[1120px] text-sm">
-              <TableHeader className="border-b-2 border-cyan-800/70 bg-slate-950"><TableRow className="border-b border-slate-700/80"><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">الصنف / القطعة / المنطقة</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">المورد</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">سعر الوحدة</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">الإجمالي</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">العملة</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">ترشيح الحسابات</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">ترشيح القسم (إن لزم)</TableHead><TableHead className="text-center text-sm font-black text-slate-100">الإجراء</TableHead></TableRow></TableHeader>
-              <TableBody className="divide-y divide-slate-700/80">
-                {(request.quotes || []).map(quote => {
-                  const primaryItem = request.items?.[0];
-                  const accounting = quote.recommendations?.find(item => item.role_type === 'ACCOUNTING');
-                  const department = quote.recommendations?.find(item => item.role_type === 'DEPARTMENT');
-                  return <TableRow key={quote.id} className="border-b border-slate-700/80 even:bg-slate-800/25">
-                    <TableCell className="min-w-[240px] border-l border-slate-700/70 align-top text-sm">
-                      <div className="font-bold text-slate-100">{primaryItem?.item_description || primaryItem?.item?.name || '—'}</div>
-                      <div className="font-mono text-xs text-cyan-300">رقم قطعة الأرض: {primaryItem?.item_reference || '—'}</div>
-                      <div className="text-xs text-slate-400">المنطقة: {primaryItem?.region || '—'} — الوحدة: {getUnitLabel(primaryItem?.uom)} — الكمية: {primaryItem?.quantity || '—'}</div>
-                    </TableCell>
-                    <TableCell className="min-w-[190px] border-l border-slate-700/70 align-top text-sm font-black text-slate-100">{quote.supplier?.company_name || '—'}</TableCell>
-                    <TableCell className="border-l border-slate-700/70 align-top font-mono text-sm font-black text-amber-300">{quote.unit_price || '—'} ج.م</TableCell><TableCell className="border-l border-slate-700/70 align-top font-mono text-sm font-black text-emerald-300">{quote.total_amount} ج.م</TableCell>
-                    <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">{quote.currency}</TableCell>
-                      <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">{accounting ? `${accounting.decision === 'RECOMMEND' ? 'مرشح' : 'مرفوض'}${accounting.user?.name ? ` — ${accounting.user.name}` : ''}` : 'لم يرشح بعد'}</TableCell>
-                      <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">{isGeneralManagerRequest(request) ? 'غير مطلوب — قرار المدير العام' : department ? `${department.decision === 'RECOMMEND' ? 'مرشح' : 'مرفوض'}${department.user?.name ? ` — ${department.user.name}` : ''}` : 'لم يرشح بعد'}</TableCell>
-                    <TableCell className="min-w-[250px] border-l border-slate-700/70 align-top text-sm">
-                      <input value={comments[quote.id] || ''} onChange={event => setComments(current => ({ ...current, [quote.id]: event.target.value }))} placeholder="تعليق اختياري" className="mb-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100" />
-                      <div className="flex justify-center gap-2">
-                        <Button size="sm" variant={mode === 'executive' ? 'primary' : 'success'} disabled={savingId === quote.id} onClick={() => void act(quote, mode === 'executive' ? 'SELECT' : 'RECOMMEND')}>{mode === 'executive' ? copy.action : copy.action}</Button>
-                        <Button size="sm" variant="danger" disabled={savingId === quote.id} onClick={() => void act(quote, 'REJECT')}>{mode === 'executive' ? 'رفض جميع العروض' : 'رفض العرض'}</Button>
+          
+          <div className="hidden min-w-0 md:block">
+            <div className="overflow-x-auto">
+              <Table className="min-w-[1120px] text-sm">
+                <TableHeader className="border-b-2 border-cyan-800/70 bg-slate-950"><TableRow className="border-b border-slate-700/80"><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">الصنف / القطعة / المنطقة</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">المورد</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">سعر الوحدة</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">الإجمالي</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">العملة</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">ترشيح الحسابات</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">ترشيح القسم (إن لزم)</TableHead><TableHead className="text-center text-sm font-black text-slate-100">الإجراء</TableHead></TableRow></TableHeader>
+                <TableBody className="divide-y divide-slate-700/80">
+                  {(request.quotes || []).map(quote => {
+                    const primaryItem = request.items?.[0];
+                    const accounting = quote.recommendations?.find(item => item.role_type === 'ACCOUNTING');
+                    const department = quote.recommendations?.find(item => item.role_type === 'DEPARTMENT');
+                    return <TableRow key={quote.id} className="border-b border-slate-700/80 even:bg-slate-800/25">
+                      <TableCell className="min-w-[240px] border-l border-slate-700/70 align-top text-sm">
+                        <div className="font-bold text-slate-100">{primaryItem?.item_description || primaryItem?.item?.name || '—'}</div>
+                        <div className="font-mono text-xs text-cyan-300">رقم قطعة الأرض: {primaryItem?.item_reference || '—'}</div>
+                        <div className="text-xs text-slate-400">المنطقة: {primaryItem?.region || '—'} — الوحدة: {getUnitLabel(primaryItem?.uom)} — الكمية: {primaryItem?.quantity || '—'}</div>
+                      </TableCell>
+                      <TableCell className="min-w-[190px] border-l border-slate-700/70 align-top text-sm font-black text-slate-100">{quote.supplier?.company_name || '—'}</TableCell>
+                      <TableCell className="border-l border-slate-700/70 align-top font-mono text-sm font-black text-amber-300">{quote.unit_price || '—'} ج.م</TableCell><TableCell className="border-l border-slate-700/70 align-top font-mono text-sm font-black text-emerald-300">{quote.total_amount} ج.م</TableCell>
+                      <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">{quote.currency}</TableCell>
+                        <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">{accounting ? `${accounting.decision === 'RECOMMEND' ? 'مرشح' : 'مرفوض'}${accounting.user?.name ? ` — ${accounting.user.name}` : ''}` : 'لم يرشح بعد'}</TableCell>
+                        <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">{isGeneralManagerRequest(request) ? 'غير مطلوب — قرار المدير العام' : department ? `${department.decision === 'RECOMMEND' ? 'مرشح' : 'مرفوض'}${department.user?.name ? ` — ${department.user.name}` : ''}` : 'لم يرشح بعد'}</TableCell>
+                      <TableCell className="min-w-[250px] border-l border-slate-700/70 align-top text-sm">
+                        <input value={comments[quote.id] || ''} onChange={event => setComments(current => ({ ...current, [quote.id]: event.target.value }))} placeholder="تعليق اختياري" className="mb-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100" />
+                        <div className="flex justify-center gap-2">
+                          <Button size="sm" variant={mode === 'executive' ? 'primary' : 'success'} disabled={savingId === quote.id} onClick={() => void act(quote, mode === 'executive' ? 'SELECT' : 'RECOMMEND')}>{mode === 'executive' ? copy.action : copy.action}</Button>
+                          <Button size="sm" variant="danger" disabled={savingId === quote.id} onClick={() => void act(quote, 'REJECT')}>{mode === 'executive' ? 'رفض جميع العروض' : 'رفض العرض'}</Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>;
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          <div className="space-y-3 md:hidden">
+            {(request.quotes || []).map(quote => {
+              const primaryItem = request.items?.[0];
+              const accounting = quote.recommendations?.find(item => item.role_type === 'ACCOUNTING');
+              const department = quote.recommendations?.find(item => item.role_type === 'DEPARTMENT');
+              return (
+                <article key={`mobile-quote-${quote.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+                  <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-3">
+                    <span className="min-w-0 break-normal font-black text-sm text-slate-100">
+                      {quote.supplier?.company_name || 'غير محدد'}
+                    </span>
+                    <span className="shrink-0 font-mono text-sm font-black text-emerald-400">
+                      {quote.total_amount} {quote.currency || 'ج.م'}
+                    </span>
+                  </div>
+                  <dl className="mt-3 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
+                    <div className="min-w-0 min-[420px]:col-span-2">
+                      <dt className="text-slate-500">الصنف / الوصف</dt>
+                      <dd className="mt-1 font-bold text-slate-200 break-normal">
+                        {primaryItem?.item_description || primaryItem?.item?.name || '—'}
+                      </dd>
+                    </div>
+                    {primaryItem?.item_reference && (
+                      <div>
+                        <dt className="text-slate-500">رقم القطعة</dt>
+                        <dd className="mt-1 font-mono text-cyan-300">{primaryItem.item_reference}</dd>
                       </div>
-                    </TableCell>
-                  </TableRow>;
-                })}
-              </TableBody>
-            </Table>
+                    )}
+                    {primaryItem?.region && (
+                      <div>
+                        <dt className="text-slate-500">المنطقة</dt>
+                        <dd className="mt-1 text-slate-300">{primaryItem.region}</dd>
+                      </div>
+                    )}
+                    <div>
+                      <dt className="text-slate-500">الكمية</dt>
+                      <dd className="mt-1 font-mono text-slate-300">
+                        {primaryItem?.quantity || '—'} {getUnitLabel(primaryItem?.uom)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">سعر الوحدة</dt>
+                      <dd className="mt-1 font-mono font-bold text-amber-300">
+                        {quote.unit_price || '—'} ج.م
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">ترشيح الحسابات</dt>
+                      <dd className="mt-1 font-semibold text-slate-300">
+                        {accounting ? `${accounting.decision === 'RECOMMEND' ? 'مرشح' : 'مرفوض'}${accounting.user?.name ? ` (${accounting.user.name})` : ''}` : 'لم يرشح بعد'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">ترشيح القسم</dt>
+                      <dd className="mt-1 font-semibold text-slate-300">
+                        {isGeneralManagerRequest(request) ? 'قرار المدير العام' : department ? `${department.decision === 'RECOMMEND' ? 'مرشح' : 'مرفوض'}${department.user?.name ? ` (${department.user.name})` : ''}` : 'لم يرشح بعد'}
+                      </dd>
+                    </div>
+                  </dl>
+                  <div className="mt-4 space-y-2 border-t border-slate-800 pt-3">
+                    <input
+                      value={comments[quote.id] || ''}
+                      onChange={event => setComments(current => ({ ...current, [quote.id]: event.target.value }))}
+                      placeholder="تعليق اختياري"
+                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 min-h-10"
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Button
+                        size="sm"
+                        variant={mode === 'executive' ? 'primary' : 'success'}
+                        disabled={savingId === quote.id}
+                        onClick={() => void act(quote, mode === 'executive' ? 'SELECT' : 'RECOMMEND')}
+                        className="w-full min-h-10"
+                      >
+                        {mode === 'executive' ? copy.action : copy.action}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        disabled={savingId === quote.id}
+                        onClick={() => void act(quote, 'REJECT')}
+                        className="w-full min-h-10"
+                      >
+                        {mode === 'executive' ? 'رفض جميع العروض' : 'رفض العرض'}
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </Card>
       ))}
