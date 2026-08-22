@@ -16,6 +16,7 @@ class SupplierController extends Controller
     {
         $search = trim((string) $request->query('search', ''));
         $status = (string) $request->query('status', '');
+        $perPage = min(max((int) $request->query('per_page', 50), 1), 200);
 
         $query = Supplier::query();
 
@@ -34,8 +35,16 @@ class SupplierController extends Controller
             $query->where('is_active', false);
         }
 
+        $paginator = $query->orderBy('company_name')->paginate($perPage);
+
         return response()->json([
-            'data' => $query->orderBy('company_name')->get(),
+            'data' => $paginator->items(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
+            ],
         ]);
     }
 
