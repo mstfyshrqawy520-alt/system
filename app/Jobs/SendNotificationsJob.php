@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\PurchaseOrder;
 use App\Models\PurchaseReceipt;
 use App\Services\NotificationService;
 use Illuminate\Bus\Queueable;
@@ -16,11 +17,6 @@ class SendNotificationsJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * Queue notifications only after the surrounding transaction commits.
-     */
-    public bool $afterCommit = true;
-
-    /**
      * @param array<int> $recipientIds
      */
     public function __construct(
@@ -31,11 +27,17 @@ class SendNotificationsJob implements ShouldQueue
         public Model $notifiable,
         public ?PurchaseReceipt $purchaseReceipt = null,
     ) {
+        // Queue notifications only after the surrounding transaction commits.
+        $this->afterCommit();
     }
 
     public function handle(NotificationService $notificationService): void
     {
         if ($this->purchaseReceipt !== null) {
+            if (! $this->notifiable instanceof PurchaseOrder) {
+                throw new \LogicException('A purchase order is required when queueing a purchase-order and receipt notification.');
+            }
+
             $notificationService->notifyAccountingWithPurchaseOrderAndReceipt(
                 $this->recipientIds,
                 $this->notifiable,
