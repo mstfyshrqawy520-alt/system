@@ -20,7 +20,7 @@ class GeneralManagerPurchaseRequestService
             ->with([
                 'requester:id,name,email',
                 'department:id,name,code',
-                'directSupplier:id,company_name,code',
+                'directSupplier:id,company_name',
                 'assignedReviewer:id,name,email,department_id',
                 'siteEngineer:id,name,email,department_id',
                 'items.item',
@@ -40,7 +40,7 @@ class GeneralManagerPurchaseRequestService
             ->with([
                 'requester:id,name,email',
                 'department:id,name,code',
-                'directSupplier:id,company_name,code',
+                'directSupplier:id,company_name',
                 'assignedReviewer:id,name,email,department_id',
                 'siteEngineer:id,name,email,department_id',
                 'items.item',
