@@ -217,7 +217,7 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
 
       {selected && createPortal((
         <div className="modal-top-viewport fixed inset-0 z-[9999] flex min-h-screen items-center justify-center overflow-y-auto bg-slate-950/80 p-4 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-label="قرار المدير التنفيذي">
-          <div className="min-h-0 max-h-[calc(100dvh-2rem)] w-full max-w-[1100px] overflow-y-auto rounded-2xl border border-slate-700 bg-slate-950 p-4 shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:p-6">
+          <div className="min-h-0 max-h-[calc(100dvh-2rem)] w-full max-w-[1100px] overflow-y-auto rounded-2xl border border-slate-700 bg-slate-950 p-4 pb-24 sm:p-6 sm:pb-6 shadow-2xl sm:max-h-[calc(100dvh-3rem)]">
             <div className="flex flex-col gap-2 border-b border-slate-800 pb-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="text-lg font-black text-slate-100">{selected.request_number}</h2>
@@ -291,9 +291,16 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-start">
-              <Button type="button" variant="primary" isLoading={actionLoading} onClick={() => void performAction('approve')} className="w-full sm:w-auto min-h-10">اعتماد وإرسال للمشتريات</Button>
-              <Button type="button" variant="danger" isLoading={actionLoading} onClick={() => void performAction('reject')} className="w-full sm:w-auto min-h-10">رفض الطلب</Button>
+            {/* Desktop Modal Actions */}
+            <div className="mt-5 hidden sm:flex sm:flex-row sm:justify-start gap-2">
+              <Button type="button" variant="primary" isLoading={actionLoading} onClick={() => void performAction('approve')} className="min-h-10">اعتماد وإرسال للمشتريات</Button>
+              <Button type="button" variant="danger" isLoading={actionLoading} onClick={() => void performAction('reject')} className="min-h-10">رفض الطلب</Button>
+            </div>
+
+            {/* Mobile Sticky Modal Actions */}
+            <div className="fixed bottom-0 inset-x-0 z-30 flex items-center gap-2 border-t border-slate-800 bg-slate-950/95 p-3 shadow-2xl backdrop-blur sm:hidden">
+              <Button type="button" variant="primary" isLoading={actionLoading} onClick={() => void performAction('approve')} className="flex-1 min-h-10 text-xs font-bold">اعتماد وإرسال</Button>
+              <Button type="button" variant="danger" isLoading={actionLoading} onClick={() => void performAction('reject')} className="flex-1 min-h-10 text-xs font-bold">رفض الطلب</Button>
             </div>
           </div>
         </div>
