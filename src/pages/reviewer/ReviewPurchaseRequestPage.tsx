@@ -228,7 +228,7 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
   const isConflictError = error?.status === 409;
 
   return (
-    <div className="space-y-6 animate-fade-in" dir="rtl">
+    <div className="space-y-6 pb-24 md:pb-0 animate-fade-in" dir="rtl">
       {/* Flash */}
       {successMessage && (
         <div className="bg-emerald-950/40 border border-emerald-800/80 text-emerald-300 px-4 py-3 rounded-xl text-xs font-semibold flex items-center justify-between">
@@ -293,8 +293,8 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
           <div><div className="text-[10px] text-slate-400 font-semibold">المنطقة</div><div className="mt-1 font-bold text-slate-200">{requestData.items?.map((item) => item.region).filter(Boolean).join('، ') || 'غير محددة'}</div></div>
         </Card>
 
-        {/* Action Bar */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Desktop Action Bar */}
+        <div className="hidden md:flex items-center gap-2 flex-wrap">
           {requestData.status === 'SUBMITTED' && hasPermission('purchase_request.review') && (
             <Button variant="primary" size="md" onClick={handleStartReview} isLoading={isMutating}>
               {isMutating ? 'جارٍ بدء المراجعة...' : 'بدء المراجعة'}
@@ -326,6 +326,44 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
             <Button variant="secondary" size="md">← إلغاء</Button>
           </Link>
         </div>
+      </div>
+
+      {/* Sticky Mobile Bottom Action Bar */}
+      <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-between gap-2 border-t border-slate-800 bg-slate-900/95 p-3 shadow-2xl backdrop-blur md:hidden">
+        <Link to="/reviewer/requests" className="flex-1">
+          <Button variant="secondary" size="md" className="w-full min-h-10 text-xs">← إلغاء</Button>
+        </Link>
+        {requestData.status === 'SUBMITTED' && hasPermission('purchase_request.review') && (
+          <Button variant="primary" size="md" onClick={handleStartReview} isLoading={isMutating} className="flex-2 w-full min-h-10 text-xs font-bold">
+            {isMutating ? 'جارٍ بدء المراجعة...' : 'بدء المراجعة'}
+          </Button>
+        )}
+        {isUnderReview && !isFinalized && (
+          <div className="flex flex-1 items-center gap-2">
+            {hasPermission('purchase_request.approve') && (
+              <Button
+                variant="success"
+                size="md"
+                onClick={() => setIsApproveModalOpen(true)}
+                disabled={isMutating}
+                className="flex-1 min-h-10 text-xs font-bold"
+              >
+                اعتماد
+              </Button>
+            )}
+            {hasPermission('purchase_request.reject') && (
+              <Button
+                variant="danger"
+                size="md"
+                onClick={() => setIsRejectModalOpen(true)}
+                disabled={isMutating}
+                className="flex-1 min-h-10 text-xs font-bold"
+              >
+                رفض
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Editable Header */}
