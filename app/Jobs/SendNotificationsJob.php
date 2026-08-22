@@ -43,16 +43,35 @@ class SendNotificationsJob implements ShouldQueue
                 $this->notifiable,
                 $this->purchaseReceipt,
             );
-
-            return;
+        } else {
+            $notificationService->notifyUsers(
+                $this->recipientIds,
+                $this->type,
+                $this->title,
+                $this->message,
+                $this->notifiable,
+            );
         }
 
-        $notificationService->notifyUsers(
-            $this->recipientIds,
-            $this->type,
-            $this->title,
-            $this->message,
-            $this->notifiable,
-        );
+        // Dispatch Web & Mobile FCM Push Notifications asynchronously after database storage
+        try {
+            /** @var \App\Services\FcmService $fcmService */
+            $fcmService = app(\App\Services\FcmService::class);
+            $fcmService->sendToUsers(
+                $this->recipientIds,
+                $this->title,
+                $this->message,
+                [
+                    'type' => $this->type,
+                    'notifiable_type' => get_class($this->notifiable),
+                    'notifiable_id' => $this->notifiable->getKey(),
+                    'url' => '/notifications',
+                ]
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('SendNotificationsJob: FCM push delivery error', [
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
