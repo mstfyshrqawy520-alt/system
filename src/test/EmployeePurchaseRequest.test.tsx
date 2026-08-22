@@ -324,33 +324,27 @@ describe('Employee Pages Integration', () => {
     fireEvent.change(departmentSelect(), {
       target: { value: '1' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'التالي' }));
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText(/وصف دقيق للصنف/i)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/مثال: حديد تسليح/i)).toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByPlaceholderText(/وصف دقيق للصنف/i), {
+    fireEvent.change(screen.getByPlaceholderText(/مثال: حديد تسليح/i), {
       target: { value: 'Test Computer Monitor' },
     });
-    fireEvent.change(screen.getByPlaceholderText(/أدخل رقم قطعة الأرض/i), {
+    fireEvent.change(screen.getByPlaceholderText(/مثال: 256 أو A-14/i), {
       target: { value: 'UI-PART-002' },
     });
-    fireEvent.change(screen.getByPlaceholderText(/المنطقة السابعة والعشرين/i), {
+    fireEvent.change(screen.getByPlaceholderText(/مثال: المنطقة السابعة/i), {
       target: { value: 'المنطقة السابعة والعشرون' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'التالي' }));
-    await waitFor(() => expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({
-      target_department_id: 1,
-    })));
-
-    expect(screen.getByText('المراجعة قبل الإرسال')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: /إرسال طلب الشراء/i }));
+    fireEvent.click(screen.getByRole('button', { name: /إرسال طلب الشراء فوراً/i }));
 
     await waitFor(() => {
-      expect(updateSpy).toHaveBeenCalled();
+      expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({
+        target_department_id: 1,
+      }));
       expect(submitSpy).toHaveBeenCalledWith(mockDraftRequest.id);
     });
   });

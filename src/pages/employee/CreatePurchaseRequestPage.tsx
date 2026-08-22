@@ -1,19 +1,28 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
-import { PRWizardStep1 } from '../../components/purchase-requests/PRWizardStep1';
-import { PRWizardStep2 } from '../../components/purchase-requests/PRWizardStep2';
-import { PRWizardStep4 } from '../../components/purchase-requests/PRWizardStep4';
+import { Card } from '../../components/ui/Card';
+import { FormField, Input, Select, Textarea } from '../../components/ui/FormField';
 import {
   createPurchaseRequestApi,
   getPurchaseRequestDepartmentOptionsApi,
   submitPurchaseRequestApi,
   updatePurchaseRequestApi,
 } from '../../api/purchaseRequests';
-import { CreatePurchaseRequestPayload, DepartmentOption } from '../../types/purchaseRequest';
+import { getCatalogItemsApi } from '../../api/catalog';
+import {
+  CatalogItem,
+  CreatePurchaseRequestPayload,
+  DepartmentOption,
+  PurchaseRequestItemFormInput,
+  PurchaseRequestPriority,
+} from '../../types/purchaseRequest';
+import { getUnitLabel, getUnitOptions } from '../../utils/units';
 import { parseApiError } from '../../utils/apiError';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { useAuth } from '../../context/AuthContext';
+
+const UNIT_OPTIONS = getUnitOptions(['PCS', 'KG', 'TON', 'M', 'M2', 'M3', 'L', 'BAG', 'BOX', 'CARTON', 'SET', 'PAIR', 'UNIT', 'HOUR', 'DAY']);
 
 const getTodayDateInputValue = (): string => {
   const today = new Date();
@@ -25,6 +34,16 @@ const getTodayDateInputValue = (): string => {
 
 const DRAFT_STORAGE_KEY = 'ashbiliya.purchase-request.draft.v1';
 
+const emptyItem = (): PurchaseRequestItemFormInput => ({
+  item_description: '',
+  item_reference: '',
+  region: '',
+  quantity: 1,
+  uom: 'PCS',
+  specifications: '',
+  notes: '',
+});
+
 const INITIAL_DATA: CreatePurchaseRequestPayload = {
   target_department_id: undefined,
   priority: 'NORMAL',
@@ -32,16 +51,7 @@ const INITIAL_DATA: CreatePurchaseRequestPayload = {
   site_engineer_user_id: undefined,
   date_needed: getTodayDateInputValue(),
   notes: '',
-  items: [
-    {
-      item_description: '',
-      item_reference: '',
-      region: '',
-      quantity: 1,
-      uom: 'PCS',
-      specifications: '',
-    },
-  ],
+  items: [emptyItem()],
 };
 
 type ItemErrors = Record<number, {
@@ -113,6 +123,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
   const { hasRole } = useAuth();
   const isGeneralManager = hasRole('general_manager');
   const [data, setData] = useState<CreatePurchaseRequestPayload>(INITIAL_DATA);
+  const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<DepartmentOption[]>([]);
   const [departmentLoading, setDepartmentLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -121,11 +132,11 @@ const CreatePurchaseRequestPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [draftReady, setDraftReady] = useState(false);
   const [draftMessage, setDraftMessage] = useState<string | null>(null);
-  const [currentStep, setCurrentStep] = useState(1);
   const [serverDraftId, setServerDraftId] = useState<number | null>(null);
   const isDirty = useMemo(() => JSON.stringify(data) !== JSON.stringify(INITIAL_DATA), [data]);
   useUnsavedChangesWarning(isDirty && !isSubmitting);
 
+  // Restore local draft
   useEffect(() => {
     try {
       const savedDraft = window.localStorage.getItem(DRAFT_STORAGE_KEY);
@@ -137,12 +148,13 @@ const CreatePurchaseRequestPage: React.FC = () => {
         }
       }
     } catch {
-      // تجاهل أي مسودة تالفة والبدء بنموذج جديد.
+      // Ignore corrupted draft
     } finally {
       setDraftReady(true);
     }
   }, []);
 
+  // Auto-save local draft
   useEffect(() => {
     if (!draftReady) return;
     const timer = window.setTimeout(() => {
@@ -156,6 +168,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [data, draftReady]);
 
+  // Load department options & catalog items
   useEffect(() => {
     let cancelled = false;
     getPurchaseRequestDepartmentOptionsApi()
@@ -169,6 +182,12 @@ const CreatePurchaseRequestPage: React.FC = () => {
         if (!cancelled) setDepartmentLoading(false);
       });
 
+    getCatalogItemsApi()
+      .then((items) => {
+        if (!cancelled) setCatalogItems(items);
+      })
+      .catch(() => {});
+
     return () => { cancelled = true; };
   }, []);
 
@@ -177,13 +196,37 @@ const CreatePurchaseRequestPage: React.FC = () => {
     [data, departmentOptions, isGeneralManager],
   );
   const requestHasErrors = hasValidationErrors(validation);
-  const completedItems = data.items.filter((item) =>
-    item.item_description.trim() && item.item_reference?.trim() && item.region?.trim() && Number(item.quantity) > 0,
-  ).length;
   const targetDepartment = departmentOptions.find((department) => department.id === data.target_department_id);
-  const managerName = targetDepartment?.manager?.name || 'غير معين';
-  const siteEngineerName = targetDepartment?.site_engineer?.name || 'غير معين';
-  const canSubmit = !requestHasErrors && !departmentLoading;
+
+  // Item Management Helpers
+  const updateItem = (index: number, partial: Partial<PurchaseRequestItemFormInput>) => {
+    const updated = data.items.map((item, i) => (i === index ? { ...item, ...partial } : item));
+    setData({ ...data, items: updated });
+  };
+
+  const addItem = () => {
+    setData({ ...data, items: [...data.items, emptyItem()] });
+  };
+
+  const removeItem = (index: number) => {
+    if (data.items.length <= 1) return;
+    setData({ ...data, items: data.items.filter((_, i) => i !== index) });
+  };
+
+  const handleCatalogSelect = (index: number, catalogId: string) => {
+    if (!catalogId) {
+      updateItem(index, { item_id: null });
+      return;
+    }
+    const cat = catalogItems.find((c) => c.id === parseInt(catalogId, 10));
+    if (cat) {
+      updateItem(index, {
+        item_id: cat.id,
+        item_description: cat.name,
+        uom: cat.uom || 'PCS',
+      });
+    }
+  };
 
   const ensureServerDraft = async (): Promise<{ id: number }> => {
     const normalizedData = normalizeRequestData(data);
@@ -194,59 +237,33 @@ const CreatePurchaseRequestPage: React.FC = () => {
 
     const created = await createPurchaseRequestApi(normalizedData);
     setServerDraftId(created.id);
-    setDraftMessage(`تم إنشاء المسودة ${created.request_number} ويمكنك مراجعة الطلب قبل الإرسال.`);
     return { id: created.id };
   };
 
-  const handleNextStep = async () => {
-    setError(null);
-    if (currentStep === 1) {
-      setShowValidation(true);
-      if (validation.targetDepartment || validation.targetManager || validation.targetSiteEngineer || validation.dateNeeded) {
-        setError(validation.targetManager || validation.targetSiteEngineer || 'أكمل بيانات الطلب والقسم المستهدف قبل الانتقال للتفاصيل.');
-        return;
-      }
-    }
-    if (currentStep === 2) {
-      setShowValidation(true);
-      if (requestHasErrors) {
-        setError('راجع تفاصيل البنود المحددة باللون الأحمر قبل الانتقال للمراجعة.');
-        return;
-      }
-      try {
-        await ensureServerDraft();
-      } catch (err) {
-        setError(parseApiError(err).message);
-        return;
-      }
-    }
-    setCurrentStep((step) => Math.min(4, step + 1));
-  };
-
-  const handlePreviousStep = () => {
-    setError(null);
-    setCurrentStep((step) => Math.max(1, step - 1));
-  };
-
-  const handleSaveDraft = () => {
+  // Save draft on server & local
+  const handleSaveDraft = async () => {
     setError(null);
     setIsSavingDraft(true);
     try {
       window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(data));
-      setDraftMessage('تم حفظ المسودة على هذا الجهاز. يمكنك العودة إليها لاحقًا.');
-    } catch {
-      setError('تعذر حفظ المسودة على هذا الجهاز. يمكنك متابعة الطلب وإرساله بعد استكمال البيانات.');
+      if (data.target_department_id && data.items.some((i) => i.item_description.trim())) {
+        const draft = await ensureServerDraft();
+        setDraftMessage(`تم حفظ المسودة بنجاح (${draft.id}). يمكنك العودة إليها في أي وقت.`);
+      } else {
+        setDraftMessage('تم حفظ المسودة على هذا الجهاز.');
+      }
+    } catch (err) {
+      setError(parseApiError(err).message);
     } finally {
-      window.setTimeout(() => setIsSavingDraft(false), 350);
+      setIsSavingDraft(false);
     }
   };
 
-
+  // Submit request directly in one step
   const handleSubmit = async () => {
     setShowValidation(true);
-    if (!canSubmit) {
-      setError('راجع الحقول المحددة باللون الأحمر قبل إرسال الطلب.');
-      setCurrentStep(1);
+    if (requestHasErrors) {
+      setError('يرجى استكمال ومراجعة الحقول المحددة باللون الأحمر قبل إرسال الطلب.');
       return;
     }
 
@@ -270,123 +287,318 @@ const CreatePurchaseRequestPage: React.FC = () => {
     }
   };
 
-  const stepTitles = ['بيانات الطلب', 'التفاصيل', 'المراجعة والإرسال'];
-
   return (
-    <div className="mx-auto max-w-6xl space-y-4 pb-8" dir="rtl">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mx-auto max-w-5xl space-y-6 pb-12" dir="rtl">
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-4">
         <div>
           <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-cyan-400">
-              <span>{isGeneralManager ? 'المدير العام' : 'منشئ الطلب'}</span>
+            <span>{isGeneralManager ? 'المدير العام' : 'منشئ الطلب'}</span>
             <span className="text-slate-600">/</span>
-            <span>إنشاء طلب شراء</span>
+            <span>طلب شراء جديد</span>
           </div>
-          <h1 className="text-xl font-black text-slate-100">طلب شراء جديد</h1>
-          <p className="mt-1 text-xs text-slate-400">أدخل البيانات التشغيلية فقط، ثم راجع الطلب قبل إرساله.</p>
+          <h1 className="text-xl font-black text-slate-100 flex items-center gap-2">
+            <span>✍️</span> إنشاء وإرسال طلب شراء
+          </h1>
+          <p className="mt-1 text-xs text-slate-400">
+            أدخل بيانات الطلب والأصناف المطلوبة، ثم اضغط على إرسال الطلب مباشرة لبدء دورة الاعتماد.
+          </p>
         </div>
-        <Link to="/requests">
-          <Button type="button" variant="secondary" size="sm">← أرشيف طلباتي</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          {draftMessage && (
+            <span className="hidden sm:inline-block rounded-lg bg-emerald-950/60 border border-emerald-800/60 px-3 py-1.5 text-[11px] font-bold text-emerald-300">
+              ✓ {draftMessage}
+            </span>
+          )}
+          <Link to="/requests">
+            <Button type="button" variant="secondary" size="sm">
+              ← أرشيف طلباتي
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-900/70 shadow-2xl shadow-slate-950/30">
-        <header className="border-b border-slate-800 bg-slate-950/40 px-5 py-5 md:px-7">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-xs font-bold text-cyan-300">خطوات الطلب</p>
-              <p className="mt-1 text-xs leading-6 text-slate-400">لا تظهر في هذه الشاشة أي أسعار أو ميزانيات أو بيانات مالية.</p>
-              {draftMessage && <p className="mt-2 text-[11px] font-medium text-emerald-300" aria-live="polite">{draftMessage}</p>}
-            </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {stepTitles.map((title, index) => {
-                const step = index + 1;
-                const isActive = currentStep === step;
-                const isCompleted = currentStep > step;
-                return (
-                  <button
-                    key={title}
-                    type="button"
-                    disabled={step > currentStep}
-                    onClick={() => step <= currentStep && setCurrentStep(step)}
-                    className={`min-h-11 rounded-xl border px-3 py-2 text-right text-[11px] transition-colors ${isActive ? 'border-cyan-500/70 bg-cyan-950/50 text-cyan-200' : isCompleted ? 'border-emerald-700/60 bg-emerald-950/30 text-emerald-300' : 'border-slate-800 bg-slate-900/60 text-slate-500'} ${step > currentStep ? 'cursor-not-allowed opacity-60' : 'hover:border-cyan-700/70'}`}
-                  >
-                    <span className="ml-1 font-black">{isCompleted ? '✓' : step}</span>{title}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </header>
+      {error && (
+        <div className="rounded-xl border border-rose-800/80 bg-rose-950/40 p-4 text-xs font-bold text-rose-200 shadow-lg" role="alert">
+          ⚠️ {error}
+        </div>
+      )}
 
-        {error && (
-          <div className="mx-5 mt-5 rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200 md:mx-7" role="alert" aria-live="polite">
-            {error}
+      {/* Card 1: Basic Request Info */}
+      <Card className="space-y-5 border-slate-800 bg-slate-900/90 p-5 sm:p-6 shadow-xl">
+        <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-black text-slate-100 flex items-center gap-2">
+              <span className="text-cyan-400">📋</span> 1. بيانات الطلب والجهة المستهدفة
+            </h2>
+            <p className="text-[11px] text-slate-400 mt-0.5">حدد القسم الذي سيعالج طلب الشراء وتاريخ الاحتياج والأولوية</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label="القسم المستهدف" required error={showValidation ? validation.targetDepartment : undefined}>
+            <Select
+              id="pr-target-department"
+              value={data.target_department_id ? String(data.target_department_id) : ''}
+              onChange={(event) =>
+                setData({
+                  ...data,
+                  target_department_id: event.target.value ? Number(event.target.value) : undefined,
+                  reviewer_user_id: undefined,
+                  site_engineer_user_id: undefined,
+                })
+              }
+              disabled={departmentLoading || departmentOptions.length === 0}
+              error={Boolean(showValidation && validation.targetDepartment)}
+            >
+              <option value="">{departmentLoading ? 'جاري تحميل الأقسام...' : 'اختر القسم الذي سيعالج الطلب'}</option>
+              {departmentOptions.map((department) => (
+                <option key={department.id} value={department.id}>
+                  {department.name} {department.code ? `(${department.code})` : ''}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+
+          <FormField label="تاريخ الاحتياج" required error={showValidation ? validation.dateNeeded : undefined}>
+            <Input
+              type="date"
+              id="pr-date-needed"
+              min={getTodayDateInputValue()}
+              value={data.date_needed || ''}
+              onChange={(event) => setData({ ...data, date_needed: event.target.value })}
+              error={Boolean(showValidation && validation.dateNeeded)}
+            />
+          </FormField>
+        </div>
+
+        {targetDepartment && (
+          <div className="grid grid-cols-1 gap-3 rounded-xl border border-cyan-800/40 bg-cyan-950/20 p-3 text-xs sm:grid-cols-2">
+            <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-2.5">
+              <span className="text-slate-500 text-[10px]">مدير القسم المستهدف (المراجع):</span>
+              <div className="font-bold text-slate-200 mt-0.5">{isGeneralManager ? 'مسار المدير العام المباشر' : targetDepartment.manager?.name || 'غير معين'}</div>
+            </div>
+            <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-2.5">
+              <span className="text-slate-500 text-[10px]">مهندس الموقع المعين:</span>
+              <div className="font-bold text-slate-200 mt-0.5">{targetDepartment.site_engineer?.name || 'غير معين'}</div>
+            </div>
           </div>
         )}
 
-        <div className="px-5 py-6 md:px-7">
-          {currentStep === 1 && (
-            <div className="space-y-4">
-              <div className="border-b border-slate-800/80 pb-3">
-                <h2 className="text-sm font-bold text-cyan-300">بيانات الطلب</h2>
-                <p className="mt-1 text-[11px] text-slate-500">اختر القسم المستهدف وحدد الأولوية وتاريخ الاحتياج.</p>
-              </div>
-              <PRWizardStep1
-                data={data}
-                onChange={setData}
-                departmentOptions={departmentOptions}
-                departmentLoading={departmentLoading}
-                isGeneralManager={isGeneralManager}
-                errors={showValidation ? validation : {}}
-              />
-            </div>
-          )}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label="الأولوية">
+            <Select
+              id="pr-priority"
+              value={data.priority}
+              onChange={(event) => setData({ ...data, priority: event.target.value as PurchaseRequestPriority })}
+            >
+              <option value="LOW">منخفضة</option>
+              <option value="NORMAL">عادية</option>
+              <option value="HIGH">عاجلة</option>
+              <option value="URGENT">حرجة للغاية (طارئة)</option>
+            </Select>
+          </FormField>
 
-          {currentStep === 2 && (
-            <div className="space-y-4">
-              <div className="border-b border-slate-800/80 pb-3">
-                <h2 className="text-sm font-bold text-cyan-300">تفاصيل البنود</h2>
-                <p className="mt-1 text-[11px] text-slate-500">أدخل الوصف ورقم قطعة الأرض والمنطقة والكمية والوحدة والمواصفات فقط.</p>
-              </div>
-              <PRWizardStep2 data={data} onChange={setData} errors={showValidation ? validation.items : {}} />
-            </div>
-          )}
+          <FormField label="ملاحظات / الغرض من الشراء">
+            <Textarea
+              id="pr-notes"
+              rows={2}
+              value={data.notes || ''}
+              onChange={(event) => setData({ ...data, notes: event.target.value })}
+              placeholder="اكتب أي ملاحظات أو توضيحات خاصة بالطلب..."
+            />
+          </FormField>
+        </div>
+      </Card>
 
-          {currentStep === 3 && (
-            <div className="space-y-4">
-              <div className="border-b border-slate-800/80 pb-3">
-                <h2 className="text-sm font-bold text-cyan-300">المراجعة قبل الإرسال</h2>
-                <p className="mt-1 text-[11px] text-slate-500">راجع البيانات التشغيلية وتأكد من اكتمالها قبل بدء دورة الاعتماد الرسمية.</p>
-              </div>
-              <PRWizardStep4
-                data={data}
-                onSubmit={() => void handleSubmit()}
-                isSubmitting={isSubmitting}
-                isGeneralManager={isGeneralManager}
-              />
-            </div>
-          )}
+      {/* Card 2: Items List */}
+      <Card className="space-y-4 border-slate-800 bg-slate-900/90 p-5 sm:p-6 shadow-xl">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div>
+            <h2 className="text-sm font-black text-slate-100 flex items-center gap-2">
+              <span className="text-cyan-400">📦</span> 2. بنود ومواد الطلب ({data.items.length})
+            </h2>
+            <p className="text-[11px] text-slate-400 mt-0.5">أدخل الأصناف، أرقام قطع الأراضي، المناطق، والكميات المطلوبة</p>
+          </div>
+          <Button type="button" variant="secondary" size="sm" onClick={addItem} className="text-xs">
+            + إضافة صنف آخر
+          </Button>
         </div>
 
-        <footer className="flex flex-col-reverse gap-3 border-t border-slate-800 bg-slate-950/40 px-5 py-5 sm:flex-row sm:items-center sm:justify-between md:px-7">
-          <p className="text-[11px] leading-5 text-slate-500">حفظ المسودة محلي، وإنشاء المسودة على الخادم يتم عند الانتقال إلى المراجعة. الإرسال فقط يبدأ دورة الاعتماد.</p>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button type="button" variant="secondary" size="md" onClick={handleSaveDraft} disabled={isSubmitting || isSavingDraft} isLoading={isSavingDraft}>
-              {isSavingDraft ? 'جارٍ حفظ المسودة...' : 'حفظ كمسودة'}
-            </Button>
-            {currentStep > 1 && (
-              <Button type="button" variant="secondary" size="md" onClick={handlePreviousStep} disabled={isSubmitting}>
-                السابق
-              </Button>
-            )}
-            {currentStep < 3 && (
-              <Button type="button" variant="primary" size="md" onClick={() => void handleNextStep()} disabled={isSubmitting || isSavingDraft}>
-                التالي
-              </Button>
-            )}
-          </div>
-        </footer>
-      </section>
+        <div className="space-y-4">
+          {data.items.map((item, index) => {
+            const itemErr = showValidation ? validation.items[index] : undefined;
+
+            return (
+              <div
+                key={index}
+                className="rounded-xl border border-slate-800/90 bg-slate-950/60 p-4 space-y-3 transition-all hover:border-slate-700"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-xs font-black text-cyan-300">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cyan-950 border border-cyan-700 text-[10px]">
+                      {index + 1}
+                    </span>
+                    {item.item_description || `بند جديد رقم ${index + 1}`}
+                  </span>
+
+                  {data.items.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      className="text-xs font-bold text-rose-400 hover:text-rose-300 px-2 py-1 rounded hover:bg-rose-950/40 transition-colors"
+                      title="حذف هذا البند"
+                    >
+                      🗑️ حذف البند
+                    </button>
+                  )}
+                </div>
+
+                {catalogItems.length > 0 && (
+                  <div className="text-xs">
+                    <label className="block text-[11px] font-bold text-slate-400 mb-1">
+                      اختيار سريع من دليل الأصناف (اختياري)
+                    </label>
+                    <Select
+                      value={item.item_id ? String(item.item_id) : ''}
+                      onChange={(e) => handleCatalogSelect(index, e.target.value)}
+                    >
+                      <option value="">-- أو اختر صنفًا جاهزًا من الكتالوج --</option>
+                      {catalogItems.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name} {cat.sku ? `(${cat.sku})` : ''} — [{getUnitLabel(cat.uom)}]
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="sm:col-span-1">
+                    <FormField label="وصف الصنف / المادة" required error={itemErr?.description}>
+                      <Input
+                        type="text"
+                        value={item.item_description}
+                        onChange={(e) => updateItem(index, { item_description: e.target.value })}
+                        placeholder="مثال: حديد تسليح 16مم، خرسانة جاهزة..."
+                        error={Boolean(itemErr?.description)}
+                      />
+                    </FormField>
+                  </div>
+
+                  <div>
+                    <FormField label="رقم قطعة الأرض" required error={itemErr?.reference}>
+                      <Input
+                        type="text"
+                        value={item.item_reference || ''}
+                        onChange={(e) => updateItem(index, { item_reference: e.target.value })}
+                        placeholder="مثال: 256 أو A-14"
+                        error={Boolean(itemErr?.reference)}
+                      />
+                    </FormField>
+                  </div>
+
+                  <div>
+                    <FormField label="المنطقة" required error={itemErr?.region}>
+                      <Input
+                        type="text"
+                        value={item.region || ''}
+                        onChange={(e) => updateItem(index, { region: e.target.value })}
+                        placeholder="مثال: المنطقة السابعة..."
+                        error={Boolean(itemErr?.region)}
+                      />
+                    </FormField>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div>
+                    <FormField label="الكمية المطلوبة" required error={itemErr?.quantity}>
+                      <Input
+                        type="number"
+                        min="0.01"
+                        step="any"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(index, { quantity: Number(e.target.value) || 0 })}
+                        placeholder="1"
+                        error={Boolean(itemErr?.quantity)}
+                      />
+                    </FormField>
+                  </div>
+
+                  <div>
+                    <FormField label="وحدة القياس">
+                      <Select
+                        value={item.uom}
+                        onChange={(e) => updateItem(index, { uom: e.target.value })}
+                      >
+                        {UNIT_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormField>
+                  </div>
+
+                  <div>
+                    <FormField label="المواصفات الفنية (اختياري)">
+                      <Input
+                        type="text"
+                        value={item.specifications || ''}
+                        onChange={(e) => updateItem(index, { specifications: e.target.value })}
+                        placeholder="مثال: مطابق للكود المصري، درجة نقاء..."
+                      />
+                    </FormField>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={addItem}
+          className="w-full py-2.5 border-dashed border-slate-700 hover:border-cyan-500/70"
+        >
+          + إضافة صنف أو مادة أخرى للطلب
+        </Button>
+      </Card>
+
+      {/* Bottom Submit & Action Bar */}
+      <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 shadow-2xl backdrop-blur-sm">
+        <div className="text-xs text-slate-400">
+          💡 عند الضغط على <strong>&quot;إرسال طلب الشراء فوراً&quot;</strong> سيتم حفظ الطلب وإرساله مباشرة لدورة الاعتماد.
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
+            onClick={handleSaveDraft}
+            disabled={isSubmitting || isSavingDraft}
+            isLoading={isSavingDraft}
+          >
+            💾 حفظ كمسودة
+          </Button>
+
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            onClick={() => void handleSubmit()}
+            disabled={isSubmitting || isSavingDraft}
+            isLoading={isSubmitting}
+            className="px-6 shadow-lg shadow-cyan-600/30"
+          >
+            🚀 إرسال طلب الشراء فوراً
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
