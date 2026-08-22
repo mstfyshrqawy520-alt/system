@@ -159,6 +159,21 @@ class PurchaseQuoteService
                 ['decision' => $decision, 'comment' => $comment]
             );
 
+            // When a quote is recommended, mark all other quotes for this PR as rejected by this role
+            if ($decision === 'RECOMMEND') {
+                $otherQuoteIds = $request->quotes()->where('id', '!=', $quote->id)->pluck('id');
+                foreach ($otherQuoteIds as $otherQuoteId) {
+                    PurchaseRequestQuoteRecommendation::updateOrCreate(
+                        [
+                            'purchase_request_quote_id' => $otherQuoteId,
+                            'user_id' => $actor->id,
+                            'role_type' => $roleType,
+                        ],
+                        ['decision' => 'REJECT', 'comment' => null]
+                    );
+                }
+            }
+
             $requiredRoleTypes = $isExecutiveRequester ? ['ACCOUNTING'] : ['ACCOUNTING', 'DEPARTMENT'];
             $recommendationCount = PurchaseRequestQuoteRecommendation::whereHas('quote', fn ($q) => $q->where('purchase_request_id', $request->id))
                 ->whereIn('role_type', $requiredRoleTypes)

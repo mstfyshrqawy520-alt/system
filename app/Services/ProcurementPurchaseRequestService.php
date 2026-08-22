@@ -41,10 +41,13 @@ class ProcurementPurchaseRequestService
             $query->where('status', 'PENDING_QUOTE_RECOMMENDATIONS')
                 ->whereDoesntHave('quotes');
         } elseif ($actor?->hasRole('reviewer')) {
-            // Department reviewers must only see normal requests explicitly assigned to them.
+            // Department reviewers must only see normal requests explicitly assigned to them where DEPARTMENT recommendation is not yet submitted.
             // General-manager requests require accounting recommendation only.
             $query->where('status', 'PENDING_QUOTE_RECOMMENDATIONS')
                 ->whereHas('quotes')
+                ->whereDoesntHave('quotes.recommendations', function ($recommendationQuery): void {
+                    $recommendationQuery->where('role_type', 'DEPARTMENT');
+                })
                 ->whereDoesntHave('requester.roles', function ($roleQuery): void {
                     $roleQuery->where('slug', 'general_manager');
                 })
@@ -55,8 +58,12 @@ class ProcurementPurchaseRequestService
                         });
                 });
         } elseif ($actor?->hasRole('accountant')) {
+            // Accountants must only see requests where ACCOUNTING recommendation is not yet submitted.
             $query->where('status', 'PENDING_QUOTE_RECOMMENDATIONS')
-                ->whereHas('quotes');
+                ->whereHas('quotes')
+                ->whereDoesntHave('quotes.recommendations', function ($recommendationQuery): void {
+                    $recommendationQuery->where('role_type', 'ACCOUNTING');
+                });
         } elseif ($actor?->hasRole('general_manager')) {
             $query->where('status', 'PENDING_EXECUTIVE_QUOTE_DECISION')
                 ->whereHas('quotes');

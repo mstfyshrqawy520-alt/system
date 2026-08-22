@@ -79,7 +79,7 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
 
   useEffect(() => { void load(); }, []);
 
-  const act = async (quote: PurchaseRequestQuote, decision: 'RECOMMEND' | 'REJECT' | 'SELECT') => {
+  const act = async (request: PurchaseRequest, quote: PurchaseRequestQuote, decision: 'RECOMMEND' | 'REJECT' | 'SELECT') => {
     setSavingId(quote.id);
     setError(null);
     setSuccess(null);
@@ -87,6 +87,7 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
       if (mode === 'executive') {
         await decidePurchaseQuoteApi(quote.id, decision === 'SELECT' ? 'SELECT' : 'REJECT', comments[quote.id]);
         setSuccess(decision === 'SELECT' ? 'تم اختيار العرض بنجاح، وعاد الطلب إلى مدير المشتريات لإنشاء أمر الشراء.' : 'تم رفض عروض الأسعار والطلب بنجاح.');
+        setRequests(current => current.filter(r => r.id !== request.id));
       } else {
         const updatedRequest = await recommendPurchaseQuoteApi(
           quote.id,
@@ -95,15 +96,16 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
         );
         setSuccess(
           decision === 'REJECT'
-            ? 'تم رفض العرض وتسجيل القرار بنجاح.'
+            ? 'تم تسجيل القرار ورفض العرض بنجاح.'
             : updatedRequest.status === 'PENDING_EXECUTIVE_QUOTE_DECISION'
               ? updatedRequest.is_general_manager_requester
-                ? 'تم ترشيح العرض بنجاح. اكتمل ترشيح الحسابات، وتم إرسال الطلب الآن إلى المدير العام لاتخاذ القرار النهائي.'
-                : 'تم ترشيح العرض بنجاح. اكتملت ترشيحات الحسابات ومدير القسم، وتم إرسال الطلب الآن إلى المدير التنفيذي لاتخاذ القرار النهائي.'
+                ? 'تم ترشيح العرض بنجاح. اكتمل ترشيح الحسابات، وتم إرسال الطلب إلى المدير العام لاتخاذ القرار النهائي.'
+                : 'تم ترشيح العرض بنجاح. اكتملت ترشيحات الحسابات ومدير القسم، وتم إرسال الطلب إلى المدير التنفيذي لاتخاذ القرار النهائي.'
               : updatedRequest.is_general_manager_requester
-                ? 'تم ترشيح العرض بنجاح. بانتظار قرار المدير العام.'
-                : 'تم ترشيح العرض بنجاح. بانتظار ترشيح الطرف الآخر.',
+                ? 'تم ترشيح العرض بنجاح. تم إرسال الطلب لقرار المدير العام.'
+                : 'تم ترشيح العرض بنجاح واكتمال دورك، تم إرسال الطلب للمتابعة.',
         );
+        setRequests(current => current.filter(r => r.id !== request.id));
       }
       await load();
     } catch (err) {
@@ -187,8 +189,8 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
                       <TableCell className="min-w-[250px] border-l border-slate-700/70 align-top text-sm">
                         <input value={comments[quote.id] || ''} onChange={event => setComments(current => ({ ...current, [quote.id]: event.target.value }))} placeholder="تعليق اختياري" className="mb-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100" />
                         <div className="flex justify-center gap-2">
-                          <Button size="sm" variant={mode === 'executive' ? 'primary' : 'success'} disabled={savingId === quote.id} onClick={() => void act(quote, mode === 'executive' ? 'SELECT' : 'RECOMMEND')}>{mode === 'executive' ? copy.action : copy.action}</Button>
-                          <Button size="sm" variant="danger" disabled={savingId === quote.id} onClick={() => void act(quote, 'REJECT')}>{mode === 'executive' ? 'رفض جميع العروض' : 'رفض العرض'}</Button>
+                          <Button size="sm" variant={mode === 'executive' ? 'primary' : 'success'} disabled={savingId === quote.id} onClick={() => void act(request, quote, mode === 'executive' ? 'SELECT' : 'RECOMMEND')}>{mode === 'executive' ? copy.action : copy.action}</Button>
+                          <Button size="sm" variant="danger" disabled={savingId === quote.id} onClick={() => void act(request, quote, 'REJECT')}>{mode === 'executive' ? 'رفض جميع العروض' : 'رفض العرض'}</Button>
                         </div>
                       </TableCell>
                     </TableRow>;
@@ -269,7 +271,7 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
                         size="sm"
                         variant={mode === 'executive' ? 'primary' : 'success'}
                         disabled={savingId === quote.id}
-                        onClick={() => void act(quote, mode === 'executive' ? 'SELECT' : 'RECOMMEND')}
+                        onClick={() => void act(request, quote, mode === 'executive' ? 'SELECT' : 'RECOMMEND')}
                         className="w-full min-h-10"
                       >
                         {mode === 'executive' ? copy.action : copy.action}
@@ -278,7 +280,7 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
                         size="sm"
                         variant="danger"
                         disabled={savingId === quote.id}
-                        onClick={() => void act(quote, 'REJECT')}
+                        onClick={() => void act(request, quote, 'REJECT')}
                         className="w-full min-h-10"
                       >
                         {mode === 'executive' ? 'رفض جميع العروض' : 'رفض العرض'}
