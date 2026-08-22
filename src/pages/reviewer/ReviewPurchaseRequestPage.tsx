@@ -198,6 +198,22 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
     }
   };
 
+  const handleDirectApprove = async () => {
+    if (!id) return;
+    setIsMutating(true);
+    setError(null);
+    try {
+      await approvePurchaseRequestApi(parseInt(id, 10), 'تم الاعتماد المباشر بواسطة المراجع');
+      navigate('/reviewer/requests', {
+        state: { message: '✅ تم اعتماد طلب الشراء فوراً بخطوة واحدة وإرساله لمدير المشتريات.' },
+      });
+    } catch (err) {
+      setError(parseApiError(err));
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
   if (isLoading) return <TableSkeleton rows={8} columns={6} className="min-h-[340px]" />;
 
   if (error && !requestData) {
@@ -296,41 +312,44 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
         {/* Responsive Action Bar: Sticky bottom on mobile, inline header on desktop */}
         <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-between gap-2 border-t border-slate-800 bg-slate-900/95 p-3 shadow-2xl backdrop-blur md:static md:z-auto md:flex md:w-auto md:justify-start md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
           {requestData.status === 'SUBMITTED' && hasPermission('purchase_request.review') && (
-            <Button variant="primary" size="md" onClick={handleStartReview} isLoading={isMutating} className="flex-1 md:flex-none min-h-10 text-xs font-bold md:text-sm">
-              {isMutating ? 'جارٍ بدء المراجعة...' : 'بدء المراجعة'}
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleStartReview}
+              isLoading={isMutating}
+              className="flex-1 md:flex-none min-h-10 text-xs font-bold md:text-sm"
+            >
+              بدء المراجعة
             </Button>
           )}
 
-          {isUnderReview && !isFinalized && (
-            <div className="flex flex-1 md:flex-none items-center gap-2">
-              {hasPermission('purchase_request.approve') && (
-                <Button
-                  variant="success"
-                  size="md"
-                  onClick={() => setIsApproveModalOpen(true)}
-                  disabled={isMutating}
-                  className="flex-1 md:flex-none min-h-10 text-xs font-bold md:text-sm"
-                  title="اعتماد الطلب"
-                >
-                  اعتماد
-                </Button>
-              )}
-              {hasPermission('purchase_request.reject') && (
-                <Button
-                  variant="danger"
-                  size="md"
-                  onClick={() => setIsRejectModalOpen(true)}
-                  disabled={isMutating}
-                  className="flex-1 md:flex-none min-h-10 text-xs font-bold md:text-sm"
-                >
-                  رفض
-                </Button>
-              )}
-            </div>
+          {!isFinalized && hasPermission('purchase_request.approve') && (
+            <Button
+              variant="success"
+              size="md"
+              onClick={handleDirectApprove}
+              isLoading={isMutating}
+              className="flex-1 md:flex-none min-h-10 text-xs font-black md:text-sm shadow-lg shadow-emerald-950/50"
+              title="اعتماد الطلب فوراً بخطوة واحدة"
+            >
+              اعتماد الطلب
+            </Button>
+          )}
+
+          {isUnderReview && !isFinalized && hasPermission('purchase_request.reject') && (
+            <Button
+              variant="danger"
+              size="md"
+              onClick={() => setIsRejectModalOpen(true)}
+              disabled={isMutating}
+              className="flex-1 md:flex-none min-h-10 text-xs font-bold md:text-sm"
+            >
+              رفض الطلب
+            </Button>
           )}
 
           <Link to="/reviewer/requests" className="flex-1 md:flex-none">
-            <Button variant="secondary" size="md" className="w-full md:w-auto min-h-10 text-xs md:text-sm">← إلغاء</Button>
+            <Button variant="secondary" size="md" className="w-full md:w-auto min-h-10 text-xs md:text-sm">← قائمة الطلبات</Button>
           </Link>
         </div>
       </div>

@@ -4,7 +4,7 @@ import ErrorMessage from '../../components/ErrorMessage';
 import { TableSkeleton } from '../../components/ui/StateFeedback';
 import PurchaseRequestStatusBadge from '../../components/purchase-requests/PurchaseRequestStatusBadge';
 import { useAuth } from '../../context/AuthContext';
-import { getReviewableRequestsApi, ReviewerRequestFilters } from '../../api/reviewer';
+import { getReviewableRequestsApi, approvePurchaseRequestApi, ReviewerRequestFilters } from '../../api/reviewer';
 import { ApiError } from '../../types/api';
 import { PurchaseRequest, PR_STATUS_LABELS } from '../../types/purchaseRequest';
 import { parseApiError } from '../../utils/apiError';
@@ -49,7 +49,9 @@ export const ReviewerRequestsPage: React.FC = () => {
   const [activeFilter, setActiveFilter] = usePersistedState<string>('reviewer.active-filter.v1', 'ALL');
   const [searchFilters, setSearchFilters] = usePersistedState<ReviewerRequestFilters>('reviewer.search-filters.v3', INITIAL_FILTERS);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [approvingId, setApprovingId] = useState<number | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const fetchRequests = async (filters: ReviewerRequestFilters = searchFilters) => {
     setIsLoading(true);
@@ -67,6 +69,21 @@ export const ReviewerRequestsPage: React.FC = () => {
   useEffect(() => {
     void fetchRequests(searchFilters);
   }, []);
+
+  const handleQuickApprove = async (id: number) => {
+    setApprovingId(id);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      await approvePurchaseRequestApi(id, 'تم الاعتماد المباشر بواسطة المراجع');
+      setSuccessMsg('✅ تم اعتماد طلب الشراء فوراً بخطوة واحدة.');
+      await fetchRequests(searchFilters);
+    } catch (err) {
+      setError(parseApiError(err));
+    } finally {
+      setApprovingId(null);
+    }
+  };
 
   const filteredRequests = requests.filter((request) => {
     const matchesActive = activeFilter === 'ALL'
@@ -177,6 +194,12 @@ export const ReviewerRequestsPage: React.FC = () => {
       </div>
 
 
+      {successMsg && (
+        <div className="rounded-xl border border-emerald-800 bg-emerald-950/40 p-3 text-xs font-bold text-emerald-300 flex items-center justify-between">
+          <span>{successMsg}</span>
+          <button type="button" onClick={() => setSuccessMsg(null)} className="text-emerald-400 font-black">✕</button>
+        </div>
+      )}
       <ErrorMessage error={error} onDismiss={() => setError(null)} onRetry={() => void fetchRequests(searchFilters)} />
 
       {filteredRequests.length === 0 ? (
@@ -210,6 +233,8 @@ export const ReviewerRequestsPage: React.FC = () => {
                   ? itemNames[0]
                   : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
 
+              const canQuickApprove = (request.status === 'SUBMITTED' || request.status === 'UNDER_REVIEW') && hasPermission('purchase_request.approve');
+
               return (
                 <TableRow key={request.id}>
                   <TableCell className="font-mono font-bold text-cyan-400"><Link to={`/reviewer/requests/${request.id}`} className="hover:underline">{request.request_number}</Link></TableCell>
@@ -224,12 +249,27 @@ export const ReviewerRequestsPage: React.FC = () => {
                   <TableCell className="whitespace-nowrap">{formatDate(request.created_at)}</TableCell>
                   <TableCell><div className="flex flex-wrap items-center gap-2"><PurchaseRequestStatusBadge status={request.status} />{isOverdueRequest(request) && <span className="rounded-full border border-rose-800/70 bg-rose-950/40 px-2 py-1 text-[10px] font-bold text-rose-300">متأخر</span>}</div></TableCell>
                   <TableCell className="text-center">
-                    {request.status === 'SUBMITTED' && hasPermission('purchase_request.review') && (
-                      <Link to={`/reviewer/requests/${request.id}/review`}><Button variant="warning" size="sm" className="px-2 py-1">بدء المراجعة</Button></Link>
-                    )}
-                    {REVIEWER_EDITABLE_STATUSES.includes(request.status) && hasPermission('purchase_request.edit_during_review') && (
-                      <Link to={`/reviewer/requests/${request.id}/review`}><Button variant="secondary" size="sm" className="px-2 py-1">{request.status === 'PENDING_PROCUREMENT_APPROVAL' ? 'تعديل قبل المشتريات' : 'تعديل ومراجعة'}</Button></Link>
-                    )}
+                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                      {canQuickApprove && (
+                        <Button
+                          variant="success"
+                          size="sm"
+                          isLoading={approvingId === request.id}
+                          disabled={approvingId !== null}
+                          onClick={() => handleQuickApprove(request.id)}
+                          className="px-2.5 py-1 text-xs"
+                          title="اعتماد فوري للطلب بنقرة واحدة"
+                        >
+                          اعتماد فوري
+                        </Button>
+                      )}
+                      {REVIEWER_EDITABLE_STATUSES.includes(request.status) && hasPermission('purchase_request.edit_during_review') && (
+                        <Link to={`/reviewer/requests/${request.id}/review`}><Button variant="secondary" size="sm" className="px-2 py-1">{request.status === 'PENDING_PROCUREMENT_APPROVAL' ? 'تعديل قبل المشتريات' : 'مراجعة وتعديل'}</Button></Link>
+                      )}
+                      {!canQuickApprove && !REVIEWER_EDITABLE_STATUSES.includes(request.status) && (
+                        <Link to={`/reviewer/requests/${request.id}`}><Button variant="secondary" size="sm" className="px-2 py-1">عرض الطلب</Button></Link>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -241,6 +281,8 @@ export const ReviewerRequestsPage: React.FC = () => {
         <div className="space-y-3 md:hidden">
           {filteredRequests.map((request) => {
             const itemNames = request.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
+            const canQuickApprove = (request.status === 'SUBMITTED' || request.status === 'UNDER_REVIEW') && hasPermission('purchase_request.approve');
+
             return (
               <article key={`mobile-${request.id}`} className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -257,9 +299,20 @@ export const ReviewerRequestsPage: React.FC = () => {
                   <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 font-bold text-slate-200">{request.items?.map((item) => item.region).filter(Boolean).join('، ') || 'غير محددة'}</dd></div>
                 </dl>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Link to={`/reviewer/requests/${request.id}`}><Button variant="secondary" size="sm">عرض الطلب</Button></Link>
-                  {request.status === 'SUBMITTED' && hasPermission('purchase_request.review') && <Link to={`/reviewer/requests/${request.id}/review`}><Button variant="warning" size="sm">بدء المراجعة</Button></Link>}
-                  {REVIEWER_EDITABLE_STATUSES.includes(request.status) && hasPermission('purchase_request.edit_during_review') && <Link to={`/reviewer/requests/${request.id}/review`}><Button variant="secondary" size="sm">{request.status === 'PENDING_PROCUREMENT_APPROVAL' ? 'تعديل قبل المشتريات' : 'تعديل ومراجعة'}</Button></Link>}
+                  {canQuickApprove && (
+                    <Button
+                      variant="success"
+                      size="sm"
+                      isLoading={approvingId === request.id}
+                      disabled={approvingId !== null}
+                      onClick={() => handleQuickApprove(request.id)}
+                      className="flex-1"
+                    >
+                      اعتماد فوري
+                    </Button>
+                  )}
+                  {REVIEWER_EDITABLE_STATUSES.includes(request.status) && hasPermission('purchase_request.edit_during_review') && <Link to={`/reviewer/requests/${request.id}/review`} className="flex-1"><Button variant="secondary" size="sm" className="w-full">{request.status === 'PENDING_PROCUREMENT_APPROVAL' ? 'تعديل قبل المشتريات' : 'مراجعة وتعديل'}</Button></Link>}
+                  <Link to={`/reviewer/requests/${request.id}`} className="flex-1"><Button variant="secondary" size="sm" className="w-full">عرض الطلب</Button></Link>
                 </div>
               </article>
             );
