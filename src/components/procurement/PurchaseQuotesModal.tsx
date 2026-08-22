@@ -82,8 +82,25 @@ export const PurchaseQuotesModal: React.FC<PurchaseQuotesModalProps> = ({ isOpen
 
   if (!isOpen || !request) return null;
 
+  const totalQuantity = useMemo(
+    () => (request?.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0),
+    [request?.items]
+  );
+
   const updateDraft = (index: number, field: keyof QuoteDraft, value: string) => {
-    setDrafts(current => current.map((draft, draftIndex) => draftIndex === index ? { ...draft, [field]: value } : draft));
+    setDrafts(current => current.map((draft, draftIndex) => {
+      if (draftIndex !== index) return draft;
+      const updated = { ...draft, [field]: value };
+      if (field === 'unit_price') {
+        const unitVal = parseFloat(value);
+        if (!isNaN(unitVal) && unitVal >= 0 && totalQuantity > 0) {
+          updated.total_amount = (unitVal * totalQuantity).toFixed(2);
+        } else if (value === '') {
+          updated.total_amount = '';
+        }
+      }
+      return updated;
+    }));
   };
 
   const addQuote = () => {
@@ -228,10 +245,14 @@ export const PurchaseQuotesModal: React.FC<PurchaseQuotesModalProps> = ({ isOpen
                       <button type="button" className="shrink-0 rounded-lg border border-cyan-700/70 bg-cyan-950/40 px-3 text-xs font-bold text-cyan-200 hover:bg-cyan-900/60" onClick={() => setSupplierModalIndex(index)}>إضافة مورد جديد</button>
                     </div>
                   </label>
-                  <label className="text-xs font-bold text-slate-300">سعر الوحدة بالجنيه المصري
+                  <label className="text-xs font-bold text-slate-300">
+                    سعر الوحدة بالجنيه المصري
+                    {totalQuantity > 0 && <span className="mr-1 text-[10px] font-normal text-cyan-300">({totalQuantity} قطعة)</span>}
                     <input type="number" min="0" step="0.01" value={draft.unit_price} onChange={event => updateDraft(index, 'unit_price', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-mono text-slate-100" placeholder="مثال: 2500.00" />
                   </label>
-                  <label className="text-xs font-bold text-slate-300">الإجمالي بالجنيه المصري
+                  <label className="text-xs font-bold text-slate-300">
+                    الإجمالي بالجنيه المصري
+                    {totalQuantity > 0 && <span className="mr-1 text-[10px] font-normal text-emerald-400">(محسوب تلقائيًا)</span>}
                     <input type="number" min="0" step="0.01" value={draft.total_amount} onChange={event => updateDraft(index, 'total_amount', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-mono text-slate-100" placeholder="مثال: 12500.00" />
                   </label>
                   <label className="text-xs font-bold text-slate-300">شروط العرض وملاحظات المورد
