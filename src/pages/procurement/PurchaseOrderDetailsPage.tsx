@@ -180,45 +180,98 @@ export const PurchaseOrderDetailsPage: React.FC = () => {
       {/* البنود Commercial Table */}
       <Card className="space-y-4">
         <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">بنود أمر الشراء المعتمدة والتكاليف التفصيلية</h3>
-        
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>#</TableHead>
-              <TableHead>رقم قطعة الأرض</TableHead>
-              <TableHead>المنطقة</TableHead>
-              <TableHead>البند / الوصف</TableHead>
-              <TableHead>الكمية</TableHead>
-              <TableHead>سعر الوحدة</TableHead>
-              <TableHead>الإجمالي النهائي</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {po.items?.map((item, idx) => (
-              <TableRow key={item.id || idx}>
-                <TableCell className="font-mono text-slate-400">{idx + 1}</TableCell>
-                <TableCell className="font-mono text-slate-300">{item.item_reference || '—'}</TableCell>
-                <TableCell className="text-slate-300">{item.region || '—'}</TableCell>
-                <TableCell className="font-bold text-slate-100">
-                  {item.item_name || item.item_description}
-                  {item.specifications && <div className="text-[10px] text-slate-400 mt-0.5 font-normal">{item.specifications}</div>}
-                </TableCell>
-                <TableCell className="font-mono text-slate-200">{item.quantity} {getUnitLabel(item.uom)}</TableCell>
-                <TableCell>
-                  <CurrencyDisplay amount={item.unit_price} amountClassName="font-mono text-slate-200" />
-                </TableCell>
-                <TableCell>
-                  <CurrencyDisplay amount={item.line_total} amountClassName="font-mono font-bold text-cyan-400" />
-                </TableCell>
+
+        <div className="hidden min-w-0 md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead>رقم قطعة الأرض</TableHead>
+                <TableHead>المنطقة</TableHead>
+                <TableHead>البند / الوصف</TableHead>
+                <TableHead>الكمية</TableHead>
+                <TableHead>سعر الوحدة</TableHead>
+                <TableHead>الإجمالي النهائي</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {po.items?.map((item, idx) => (
+                <TableRow key={item.id || idx}>
+                  <TableCell className="font-mono text-slate-400">{idx + 1}</TableCell>
+                  <TableCell className="font-mono text-slate-300">{item.item_reference || '—'}</TableCell>
+                  <TableCell className="text-slate-300">{item.region || '—'}</TableCell>
+                  <TableCell className="font-bold text-slate-100">
+                    {item.item_name || item.item_description}
+                    {item.specifications && <div className="text-[10px] text-slate-400 mt-0.5 font-normal">{item.specifications}</div>}
+                  </TableCell>
+                  <TableCell className="font-mono text-slate-200">{item.quantity} {getUnitLabel(item.uom)}</TableCell>
+                  <TableCell>
+                    <CurrencyDisplay amount={item.unit_price} amountClassName="font-mono text-slate-200" />
+                  </TableCell>
+                  <TableCell>
+                    <CurrencyDisplay amount={item.line_total} amountClassName="font-mono font-bold text-cyan-400" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        <div className="space-y-3 md:hidden">
+          {po.items?.map((item, idx) => (
+            <article key={`mobile-po-item-${item.id || idx}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <span className="shrink-0 rounded-md bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-300">
+                  بند {idx + 1}
+                </span>
+                <span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">
+                  {item.item_reference || 'بدون رقم قطعة'}
+                </span>
+              </div>
+              <dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
+                <div className="min-w-0 min-[420px]:col-span-2">
+                  <dt className="text-slate-500">البند / الوصف</dt>
+                  <dd className="mt-1 break-normal font-bold leading-6 text-slate-100">
+                    {item.item_name || item.item_description || 'غير محدد'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">المنطقة</dt>
+                  <dd className="mt-1 break-normal text-slate-300">{item.region || 'غير محددة'}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">الكمية والوحدة</dt>
+                  <dd className="mt-1 whitespace-nowrap font-mono text-slate-200">
+                    {item.quantity} {getUnitLabel(item.uom)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">سعر الوحدة</dt>
+                  <dd className="mt-1 whitespace-nowrap">
+                    <CurrencyDisplay amount={item.unit_price} amountClassName="font-mono text-slate-200" />
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">الإجمالي النهائي</dt>
+                  <dd className="mt-1 whitespace-nowrap">
+                    <CurrencyDisplay amount={item.line_total} amountClassName="font-mono font-bold text-cyan-400" />
+                  </dd>
+                </div>
+                {item.specifications && (
+                  <div className="min-[420px]:col-span-2">
+                    <dt className="text-slate-500">المواصفات</dt>
+                    <dd className="mt-1 break-normal text-slate-300 leading-6">{item.specifications}</dd>
+                  </div>
+                )}
+              </dl>
+            </article>
+          ))}
+        </div>
 
         {/* Financial Recalculated Totals */}
         <div className="flex justify-end pt-3 border-t border-slate-800">
-          <div className="w-80 bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
-            <div className="flex justify-between text-sm font-black text-cyan-400">
+          <div className="w-full sm:w-80 bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
+            <div className="flex justify-between items-center text-sm font-black text-cyan-400">
               <span>الإجمالي الكلي:</span>
               <CurrencyDisplay amount={po.grand_total || 0} amountClassName="font-mono text-lg font-black text-cyan-400" />
             </div>
@@ -226,10 +279,9 @@ export const PurchaseOrderDetailsPage: React.FC = () => {
         </div>
       </Card>
 
-            <SystemEventTimeline entity="purchase_order" entityId={po.id} />
+      <SystemEventTimeline entity="purchase_order" entityId={po.id} />
 
       {/* طباعة Preview Modal */}
-
       <PurchaseOrderPrintModal
         po={po}
         isOpen={isPrintModalOpen}
