@@ -417,6 +417,24 @@ export const AuthenticatedLayout: React.FC = () => {
                     <Outlet />
                 </main>
             </div>
+
+            {/* Floating Quick Action Button (+) for All Roles except Admin */}
+            {primaryRoleSlug !== 'admin' && location.pathname !== '/requests/create' && location.pathname !== '/employee/requests/create' && (
+                <Link
+                    to={primaryRoleSlug === 'employee' ? '/employee/requests/create' : '/requests/create'}
+                    className="group fixed bottom-6 left-6 z-50 flex items-center gap-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-teal-400 p-3.5 sm:px-5 sm:py-3.5 text-slate-950 font-black shadow-2xl shadow-cyan-500/40 hover:shadow-cyan-400/60 border border-cyan-200/50 hover:scale-105 active:scale-95 transition-all duration-200 select-none"
+                    aria-label="إنشاء طلب شراء جديد"
+                    title="إنشاء طلب شراء جديد"
+                >
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-950/20 text-xl font-black leading-none">
+                        +
+                    </span>
+                    <span className="hidden sm:inline-block text-xs font-black tracking-wide">
+                        طلب شراء جديد
+                    </span>
+                </Link>
+            )}
+
             <footer className="mx-auto w-full max-w-[1800px] px-2 pb-3 text-center text-[10px] text-slate-500 sm:px-3 lg:px-4">
                 شركة الإشبيليّة للتطوير العقاري والمقاولات · منظومة المشتريات التشغيلية · <a href="https://ishbilia.dev" target="_blank" rel="noreferrer" className="text-[#d4b36a] hover:text-[#f0d695]">الموقع الرسمي</a> · <a href="https://web.facebook.com/Ishbilia.realestate?locale=ar_AR" target="_blank" rel="noreferrer" className="text-[#d4b36a] hover:text-[#f0d695]">صفحة Facebook</a>
             </footer>
