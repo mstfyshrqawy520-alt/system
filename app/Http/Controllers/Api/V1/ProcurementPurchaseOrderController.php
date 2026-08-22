@@ -8,6 +8,7 @@ use App\Http\Requests\Procurement\CreatePurchaseOrderRequest;
 use App\Http\Requests\Procurement\UpdatePurchaseOrderHeaderRequest;
 use App\Http\Requests\Procurement\UpdatePurchaseOrderItemRequest;
 use App\Http\Requests\Procurement\StoreDirectPurchaseOrderRequest;
+use App\Http\Requests\Procurement\UpdateDeliveryStatusRequest;
 use App\Http\Resources\PurchaseOrderResource;
 use App\Http\Resources\PurchaseRequestResource;
 use App\Http\Resources\SupplierResource;
@@ -383,13 +384,9 @@ class ProcurementPurchaseOrderController extends Controller
     /**
      * Update delivery tracking details for a PO.
      */
-    public function updateDeliveryStatus(Request $request, int $id): JsonResponse
+    public function updateDeliveryStatus(UpdateDeliveryStatusRequest $request, int $id): JsonResponse
     {
-        $validated = $request->validate([
-            'delivery_status' => ['required', 'string', 'in:NOT_STARTED,PARTIAL,COMPLETE,LATE'],
-            'actual_delivery_date' => ['nullable', 'date'],
-            'delivery_notes' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $validated = $request->validated();
 
         $po = PurchaseOrder::findOrFail($id);
         $oldStatus = $po->delivery_status;
