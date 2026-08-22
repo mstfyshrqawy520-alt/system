@@ -35,6 +35,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        \Sentry\Laravel\Integration::handles($exceptions);
+
         // Treat every /api/* request as JSON even when a caller omits the Accept header.
         // This prevents unauthenticated API calls from falling through to a web login redirect.
         $isApiRequest = static fn (Request $request): bool => $request->is('api/*') || $request->segment(1) === 'api';
