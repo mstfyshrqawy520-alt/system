@@ -41,9 +41,13 @@ class ProcurementPurchaseRequestService
             $query->where('status', 'PENDING_QUOTE_RECOMMENDATIONS')
                 ->whereDoesntHave('quotes');
         } elseif ($actor?->hasRole('reviewer')) {
-            // Department reviewers must only see quote requests explicitly assigned to them.
+            // Department reviewers must only see normal requests explicitly assigned to them.
+            // General-manager requests require accounting recommendation only.
             $query->where('status', 'PENDING_QUOTE_RECOMMENDATIONS')
                 ->whereHas('quotes')
+                ->whereDoesntHave('requester.roles', function ($roleQuery): void {
+                    $roleQuery->where('slug', 'general_manager');
+                })
                 ->where(function ($scopeQuery) use ($actor): void {
                     $scopeQuery->where('reviewer_user_id', $actor->id)
                         ->orWhereHas('targetDepartment', function ($departmentQuery) use ($actor): void {
