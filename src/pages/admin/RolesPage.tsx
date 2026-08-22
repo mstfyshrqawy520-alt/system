@@ -68,37 +68,70 @@ export const RolesPage: React.FC = () => {
         resultLabel="دور"
       />
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>معرف الدور</TableHead>
-            <TableHead>اسم الدور</TableHead>
-            <TableHead>الرمز</TableHead>
-            <TableHead>عدد الصلاحيات</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredRoles.map((role) => (
-            <TableRow key={role.id}>
-              <TableCell className="font-mono text-cyan-400 font-bold">#{role.id}</TableCell>
-              <TableCell className="font-bold text-slate-100">{role.name}</TableCell>
-              <TableCell className="font-mono text-slate-400">{role.slug || role.name}</TableCell>
-              <TableCell className="font-mono text-slate-200">
-                <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-cyan-950 text-cyan-400 border border-cyan-800 rounded">
-                  {role.permissions?.length ?? 0} صلاحيات
-                </span>
-              </TableCell>
-            </TableRow>
-          ))}
-          {filteredRoles.length === 0 && (
+      <div className="hidden min-w-0 md:block">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={4} className="p-8 text-center text-slate-400 text-xs">
-                {roles.length === 0 ? 'لا توجد أدوار مسجلة حالياً.' : 'لم نجد أدوارًا مطابقة للبحث الحالي.'}
-              </TableCell>
+              <TableHead>معرف الدور</TableHead>
+              <TableHead>اسم الدور</TableHead>
+              <TableHead>الرمز</TableHead>
+              <TableHead>عدد الصلاحيات</TableHead>
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {filteredRoles.map((role) => (
+              <TableRow key={role.id}>
+                <TableCell className="font-mono text-cyan-400 font-bold">#{role.id}</TableCell>
+                <TableCell className="font-bold text-slate-100">{role.name}</TableCell>
+                <TableCell className="font-mono text-slate-400">{role.slug || role.name}</TableCell>
+                <TableCell className="font-mono text-slate-200">
+                  <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-cyan-950 text-cyan-400 border border-cyan-800 rounded">
+                    {role.permissions?.length ?? 0} صلاحيات
+                  </span>
+                </TableCell>
+              </TableRow>
+            ))}
+            {filteredRoles.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="p-8 text-center text-slate-400 text-xs">
+                  {roles.length === 0 ? 'لا توجد أدوار مسجلة حالياً.' : 'لم نجد أدوارًا مطابقة للبحث الحالي.'}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="space-y-3 md:hidden">
+        {filteredRoles.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-800 bg-slate-900/50 p-8 text-center text-xs text-slate-400">
+            {roles.length === 0 ? 'لا توجد أدوار مسجلة حالياً.' : 'لم نجد أدوارًا مطابقة للبحث الحالي.'}
+          </div>
+        ) : (
+          filteredRoles.map((role) => (
+            <article key={`mobile-role-${role.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+              <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-3">
+                <h3 className="break-normal font-bold text-sm text-slate-100">{role.name}</h3>
+                <span className="shrink-0 font-mono text-xs font-bold text-cyan-400">#{role.id}</span>
+              </div>
+              <dl className="mt-3 grid min-w-0 grid-cols-1 gap-2 text-xs min-[420px]:grid-cols-2">
+                <div>
+                  <dt className="text-slate-500">الرمز</dt>
+                  <dd className="mt-1 font-mono text-slate-300">{role.slug || role.name}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">عدد الصلاحيات</dt>
+                  <dd className="mt-1">
+                    <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-cyan-950 text-cyan-400 border border-cyan-800 rounded">
+                      {role.permissions?.length ?? 0} صلاحيات
+                    </span>
+                  </dd>
+                </div>
+              </dl>
+            </article>
+          ))
+        )}
+      </div>
     </div>
   );
 };
