@@ -64,7 +64,7 @@ class AccountingPurchaseOrderService
             // Notify General Manager (view-only notification — no approval required)
             $notificationService = app(NotificationService::class);
             $gms = $notificationService->resolveUsersWithPermission('purchase_order.view_gm');
-            $notificationService->notifyUsers(
+            $notificationService->queueUsers(
                 $gms,
                 'purchase_order_approved_accounting',
                 'تمت الموافقة المحاسبية على أمر الشراء',
@@ -118,7 +118,7 @@ class AccountingPurchaseOrderService
 
             // Notify Procurement Manager who created the PO (Event 6)
             $notificationService = app(NotificationService::class);
-            $notificationService->createNotification(
+            $notificationService->queueNotification(
                 $lockedPo->created_by_user_id,
                 'purchase_order_returned',
                 'إعادة أمر الشراء للتصحيح',

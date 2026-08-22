@@ -186,7 +186,7 @@ class GeneralManagerPurchaseRequestService
                 ]
             );
 
-            app(NotificationService::class)->createNotification(
+            app(NotificationService::class)->queueNotification(
                 $pr->user_id,
                 'purchase_request_approved_by_executive',
                 'تم اعتماد طلب الشراء تنفيذيًا',
@@ -232,7 +232,7 @@ class GeneralManagerPurchaseRequestService
                 ]
             );
 
-            app(NotificationService::class)->createNotification(
+            app(NotificationService::class)->queueNotification(
                 $pr->user_id,
                 'purchase_request_rejected_by_executive',
                 'تم رفض طلب الشراء تنفيذيًا',
@@ -255,7 +255,7 @@ class GeneralManagerPurchaseRequestService
     {
         $notificationService = app(NotificationService::class);
         $procurementManagers = $notificationService->resolveUsersWithPermission('purchase_request.approve_procurement');
-        $notificationService->notifyUsers(
+        $notificationService->queueUsers(
             $procurementManagers,
             'purchase_request_pending_procurement',
             'طلب شراء بانتظار المشتريات',

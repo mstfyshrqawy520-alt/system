@@ -502,7 +502,7 @@ class PurchaseOrderService
             // Notify Accountants (Read-only access notification)
             $notificationService = app(\App\Services\NotificationService::class);
             $accountants = $notificationService->resolveUsersWithPermission('purchase_order.view_accounting');
-            $notificationService->notifyUsers(
+            $notificationService->queueUsers(
                 $accountants,
                 'purchase_order_issued_accounting',
                 'تم إصدار أمر شراء جديد',
@@ -512,7 +512,7 @@ class PurchaseOrderService
 
             // Notify General Managers (Read-only access notification)
             $gms = $notificationService->resolveUsersWithPermission('purchase_order.view_gm');
-            $notificationService->notifyUsers(
+            $notificationService->queueUsers(
                 $gms,
                 'purchase_order_issued_gm',
                 'تم إصدار أمر شراء جديد',

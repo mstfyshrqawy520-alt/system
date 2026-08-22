@@ -80,14 +80,14 @@ class AccountingPurchaseRequestService
             );
 
             $notificationService = app(NotificationService::class);
-            $notificationService->notifyUsers(
+            $notificationService->queueUsers(
                 $notificationService->resolveUsersWithPermission('purchase_request.approve_procurement'),
                 'purchase_request_pending_procurement_po',
                 'طلب شراء مباشر جاهز للمشتريات',
                 "راجعت الحسابات البيانات المالية للطلب {$pr->request_number} ووافقَت عليه. عاد الطلب إلى مدير المشتريات لإنشاء أمر الشراء.",
                 $pr
             );
-            $notificationService->createNotification(
+            $notificationService->queueNotification(
                 $pr->user_id,
                 'purchase_request_accounting_approved_direct',
                 'تمت الموافقة المالية على طلبك',
@@ -144,14 +144,14 @@ class AccountingPurchaseRequestService
             );
 
             $notificationService = app(NotificationService::class);
-            $notificationService->createNotification(
+            $notificationService->queueNotification(
                 $pr->user_id,
                 'purchase_request_accounting_rejected_direct',
                 'تم رفض الطلب ماليًا',
                 "رفضت الحسابات الطلب {$pr->request_number}. السبب: {$comment}",
                 $pr
             );
-            $notificationService->notifyUsers(
+            $notificationService->queueUsers(
                 $notificationService->resolveUsersWithPermission('purchase_request.view_approved'),
                 'purchase_request_accounting_rejected_direct',
                 'رفض مالي مباشر',

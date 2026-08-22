@@ -254,7 +254,7 @@ class ProcurementPurchaseRequestService
             );
 
             $notificationService = app(NotificationService::class);
-            $notificationService->notifyUsers(
+            $notificationService->queueUsers(
                 $notificationService->resolveUsersWithPermission('purchase_request.accounting_view'),
                 'purchase_request_pending_accounting_approval',
                 'طلب بانتظار الموافقة المالية',
@@ -344,7 +344,7 @@ class ProcurementPurchaseRequestService
             );
 
             $notificationService = app(NotificationService::class);
-            $notificationService->notifyUsers(
+            $notificationService->queueUsers(
                 $notificationService->resolveUsersWithPermission('purchase_request.accounting_view'),
                 'purchase_request_pending_accounting_approval',
                 'طلب شراء مباشر بانتظار الحسابات',
@@ -413,7 +413,7 @@ class ProcurementPurchaseRequestService
             if (! empty($comment)) {
                 $rejMsg .= " السبب: {$comment}";
             }
-            $notificationService->createNotification(
+            $notificationService->queueNotification(
                 $pr->user_id,
                 'purchase_request_rejected_procurement',
                 'طلب الشراء مرفوض من المشتريات',

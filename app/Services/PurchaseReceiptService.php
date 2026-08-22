@@ -85,7 +85,7 @@ class PurchaseReceiptService
 
             $siteEngineer = User::find($siteEngineerId);
             if ($siteEngineer) {
-                app(NotificationService::class)->createNotification(
+                app(NotificationService::class)->queueNotification(
                     $siteEngineer,
                     'purchase_receipt_pending_site_engineer',
                     'إذن استلام بانتظار اعتمادك',
@@ -174,7 +174,7 @@ class PurchaseReceiptService
 
             $notificationService = app(NotificationService::class);
             $accountants = $notificationService->resolveUsersWithPermission('purchase_order.view_accounting');
-            $notificationService->notifyAccountingWithPurchaseOrderAndReceipt(
+            $notificationService->queueAccountingWithPurchaseOrderAndReceipt(
                 $accountants,
                 $receipt->purchaseOrder,
                 $receipt

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SendNotificationsJob;
 use App\Models\Notification;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseReceipt;
@@ -92,6 +93,61 @@ class NotificationService
         foreach ($recipients as $recipient) {
             $this->createNotification($recipient, $type, $title, $message, $notifiable);
         }
+    }
+
+    /**
+     * Queue a notification for one recipient after the surrounding transaction commits.
+     */
+    public function queueNotification(User|int $recipient, string $type, string $title, string $message, Model $notifiable): void
+    {
+        $userId = $recipient instanceof User ? $recipient->id : (int) $recipient;
+
+        SendNotificationsJob::dispatch([$userId], $type, $title, $message, $notifiable);
+    }
+
+    /**
+     * Queue notifications for multiple recipients after the surrounding transaction commits.
+     */
+    public function queueUsers(iterable $recipients, string $type, string $title, string $message, Model $notifiable): void
+    {
+        $recipientIds = collect($recipients)
+            ->map(fn (User|int $recipient): int => $recipient instanceof User ? $recipient->id : (int) $recipient)
+            ->filter(fn (int $id): bool => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($recipientIds === []) {
+            return;
+        }
+
+        SendNotificationsJob::dispatch($recipientIds, $type, $title, $message, $notifiable);
+    }
+
+    /**
+     * Queue one Accounting notification that carries both the PO and its approved receipt.
+     */
+    public function queueAccountingWithPurchaseOrderAndReceipt(iterable $recipients, PurchaseOrder $purchaseOrder, PurchaseReceipt $purchaseReceipt): void
+    {
+        $recipientIds = collect($recipients)
+            ->map(fn (User|int $recipient): int => $recipient instanceof User ? $recipient->id : (int) $recipient)
+            ->filter(fn (int $id): bool => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($recipientIds === []) {
+            return;
+        }
+
+        SendNotificationsJob::dispatch(
+            $recipientIds,
+            'purchase_order_and_receipt_ready_accounting',
+            '',
+            '',
+            $purchaseOrder,
+            $purchaseReceipt,
+        );
     }
 
     /**

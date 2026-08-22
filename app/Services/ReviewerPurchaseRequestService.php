@@ -428,7 +428,7 @@ class ReviewerPurchaseRequestService
 
             // Notify Requester Employee
             $notificationService = app(\App\Services\NotificationService::class);
-            $notificationService->createNotification(
+            $notificationService->queueNotification(
                 $pr->user_id,
                 'purchase_request_approved',
                 'تم اعتماد طلب الشراء',
@@ -438,7 +438,7 @@ class ReviewerPurchaseRequestService
 
             // Notify the Executive / General Manager
             $executives = $notificationService->resolveUsersWithPermission('purchase_request.approve_gm');
-            $notificationService->notifyUsers(
+            $notificationService->queueUsers(
                 $executives,
                 'purchase_request_pending_executive',
                 'طلب شراء بانتظار قرار المدير التنفيذي',
@@ -498,7 +498,7 @@ class ReviewerPurchaseRequestService
             if (! empty($comment)) {
                 $rejMsg .= "\nالسبب: {$comment}";
             }
-            $notificationService->createNotification(
+            $notificationService->queueNotification(
                 $pr->user_id,
                 'purchase_request_rejected',
                 'تم رفض/إرجاع طلب الشراء',

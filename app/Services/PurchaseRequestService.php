@@ -334,7 +334,7 @@ class PurchaseRequestService
                 $reviewers = $request->assignedReviewer
                     ? collect([$request->assignedReviewer])
                     : $notificationService->resolveUsersWithPermission('purchase_request.review', $request->target_department_id);
-                $notificationService->notifyUsers(
+                $notificationService->queueUsers(
                     $reviewers,
                     'purchase_request_submitted',
                     'طلب شراء جديد للمراجعة',
@@ -342,7 +342,7 @@ class PurchaseRequestService
                     $request
                 );
             } elseif ($nextStatus === 'PENDING_EXECUTIVE_APPROVAL') {
-                $notificationService->notifyUsers(
+                $notificationService->queueUsers(
                     $notificationService->resolveUsersWithPermission('purchase_request.view_gm'),
                     'purchase_request_pending_executive_approval',
                     'طلب شراء بانتظار اعتماد المدير التنفيذي',
@@ -350,7 +350,7 @@ class PurchaseRequestService
                     $request
                 );
             } else {
-                $notificationService->notifyUsers(
+                $notificationService->queueUsers(
                     $notificationService->resolveUsersWithPermission('purchase_request.view_approved'),
                     'purchase_request_pending_procurement',
                     'طلب شراء من المدير التنفيذي',

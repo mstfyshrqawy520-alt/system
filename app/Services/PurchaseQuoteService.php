@@ -108,7 +108,7 @@ class PurchaseQuoteService
                 ? User::whereKey($pr->reviewer_user_id)->get()
                 : collect();
             $accountants = $notificationService->resolveUsersWithPermission('purchase_quote.recommend');
-            $notificationService->notifyUsers(
+            $notificationService->queueUsers(
                 $accountants->merge($reviewers)->unique('id'),
                 'purchase_quote_pending_recommendation',
                 'عروض أسعار بانتظار الترشيح',
@@ -169,7 +169,7 @@ class PurchaseQuoteService
             if ($recommendationCount >= count($requiredRoleTypes)) {
                 $request->update(['status' => self::EXECUTIVE_DECISION_PENDING]);
                 $executives = app(NotificationService::class)->resolveUsersWithPermission('purchase_quote.decide');
-                app(NotificationService::class)->notifyUsers(
+                app(NotificationService::class)->queueUsers(
                     $executives,
                     'purchase_quote_recommendations_ready',
                     'ترشيحات عروض الأسعار جاهزة',
@@ -234,7 +234,7 @@ class PurchaseQuoteService
             );
 
             $notificationService = app(NotificationService::class);
-            $notificationService->notifyUsers(
+            $notificationService->queueUsers(
                 $notificationService->resolveUsersWithPermission('purchase_request.approve_procurement'),
                 'purchase_quote_decision_complete',
                 'تم اتخاذ قرار عروض الأسعار',
