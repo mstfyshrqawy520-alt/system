@@ -1,0 +1,96 @@
+﻿E:\purchasing system\src\components\accounting\FinancialSummary.tsx:16: <div className="grid grid-cols-2 gap-y-2.5 gap-x-4 bg-slate-950 border border-slate-850 p-5 rounded-xl text-xs max-w-sm mr-auto shadow-md">
+E:\purchasing system\src\components\notifications\NotificationBell.tsx:47: {count > 0 && <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">{count > 99 ? '99+' : count}</span>}
+E:\purchasing system\src\components\procurement\DeliveryTrackingWidget.tsx:76: <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+E:\purchasing system\src\components\procurement\DeliveryTrackingWidget.tsx:120: <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+E:\purchasing system\src\components\procurement\DirectPoModal.tsx:110: <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/85 p-3 sm:p-5" dir="rtl">
+E:\purchasing system\src\components\procurement\DirectPoModal.tsx:126: <div className="grid grid-cols-1 gap-4 px-5 pt-5 md:grid-cols-2">
+E:\purchasing system\src\components\procurement\DirectPoModal.tsx:149: <div className="overflow-x-auto rounded border border-cyan-500/70">
+E:\purchasing system\src\components\procurement\DirectPoModal.tsx:150: <table className="min-w-[1120px] w-full border-collapse text-right text-[11px]">
+E:\purchasing system\src\components\procurement\PrDetailsModal.tsx:15: <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 overflow-y-auto" dir="rtl">
+E:\purchasing system\src\components\procurement\PurchaseOrderPrintModal.tsx:45: <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 print:static print:block print:bg-white" dir="rtl">
+E:\purchasing system\src\components\procurement\PurchaseOrderPrintModal.tsx:120: <div className="mt-12 grid grid-cols-3 gap-6 text-center text-xs font-bold">
+E:\purchasing system\src\components\procurement\ReportPrintModal.tsx:29: <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 overflow-y-auto" dir="rtl">
+E:\purchasing system\src\components\procurement\ReportPrintModal.tsx:94: <div className="grid grid-cols-4 gap-3 text-center">
+E:\purchasing system\src\components\procurement\SupplierModal.tsx:79: <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 overflow-y-auto" dir="rtl">
+E:\purchasing system\src\components\procurement\SupplierModal.tsx:109: <div className="grid grid-cols-2 gap-3">
+E:\purchasing system\src\components\procurement\SupplierModal.tsx:122: <div className="grid grid-cols-2 gap-3">
+E:\purchasing system\src\components\purchase-requests\PRWizardStep1.tsx:36: <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+E:\purchasing system\src\components\purchase-requests\PRWizardStep2.tsx:120: <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+E:\purchasing system\src\components\purchase-requests\PRWizardStep2.tsx:152: <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+E:\purchasing system\src\components\purchase-requests\PRWizardStep2.tsx:153: <div className="grid grid-cols-2 gap-2">
+E:\purchasing system\src\components\purchase-requests\PRWizardStep4.tsx:91: <div className="grid grid-cols-2 gap-3 text-xs">
+E:\purchasing system\src\components\purchase-requests\PurchaseRequestForm.tsx:176: <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+E:\purchasing system\src\components\purchase-requests\PurchaseRequestForm.tsx:247: <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+E:\purchasing system\src\components\purchase-requests\PurchaseRequestPrintModal.tsx:44: <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 print:static print:block print:bg-white" dir="rtl">
+E:\purchasing system\src\components\purchase-requests\PurchaseRequestPrintModal.tsx:104: <div className="mt-12 grid grid-cols-4 gap-5 text-center text-xs font-bold">
+E:\purchasing system\src\components\reviewer\AddReviewItemDialog.tsx:128: <div className="grid grid-cols-2 gap-3">
+E:\purchasing system\src\components\reviewer\ClarificationDialog.tsx:32: <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
+E:\purchasing system\src\components\reviewer\ReturnRequestDialog.tsx:32: <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
+E:\purchasing system\src\components\ui\Modal.tsx:53: className="fixed inset-0 z-[100] flex min-h-screen items-center justify-center overflow-hidden bg-slate-950/85 p-4 backdrop-blur-sm"
+E:\purchasing system\src\components\ui\Modal.tsx:68: <div className="min-w-0">
+E:\purchasing system\src\components\ui\Table.tsx:10: <div className="w-full overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/60 shadow-lg">
+E:\purchasing system\src\components\LoadingSpinner.tsx:33: <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center min-h-screen">
+E:\purchasing system\src\pages\accounting\AccountingDashboardPage.tsx:60: <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+E:\purchasing system\src\pages\accounting\AccountingDashboardPage.tsx:96: <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+E:\purchasing system\src\pages\accounting\AccountingPurchaseOrderDetailsPage.tsx:76: <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+E:\purchasing system\src\pages\admin\AdminDashboardPage.tsx:94: <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+E:\purchasing system\src\pages\admin\AdminDashboardPage.tsx:138: <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+E:\purchasing system\src\pages\admin\DepartmentsPage.tsx:215: <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+E:\purchasing system\src\pages\admin\ItemsPage.tsx:266: <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+E:\purchasing system\src\pages\admin\SuppliersPage.tsx:275: <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+E:\purchasing system\src\pages\admin\UsersPage.tsx:290: <div className="grid grid-cols-2 gap-2 p-3 bg-slate-950/60 border border-slate-800 rounded-lg">
+E:\purchasing system\src\pages\employee\CreatePurchaseRequestPage.tsx:138: <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:118: <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+E:\purchasing system\src\pages\employee\PurchaseRequestDetailsPage.tsx:293: <Card className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+E:\purchasing system\src\pages\general-manager\GeneralManagerDashboardPage.tsx:61: <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+E:\purchasing system\src\pages\general-manager\GeneralManagerDashboardPage.tsx:97: <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+E:\purchasing system\src\pages\general-manager\GeneralManagerPurchaseOrderDetailsPage.tsx:89: <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-slate-300">
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:169: <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:180: <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:204: {deliveryStatuses.length === 0 ? <EmptyState label="التوريدات" /> : <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:209: <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:212: {departments.length === 0 ? <EmptyState label="الأقسام" /> : <div className="overflow-x-auto"><table className="w-full text-right text-xs"><thead className="border-b border-slate-800 text-slate-500"><tr><th className="pb-3 font-medium">القسم</th><th className="pb-3 font-medium">الأوامر</th><th className="pb-3 font-medium">القيمة</th></tr></thead><tbody>{departments.map(item => <tr key={`${item.department_id}-${item.name}`} className="border-b border-slate-900"><td className="py-3 text-slate-200">{item.name || 'غير محدد'}</td><td className="py-3 text-slate-400">{formatNumber(item.count)}</td><td className="py-3 font-mono text-cyan-300">{formatCurrency(item.total_value)} ج.م</td></tr>)}</tbody></table></div>}
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:216: {suppliers.length === 0 ? <EmptyState label="الموردين" /> : <div className="overflow-x-auto"><table className="w-full text-right text-xs"><thead className="border-b border-slate-800 text-slate-500"><tr><th className="pb-3 font-medium">المورد</th><th className="pb-3 font-medium">الأوامر</th><th className="pb-3 font-medium">القيمة</th></tr></thead><tbody>{suppliers.map(item => <tr key={`${item.supplier_id}-${item.company_name}`} className="border-b border-slate-900"><td className="py-3 text-slate-200">{item.company_name || 'غير محدد'}</td><td className="py-3 text-slate-400">{formatNumber(item.count)}</td><td className="py-3 font-mono text-emerald-300">{formatCurrency(item.total_value)} ج.م</td></tr>)}</tbody></table></div>}
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:220: <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+E:\purchasing system\src\pages\procurement\CreatePurchaseOrderPage.tsx:197: <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-xs">
+E:\purchasing system\src\pages\procurement\CreatePurchaseOrderPage.tsx:219: <div className="overflow-x-auto rounded-lg border border-slate-800">
+E:\purchasing system\src\pages\procurement\CreatePurchaseOrderPage.tsx:260: <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+E:\purchasing system\src\pages\procurement\CreatePurchaseOrderPage.tsx:317: <div className="overflow-x-auto rounded-lg border border-slate-800 bg-slate-900/60">
+E:\purchasing system\src\pages\procurement\EditPurchaseOrderPage.tsx:218: <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+E:\purchasing system\src\pages\procurement\EditPurchaseOrderPage.tsx:275: <form onSubmit={handleAddItem} className="bg-slate-900 p-3 rounded-lg border border-slate-800 grid grid-cols-12 gap-2 items-center">
+E:\purchasing system\src\pages\procurement\EditPurchaseOrderPage.tsx:328: <div className="overflow-x-auto">
+E:\purchasing system\src\pages\procurement\ProcurementDashboardPage.tsx:92: <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+E:\purchasing system\src\pages\procurement\ProcurementDashboardPage.tsx:134: <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:88: <div className="overflow-x-auto">
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:344: const thCls = 'px-3 py-2.5 text-right text-xs font-semibold text-cyan-300 whitespace-nowrap bg-slate-800 border-b border-slate-700';
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:414: <div className="overflow-x-auto rounded-lg border border-slate-700">
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:467: <div className="overflow-x-auto rounded-lg border border-slate-700">
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:526: <div className="overflow-x-auto rounded-lg border border-slate-700">
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:621: <div className="overflow-x-auto rounded-lg border border-slate-700">
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:675: <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:699: <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:725: <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:755: <div className="overflow-x-auto rounded-lg border border-slate-700">
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:831: <div className="overflow-x-auto rounded-lg border border-slate-700">
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:882: <div className="overflow-x-auto rounded-lg border border-slate-700">
+E:\purchasing system\src\pages\procurement\ProcurementReportsPage.tsx:144: <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+E:\purchasing system\src\pages\procurement\ProcurementReportsPage.tsx:171: <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+E:\purchasing system\src\pages\procurement\PurchaseOrderDetailsPage.tsx:141: <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+E:\purchasing system\src\pages\procurement\PurchaseRequestDetailsPage.tsx:74: <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+E:\purchasing system\src\pages\procurement\PurchaseRequestDetailsPage.tsx:96: <div className="overflow-x-auto">
+E:\purchasing system\src\pages\procurement\SuppliersManagementPage.tsx:148: <div className="overflow-x-auto">
+E:\purchasing system\src\pages\reviewer\ReviewerDashboardPage.tsx:75: <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+E:\purchasing system\src\pages\reviewer\ReviewerPurchaseRequestDetailsPage.tsx:125: <Card className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+E:\purchasing system\src\pages\reviewer\ReviewerPurchaseRequestDetailsPage.tsx:188: <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+E:\purchasing system\src\pages\reviewer\ReviewerRequestsPage.tsx:106: <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+E:\purchasing system\src\pages\reviewer\ReviewerRequestsPage.tsx:176: <TableCell className="whitespace-nowrap">{formatDate(request.created_at)}</TableCell>
+E:\purchasing system\src\pages\reviewer\ReviewPurchaseRequestPage.tsx:375: <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+E:\purchasing system\src\pages\reviewer\ReviewPurchaseRequestPage.tsx:420: <TableCell className="font-bold text-slate-100 min-w-[200px]">
+E:\purchasing system\src\pages\HelpCenterPage.tsx:74: <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+E:\purchasing system\src\pages\HelpCenterPage.tsx:111: <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+E:\purchasing system\src\pages\HelpCenterPage.tsx:128: <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+E:\purchasing system\src\pages\LoginPage.tsx:54: <div className="min-h-screen bg-[#0b1220] flex flex-col justify-center py-12 sm:px-6 lg:px-8 animate-fade-in text-right" dir="rtl">
+E:\purchasing system\src\pages\LoginPage.tsx:126: <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+E:\purchasing system\src\pages\ProfilePage.tsx:100: <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+E:\purchasing system\src\pages\ProtectedPage.tsx:23: <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+E:\purchasing system\src\pages\UserPreferencesPage.tsx:79: <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

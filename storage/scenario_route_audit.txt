@@ -1,0 +1,28 @@
+﻿3: use App\Http\Controllers\Api\V1\AccountingPurchaseOrderController;
+45: Route::middleware('auth:sanctum')->prefix('purchase-requests')->group(function () {
+81: Route::middleware('auth:sanctum')->prefix('reviewer/purchase-requests')->group(function () {
+120: Route::get('/purchase-requests', [ProcurementPurchaseOrderController::class, 'indexApprovedPrs'])
+123: Route::get('/purchase-requests/{id}', [ProcurementPurchaseOrderController::class, 'showApprovedPr'])
+126: Route::post('/purchase-requests/{id}/approve', [ProcurementPurchaseOrderController::class, 'approvePurchaseRequest'])
+129: Route::post('/purchase-requests/{id}/reject', [ProcurementPurchaseOrderController::class, 'rejectPurchaseRequest'])
+133: Route::get('/approved-purchase-requests', [ProcurementPurchaseOrderController::class, 'indexProcurementApprovedPrs'])
+164: Route::get('/purchase-orders', [ProcurementPurchaseOrderController::class, 'indexPos'])
+167: Route::get('/purchase-orders/{id}', [ProcurementPurchaseOrderController::class, 'showPo'])
+170: Route::post('/purchase-orders', [ProcurementPurchaseOrderController::class, 'storePo'])
+173: Route::put('/purchase-orders/{id}', [ProcurementPurchaseOrderController::class, 'updateHeader'])
+176: Route::put('/purchase-orders/{id}/items/{itemId}', [ProcurementPurchaseOrderController::class, 'updateItem'])
+179: Route::post('/purchase-orders/{id}/items', [ProcurementPurchaseOrderController::class, 'addItem'])
+182: Route::delete('/purchase-orders/{id}/items/{itemId}', [ProcurementPurchaseOrderController::class, 'deleteItem'])
+185: Route::post('/purchase-orders/{id}/submit', [ProcurementPurchaseOrderController::class, 'submitPoToAccounting'])
+188: Route::put('/purchase-orders/{id}/delivery', [ProcurementPurchaseOrderController::class, 'updateDeliveryStatus'])
+195: // Accounting Financial Review Routes (View Only)
+196: Route::middleware('auth:sanctum')->prefix('accounting/purchase-orders')->group(function () {
+197: Route::get('/', [AccountingPurchaseOrderController::class, 'index'])
+198: ->middleware('permission:purchase_order.view_accounting');
+200: Route::get('/{id}', [AccountingPurchaseOrderController::class, 'show'])
+201: ->middleware('permission:purchase_order.view_accounting');
+203: Route::post('/{id}/approve', [AccountingPurchaseOrderController::class, 'approve'])
+204: ->middleware('permission:purchase_order.view_accounting');
+206: Route::post('/{id}/return', [AccountingPurchaseOrderController::class, 'returnToProcurement'])
+207: ->middleware('permission:purchase_order.view_accounting');
+212: Route::middleware('auth:sanctum')->prefix('general-manager/purchase-orders')->group(function () {

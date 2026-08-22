@@ -1,0 +1,259 @@
+﻿E:\purchasing system\app\Http\Controllers\Api\V1\ProcurementAnalyticsController.php:203: 'title' => $requestModel->title,
+E:\purchasing system\app\Http\Controllers\Api\V1\ProcurementPurchaseOrderController.php:287: 'project' => ['nullable', 'string', 'max:150'],
+E:\purchasing system\app\Http\Controllers\Api\V1\ProcurementPurchaseOrderController.php:288: 'title' => ['nullable', 'string', 'max:255'],
+E:\purchasing system\app\Http\Controllers\Api\V1\ProcurementPurchaseOrderController.php:322: 'title' => $validated['title'] ?? 'Direct Purchase Order Request',
+E:\purchasing system\app\Http\Controllers\Api\V1\ProcurementPurchaseOrderController.php:323: 'project' => $validated['project'] ?? null,
+E:\purchasing system\app\Http\Controllers\Api\V1\ReviewerPurchaseRequestController.php:38: 'project' => ['nullable', 'string', 'max:150'],
+E:\purchasing system\app\Http\Requests\PurchaseRequest\StorePurchaseRequestRequest.php:18: 'title' => ['required', 'string', 'max:150'],
+E:\purchasing system\app\Http\Requests\PurchaseRequest\StorePurchaseRequestRequest.php:19: 'project' => ['nullable', 'string', 'max:150'],
+E:\purchasing system\app\Http\Requests\PurchaseRequest\UpdatePurchaseRequestRequest.php:18: 'title' => ['sometimes', 'required', 'string', 'max:150'],
+E:\purchasing system\app\Http\Requests\PurchaseRequest\UpdatePurchaseRequestRequest.php:19: 'project' => ['nullable', 'string', 'max:150'],
+E:\purchasing system\app\Http\Requests\Reviewer\ReviewerUpdateHeaderRequest.php:17: 'title' => ['sometimes', 'required', 'string', 'max:150'],
+E:\purchasing system\app\Http\Resources\NotificationResource.php:27: 'title' => $this->title,
+E:\purchasing system\app\Http\Resources\PurchaseOrderResource.php:31: 'project_reference' => $this->when($this->relationLoaded('purchaseRequest'), fn () => $this->purchaseRequest?->project),
+E:\purchasing system\app\Http\Resources\PurchaseRequestResource.php:15: 'title' => $this->title,
+E:\purchasing system\app\Http\Resources\PurchaseRequestResource.php:16: 'project' => $this->project,
+E:\purchasing system\app\Models\Notification.php:19: 'title',
+E:\purchasing system\app\Models\PurchaseRequest.php:23: 'title',
+E:\purchasing system\app\Models\PurchaseRequest.php:24: 'project',
+E:\purchasing system\app\Services\NotificationService.php:40: public function createNotification(User|int $recipient, string $type, string $title, string $message, Model $notifiable): ?Notification
+E:\purchasing system\app\Services\NotificationService.php:52: 'title' => $title,
+E:\purchasing system\app\Services\NotificationService.php:62: public function notifyUsers(iterable $recipients, string $type, string $title, string $message, Model $notifiable): void
+E:\purchasing system\app\Services\NotificationService.php:65: $this->createNotification($recipient, $type, $title, $message, $notifiable);
+E:\purchasing system\app\Services\PurchaseRequestService.php:95: 'title' => $data['title'],
+E:\purchasing system\app\Services\PurchaseRequestService.php:96: 'project' => $data['project'] ?? null,
+E:\purchasing system\app\Services\PurchaseRequestService.php:146: $simpleFields = ['title', 'project', 'priority', 'date_needed', 'notes'];
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:71: if (! empty($filters['project'])) {
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:72: $query->where('project', 'like', '%' . $filters['project'] . '%');
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:147: $allowedFields = ['title', 'priority', 'date_needed', 'notes'];
+E:\purchasing system\database\migrations\2026_01_01_000011_create_purchase_requests_table.php:24: $table->string('title', 150);
+E:\purchasing system\database\migrations\2026_01_01_000017_create_notifications_table.php:20: $table->string('title', 150);
+E:\purchasing system\database\migrations\2026_08_14_000001_add_extended_fields_to_purchase_requests.php:12: $table->string('project', 150)->nullable()->after('title');
+E:\purchasing system\database\migrations\2026_08_14_000001_add_extended_fields_to_purchase_requests.php:21: $table->dropColumn(['project', 'required_delivery_date', 'return_reason']);
+E:\purchasing system\src\api\procurement.ts:75: title: string;
+E:\purchasing system\src\api\procurement.ts:87: project?: string;
+E:\purchasing system\src\api\procurement.ts:88: title?: string;
+E:\purchasing system\src\api\reviewer.ts:5: title?: string;
+E:\purchasing system\src\api\reviewer.ts:25: project?: string;
+E:\purchasing system\src\components\notifications\NotificationBell.tsx:52: <p className="mt-1 text-sm font-bold text-slate-100">{latest.title}</p>
+E:\purchasing system\src\components\procurement\DirectPoModal.tsx:42: const [title, setTitle] = useState('أمر شراء مباشر');
+E:\purchasing system\src\components\procurement\DirectPoModal.tsx:91: project: projectReference.trim() || undefined,
+E:\purchasing system\src\components\procurement\DirectPoModal.tsx:92: title: title.trim() || 'أمر شراء مباشر',
+E:\purchasing system\src\components\procurement\DirectPoModal.tsx:151: <input value={title} onChange={event => setTitle(event.target.value)} placeholder="أمر شراء مواد" className="mt-2 h-10 w-full rounded-md border border-slate-600 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-cyan-300" />
+E:\purchasing system\src\components\procurement\PrDetailsModal.tsx:30: <div className="flex justify-between"><span className="text-slate-400">عنوان الطلب:</span><span className="font-semibold text-slate-200">{pr.title}</span></div>
+E:\purchasing system\src\components\procurement\PurchaseOrderPrintModal.tsx:36: 'رقم القطعة / المشروع: ' + (po.project_reference || po.purchase_request?.project || '—'),
+E:\purchasing system\src\components\procurement\PurchaseOrderPrintModal.tsx:63: <div>رقم القطعة / المشروع: <span className="font-normal">{po.project_reference || po.purchase_request?.project || '—'}</span></div>
+E:\purchasing system\src\components\procurement\PurchaseOrderPrintModal.tsx:67: <div>غرض الشراء: <span className="font-normal">{po.purchase_request?.title || '—'}</span></div>
+E:\purchasing system\src\components\purchase-requests\DeleteRequestDialog.tsx:24: title="حذف المسودة"
+E:\purchasing system\src\components\purchase-requests\PRWizardStep1.tsx:39: id="pr-title"
+E:\purchasing system\src\components\purchase-requests\PRWizardStep1.tsx:40: value={data.title}
+E:\purchasing system\src\components\purchase-requests\PRWizardStep1.tsx:41: onChange={e => set('title', e.target.value)}
+E:\purchasing system\src\components\purchase-requests\PRWizardStep1.tsx:47: id="pr-project"
+E:\purchasing system\src\components\purchase-requests\PRWizardStep1.tsx:48: value={data.project || ''}
+E:\purchasing system\src\components\purchase-requests\PRWizardStep1.tsx:49: onChange={e => set('project', e.target.value)}
+E:\purchasing system\src\components\purchase-requests\PRWizardStep4.tsx:23: id: 'title',
+E:\purchasing system\src\components\purchase-requests\PRWizardStep4.tsx:25: passed: !!(data.title && data.title.trim().length >= 5),
+E:\purchasing system\src\components\purchase-requests\PRWizardStep4.tsx:100: <div className="font-bold text-slate-100 mt-1">{data.title || '-'}</div>
+E:\purchasing system\src\components\purchase-requests\PRWizardStep4.tsx:102: {data.project && (
+E:\purchasing system\src\components\purchase-requests\PRWizardStep4.tsx:105: <div className="font-bold text-slate-100 mt-1">{data.project}</div>
+E:\purchasing system\src\components\purchase-requests\PurchaseRequestForm.tsx:36: const [title, setTitle] = useState<string>(initialData?.title || '');
+E:\purchasing system\src\components\purchase-requests\PurchaseRequestForm.tsx:137: if (!title.trim()) {
+E:\purchasing system\src\components\purchase-requests\PurchaseRequestForm.tsx:162: title,
+E:\purchasing system\src\components\purchase-requests\PurchaseRequestForm.tsx:184: <FormField label="عنوان الطلب / المشروع (Title)" required>
+E:\purchasing system\src\components\purchase-requests\PurchaseRequestForm.tsx:188: value={title}
+E:\purchasing system\src\components\purchase-requests\PurchaseRequestPrintModal.tsx:37: 'رقم المشروع / القطعة: ' + (pr.project || '—'),
+E:\purchasing system\src\components\purchase-requests\PurchaseRequestPrintModal.tsx:62: <div>رقم المشروع / القطعة: <span className="font-normal">{pr.project || '—'}</span></div>
+E:\purchasing system\src\components\purchase-requests\PurchaseRequestTable.tsx:73: {pr.title}
+E:\purchasing system\src\components\purchase-requests\SubmitRequestDialog.tsx:24: title="إرسال طلب الشراء"
+E:\purchasing system\src\components\reviewer\AddReviewItemDialog.tsx:77: title="إضافة بند جديد أثناء المراجعة"
+E:\purchasing system\src\components\reviewer\ApproveRequestDialog.tsx:32: title="اعتماد طلب الشراء"
+E:\purchasing system\src\components\reviewer\RejectRequestDialog.tsx:38: title="رفض طلب الشراء"
+E:\purchasing system\src\components\reviewer\ReviewerChecklist.tsx:14: id: 'title',
+E:\purchasing system\src\components\reviewer\ReviewerChecklist.tsx:18: check: (pr) => !!(pr.title && pr.title.trim().length >= 5),
+E:\purchasing system\src\components\ui\Card.tsx:21: title: string;
+E:\purchasing system\src\components\ui\Card.tsx:35: title,
+E:\purchasing system\src\components\ui\Card.tsx:65: <p className="text-xs font-semibold text-slate-400">{title}</p>
+E:\purchasing system\src\components\ui\Modal.tsx:7: title: string;
+E:\purchasing system\src\components\ui\Modal.tsx:17: title,
+E:\purchasing system\src\components\ui\Modal.tsx:64: aria-labelledby="modal-title"
+E:\purchasing system\src\components\ui\Modal.tsx:69: <h3 id="modal-title" className="text-lg font-bold text-slate-100">{title}</h3>
+E:\purchasing system\src\components\ui\StateFeedback.tsx:22: title?: string;
+E:\purchasing system\src\components\ui\StateFeedback.tsx:30: title = 'لا توجد بيانات',
+E:\purchasing system\src\components\ui\StateFeedback.tsx:45: <h4 className="text-sm font-bold text-slate-200">{title}</h4>
+E:\purchasing system\src\components\ui\StateFeedback.tsx:53: title?: string;
+E:\purchasing system\src\components\ui\StateFeedback.tsx:60: title = 'حدث خطأ غير متوقع',
+E:\purchasing system\src\components\ui\StateFeedback.tsx:72: <h4 className="text-sm font-bold text-rose-200">{title}</h4>
+E:\purchasing system\src\hooks\usePRAutosave.ts:45: // If no items yet, don't bother saving to backend (needs at least empty title)
+E:\purchasing system\src\hooks\usePRAutosave.ts:46: if (!data.title || data.title.trim() === '') {
+E:\purchasing system\src\layouts\AuthenticatedLayout.tsx:168: {/* Company Logo & Title */}
+E:\purchasing system\src\pages\HelpCenterPage.tsx:36: const roleGuides: Record<string, { title: string; text: string; link: string; linkLabel: string }> = {
+E:\purchasing system\src\pages\HelpCenterPage.tsx:37: employee: { title: 'الموظف', text: 'أنشئ طلباتك في صفحة واحدة، راجع حالتها، وتابع الملاحظات والإشعارات.', link: '/employee/requests', linkLabel: 'طلبات الشراء' },
+E:\purchasing system\src\pages\HelpCenterPage.tsx:38: reviewer: { title: 'المراجع', text: 'راجع طلبات قسمك فقط، استخدم الفلاتر، وسجل قرار المراجعة أو طلب التوضيح.', link: '/reviewer/requests', linkLabel: 'طلبات المراجعة' },
+E:\purchasing system\src\pages\HelpCenterPage.tsx:39: procurement_manager: { title: 'مدير المشتريات', text: 'حوّل الطلبات المعتمدة إلى أوامر شراء، أدخل الأسعار والمورد، ثم اطبع المستند.', link: '/procurement/purchase-orders', linkLabel: 'أوامر الشراء' },
+E:\purchasing system\src\pages\HelpCenterPage.tsx:40: accountant: { title: 'الحسابات', text: 'راجع أوامر الشراء والإجماليات واسم القطعة والمستند المطبوع دون إجراءات اعتماد.', link: '/accounting/purchase-orders', linkLabel: 'أوامر الشراء' },
+E:\purchasing system\src\pages\HelpCenterPage.tsx:41: general_manager: { title: 'المدير العام', text: 'تابع العرض التنفيذي والإشعارات وأوامر الشراء للعرض والطباعة فقط.', link: '/general-manager', linkLabel: 'لوحة المدير العام' },
+E:\purchasing system\src\pages\HelpCenterPage.tsx:42: admin: { title: 'مدير النظام', text: 'أدر المستخدمين والأدوار والصلاحيات والأقسام والكتالوج والموردين.', link: '/admin', linkLabel: 'لوحة الإدارة' },
+E:\purchasing system\src\pages\HelpCenterPage.tsx:70: <p className="text-sm font-bold text-slate-100 mt-1">{roleGuide.title}</p>
+E:\purchasing system\src\pages\HelpCenterPage.tsx:80: ].map(([icon, title, description]) => (
+E:\purchasing system\src\pages\HelpCenterPage.tsx:81: <div key={title} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+E:\purchasing system\src\pages\HelpCenterPage.tsx:83: <h2 className="text-sm font-bold text-slate-100 mt-2">{title}</h2>
+E:\purchasing system\src\pages\HelpCenterPage.tsx:101: <h2 className="text-lg font-black text-slate-100 mt-1">أنت تستخدم النظام بصلاحية: {roleGuide.title}</h2>
+E:\purchasing system\src\pages\NotificationsPage.tsx:190: title="لا توجد إشعارات حالياً"
+E:\purchasing system\src\pages\NotificationsPage.tsx:229: {notif.title}
+E:\purchasing system\src\pages\UserPreferencesPage.tsx:51: const options: Array<{ key: keyof UserPreferences; title: string; description: string; icon: string }> = [
+E:\purchasing system\src\pages\UserPreferencesPage.tsx:52: { key: 'compactMode', title: 'وضع العرض المضغوط', description: 'يقلل المسافات بين العناصر ليسمح بعرض بيانات أكثر في الشاشة الواحدة.', icon: '▦' },
+E:\purchasing system\src\pages\UserPreferencesPage.tsx:53: { key: 'reduceMotion', title: 'تقليل الحركة', description: 'يوقف الحركات الانتقالية البصرية للمستخدمين الذين يفضلون واجهة ثابتة.', icon: '⏸' },
+E:\purchasing system\src\pages\UserPreferencesPage.tsx:54: { key: 'confirmSensitiveActions', title: 'تأكيد الإجراءات الحساسة', description: 'يعرض تأكيداً قبل إجراءات مثل الحذف أو الإرسال النهائي عندما تدعم الصفحة ذلك.', icon: '✓' },
+E:\purchasing system\src\pages\UserPreferencesPage.tsx:87: <h3 className="text-sm font-bold text-slate-100 mt-4">{option.title}</h3>
+E:\purchasing system\src\pages\accounting\AccountingDashboardPage.tsx:63: title="إجمالي أوامر الشراء المصدرة"
+E:\purchasing system\src\pages\accounting\AccountingDashboardPage.tsx:71: title="إجمالي القيم المشتراة (EGP)"
+E:\purchasing system\src\pages\accounting\AccountingDashboardPage.tsx:79: title="توريدات قيد الانتظار والمتابعة"
+E:\purchasing system\src\pages\accounting\AccountingDashboardPage.tsx:87: title="عدد الموردين المتدفق لهم"
+E:\purchasing system\src\pages\accounting\AccountingPurchaseOrderDetailsPage.tsx:98: <div><strong className="text-slate-400">رقم القطعة / المشروع:</strong> <span className="font-bold text-cyan-300">{po.project_reference || po.purchase_request?.project || 'غير محدد'}</span></div>
+E:\purchasing system\src\pages\accounting\AccountingPurchaseOrderDetailsPage.tsx:101: <div><strong className="text-slate-400">سبب الشراء:</strong> {po.purchase_request?.title || '—'}</div>
+E:\purchasing system\src\pages\accounting\AccountingPurchaseOrdersPage.tsx:65: <TableCell className="font-bold text-cyan-300">{x.project_reference || x.purchase_request?.project || 'غير محدد'}</TableCell>
+E:\purchasing system\src\pages\admin\AdminDashboardPage.tsx:97: title="المستخدمين"
+E:\purchasing system\src\pages\admin\AdminDashboardPage.tsx:106: title="الأقسام والإدارات"
+E:\purchasing system\src\pages\admin\AdminDashboardPage.tsx:115: title="الأصناف في الكتالوج"
+E:\purchasing system\src\pages\admin\AdminDashboardPage.tsx:124: title="سجل الموردين"
+E:\purchasing system\src\pages\admin\CategoriesPage.tsx:179: title={editingCategory ? 'تعديل التصنيف' : 'إضافة تصنيف جديد'}
+E:\purchasing system\src\pages\admin\DepartmentsPage.tsx:195: title={editingDept ? 'تعديل بيانات القسم' : 'إضافة قسم جديد'}
+E:\purchasing system\src\pages\admin\ItemsPage.tsx:238: title={editingItem ? 'تعديل صنف الكتالوج' : 'إضافة صنف جديد'}
+E:\purchasing system\src\pages\admin\SuppliersPage.tsx:247: title={editingSupplier ? 'تعديل بيانات المورد' : 'إضافة مورد جديد'}
+E:\purchasing system\src\pages\admin\UsersPage.tsx:227: title={editingUser ? 'تعديل بيانات المستخدم' : 'إضافة مستخدم جديد'}
+E:\purchasing system\src\pages\employee\CreatePurchaseRequestPage.tsx:15: title: '',
+E:\purchasing system\src\pages\employee\CreatePurchaseRequestPage.tsx:16: project: '',
+E:\purchasing system\src\pages\employee\CreatePurchaseRequestPage.tsx:57: Boolean(data.title.trim()) &&
+E:\purchasing system\src\pages\employee\CreatePurchaseRequestPage.tsx:149: <div className="text-sm font-semibold text-slate-100 mt-1 truncate">{data.title || '—'}</div>
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:120: title="إجمالي"
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:126: title="مسودات"
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:132: title="قيد المراجعة"
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:138: title="معاد"
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:144: title="بانتظار توضيح"
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:150: title="معتمدة"
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:156: title="مرفوضة"
+E:\purchasing system\src\pages\employee\PurchaseRequestDetailsPage.tsx:264: <h2 className="text-sm font-bold text-slate-200 mt-1.5">{requestData.title}</h2>
+E:\purchasing system\src\pages\employee\PurchaseRequestDetailsPage.tsx:265: {requestData.project && (
+E:\purchasing system\src\pages\employee\PurchaseRequestDetailsPage.tsx:266: <div className="text-xs text-slate-400 mt-0.5">📁 {requestData.project}</div>
+E:\purchasing system\src\pages\employee\PurchaseRequestDetailsPage.tsx:314: {requestData.project && (
+E:\purchasing system\src\pages\employee\PurchaseRequestDetailsPage.tsx:317: <div className="font-bold text-slate-200 mt-1">{requestData.project}</div>
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:84: r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:86: (r.project || '').toLowerCase().includes(searchQuery.toLowerCase());
+E:\purchasing system\src\pages\general-manager\GeneralManagerDashboardPage.tsx:64: title="إجمالي أوامر الشراء المصدرة"
+E:\purchasing system\src\pages\general-manager\GeneralManagerDashboardPage.tsx:72: title="إجمالي قيم المشتريات المعتمدة (EGP)"
+E:\purchasing system\src\pages\general-manager\GeneralManagerDashboardPage.tsx:80: title="التوريدات المكتملة"
+E:\purchasing system\src\pages\general-manager\GeneralManagerDashboardPage.tsx:88: title="التوريدات المتأخرة (تنفيذي)"
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:170: <RouterLink to="/employee/requests" className="block"><KpiCard title="إجمالي طلبات الشراء" value={formatNumber(metrics?.purchase_requests_count)} accentColor="cyan" icon={<span>PR</span>} /></RouterLink>
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:171: <KpiCard title="طلبات بانتظار المشتريات" value={formatNumber(metrics?.pending_procurement_count)} accentColor="amber" icon={<span>↳</span>} />
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:172: <RouterLink to="/general-manager/purchase-orders" className="block"><KpiCard title="أوامر الشراء" value={formatNumber(metrics?.purchase_orders_count)} accentColor="cyan" icon={<span>PO</span>} /></RouterLink>
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:173: <KpiCard title="إجمالي قيمة أوامر الشراء" value={<CurrencyDisplay amount={Number(metrics?.total_value || 0)} amountClassName="text-base font-bold font-mono text-emerald-300" />} accentColor="emerald" icon={<span>ج.م</span>} />
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:174: <KpiCard title="بانتظار مراجعة الحسابات" value={formatNumber(metrics?.pending_accounting_count)} accentColor="amber" icon={<span>ح</span>} />
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:175: <KpiCard title="التوريدات المكتملة" value={formatNumber(metrics?.completed_delivery_count)} accentColor="emerald" icon={<span>✓</span>} />
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:176: <KpiCard title="التوريدات المتأخرة" value={formatNumber(metrics?.late_delivery_count)} accentColor="rose" icon={<span>!</span>} />
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:177: <KpiCard title="متوسط أمر الشراء" value={<CurrencyDisplay amount={Number(metrics?.average_value || 0)} amountClassName="text-base font-bold font-mono text-cyan-300" />} accentColor="cyan" icon={<span>∅</span>} />
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:222: <div className="rounded-xl border border-slate-800 bg-slate-950 p-5"><div className="mb-4 flex items-center justify-between"><h2 className="text-base font-bold text-slate-100">آخر الطلبات المتابعة</h2><span className="text-xs text-slate-500">الحالة الحالية</span></div>{(report?.recent_purchase_requests ?? []).length === 0 ? <EmptyState label="الطلبات" /> : <div className="space-y-3">{(report?.recent_purchase_requests ?? []).map(item => <div key={item.id} className="rounded-lg border border-slate-800 bg-slate-900/60 p-3"><div className="flex items-center justify-between gap-3"><span className="font-semibold text-slate-200">{item.request_number}</span><span className={`rounded-md border px-2 py-1 text-[11px] ${statusTone(item.status)}`}>{REQUEST_STATUS_LABELS[item.status] || item.status}</span></div><p className="mt-2 text-xs text-slate-400">{item.title}</p><div className="mt-2 flex flex-wrap justify-between gap-2 text-[11px] text-slate-500"><span>{item.requester_name || 'غير محدد'} — {item.department_name || 'غير محدد'}</span><span>{formatDate(item.updated_at)}</span></div></div>)}</div>}</div>
+E:\purchasing system\src\pages\procurement\ApprovedPurchaseRequestsPage.tsx:55: r.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+E:\purchasing system\src\pages\procurement\ApprovedPurchaseRequestsPage.tsx:141: <TableCell className="font-bold text-slate-100">{r.title}</TableCell>
+E:\purchasing system\src\pages\procurement\CreatePurchaseOrderPage.tsx:199: <span className="font-bold text-cyan-300">{pr.project || 'غير محدد'}</span>
+E:\purchasing system\src\pages\procurement\CreatePurchaseOrderPage.tsx:203: <span className="font-bold text-slate-100">{pr.title}</span>
+E:\purchasing system\src\pages\procurement\ProcurementDashboardPage.tsx:94: title="إجمالي قيم المشتريات"
+E:\purchasing system\src\pages\procurement\ProcurementDashboardPage.tsx:100: title="طلبات معتمدة بانتظار PO"
+E:\purchasing system\src\pages\procurement\ProcurementDashboardPage.tsx:106: title="أوامر مسودة DRAFT"
+E:\purchasing system\src\pages\procurement\ProcurementDashboardPage.tsx:112: title="مراجعة المحاسبة"
+E:\purchasing system\src\pages\procurement\ProcurementDashboardPage.tsx:118: title="أوامر معادة للمشتريات"
+E:\purchasing system\src\pages\procurement\ProcurementDashboardPage.tsx:124: title="معتمدة نهائياً"
+E:\purchasing system\src\pages\procurement\ProcurementDashboardPage.tsx:163: <TableCell className="text-slate-100 font-bold">{pr.title}</TableCell>
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:222: (p.purchase_request?.title || '').toLowerCase().includes(q) ||
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:252: project: '',
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:253: title: 'أمر شراء مباشر',
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:443: <td className={tdCls + ' font-semibold text-slate-100'}>{pr.title}</td>
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:494: <td className={tdCls + ' font-semibold text-slate-100'}>{pr.title}</td>
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:574: <td className={tdCls + ' text-cyan-300 font-semibold'}>{po.project_reference || po.purchase_request?.project || '-'}</td>
+E:\purchasing system\src\pages\procurement\PurchaseOrderDetailsPage.tsx:157: <div className="flex justify-between"><span className="text-slate-400">رقم القطعة / المشروع:</span><span className="text-cyan-300 font-bold">{po.project_reference || po.purchase_request?.project || 'غير محدد'}</span></div>
+E:\purchasing system\src\pages\procurement\PurchaseRequestDetailsPage.tsx:59: <p className="text-xs text-slate-400 mt-1">{pr.title}</p>
+E:\purchasing system\src\pages\reviewer\ReviewerDashboardPage.tsx:77: title="في انتظار المراجعة"
+E:\purchasing system\src\pages\reviewer\ReviewerDashboardPage.tsx:83: title="قيد المراجعة"
+E:\purchasing system\src\pages\reviewer\ReviewerDashboardPage.tsx:89: title="بانتظار توضيح"
+E:\purchasing system\src\pages\reviewer\ReviewerDashboardPage.tsx:95: title="معاد"
+E:\purchasing system\src\pages\reviewer\ReviewerDashboardPage.tsx:101: title="معتمدة"
+E:\purchasing system\src\pages\reviewer\ReviewerDashboardPage.tsx:107: title="مرفوضة"
+E:\purchasing system\src\pages\reviewer\ReviewerPurchaseRequestDetailsPage.tsx:93: {requestData.title}
+E:\purchasing system\src\pages\reviewer\ReviewerRequestsPage.tsx:18: project: '',
+E:\purchasing system\src\pages\reviewer\ReviewerRequestsPage.tsx:118: <input value={searchFilters.project || ''} onChange={(event) => updateFilter('project', event.target.value)} placeholder="اسم المشروع أو القطعة" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-cyan-500" />
+E:\purchasing system\src\pages\reviewer\ReviewerRequestsPage.tsx:180: <TableCell className="font-bold text-slate-100 max-w-xs truncate">{request.title}</TableCell>
+E:\purchasing system\src\pages\reviewer\ReviewerRequestsPage.tsx:181: <TableCell>{request.project || '—'}</TableCell>
+E:\purchasing system\src\pages\reviewer\ReviewPurchaseRequestPage.tsx:68: setHeaderTitle(data.title);
+E:\purchasing system\src\pages\reviewer\ReviewPurchaseRequestPage.tsx:91: title: headerTitle,
+E:\purchasing system\src\pages\reviewer\ReviewPurchaseRequestPage.tsx:112: setHeaderTitle(updated.title);
+E:\purchasing system\src\pages\reviewer\ReviewPurchaseRequestPage.tsx:312: {requestData.title}
+E:\purchasing system\src\pages\reviewer\ReviewPurchaseRequestPage.tsx:334: title={!checklistAllPassed ? 'أكمل قائمة التحقق أولاً' : 'اعتماد الطلب'}
+E:\purchasing system\src\test\EmployeePurchaseRequest.test.tsx:42: title: 'Laptops for IT Team',
+E:\purchasing system\src\test\NotificationSystem.test.tsx:25: title: 'New Purchase Request Submitted',
+E:\purchasing system\src\test\NotificationSystem.test.tsx:36: title: 'System Maintenance Completed',
+E:\purchasing system\src\test\NotificationSystem.test.tsx:51: it('1. الإشعارات page renders title and elements', async () => {
+E:\purchasing system\src\test\ReviewerPurchaseRequest.test.tsx:15: const submitted: PurchaseRequest = { id: 10, request_number: 'PR-10', title: 'Monitors', status: 'SUBMITTED', priority: 'NORMAL', created_at: '2026-08-11T00:00:00Z', updated_at: '2026-08-11T00:00:00Z', items: [{ id: 1, item_description: 'Monitor', quantity: '1.00', uom: 'PCS' }] };
+E:\purchasing system\src\types\notification.ts:4: title: string;
+E:\purchasing system\src\types\purchaseOrder.ts:58: title: string;
+E:\purchasing system\src\types\purchaseOrder.ts:59: project?: string | null;
+E:\purchasing system\src\types\purchaseRequest.ts:101: title: string;
+E:\purchasing system\src\types\purchaseRequest.ts:102: project?: string | null;
+E:\purchasing system\src\types\purchaseRequest.ts:156: title: string;
+E:\purchasing system\src\types\purchaseRequest.ts:157: project?: string;
+E:\purchasing system\src\types\purchaseRequest.ts:167: title?: string;
+E:\purchasing system\src\types\purchaseRequest.ts:168: project?: string;
+E:\purchasing system\tests\Feature\Api\V1\AccountingPurchaseOrderTest.php:88: 'title' => 'Approved Laptops Requisition',
+E:\purchasing system\tests\Feature\Api\V1\AuthorizationTest.php:83: 'title'                => 'Auth Test PR',
+E:\purchasing system\tests\Feature\Api\V1\AuthorizationTest.php:370: ->putJson("/api/v1/procurement/purchase-orders/{$po->id}", ['title' => 'Hacked'])
+E:\purchasing system\tests\Feature\Api\V1\AuthorizationTest.php:402: ->putJson("/api/v1/procurement/purchase-orders/{$po->id}", ['title' => 'GM Hacked'])
+E:\purchasing system\tests\Feature\Api\V1\FinancialRulesTest.php:97: 'title' => 'Office Laptops Request',
+E:\purchasing system\tests\Feature\Api\V1\FullEndToEndWorkflowTest.php:130: 'title' => 'Laptops for IT Department Upgrade',
+E:\purchasing system\tests\Feature\Api\V1\GeneralManagerPurchaseOrderTest.php:98: 'title' => 'Approved Server Requisition',
+E:\purchasing system\tests\Feature\Api\V1\NotificationTest.php:108: 'title' => 'Purchase Request Rejected',
+E:\purchasing system\tests\Feature\Api\V1\NotificationTest.php:129: 'title' => 'New Request',
+E:\purchasing system\tests\Feature\Api\V1\NotificationTest.php:157: 'title' => 'Title 1',
+E:\purchasing system\tests\Feature\Api\V1\NotificationTest.php:164: 'title' => 'Title 2',
+E:\purchasing system\tests\Feature\Api\V1\NotificationTest.php:183: 'title' => 'Title 1',
+E:\purchasing system\tests\Feature\Api\V1\NotificationTest.php:202: 'title' => 'Title 1',
+E:\purchasing system\tests\Feature\Api\V1\NotificationTest.php:232: 'title' => 'Title 1',
+E:\purchasing system\tests\Feature\Api\V1\NotificationTest.php:249: 'title' => 'Title 1',
+E:\purchasing system\tests\Feature\Api\V1\NotificationTest.php:256: 'title' => 'Title 2',
+E:\purchasing system\tests\Feature\Api\V1\NotificationTest.php:277: 'title' => 'Notification Test Requisition',
+E:\purchasing system\tests\Feature\Api\V1\NotificationTest.php:338: 'title' => 'Approval Notification Test',
+E:\purchasing system\tests\Feature\Api\V1\NotificationTest.php:360: $this->assertEquals('تم اعتماد طلب الشراء', $empNotification->title);
+E:\purchasing system\tests\Feature\Api\V1\NotificationTest.php:376: 'title' => 'Rejection Notification Test',
+E:\purchasing system\tests\Feature\Api\V1\NotificationTest.php:416: 'title' => 'Isolation Notification Test',
+E:\purchasing system\tests\Feature\Api\V1\ProcurementPurchaseOrderTest.php:88: 'title' => 'Pending Procurement Requisition',
+E:\purchasing system\tests\Feature\Api\V1\ProcurementPurchaseOrderTest.php:98: 'title' => 'Approved Server Requisition',
+E:\purchasing system\tests\Feature\Api\V1\ProcurementPurchaseOrderTest.php:117: 'title' => 'Draft Requisition',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:105: 'title' => 'Laptops for IT Department',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:121: 'title' => 'Laptops for IT Department',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:137: 'title' => 'Laptops for IT Department',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:150: 'title' => 'Multiple Items Request',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:181: 'title' => 'Ali Request',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:190: 'title' => 'Other Request',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:211: 'title' => 'Other Request',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:231: 'title' => 'Original Draft',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:240: 'title' => 'Updated Draft Title',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:253: 'title' => 'Updated Draft Title',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:265: 'title' => 'Submitted Request',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:274: 'title' => 'Trying To Edit Submitted Request',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:287: 'title' => 'Draft To Delete',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:309: 'title' => 'Submitted Request',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:329: 'title' => 'Draft Ready For Submit',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:367: 'title' => 'Other Draft',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:387: 'title' => 'Empty Draft',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:408: 'title' => 'Inactive Item Request',
+E:\purchasing system\tests\Feature\Api\V1\PurchaseRequestTest.php:430: 'title' => 'Zero Qty Request',
+E:\purchasing system\tests\Feature\Api\V1\ReviewerPurchaseRequestTest.php:85: 'title' => 'IT Equipment Request',
+E:\purchasing system\tests\Feature\Api\V1\ReviewerPurchaseRequestTest.php:105: 'title' => 'HR Stationery Request',
+E:\purchasing system\tests\Feature\Api\V1\ReviewerPurchaseRequestTest.php:178: 'title' => 'Updated IT Equipment Title',
+E:\purchasing system\tests\Feature\Api\V1\ReviewerPurchaseRequestTest.php:185: 'title' => 'Updated IT Equipment Title',
+E:\purchasing system\tests\Feature\Api\V1\ReviewerPurchaseRequestTest.php:198: 'field_name' => 'title',
+E:\purchasing system\tests\Feature\Api\V1\ReviewerPurchaseRequestTest.php:200: 'new_value' => 'Updated IT Equipment Title',
+E:\purchasing system\tests\Feature\Api\V1\ReviewerPurchaseRequestTest.php:386: 'title' => 'Hacking HR Title',
+E:\purchasing system\tests\Feature\Api\V1\ReviewerPurchaseRequestTest.php:404: $this->itSubmittedPr->update(['project' => 'مشروع النخيل']);
+E:\purchasing system\tests\Feature\Api\V1\ReviewerPurchaseRequestTest.php:412: 'project' => 'النخيل',
+E:\purchasing system\tests\Unit\Models\ModelRelationshipsTest.php:152: 'title' => 'Laptops Requisition',
+E:\purchasing system\tests\Unit\Models\ModelRelationshipsTest.php:191: 'title' => 'Monitors',
+E:\purchasing system\tests\Unit\Models\ModelRelationshipsTest.php:233: 'title' => 'Office Supplies',
+E:\purchasing system\tests\Unit\Models\ModelRelationshipsTest.php:284: 'title' => 'Purchase Request Approved',

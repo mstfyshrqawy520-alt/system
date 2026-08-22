@@ -1,0 +1,242 @@
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { getPurchaseOrderApi, submitPurchaseOrderApi } from '../../api/purchaseOrders';
+import { PurchaseOrder } from '../../types/purchaseOrder';
+import PurchaseOrderStatusBadge from '../../components/procurement/PurchaseOrderStatusBadge';
+import PurchaseOrderPrintModal from '../../components/procurement/PurchaseOrderPrintModal';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import ErrorMessage from '../../components/ErrorMessage';
+import { useAuth } from '../../context/AuthContext';
+import { parseApiError } from '../../utils/apiError';
+import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
+import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
+import { getUnitLabel } from '../../utils/units';
+import SystemEventTimeline from '../../components/ui/SystemEventTimeline';
+
+export const PurchaseOrderDetailsPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [po, setPo] = useState<PurchaseOrder | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
+
+  const { hasPermission } = useAuth();
+
+  const loadPo = async (): Promise<PurchaseOrder | null> => {
+    if (!id) return null;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getPurchaseOrderApi(parseInt(id, 10));
+      setPo(data);
+      return data;
+    } catch (err: unknown) {
+      const parsed = parseApiError(err);
+      setError(parsed.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPo();
+  }, [id]);
+
+  if (loading) {
+    return <LoadingSpinner message="جاري تفاصيل أمر الشراء..." />;
+  }
+
+  if (!po) {
+    return (
+      <div className="p-8 text-center bg-slate-900/40 border border-slate-800 text-slate-400 text-xs rounded-xl" dir="rtl">
+        لم يتم العثور على أمر الشراء المطلوب.
+      </div>
+    );
+  }
+
+  const isEditable = ['PO_DRAFT', 'RETURNED_TO_PROCUREMENT'].includes(po.status);
+
+  const handleSubmitToAccounting = async () => {
+    if (submitting) return;
+    if (!confirm('هل أنت متأكد من إرسال أمر الشراء إلى إدارة الحسابات والمالية للمراجعة؟')) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await submitPurchaseOrderApi(po.id);
+      await loadPo();
+      alert('تم إرسال أمر الشراء إلى الحسابات بنجاح');
+      navigate('/procurement/purchase-orders');
+    } catch (err: any) {
+      if (err?.code === 'ECONNABORTED' || err?.message?.includes('timeout')) {
+        setError('جاري التحقق من حالة أمر الشراء...');
+        try {
+          const reloaded = await loadPo();
+          if (reloaded?.status === 'ISSUED') {
+            alert('تم إرسال أمر الشراء بنجاح');
+            navigate('/procurement/purchase-orders');
+            return;
+          }
+        } catch {
+          // ignore
+        }
+      }
+      const parsed = parseApiError(err);
+      setError(parsed.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="procurement-reference-page space-y-6 animate-fade-in" dir="rtl">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+        <div>
+          <div className="flex items-center space-x-3 space-x-reverse">
+            <h1 className="text-2xl font-black text-slate-100 font-mono">{po.po_number}</h1>
+            <PurchaseOrderStatusBadge status={po.status} />
+          </div>
+          <p className="text-xs text-slate-400 mt-1">
+            تفاصيل أمر الشراء، السجلات المالية، وبنود التوريد المعتمدة
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {isEditable && hasPermission('purchase_order.edit') && (
+            <Link to={`/procurement/purchase-orders/${po.id}/edit`}>
+              <Button variant="warning" size="md" className="bg-amber-950/60 text-amber-300 border-amber-800/60 hover:bg-amber-900/60">
+                ✏️ تعديل أمر الشراء
+              </Button>
+            </Link>
+          )}
+
+          {isEditable && hasPermission('purchase_order.edit') && (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleSubmitToAccounting}
+              isLoading={submitting}
+            >
+              {po.status === 'RETURNED_TO_PROCUREMENT' ? 'إعادة الإرسال للحسابات' : 'إرسال إلى الحسابات'}
+            </Button>
+          )}
+
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => setIsPrintModalOpen(true)}
+          >
+            🖨️ معاينة وتصدير للطباعة
+          </Button>
+        </div>
+      </div>
+
+      {error && <ErrorMessage error={error} />}
+
+      {/* Metadata Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+        
+        {/* المورد Info */}
+        <Card className="space-y-2">
+          <div className="font-bold text-slate-200 border-b border-slate-800 pb-2 flex justify-between">
+            <span>بيانات المورد</span>
+            <span className="font-mono text-cyan-400">{po.supplier?.code}</span>
+          </div>
+          <div className="flex justify-between"><span className="text-slate-400">اسم الشركة:</span><span className="font-bold text-slate-200">{po.supplier?.company_name || 'غير محدد'}</span></div>
+          <div className="flex justify-between"><span className="text-slate-400">رقم الهاتف:</span><span className="text-slate-300 font-mono" dir="ltr">{po.supplier?.phone || 'غير متاح'}</span></div>
+        </Card>
+
+        {/* PR التفاصيل والتكلفة */}
+        <Card className="space-y-2">
+          <div className="font-bold text-slate-200 border-b border-slate-800 pb-2">طلب الشراء والتكلفة</div>
+          <div className="flex justify-between"><span className="text-slate-400">طلب الشراء:</span><span className="font-mono font-bold text-cyan-400">{po.purchase_request?.request_number || 'أمر مباشر Direct'}</span></div>
+          <div className="flex justify-between"><span className="text-slate-400">القسم:</span><span className="text-slate-200 font-bold">{po.department?.name || po.purchase_request?.department?.name || 'إدارة المشتريات'}</span></div>
+          <div className="flex justify-between"><span className="text-slate-400">صاحب الطلب:</span><span className="text-slate-200 font-bold">{po.requested_by?.name || po.purchase_request?.requester?.name || '—'}</span></div>
+          <div className="flex justify-between"><span className="text-slate-400">رئيس القسم المعتمد:</span><span className="text-emerald-300 font-bold">{po.department_approver?.name || po.purchase_request?.assigned_reviewer?.name || '—'}</span></div>
+          <div className="flex justify-between"><span className="text-slate-400">منشئ أمر الشراء:</span><span className="text-slate-200 font-bold">{po.created_by?.name || '—'}</span></div>
+        </Card>
+
+        {/* Commercial Terms */}
+        <Card className="space-y-2">
+          <div className="font-bold text-slate-200 border-b border-slate-800 pb-2">الشروط التجارية والفترة</div>
+          <div className="flex justify-between"><span className="text-slate-400">شروط الدفع:</span><span className="text-slate-200 font-bold">{po.payment_terms || 'حسب الاتفاق'}</span></div>
+          <div className="flex justify-between"><span className="text-slate-400">تاريخ التوريد:</span><span className="font-mono text-slate-300">{po.delivery_date || 'فور الاعتماد'}</span></div>
+          <div className="flex justify-between"><span className="text-slate-400">كود الميزانية:</span><span className="font-mono text-slate-300">{po.budget_code || '—'}</span></div>
+        </Card>
+      </div>
+
+      {po.financial_notes && (
+        <div className="p-4 bg-amber-950/40 border border-amber-800/80 rounded-xl text-amber-300 text-xs font-semibold shadow-lg">
+          <span className="font-bold">ملاحظات مالية من الحسابات:</span> {po.financial_notes}
+        </div>
+      )}
+
+      {/* البنود Commercial Table */}
+      <Card className="space-y-4">
+        <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">بنود أمر الشراء المعتمدة والتكاليف التفصيلية</h3>
+        
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>#</TableHead>
+              <TableHead>رقم قطعة الأرض</TableHead>
+              <TableHead>المنطقة</TableHead>
+              <TableHead>البند / الوصف</TableHead>
+              <TableHead>الكمية</TableHead>
+              <TableHead>سعر الوحدة</TableHead>
+              <TableHead>الإجمالي النهائي</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {po.items?.map((item, idx) => (
+              <TableRow key={item.id || idx}>
+                <TableCell className="font-mono text-slate-400">{idx + 1}</TableCell>
+                <TableCell className="font-mono text-slate-300">{item.item_reference || '—'}</TableCell>
+                <TableCell className="text-slate-300">{item.region || '—'}</TableCell>
+                <TableCell className="font-bold text-slate-100">
+                  {item.item_name || item.item_description}
+                  {item.specifications && <div className="text-[10px] text-slate-400 mt-0.5 font-normal">{item.specifications}</div>}
+                </TableCell>
+                <TableCell className="font-mono text-slate-200">{item.quantity} {getUnitLabel(item.uom)}</TableCell>
+                <TableCell>
+                  <CurrencyDisplay amount={item.unit_price} amountClassName="font-mono text-slate-200" />
+                </TableCell>
+                <TableCell>
+                  <CurrencyDisplay amount={item.line_total} amountClassName="font-mono font-bold text-cyan-400" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        {/* Financial Recalculated Totals */}
+        <div className="flex justify-end pt-3 border-t border-slate-800">
+          <div className="w-80 bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
+            <div className="flex justify-between text-sm font-black text-cyan-400">
+              <span>الإجمالي الكلي:</span>
+              <CurrencyDisplay amount={po.grand_total || 0} amountClassName="font-mono text-lg font-black text-cyan-400" />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+            <SystemEventTimeline entity="purchase_order" entityId={po.id} />
+
+      {/* طباعة Preview Modal */}
+
+      <PurchaseOrderPrintModal
+        po={po}
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+      />
+    </div>
+  );
+};
+
+export default PurchaseOrderDetailsPage;

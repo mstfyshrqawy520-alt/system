@@ -1,0 +1,434 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Procurement\AddPurchaseOrderItemRequest;
+use App\Http\Requests\Procurement\CreatePurchaseOrderRequest;
+use App\Http\Requests\Procurement\UpdatePurchaseOrderHeaderRequest;
+use App\Http\Requests\Procurement\UpdatePurchaseOrderItemRequest;
+use App\Http\Resources\PurchaseOrderResource;
+use App\Http\Resources\PurchaseRequestResource;
+use App\Http\Resources\SupplierResource;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
+use App\Models\PurchaseRequest;
+use App\Services\ProcurementPurchaseRequestService;
+use App\Services\PurchaseOrderService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+
+class ProcurementPurchaseOrderController extends Controller
+{
+    public function __construct(
+        protected PurchaseOrderService $poService,
+        protected ProcurementPurchaseRequestService $procurementPrService,
+    ) {}
+
+    // ─────────────────────────────────────────────
+    // PURCHASE REQUEST — PROCUREMENT APPROVAL QUEUE
+    // ─────────────────────────────────────────────
+
+    /**
+     * List PRs pending procurement manager approval (PENDING_PROCUREMENT_APPROVAL).
+     */
+    public function indexApprovedPrs(Request $request): AnonymousResourceCollection
+    {
+        $perPage = min((int) $request->query('per_page', 15), 100);
+        $prs = $this->procurementPrService->getPendingProcurementApprovalRequests($perPage);
+        return PurchaseRequestResource::collection($prs);
+    }
+
+    /**
+     * List PRs waiting for three supplier quotes.
+     */
+    public function indexPendingQuoteRequests(Request $request): AnonymousResourceCollection
+    {
+        $perPage = min((int) $request->query('per_page', 15), 100);
+        return PurchaseRequestResource::collection($this->procurementPrService->getPendingQuoteRequests($perPage, $request->user()));
+    }
+
+    /**
+     * List PRs already approved by procurement (APPROVED_BY_PROCUREMENT) — ready for PO creation.
+     */
+    public function indexProcurementApprovedPrs(Request $request): AnonymousResourceCollection
+    {
+        $perPage = min((int) $request->query('per_page', 15), 100);
+        $prs = $this->procurementPrService->getApprovedByProcurementRequests($perPage);
+        return PurchaseRequestResource::collection($prs);
+    }
+
+    /**
+     * View a purchase request (pending or approved by procurement).
+     */
+    public function showApprovedPr(Request $request, int $id): JsonResponse|PurchaseRequestResource
+    {
+        $pr = PurchaseRequest::with(['requester', 'department', 'assignedReviewer', 'siteEngineer', 'directSupplier', 'items.item', 'approvalHistory.actor', 'quotes.supplier', 'quotes.recommendations.user', 'selectedQuote.supplier'])
+            ->findOrFail($id);
+
+        if (! in_array($pr->status, ['PENDING_PROCUREMENT_APPROVAL', 'PENDING_QUOTE_RECOMMENDATIONS', 'PENDING_EXECUTIVE_QUOTE_DECISION', 'APPROVED_BY_PROCUREMENT', 'APPROVED_BY_ACCOUNTING'])) {
+            return response()->json(['message' => 'Purchase request is not in a procurement queue status.'], 409);
+        }
+
+        return new PurchaseRequestResource($pr);
+    }
+
+    /**
+     * Procurement Manager chooses the next route: three quotes or direct accounting approval.
+     */
+    public function approvePurchaseRequest(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'use_quotes' => ['nullable', 'boolean'],
+            'comment' => ['nullable', 'string', 'max:2000'],
+            'financial_data' => ['nullable', 'array'],
+            'financial_data.supplier_id' => ['required_if:use_quotes,false', 'integer', 'exists:suppliers,id'],
+            'financial_data.items' => ['required_if:use_quotes,false', 'array', 'min:1'],
+            'financial_data.items.*' => ['array'],
+            'financial_data.items.*.pr_item_id' => ['required_if:use_quotes,false', 'integer', 'exists:purchase_request_items,id'],
+            'financial_data.items.*.quantity' => ['required_if:use_quotes,false', 'numeric', 'gt:0'],
+            'financial_data.items.*.unit_price' => ['required_if:use_quotes,false', 'numeric', 'gte:0'],
+            'financial_data.notes' => ['nullable', 'string', 'max:5000'],
+        ]);
+        $pr = PurchaseRequest::with(['requester', 'department', 'items'])->findOrFail($id);
+        $useQuotes = array_key_exists('use_quotes', $validated) ? (bool) $validated['use_quotes'] : true;
+
+        try {
+            $approved = $useQuotes
+                ? $this->procurementPrService->approvePurchaseRequest(
+                    $request->user(),
+                    $pr,
+                    $validated['comment'] ?? null,
+                )
+                : $this->procurementPrService->sendToAccountingWithoutQuotes(
+                    $request->user(),
+                    $pr,
+                    $validated['financial_data'] ?? [],
+                    $validated['comment'] ?? null,
+                );
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 409);
+        }
+
+        return response()->json([
+            'message' => $useQuotes
+                ? 'تم اعتماد الطلب وبدء مسار عروض الأسعار الثلاثة.'
+                : 'تم إرسال الطلب إلى الحسابات للموافقة المالية بدون عروض أسعار.',
+            'data' => new PurchaseRequestResource($approved),
+        ], 200);
+    }
+
+    /**
+     * Reject a PR at procurement level (PENDING_PROCUREMENT_APPROVAL → REJECTED).
+     */
+    public function rejectPurchaseRequest(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'comment' => ['required', 'string', 'min:3', 'max:1000'],
+        ]);
+
+        $pr = PurchaseRequest::with(['requester', 'department', 'items'])->findOrFail($id);
+
+        try {
+            $rejected = $this->procurementPrService->rejectPurchaseRequest(
+                $request->user(),
+                $pr,
+                $validated['comment']
+            );
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 409);
+        }
+
+        return response()->json([
+            'message' => 'تم رفض طلب الشراء من قِبَل مدير المشتريات.',
+            'data' => new PurchaseRequestResource($rejected),
+        ], 200);
+    }
+
+    // ─────────────────────────────────────────────
+    // SUPPLIERS
+    // ─────────────────────────────────────────────
+
+    /**
+     * List active suppliers for procurement selection.
+     */
+    public function indexSuppliers(Request $request): AnonymousResourceCollection
+    {
+        $suppliers = $this->poService->getActiveSuppliers();
+        return SupplierResource::collection($suppliers);
+    }
+
+    // ─────────────────────────────────────────────
+    // PURCHASE ORDERS
+    // ─────────────────────────────────────────────
+
+    /**
+     * List all purchase orders.
+     */
+    public function indexPos(Request $request): AnonymousResourceCollection
+    {
+        $perPage = min(max((int) $request->query('per_page', 15), 1), 100);
+        $search = trim((string) $request->query('search', ''));
+        $status = trim((string) $request->query('status', ''));
+        $supplierId = (int) $request->query('supplier_id', 0);
+        $departmentId = (int) $request->query('department_id', 0);
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+
+        $posQuery = PurchaseOrder::with([
+                'purchaseRequest.requester',
+                'purchaseRequest.department',
+                'purchaseRequest.assignedReviewer',
+                'purchaseRequest.approvalHistory.actor',
+                'supplier',
+                'createdBy',
+                'items.item',
+            ])
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($supplierId > 0, fn ($query) => $query->where('supplier_id', $supplierId))
+            ->when($departmentId > 0, fn ($query) => $query->whereHas('purchaseRequest', fn ($requestQuery) => $requestQuery->where('department_id', $departmentId)))
+            ->when($dateFrom, fn ($query) => $query->whereDate('updated_at', '>=', $dateFrom))
+            ->when($dateTo, fn ($query) => $query->whereDate('updated_at', '<=', $dateTo))
+            ->when($search !== '', function ($query) use ($search): void {
+                $term = '%' . mb_substr($search, 0, 100) . '%';
+                $query->where(function ($searchQuery) use ($term): void {
+                    $searchQuery
+                        ->where('po_number', 'like', $term)
+                        ->orWhereHas('supplier', fn ($supplierQuery) => $supplierQuery->where('company_name', 'like', $term))
+                        ->orWhereHas('purchaseRequest', function ($requestQuery) use ($term): void {
+                            $requestQuery
+                                ->where('request_number', 'like', $term)
+                                ->orWhereHas('requester', fn ($userQuery) => $userQuery->where('name', 'like', $term))
+                                ->orWhereHas('department', fn ($departmentQuery) => $departmentQuery->where('name', 'like', $term));
+                        });
+                });
+            })
+            ->orderBy('updated_at', 'desc');
+
+        return PurchaseOrderResource::collection($posQuery->paginate($perPage)->withQueryString());
+    }
+
+    /**
+     * View purchase order details.
+     */
+    public function showPo(Request $request, int $id): PurchaseOrderResource
+    {
+        $po = PurchaseOrder::with(['purchaseRequest.requester', 'purchaseRequest.department', 'purchaseRequest.assignedReviewer', 'purchaseRequest.approvalHistory.actor', 'supplier', 'createdBy', 'items.item'])->findOrFail($id);
+        return new PurchaseOrderResource($po);
+    }
+
+    /**
+     * Create a new draft Purchase Order from a procurement-approved Purchase Request.
+     */
+    public function storePo(CreatePurchaseOrderRequest $request): JsonResponse
+    {
+        $prId = (int) $request->validated('purchase_request_id');
+        $supplierId = (int) $request->validated('supplier_id');
+
+        try {
+            $po = $this->poService->createPoFromPr(
+                $request->user(),
+                $prId,
+                $supplierId,
+                $request->validated()
+            );
+
+            // إصدار أمر الشراء وإرساله للحسابات فور اكتمال بياناته التجارية.
+            $po = $this->poService->submitToAccounting($request->user(), $po);
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 409);
+        }
+
+        return (new PurchaseOrderResource($po))
+            ->response()
+            ->setStatusCode(201);
+    }
+
+    /**
+     * Update draft Purchase Order header details.
+     */
+    public function updateHeader(UpdatePurchaseOrderHeaderRequest $request, int $id): JsonResponse|PurchaseOrderResource
+    {
+        $po = PurchaseOrder::where('id', $id)->firstOrFail();
+
+        if ($po->status !== 'PO_DRAFT' && $po->status !== 'RETURNED_TO_PROCUREMENT') {
+            return response()->json(['message' => 'Only draft or returned purchase orders can be edited.'], 409);
+        }
+
+        try {
+            $updatedPo = $this->poService->updateHeader($request->user(), $po, $request->validated());
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 409);
+        }
+
+        return new PurchaseOrderResource($updatedPo);
+    }
+
+    /**
+     * Update commercial details for a PO line item.
+     */
+    public function updateItem(UpdatePurchaseOrderItemRequest $request, int $id, int $itemId): JsonResponse|PurchaseOrderResource
+    {
+        $po = PurchaseOrder::findOrFail($id);
+        $item = PurchaseOrderItem::findOrFail($itemId);
+
+        if ($po->status !== 'PO_DRAFT' && $po->status !== 'RETURNED_TO_PROCUREMENT') {
+            return response()->json(['message' => 'Only draft or returned purchase orders can be edited.'], 409);
+        }
+
+        if ($item->purchase_order_id !== $po->id) {
+            return response()->json(['message' => 'Item does not belong to this purchase order.'], 422);
+        }
+
+        $updatedPo = $this->poService->updateItem($request->user(), $po, $item, $request->validated());
+        return new PurchaseOrderResource($updatedPo);
+    }
+
+    /**
+     * Add a new line item to a draft PO.
+     */
+    public function addItem(AddPurchaseOrderItemRequest $request, int $id): JsonResponse|PurchaseOrderResource
+    {
+        $po = PurchaseOrder::findOrFail($id);
+
+        if ($po->status !== 'PO_DRAFT' && $po->status !== 'RETURNED_TO_PROCUREMENT') {
+            return response()->json(['message' => 'Only draft or returned purchase orders can be edited.'], 409);
+        }
+
+        $updatedPo = $this->poService->addItem($request->user(), $po, $request->validated());
+        return new PurchaseOrderResource($updatedPo);
+    }
+
+    /**
+     * Remove a line item from a draft PO.
+     */
+    public function deleteItem(Request $request, int $id, int $itemId): JsonResponse|PurchaseOrderResource
+    {
+        $po = PurchaseOrder::findOrFail($id);
+        $item = PurchaseOrderItem::findOrFail($itemId);
+
+        if ($po->status !== 'PO_DRAFT' && $po->status !== 'RETURNED_TO_PROCUREMENT') {
+            return response()->json(['message' => 'Only draft or returned purchase orders can be edited.'], 409);
+        }
+
+        if ($item->purchase_order_id !== $po->id) {
+            return response()->json(['message' => 'Item does not belong to this purchase order.'], 422);
+        }
+
+        $updatedPo = $this->poService->deleteItem($request->user(), $po, $item);
+        return new PurchaseOrderResource($updatedPo);
+    }
+
+    /**
+     * Submit draft Purchase Order to Accounting for financial audit.
+     */
+    public function submitPoToAccounting(Request $request, int $id): JsonResponse
+    {
+        $po = PurchaseOrder::with(['purchaseRequest.requester', 'purchaseRequest.department', 'items', 'supplier', 'createdBy'])->findOrFail($id);
+
+        if ($po->status === 'ISSUED') {
+            return response()->json([
+                'message' => 'Purchase order has already been issued.',
+                'data' => new PurchaseOrderResource($po),
+            ], 200);
+        }
+
+        if ($po->status !== 'PO_DRAFT' && $po->status !== 'RETURNED_TO_PROCUREMENT') {
+            return response()->json(['message' => 'Only draft or returned purchase orders can be submitted.'], 409);
+        }
+
+        $submittedPo = $this->poService->submitToAccounting($request->user(), $po);
+
+        return response()->json([
+            'message' => 'Purchase order submitted to accounting successfully.',
+            'data' => new PurchaseOrderResource($submittedPo),
+        ], 200);
+    }
+
+    /**
+     * Create a direct purchase request. It must be approved by accounting and
+     * the executive manager before procurement can create its purchase order.
+     */
+    public function storeDirectPo(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'supplier_id' => ['required', 'integer', 'exists:suppliers,id'],
+            'department_id' => ['required', 'integer', 'exists:departments,id'],
+            'site_engineer_user_id' => ['required', 'integer', 'exists:users,id'],
+            'delivery_date' => ['nullable', 'date'],
+            'priority' => ['nullable', 'string', 'in:LOW,NORMAL,HIGH,URGENT'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.item_id' => ['nullable', 'integer', 'exists:items,id'],
+            'items.*.item_description' => ['required', 'string', 'max:255'],
+            'items.*.item_reference' => ['required', 'string', 'max:100'],
+            'items.*.region' => ['required', 'string', 'max:150'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
+            'items.*.uom' => ['required', 'string', 'max:30'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'items.*.specifications' => ['nullable', 'string'],
+        ]);
+
+        $engineerIsAssigned = \App\Models\User::query()
+            ->whereKey($validated['site_engineer_user_id'])
+            ->where('is_active', true)
+            ->whereHas('roles', fn ($query) => $query->where('slug', 'site_engineer'))
+            ->exists();
+
+        if (! $engineerIsAssigned) {
+            return response()->json(['message' => 'يجب اختيار مهندس موقع نشط من قائمة مهندسي الموقع.'], 422);
+        }
+
+        try {
+            $pr = $this->procurementPrService->createDirectPurchaseRequest(
+                $request->user(),
+                $validated,
+            );
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 409);
+        }
+
+        return response()->json([
+            'message' => 'تم إنشاء طلب الشراء المباشر وإرساله إلى الحسابات للموافقة المالية.',
+            'data' => new PurchaseRequestResource($pr),
+        ], 201);
+    }
+
+    /**
+     * Update delivery tracking details for a PO.
+     */
+    public function updateDeliveryStatus(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'delivery_status' => ['required', 'string', 'in:NOT_STARTED,PARTIAL,COMPLETE,LATE'],
+            'actual_delivery_date' => ['nullable', 'date'],
+            'delivery_notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $po = PurchaseOrder::findOrFail($id);
+        $oldStatus = $po->delivery_status;
+
+        $po->update([
+            'delivery_status' => $validated['delivery_status'],
+            'actual_delivery_date' => array_key_exists('actual_delivery_date', $validated) ? $validated['actual_delivery_date'] : $po->actual_delivery_date,
+            'delivery_notes' => array_key_exists('delivery_notes', $validated) ? $validated['delivery_notes'] : $po->delivery_notes,
+        ]);
+
+        \App\Models\AuditLog::create([
+            'user_id' => $request->user()->id,
+            'entity_type' => PurchaseOrder::class,
+            'entity_id' => $po->id,
+            'action' => 'DELIVERY_STATUS_UPDATED',
+            'field_name' => 'delivery_status',
+            'old_value' => $oldStatus,
+            'new_value' => $validated['delivery_status'],
+        ]);
+
+        return response()->json([
+            'message' => 'Delivery status updated successfully.',
+            'data' => new PurchaseOrderResource($po->fresh(['purchaseRequest.requester', 'purchaseRequest.department', 'supplier', 'createdBy', 'items.prItem'])),
+        ]);
+    }
+}
+

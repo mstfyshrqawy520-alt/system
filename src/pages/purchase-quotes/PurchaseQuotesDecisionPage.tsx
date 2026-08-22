@@ -1,0 +1,203 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { getPendingQuoteRequestsApi, recommendPurchaseQuoteApi, decidePurchaseQuoteApi } from '../../api/purchaseQuotes';
+import { PurchaseRequest, PurchaseRequestQuote } from '../../types/purchaseRequest';
+import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/Table';
+import { TableSkeleton } from '../../components/ui/StateFeedback';
+import ErrorMessage from '../../components/ErrorMessage';
+import { parseApiError } from '../../utils/apiError';
+import { getUnitLabel } from '../../utils/units';
+import TableColumnFilters from '../../components/ui/TableColumnFilters';
+import { getDefaultDateFrom, getTodayInputDate } from '../../utils/dateFilters';
+
+type DecisionMode = 'recommend' | 'executive';
+
+const isGeneralManagerRequest = (request: PurchaseRequest): boolean =>
+  request.is_general_manager_requester === true
+  || request.requester_role === 'general_manager'
+  || request.requester?.role === 'general_manager';
+
+interface PurchaseQuotesDecisionPageProps {
+  mode: DecisionMode;
+}
+
+const modeCopy: Record<DecisionMode, { title: string; subtitle: string; action: string }> = {
+  recommend: {
+    title: 'ترشيح عروض الأسعار',
+    subtitle: 'راجع عروض الموردين للطلبات المسندة إليك فقط وأرسل ترشيح القسم.',
+    action: 'ترشيح هذا العرض',
+  },
+  executive: {
+    title: 'القرار التنفيذي لعروض الأسعار',
+    subtitle: 'راجع ترشيح الحسابات، ثم اختر العرض النهائي أو ارفض العروض.',
+    action: 'اختيار العرض',
+  },
+};
+
+export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProps> = ({ mode }) => {
+  const [requests, setRequests] = useState<PurchaseRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [comments, setComments] = useState<Record<number, string>>({});
+  const today = getTodayInputDate();
+  const defaultDateFrom = getDefaultDateFrom();
+  const [quoteFilters, setQuoteFilters] = useState({ item: '', supplier: '', unitPrice: '', total: '', currency: '', accounting: '', department: '', action: '', dateFrom: defaultDateFrom, dateTo: today });
+  const [searchParams] = useSearchParams();
+  const openRequestId = Number(searchParams.get('open') || 0);
+
+  const copy = modeCopy[mode];
+  const hasNonDateQuoteFilter = Boolean(quoteFilters.item || quoteFilters.supplier || quoteFilters.unitPrice || quoteFilters.total || quoteFilters.currency || quoteFilters.accounting || quoteFilters.department || quoteFilters.action);
+  const ignoreDefaultQuoteDate = hasNonDateQuoteFilter && quoteFilters.dateFrom === defaultDateFrom && quoteFilters.dateTo === today;
+  const visibleRequests = useMemo(() => {
+    const contains = (value: unknown, filter: string) => !filter || String(value ?? '').toLocaleLowerCase('ar-EG').includes(filter.toLocaleLowerCase('ar-EG'));
+    const source = (mode === 'executive' ? requests.filter(request => request.status === 'PENDING_EXECUTIVE_QUOTE_DECISION') : requests.filter(request => request.status === 'PENDING_QUOTE_RECOMMENDATIONS')).filter(request => { const requestDate = String(request.created_at || '').slice(0, 10); return request.id === openRequestId || ignoreDefaultQuoteDate || ((!quoteFilters.dateFrom || requestDate >= quoteFilters.dateFrom) && (!quoteFilters.dateTo || requestDate <= quoteFilters.dateTo)); });
+    return source.map(request => ({ ...request, quotes: (request.quotes || []).filter(quote => {
+      const primaryItem = request.items?.[0];
+      const accounting = quote.recommendations?.find(item => item.role_type === 'ACCOUNTING');
+      const department = isGeneralManagerRequest(request)
+        ? undefined
+        : quote.recommendations?.find(item => item.role_type === 'DEPARTMENT');
+      return contains(`${primaryItem?.item_description || primaryItem?.item?.name || ''} ${primaryItem?.item_reference || ''} ${primaryItem?.region || ''}`, quoteFilters.item) && contains(quote.supplier?.company_name, quoteFilters.supplier) && contains(quote.unit_price, quoteFilters.unitPrice) && contains(quote.total_amount, quoteFilters.total) && contains(quote.currency, quoteFilters.currency) && contains(accounting?.decision === 'RECOMMEND' ? 'مرشح' : accounting ? 'مرفوض' : 'لم يرشح بعد', quoteFilters.accounting) && contains(department?.decision === 'RECOMMEND' ? 'مرشح' : department ? 'مرفوض' : 'لم يرشح بعد', quoteFilters.department) && contains(mode === 'executive' ? 'اختيار العرض رفض جميع العروض' : 'ترشيح هذا العرض رفض العرض', quoteFilters.action);
+    })})).filter(request => (request.quotes || []).length > 0);
+  }, [mode, requests, quoteFilters, ignoreDefaultQuoteDate, openRequestId]);
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setRequests(await getPendingQuoteRequestsApi());
+    } catch (err) {
+      setError(parseApiError(err).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { void load(); }, []);
+
+  const act = async (quote: PurchaseRequestQuote, decision: 'RECOMMEND' | 'REJECT' | 'SELECT') => {
+    setSavingId(quote.id);
+    setError(null);
+    setSuccess(null);
+    try {
+      if (mode === 'executive') {
+        await decidePurchaseQuoteApi(quote.id, decision === 'SELECT' ? 'SELECT' : 'REJECT', comments[quote.id]);
+        setSuccess(decision === 'SELECT' ? 'تم اختيار العرض بنجاح، وعاد الطلب إلى مدير المشتريات لإنشاء أمر الشراء.' : 'تم رفض عروض الأسعار والطلب بنجاح.');
+      } else {
+        const updatedRequest = await recommendPurchaseQuoteApi(
+          quote.id,
+          decision === 'REJECT' ? 'REJECT' : 'RECOMMEND',
+          comments[quote.id],
+        );
+        setSuccess(
+          decision === 'REJECT'
+            ? 'تم رفض العرض وتسجيل القرار بنجاح.'
+            : updatedRequest.status === 'PENDING_EXECUTIVE_QUOTE_DECISION'
+              ? updatedRequest.is_general_manager_requester
+                ? 'تم ترشيح العرض بنجاح. اكتمل ترشيح الحسابات، وتم إرسال الطلب الآن إلى المدير العام لاتخاذ القرار النهائي.'
+                : 'تم ترشيح العرض بنجاح. اكتملت ترشيحات الحسابات ومدير القسم، وتم إرسال الطلب الآن إلى المدير التنفيذي لاتخاذ القرار النهائي.'
+              : updatedRequest.is_general_manager_requester
+                ? 'تم ترشيح العرض بنجاح. بانتظار قرار المدير العام.'
+                : 'تم ترشيح العرض بنجاح. بانتظار ترشيح الطرف الآخر.',
+        );
+      }
+      await load();
+    } catch (err) {
+      setError(parseApiError(err).message);
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  if (loading) return <TableSkeleton rows={5} columns={7} className="min-h-[360px]" />;
+
+  return (
+    <div className="space-y-5" dir="rtl">
+      <div>
+        <h1 className="text-xl font-black text-slate-100">{copy.title}</h1>
+        <p className="mt-1 text-sm text-slate-400">{copy.subtitle}</p>
+      </div>
+      {error && <ErrorMessage error={error} onDismiss={() => setError(null)} />}
+      {success && (
+        <div role="status" className="rounded-xl border border-emerald-700/70 bg-emerald-950/50 px-4 py-3 text-sm font-bold text-emerald-200 shadow-lg">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 text-base" aria-hidden="true">✓</span>
+            <p>{success}</p>
+            <button type="button" onClick={() => setSuccess(null)} className="mr-auto text-emerald-300 hover:text-white" aria-label="إغلاق رسالة النجاح">×</button>
+          </div>
+        </div>
+      )}
+      {!visibleRequests.length && <Card className="py-12 text-center text-slate-400">لا توجد عروض أسعار تحتاج إلى إجراء حاليًا.</Card>}
+      {visibleRequests.map(request => (
+        <Card key={request.id} className={`space-y-4 ${request.id === openRequestId ? 'border-cyan-400/80 ring-2 ring-cyan-400/20' : ''}`}>
+          <div className="flex flex-col gap-2 border-b border-slate-800 pb-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="font-bold text-cyan-300">طلب {request.request_number}</h2>
+              <p className="text-xs text-slate-400">
+                {request.requester?.name || '—'} — {request.department?.name || '—'}
+                {isGeneralManagerRequest(request) && <span className="mr-2 font-bold text-amber-300">طلب المدير العام — لا يحتاج ترشيح القسم</span>}
+              </p>
+            </div>
+          </div>
+          {mode === 'executive' && (() => {
+            const accountingRecommendation = request.quotes?.flatMap(quote => (quote.recommendations || []).map(recommendation => ({ recommendation, quote }))).find(entry => entry.recommendation.role_type === 'ACCOUNTING' && entry.recommendation.decision === 'RECOMMEND');
+            const departmentRecommendation = request.quotes?.flatMap(quote => (quote.recommendations || []).map(recommendation => ({ recommendation, quote }))).find(entry => entry.recommendation.role_type === 'DEPARTMENT' && entry.recommendation.decision === 'RECOMMEND');
+            const executiveOwnRequest = isGeneralManagerRequest(request);
+            return (
+              <div className={`grid gap-3 rounded-xl border border-cyan-900/70 bg-slate-950/70 p-4 text-sm ${executiveOwnRequest ? 'md:grid-cols-1' : 'md:grid-cols-2'}`}>
+                <div className="rounded-lg border border-emerald-800/70 bg-emerald-950/20 px-3 py-2 font-bold text-emerald-200">
+                  <div className="text-xs text-emerald-400">ترشيح الحسابات</div>
+                  <div className="mt-1">{accountingRecommendation ? `${accountingRecommendation.recommendation.user?.name || 'الحسابات'} رشّح ${accountingRecommendation.quote.supplier?.company_name || 'هذا العرض'}` : 'لم يصل ترشيح الحسابات بعد'}</div>
+                </div>
+                {!executiveOwnRequest && (
+                  <div className="rounded-lg border border-amber-800/70 bg-amber-950/20 px-3 py-2 font-bold text-amber-200">
+                    <div className="text-xs text-amber-400">ترشيح مدير القسم</div>
+                    <div className="mt-1">{departmentRecommendation ? `${departmentRecommendation.recommendation.user?.name || 'مدير القسم'} رشّح ${departmentRecommendation.quote.supplier?.company_name || 'هذا العرض'}` : 'لم يصل ترشيح مدير القسم بعد'}</div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+          <TableColumnFilters filters={[{ key: 'item', label: 'الصنف / القطعة / المنطقة', value: quoteFilters.item, onChange: (value) => setQuoteFilters(current => ({ ...current, item: value })) }, { key: 'supplier', label: 'المورد', value: quoteFilters.supplier, onChange: (value) => setQuoteFilters(current => ({ ...current, supplier: value })) }, { key: 'unitPrice', label: 'سعر الوحدة', type: 'number', value: quoteFilters.unitPrice, onChange: (value) => setQuoteFilters(current => ({ ...current, unitPrice: value })) }, { key: 'total', label: 'الإجمالي', type: 'number', value: quoteFilters.total, onChange: (value) => setQuoteFilters(current => ({ ...current, total: value })) }, { key: 'currency', label: 'العملة', value: quoteFilters.currency, onChange: (value) => setQuoteFilters(current => ({ ...current, currency: value })) }, { key: 'accounting', label: 'ترشيح الحسابات', value: quoteFilters.accounting, onChange: (value) => setQuoteFilters(current => ({ ...current, accounting: value })) }, { key: 'department', label: 'ترشيح القسم', value: quoteFilters.department, onChange: (value) => setQuoteFilters(current => ({ ...current, department: value })) }, { key: 'action', label: 'الإجراء', value: quoteFilters.action, onChange: (value) => setQuoteFilters(current => ({ ...current, action: value })) }, { key: 'dateFrom', label: 'من تاريخ الطلب', type: 'date', value: quoteFilters.dateFrom, onChange: (value) => setQuoteFilters(current => ({ ...current, dateFrom: value })) }, { key: 'dateTo', label: 'إلى تاريخ الطلب', type: 'date', value: quoteFilters.dateTo, onChange: (value) => setQuoteFilters(current => ({ ...current, dateTo: value })) }]} hasActiveFilters={Boolean(hasNonDateQuoteFilter || quoteFilters.dateFrom !== defaultDateFrom || quoteFilters.dateTo !== today)} onClear={() => setQuoteFilters({ item: '', supplier: '', unitPrice: '', total: '', currency: '', accounting: '', department: '', action: '', dateFrom: defaultDateFrom, dateTo: today })} />
+          <div className="overflow-x-auto">
+            <Table className="min-w-[1120px] text-sm">
+              <TableHeader className="border-b-2 border-cyan-800/70 bg-slate-950"><TableRow className="border-b border-slate-700/80"><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">الصنف / القطعة / المنطقة</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">المورد</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">سعر الوحدة</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">الإجمالي</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">العملة</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">ترشيح الحسابات</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">ترشيح القسم (إن لزم)</TableHead><TableHead className="text-center text-sm font-black text-slate-100">الإجراء</TableHead></TableRow></TableHeader>
+              <TableBody className="divide-y divide-slate-700/80">
+                {(request.quotes || []).map(quote => {
+                  const primaryItem = request.items?.[0];
+                  const accounting = quote.recommendations?.find(item => item.role_type === 'ACCOUNTING');
+                  const department = quote.recommendations?.find(item => item.role_type === 'DEPARTMENT');
+                  return <TableRow key={quote.id} className="border-b border-slate-700/80 even:bg-slate-800/25">
+                    <TableCell className="min-w-[240px] border-l border-slate-700/70 align-top text-sm">
+                      <div className="font-bold text-slate-100">{primaryItem?.item_description || primaryItem?.item?.name || '—'}</div>
+                      <div className="font-mono text-xs text-cyan-300">رقم قطعة الأرض: {primaryItem?.item_reference || '—'}</div>
+                      <div className="text-xs text-slate-400">المنطقة: {primaryItem?.region || '—'} — الوحدة: {getUnitLabel(primaryItem?.uom)} — الكمية: {primaryItem?.quantity || '—'}</div>
+                    </TableCell>
+                    <TableCell className="min-w-[190px] border-l border-slate-700/70 align-top text-sm font-black text-slate-100">{quote.supplier?.company_name || '—'}</TableCell>
+                    <TableCell className="border-l border-slate-700/70 align-top font-mono text-sm font-black text-amber-300">{quote.unit_price || '—'} ج.م</TableCell><TableCell className="border-l border-slate-700/70 align-top font-mono text-sm font-black text-emerald-300">{quote.total_amount} ج.م</TableCell>
+                    <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">{quote.currency}</TableCell>
+                      <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">{accounting ? `${accounting.decision === 'RECOMMEND' ? 'مرشح' : 'مرفوض'}${accounting.user?.name ? ` — ${accounting.user.name}` : ''}` : 'لم يرشح بعد'}</TableCell>
+                      <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">{isGeneralManagerRequest(request) ? 'غير مطلوب — قرار المدير العام' : department ? `${department.decision === 'RECOMMEND' ? 'مرشح' : 'مرفوض'}${department.user?.name ? ` — ${department.user.name}` : ''}` : 'لم يرشح بعد'}</TableCell>
+                    <TableCell className="min-w-[250px] border-l border-slate-700/70 align-top text-sm">
+                      <input value={comments[quote.id] || ''} onChange={event => setComments(current => ({ ...current, [quote.id]: event.target.value }))} placeholder="تعليق اختياري" className="mb-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100" />
+                      <div className="flex justify-center gap-2">
+                        <Button size="sm" variant={mode === 'executive' ? 'primary' : 'success'} disabled={savingId === quote.id} onClick={() => void act(quote, mode === 'executive' ? 'SELECT' : 'RECOMMEND')}>{mode === 'executive' ? copy.action : copy.action}</Button>
+                        <Button size="sm" variant="danger" disabled={savingId === quote.id} onClick={() => void act(quote, 'REJECT')}>{mode === 'executive' ? 'رفض جميع العروض' : 'رفض العرض'}</Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>;
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+export default PurchaseQuotesDecisionPage;

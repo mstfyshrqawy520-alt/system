@@ -1,0 +1,3 @@
+src/pages/general-manager/GeneralManagerPurchaseRequestsPage.tsx(143,64): error TS2339: Property 'total_estimated_cost' does not exist on type 'PurchaseRequest'.
+src/pages/general-manager/GeneralManagerPurchaseRequestsPage.tsx(192,86): error TS2339: Property 'estimated_unit_price' does not exist on type 'PurchaseRequestItemFormInput'.
+src/pages/general-manager/GeneralManagerPurchaseRequestsPage.tsx(192,151): error TS2345: Argument of type '"estimated_unit_price"' is not assignable to parameter of type 'keyof PurchaseRequestItemFormInput'.

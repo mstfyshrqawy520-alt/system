@@ -1,0 +1,264 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { getSuppliersApi } from '../../api/suppliers';
+import { createDirectPoApi, getProcurementDepartmentsApi, getProcurementSiteEngineersApi, ProcurementDepartmentOption, ProcurementSiteEngineerOption } from '../../api/procurement';
+import { المورد } from '../../types/purchaseOrder';
+import { parseApiError } from '../../utils/apiError';
+import { getUnitOptions } from '../../utils/units';
+
+interface ItemRow {
+  item_id?: number | null;
+  item_description: string;
+  item_reference: string;
+  region: string;
+  quantity: number;
+  uom: string;
+  unit_price: number;
+  specifications: string;
+}
+
+interface DirectPoModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: (requestId: number) => void;
+}
+
+const UNIT_OPTIONS = getUnitOptions(['PCS', 'KG', 'TON', 'M', 'M2', 'M3', 'L', 'BAG', 'BOX', 'CARTON', 'SET', 'UNIT', 'DAY']);
+
+const emptyItem = (): ItemRow => ({
+  item_description: '',
+  item_reference: '',
+  region: '',
+  quantity: 1,
+  uom: 'PCS',
+  unit_price: 0,
+  specifications: '',
+});
+
+export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  const [suppliers, setSuppliers] = useState<المورد[]>([]);
+  const [departments, setDepartments] = useState<ProcurementDepartmentOption[]>([]);
+  const [siteEngineers, setSiteEngineers] = useState<ProcurementSiteEngineerOption[]>([]);
+  const [supplierId, setSupplierId] = useState<string>('');
+  const [departmentId, setDepartmentId] = useState<string>('');
+  const [siteEngineerId, setSiteEngineerId] = useState<string>('');
+  const [priority, setPriority] = useState<'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'>('NORMAL');
+  const [deliveryDate, setDeliveryDate] = useState(() => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+  });
+  const [items, setItems] = useState<ItemRow[]>([emptyItem()]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    Promise.all([
+      getSuppliersApi().catch(() => []),
+      getProcurementDepartmentsApi().catch(() => []),
+      getProcurementSiteEngineersApi().catch(() => []),
+    ]).then(([supplierData, departmentData, engineerData]) => {
+      setSuppliers(supplierData || []);
+      setDepartments(departmentData || []);
+      setSiteEngineers(engineerData || []);
+    });
+  }, [isOpen]);
+
+  const grandTotal = useMemo(
+    () => items.reduce((sum, item) => sum + Math.max(0, Number(item.quantity) * Number(item.unit_price)), 0),
+    [items],
+  );
+
+  if (!isOpen) return null;
+
+  const updateItem = (index: number, field: keyof ItemRow, value: string | number) => {
+    setItems(current => current.map((item, itemIndex) => (
+      itemIndex === index ? { ...item, [field]: value } : item
+    )));
+  };
+
+  const addItem = () => setItems(current => [...current, emptyItem()]);
+
+  const removeItem = (index: number) => {
+    setItems(current => current.length > 1 ? current.filter((_, itemIndex) => itemIndex !== index) : current);
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    if (!supplierId) return setError('يرجى اختيار المورد.');
+    if (!departmentId) return setError('يرجى اختيار القسم الموجه له طلب الشراء.');
+    if (!siteEngineerId) return setError('يرجى اختيار مهندس الموقع المسؤول عن الاستلام.');
+    if (items.some(item => !item.item_description.trim() || !item.item_reference.trim() || !item.region.trim() || !item.uom || item.quantity <= 0 || item.unit_price < 0)) {
+      return setError('يرجى استكمال اسم الصنف ورقم قطعة الأرض والمنطقة والوحدة والكمية والسعر لكل بند.');
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const request = await createDirectPoApi({
+        supplier_id: Number(supplierId),
+        department_id: Number(departmentId),
+        site_engineer_user_id: Number(siteEngineerId),
+        priority,
+        delivery_date: deliveryDate || undefined,
+        items: items.map(item => ({
+          item_id: item.item_id ?? null,
+          item_description: item.item_description.trim(),
+          item_reference: item.item_reference.trim(),
+          region: item.region.trim(),
+          quantity: Number(item.quantity),
+          uom: item.uom,
+          unit_price: Number(item.unit_price),
+          specifications: item.specifications.trim() || undefined,
+        })),
+      });
+      onSuccess(request.id);
+      onClose();
+    } catch (err) {
+      setError(parseApiError(err).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return createPortal((
+    <div className="po-modal-viewport fixed inset-0 z-[9999] flex min-h-screen items-center justify-center overflow-y-auto bg-slate-950/85 p-4 sm:p-6" dir="rtl">
+      <div className="flex min-h-0 max-h-[calc(100dvh-2rem)] w-full max-w-[1400px] flex-col overflow-hidden rounded-lg border border-slate-600 bg-[#1c2a3e] shadow-2xl shadow-black/60 sm:max-h-[calc(100dvh-3rem)] sm:rounded-xl">
+        <div className="flex shrink-0 items-start justify-between gap-2 border-b border-slate-600 bg-[#1b283b] px-3 py-3 sm:px-5">
+          <div className="flex items-center gap-2">
+            <span className="text-xl text-emerald-400">▣</span>
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-base font-black text-emerald-400 break-words">إنشاء طلب شراء مباشر</h2>
+              <p className="mt-0.5 hidden sm:block text-[11px] text-slate-400">يرسل أولًا للحسابات ثم للمدير التنفيذي قبل إنشاء أمر الشراء</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-900/60 text-2xl font-black leading-none text-slate-300 transition-colors hover:border-cyan-400 hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/70" aria-label="إغلاق النافذة" title="إغلاق النافذة">×</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="min-h-0 flex-1 overflow-y-auto">
+          {error && <div className="mx-3 mt-3 sm:mx-5 sm:mt-4 rounded border border-rose-500/50 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-300">{error}</div>}
+
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 px-3 pt-4 sm:px-5 sm:pt-5 md:grid-cols-2 lg:grid-cols-3">
+            <label className="block text-xs font-bold text-slate-200">
+              اختر المورد <span className="text-rose-400">*</span>
+              <select required value={supplierId} onChange={event => setSupplierId(event.target.value)} className="mt-2 h-10 w-full rounded-md border border-cyan-500/80 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-cyan-300">
+                <option value="">اختر المورد...</option>
+                {suppliers.map(supplier => <option key={supplier.id} value={supplier.id}>{supplier.company_name}{supplier.code ? ` — ${supplier.code}` : ''}</option>)}
+              </select>
+            </label>
+            <label className="block text-xs font-bold text-slate-200">
+              القسم الموجه له <span className="text-rose-400">*</span>
+              <select required value={departmentId} onChange={event => setDepartmentId(event.target.value)} className="mt-2 h-10 w-full rounded-md border border-cyan-500/80 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-cyan-300">
+                <option value="">اختر القسم...</option>
+                {departments.map(department => <option key={department.id} value={department.id}>{department.name}{department.code ? ` — ${department.code}` : ''}</option>)}
+              </select>
+            </label>
+            <label className="block text-xs font-bold text-slate-200">
+              مهندس الموقع المسؤول <span className="text-rose-400">*</span>
+              <select required value={siteEngineerId} onChange={event => setSiteEngineerId(event.target.value)} className="mt-2 h-10 w-full rounded-md border border-cyan-500/80 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-cyan-300">
+                <option value="">اختر مهندس الموقع...</option>
+                {siteEngineers.map(engineer => <option key={engineer.id} value={engineer.id}>{engineer.name}{engineer.department_name ? ` — ${engineer.department_name}` : ''}</option>)}
+              </select>
+            </label>
+            <label className="block text-xs font-bold text-slate-200">
+              تاريخ الحاجة
+              <input type="date" value={deliveryDate} onChange={event => setDeliveryDate(event.target.value)} className="mt-2 h-10 w-full rounded-md border border-cyan-500/80 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-cyan-300" />
+            </label>
+            <label className="block text-xs font-bold text-slate-200">
+              الأولوية
+              <select value={priority} onChange={event => setPriority(event.target.value as typeof priority)} className="mt-2 h-10 w-full rounded-md border border-cyan-500/80 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-cyan-300">
+                <option value="NORMAL">عادي</option><option value="LOW">منخفض</option><option value="HIGH">عالي</option><option value="URGENT">عاجل</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="px-3 pb-4 pt-5 sm:px-5 sm:pb-5 sm:pt-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-black text-slate-300">أصناف وتفاصيل طلب الشراء المباشر</h3>
+              <button type="button" onClick={addItem} className="rounded-md border border-slate-500 px-3 py-2 text-xs font-bold text-slate-200 transition-colors hover:border-cyan-400 hover:text-cyan-300">＋ إضافة صنف آخر</button>
+            </div>
+
+              <div className="hidden rounded border border-cyan-500/70 sm:block">
+              <table className="w-full border-collapse text-right text-[11px]">
+                <thead className="bg-[#0c1728] text-cyan-400">
+                  <tr>
+                    <th className="border-b border-slate-700 px-2 py-3 text-center">#</th>
+                    <th className="border-b border-slate-700 px-2 py-3">رقم قطعة الأرض <span className="text-rose-400">*</span></th>
+                    <th className="border-b border-slate-700 px-2 py-3">اسم الصنف <span className="text-rose-400">*</span></th>
+                    <th className="border-b border-slate-700 px-2 py-3">الوحدة <span className="text-rose-400">*</span></th>
+                    <th className="border-b border-slate-700 px-2 py-3">الكمية <span className="text-rose-400">*</span></th>
+                    <th className="border-b border-slate-700 px-2 py-3">السعر <span className="text-rose-400">*</span></th>
+                    <th className="border-b border-slate-700 px-2 py-3">الإجمالي</th>
+                    <th className="border-b border-slate-700 px-2 py-3">المنطقة</th>
+                    <th className="border-b border-slate-700 px-2 py-3">المواصفات والتفاصيل</th>
+                    <th className="border-b border-slate-700 px-2 py-3 text-center">إجراء</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, index) => (
+                    <tr key={index} className="bg-[#172337] align-middle">
+                      <td className="border-t border-slate-700 px-2 py-3 text-center font-mono text-slate-400">{index + 1}</td>
+                      <td className="border-t border-slate-700 px-2 py-2"><input required value={item.item_reference} onChange={event => updateItem(index, 'item_reference', event.target.value)} placeholder="رقم قطعة الأرض" dir="ltr" className="h-9 w-32 rounded border border-slate-600 bg-[#0b1424] px-2 text-xs text-slate-100 outline-none focus:border-cyan-400" /></td>
+                      <td className="border-t border-slate-700 px-2 py-2"><input required value={item.item_description} onChange={event => updateItem(index, 'item_description', event.target.value)} placeholder="اسم الصنف" className="h-9 w-40 rounded border border-slate-600 bg-[#0b1424] px-2 text-xs text-slate-100 outline-none focus:border-cyan-400" /></td>
+                      <td className="border-t border-slate-700 px-2 py-2"><select required value={item.uom} onChange={event => updateItem(index, 'uom', event.target.value)} className="h-9 w-24 rounded border border-slate-600 bg-[#0b1424] px-2 text-xs text-slate-100 outline-none focus:border-cyan-400">{UNIT_OPTIONS.map(unit => <option key={unit.value} value={unit.value}>{unit.label}</option>)}</select></td>
+                      <td className="border-t border-slate-700 px-2 py-2"><input required type="number" min="0.01" step="0.01" value={item.quantity} onChange={event => updateItem(index, 'quantity', Number(event.target.value))} className="h-9 w-20 rounded border border-slate-600 bg-[#0b1424] px-2 text-center font-mono text-xs text-slate-100 outline-none focus:border-cyan-400" /></td>
+                      <td className="border-t border-slate-700 px-2 py-2"><input required type="number" min="0" step="0.01" value={item.unit_price} onChange={event => updateItem(index, 'unit_price', Number(event.target.value))} className="h-9 w-24 rounded border border-slate-600 bg-[#0b1424] px-2 text-center font-mono text-xs text-slate-100 outline-none focus:border-cyan-400" /></td>
+                      <td className="border-t border-slate-700 px-2 py-2 text-center font-mono font-black text-emerald-300">{(Number(item.quantity) * Number(item.unit_price)).toFixed(2)} ج.م</td>
+                      <td className="border-t border-slate-700 px-2 py-2"><input required value={item.region} onChange={event => updateItem(index, 'region', event.target.value)} placeholder="المنطقة" className="h-9 w-28 rounded border border-slate-600 bg-[#0b1424] px-2 text-xs text-slate-100 outline-none focus:border-cyan-400" /></td>
+                      <td className="border-t border-slate-700 px-2 py-2"><input value={item.specifications} onChange={event => updateItem(index, 'specifications', event.target.value)} placeholder="المواصفات" className="h-9 w-36 rounded border border-slate-600 bg-[#0b1424] px-2 text-xs text-slate-100 outline-none focus:border-cyan-400" /></td>
+                      <td className="border-t border-slate-700 px-2 py-2 text-center"><button type="button" onClick={() => removeItem(index)} disabled={items.length <= 1} className="rounded border border-rose-500/70 px-2 py-1 text-sm text-rose-300 disabled:cursor-not-allowed disabled:opacity-30" aria-label="حذف البند">▥</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-[#0c1728]">
+                    <td colSpan={6} className="border-t border-cyan-500/70 px-3 py-3 text-left text-sm font-black text-slate-200">الإجمالي المالي المقترح للموافقة:</td>
+                    <td className="border-t border-cyan-500/70 px-3 py-3 text-center font-mono text-base font-black text-emerald-300">{grandTotal.toFixed(2)} ج.م</td>
+                    <td colSpan={3} className="border-t border-cyan-500/70" />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div className="space-y-3 sm:hidden">
+              {items.map((item, index) => (
+                <article key={`mobile-item-${index}`} className="rounded-lg border border-slate-700 bg-[#172337] p-3">
+                  <div className="flex items-start justify-between gap-3 border-b border-slate-700 pb-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold text-cyan-300">بند #{index + 1}</p>
+                      <p className="mt-1 break-words text-sm font-black text-slate-100">{item.item_description || 'اسم الصنف غير مكتوب'}</p>
+                    </div>
+                    <button type="button" onClick={() => removeItem(index)} disabled={items.length <= 1} className="h-9 w-9 shrink-0 rounded border border-rose-500/70 text-sm text-rose-300 disabled:cursor-not-allowed disabled:opacity-30" aria-label="حذف البند">×</button>
+                  </div>
+                  <div className="mt-3 space-y-3">
+                    <label className="block text-[11px] font-bold text-slate-300">رقم قطعة الأرض <span className="text-rose-400">*</span><input required value={item.item_reference} onChange={event => updateItem(index, 'item_reference', event.target.value)} placeholder="رقم قطعة الأرض" dir="ltr" className="mt-1.5 h-11 w-full rounded border border-slate-600 bg-[#0b1424] px-3 text-sm text-slate-100 outline-none focus:border-cyan-400" /></label>
+                    <label className="block text-[11px] font-bold text-slate-300">اسم الصنف <span className="text-rose-400">*</span><input required value={item.item_description} onChange={event => updateItem(index, 'item_description', event.target.value)} placeholder="اسم الصنف" className="mt-1.5 h-11 w-full rounded border border-slate-600 bg-[#0b1424] px-3 text-sm text-slate-100 outline-none focus:border-cyan-400" /></label>
+                    <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
+                      <label className="block text-[11px] font-bold text-slate-300">الوحدة <span className="text-rose-400">*</span><select required value={item.uom} onChange={event => updateItem(index, 'uom', event.target.value)} className="mt-1.5 h-11 w-full min-w-0 rounded border border-slate-600 bg-[#0b1424] px-3 text-sm text-slate-100 outline-none focus:border-cyan-400">{UNIT_OPTIONS.map(unit => <option key={unit.value} value={unit.value}>{unit.label}</option>)}</select></label>
+                      <label className="block text-[11px] font-bold text-slate-300">الكمية <span className="text-rose-400">*</span><input required type="number" min="0.01" step="0.01" value={item.quantity} onChange={event => updateItem(index, 'quantity', Number(event.target.value))} className="mt-1.5 h-11 w-full rounded border border-slate-600 bg-[#0b1424] px-3 text-center font-mono text-sm text-slate-100 outline-none focus:border-cyan-400" /></label>
+                      <label className="block text-[11px] font-bold text-slate-300">سعر الوحدة <span className="text-rose-400">*</span><input required type="number" min="0" step="0.01" value={item.unit_price} onChange={event => updateItem(index, 'unit_price', Number(event.target.value))} className="mt-1.5 h-11 w-full rounded border border-slate-600 bg-[#0b1424] px-3 text-center font-mono text-sm text-slate-100 outline-none focus:border-cyan-400" /></label>
+                      <div className="rounded border border-emerald-500/30 bg-emerald-950/20 px-3 py-2.5"><span className="text-[11px] text-slate-400">إجمالي البند</span><p className="mt-1 font-mono text-sm font-black text-emerald-300">{(Number(item.quantity) * Number(item.unit_price)).toFixed(2)} ج.م</p></div>
+                    </div>
+                    <label className="block text-[11px] font-bold text-slate-300">المنطقة <span className="text-rose-400">*</span><input required value={item.region} onChange={event => updateItem(index, 'region', event.target.value)} placeholder="المنطقة" className="mt-1.5 h-11 w-full rounded border border-slate-600 bg-[#0b1424] px-3 text-sm text-slate-100 outline-none focus:border-cyan-400" /></label>
+                    <label className="block text-[11px] font-bold text-slate-300">المواصفات والتفاصيل<input value={item.specifications} onChange={event => updateItem(index, 'specifications', event.target.value)} placeholder="المواصفات" className="mt-1.5 h-11 w-full rounded border border-slate-600 bg-[#0b1424] px-3 text-sm text-slate-100 outline-none focus:border-cyan-400" /></label>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </form>
+
+        <div className="flex shrink-0 flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 border-t border-slate-600 bg-[#1b283b] px-3 py-3 sm:px-5">
+          <button type="button" onClick={addItem} className="w-full sm:w-auto rounded-md border border-slate-500 px-4 py-2.5 text-xs font-bold text-slate-200 hover:border-cyan-400 hover:text-cyan-300">＋ إضافة صنف آخر</button>
+          <div className="flex w-full sm:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+            <button type="button" onClick={onClose} className="w-full sm:w-auto rounded-md border border-slate-500 px-5 py-2.5 text-xs font-bold text-slate-300 hover:bg-slate-700">إلغاء</button>
+            <button type="submit" disabled={loading} onClick={handleSubmit} className="w-full sm:w-auto rounded-md bg-emerald-600 px-5 py-2.5 text-xs font-black text-white shadow-lg shadow-emerald-900/30 hover:bg-emerald-500 disabled:opacity-50">{loading ? 'جاري إرسال الطلب...' : 'إرسال طلب الشراء للحسابات  ▧'}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  ), document.body);
+};
+
+export default DirectPoModal;

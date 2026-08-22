@@ -1,0 +1,32 @@
+{
+  "zone": "example.com",
+  "rules": [
+    {
+      "name": "Bypass private procurement API",
+      "expression": "(http.host eq \"api.example.com\" and http.request.uri.path starts_with \"/api/\")",
+      "action": "bypass_cache",
+      "notes": "Never cache authenticated or business API responses. Keep this rule above any broad cache rule."
+    },
+    {
+      "name": "Bypass realtime notification stream",
+      "expression": "(http.host eq \"api.example.com\" and http.request.uri.path eq \"/api/v1/notifications/stream\")",
+      "action": "bypass_cache",
+      "notes": "SSE must remain a live origin connection with no buffering or cache."
+    },
+    {
+      "name": "Cache hashed frontend assets",
+      "expression": "(http.host eq \"app.example.com\" and starts_with(http.request.uri.path, \"/assets/\"))",
+      "action": "eligible_for_cache",
+      "edge_ttl": "respect_origin",
+      "browser_ttl": "respect_origin",
+      "notes": "The Nginx origin sets immutable one-year caching for Vite hashed assets."
+    },
+    {
+      "name": "Revalidate frontend entry point",
+      "expression": "(http.host eq \"app.example.com\" and http.request.uri.path eq \"/index.html\")",
+      "action": "bypass_cache",
+      "notes": "Do not pin the SPA entry point so releases become visible promptly."
+    }
+  ],
+  "important": "This is a dashboard/API reference, not a blind import file. Review expressions and plan availability in the target Cloudflare account before applying."
+}

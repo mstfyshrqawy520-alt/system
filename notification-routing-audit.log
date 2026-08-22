@@ -1,0 +1,190 @@
+﻿E:\purchasing system\app\Http\Controllers\Api\V1\AccountingPurchaseRequestController.php:39:'financial_data.items.*.pr_item_id' => ['required', 'integer', 'exists:purchase_request_items,id'],
+E:\purchasing system\app\Http\Controllers\Api\V1\AdminSystemMonitoringController.php:173:->get(['id', 'purchase_request_id', 'item_description', 'item_reference', 'region'])
+E:\purchasing system\app\Http\Controllers\Api\V1\AdminSystemMonitoringController.php:176:'request_id' => $item->purchase_request_id,
+E:\purchasing system\app\Http\Controllers\Api\V1\AdminSystemMonitoringController.php:183:'key' => 'purchase_request_items_missing_tracking',
+E:\purchasing system\app\Http\Controllers\Api\V1\AdminSystemMonitoringController.php:269:'endpoint' => '/api/v1/notifications/stream',
+E:\purchasing system\app\Http\Controllers\Api\V1\AdminSystemMonitoringController.php:293:'purchase_requests' => PurchaseRequest::count(),
+E:\purchasing system\app\Http\Controllers\Api\V1\AdminSystemMonitoringController.php:299:'purchase_requests_by_status' => $this->statusCounts(PurchaseRequest::class),
+E:\purchasing system\app\Http\Controllers\Api\V1\AdminSystemMonitoringController.php:384:'purchase_request_items_missing_reference' => $prMissing,
+E:\purchasing system\app\Http\Controllers\Api\V1\NotificationController.php:8:use App\Services\NotificationService;
+E:\purchasing system\app\Http\Controllers\Api\V1\NotificationController.php:17:public function __construct(private NotificationService $notificationService)
+E:\purchasing system\app\Http\Controllers\Api\V1\NotificationController.php:24:$notifications = $this->notificationService->getUserNotifications($request->user(), $perPage);
+E:\purchasing system\app\Http\Controllers\Api\V1\NotificationController.php:25:return NotificationResource::collection($notifications);
+E:\purchasing system\app\Http\Controllers\Api\V1\NotificationController.php:30:$count = $this->notificationService->getUnreadCount($request->user());
+E:\purchasing system\app\Http\Controllers\Api\V1\NotificationController.php:38:* Stream new notifications to the authenticated browser without a page refresh.
+E:\purchasing system\app\Http\Controllers\Api\V1\NotificationController.php:69:$notifications = Notification::query()
+E:\purchasing system\app\Http\Controllers\Api\V1\NotificationController.php:76:foreach ($notifications as $notification) {
+E:\purchasing system\app\Http\Controllers\Api\V1\NotificationController.php:103:$updatedNotif = $this->notificationService->markAsRead($request->user(), $notification);
+E:\purchasing system\app\Http\Controllers\Api\V1\NotificationController.php:112:$this->notificationService->markAllAsRead($request->user());
+E:\purchasing system\app\Http\Controllers\Api\V1\ProcurementAnalyticsController.php:44:->select(['id', 'po_number', 'purchase_request_id', 'supplier_id', 'created_by_user_id', 'status', 'grand_total', 'delivery_status', 'delivery_date', 'actual_delivery_date', 'created_at', 'updated_at'])
+E:\purchasing system\app\Http\Controllers\Api\V1\ProcurementAnalyticsController.php:79:->whereIn('id', $allOrderRows->pluck('purchase_request_id')->filter()->unique()->values())
+E:\purchasing system\app\Http\Controllers\Api\V1\ProcurementAnalyticsController.php:92:$submittedAt = $purchaseRequestLookup->get($po->purchase_request_id)?->submitted_at;
+E:\purchasing system\app\Http\Controllers\Api\V1\ProcurementAnalyticsController.php:149:return $purchaseRequestLookup->get($po->purchase_request_id)?->department
+E:\purchasing system\app\Http\Controllers\Api\V1\ProcurementAnalyticsController.php:158:return $purchaseRequestLookup->get($po->purchase_request_id)?->department_id
+E:\purchasing system\app\Http\Controllers\Api\V1\ProcurementAnalyticsController.php:193:'purchase_requests_count' => $allRequestRows->count(),
+E:\purchasing system\app\Http\Controllers\Api\V1\ProcurementAnalyticsController.php:243:'recent_purchase_requests' => $approvedRequests->map(function (PurchaseRequest $requestModel) {
+E:\purchasing system\app\Http\Controllers\Api\V1\ProcurementPurchaseOrderController.php:89:'financial_data.items.*.pr_item_id' => ['required_if:use_quotes,false', 'integer', 'exists:purchase_request_items,id'],
+E:\purchasing system\app\Http\Controllers\Api\V1\ProcurementPurchaseOrderController.php:226:$prId = (int) $request->validated('purchase_request_id');
+E:\purchasing system\app\Http\Controllers\Api\V1\ReviewerPurchaseRequestController.php:123:if ($item->purchase_request_id !== $pr->id) {
+E:\purchasing system\app\Http\Controllers\Api\V1\ReviewerPurchaseRequestController.php:168:if ($item->purchase_request_id !== $pr->id) {
+E:\purchasing system\app\Http\Requests\Procurement\CreatePurchaseOrderRequest.php:18:'purchase_request_id' => ['required', 'integer', 'exists:purchase_requests,id'],
+E:\purchasing system\app\Http\Resources\NotificationResource.php:19:$data['purchase_request_id'] = $this->notifiable_id;
+E:\purchasing system\app\Http\Resources\PurchaseOrderResource.php:15:'purchase_request_id' => $this->purchase_request_id,
+E:\purchasing system\app\Http\Resources\PurchaseOrderResource.php:27:'purchase_request' => new PurchaseRequestResource($this->whenLoaded('purchaseRequest')),
+E:\purchasing system\app\Models\Notification.php:14:protected $table = 'notifications';
+E:\purchasing system\app\Models\PurchaseOrder.php:21:'purchase_request_id',
+E:\purchasing system\app\Models\PurchaseOrder.php:55:return $this->belongsTo(PurchaseRequest::class, 'purchase_request_id');
+E:\purchasing system\app\Models\PurchaseReceipt.php:16:'purchase_request_id',
+E:\purchasing system\app\Models\PurchaseRequest.php:46:protected $table = 'purchase_requests';
+E:\purchasing system\app\Models\PurchaseRequest.php:121:return $this->hasMany(PurchaseRequestQuote::class, 'purchase_request_id');
+E:\purchasing system\app\Models\PurchaseRequest.php:126:return $this->hasMany(PurchaseRequestItem::class, 'purchase_request_id');
+E:\purchasing system\app\Models\PurchaseRequest.php:131:return $this->hasMany(PurchaseOrder::class, 'purchase_request_id');
+E:\purchasing system\app\Models\PurchaseRequestItem.php:15:protected $table = 'purchase_request_items';
+E:\purchasing system\app\Models\PurchaseRequestItem.php:18:'purchase_request_id',
+E:\purchasing system\app\Models\PurchaseRequestItem.php:42:return $this->belongsTo(PurchaseRequest::class, 'purchase_request_id');
+E:\purchasing system\app\Models\PurchaseRequestQuote.php:15:'purchase_request_id',
+E:\purchasing system\app\Models\PurchaseRequestQuoteRecommendation.php:14:'purchase_request_quote_id',
+E:\purchasing system\app\Models\PurchaseRequestQuoteRecommendation.php:23:return $this->belongsTo(PurchaseRequestQuote::class, 'purchase_request_quote_id');
+E:\purchasing system\app\Models\User.php:11:use Illuminate\Notifications\Notifiable;
+E:\purchasing system\app\Models\User.php:83:public function notifications(): HasMany
+E:\purchasing system\app\Services\AccountingPurchaseOrderService.php:65:$notificationService = app(NotificationService::class);
+E:\purchasing system\app\Services\AccountingPurchaseOrderService.php:66:$gms = $notificationService->resolveUsersWithPermission('purchase_order.view_gm');
+E:\purchasing system\app\Services\AccountingPurchaseOrderService.php:67:$notificationService->notifyUsers(
+E:\purchasing system\app\Services\AccountingPurchaseOrderService.php:120:$notificationService = app(NotificationService::class);
+E:\purchasing system\app\Services\AccountingPurchaseOrderService.php:121:$notificationService->createNotification(
+E:\purchasing system\app\Services\AccountingPurchaseRequestService.php:74:'event_type' => 'purchase_request.accounting_approved_direct',
+E:\purchasing system\app\Services\AccountingPurchaseRequestService.php:82:$notificationService = app(NotificationService::class);
+E:\purchasing system\app\Services\AccountingPurchaseRequestService.php:83:$notificationService->notifyUsers(
+E:\purchasing system\app\Services\AccountingPurchaseRequestService.php:84:$notificationService->resolveUsersWithPermission('purchase_request.approve_procurement'),
+E:\purchasing system\app\Services\AccountingPurchaseRequestService.php:85:'purchase_request_pending_procurement_po',
+E:\purchasing system\app\Services\AccountingPurchaseRequestService.php:90:$notificationService->createNotification(
+E:\purchasing system\app\Services\AccountingPurchaseRequestService.php:92:'purchase_request_accounting_approved_direct',
+E:\purchasing system\app\Services\AccountingPurchaseRequestService.php:138:'event_type' => 'purchase_request.accounting_rejected_direct',
+E:\purchasing system\app\Services\AccountingPurchaseRequestService.php:146:$notificationService = app(NotificationService::class);
+E:\purchasing system\app\Services\AccountingPurchaseRequestService.php:147:$notificationService->createNotification(
+E:\purchasing system\app\Services\AccountingPurchaseRequestService.php:149:'purchase_request_accounting_rejected_direct',
+E:\purchasing system\app\Services\AccountingPurchaseRequestService.php:154:$notificationService->notifyUsers(
+E:\purchasing system\app\Services\AccountingPurchaseRequestService.php:155:$notificationService->resolveUsersWithPermission('purchase_request.view_approved'),
+E:\purchasing system\app\Services\AccountingPurchaseRequestService.php:156:'purchase_request_accounting_rejected_direct',
+E:\purchasing system\app\Services\GeneralManagerPurchaseRequestService.php:181:'event_type' => 'purchase_request.approved_by_executive',
+E:\purchasing system\app\Services\GeneralManagerPurchaseRequestService.php:189:app(NotificationService::class)->createNotification(
+E:\purchasing system\app\Services\GeneralManagerPurchaseRequestService.php:191:'purchase_request_approved_by_executive',
+E:\purchasing system\app\Services\GeneralManagerPurchaseRequestService.php:228:'event_type' => 'purchase_request.rejected_by_executive',
+E:\purchasing system\app\Services\GeneralManagerPurchaseRequestService.php:235:app(NotificationService::class)->createNotification(
+E:\purchasing system\app\Services\GeneralManagerPurchaseRequestService.php:237:'purchase_request_rejected_by_executive',
+E:\purchasing system\app\Services\GeneralManagerPurchaseRequestService.php:256:$notificationService = app(NotificationService::class);
+E:\purchasing system\app\Services\GeneralManagerPurchaseRequestService.php:257:$procurementManagers = $notificationService->resolveUsersWithPermission('purchase_request.approve_procurement');
+E:\purchasing system\app\Services\GeneralManagerPurchaseRequestService.php:258:$notificationService->notifyUsers(
+E:\purchasing system\app\Services\GeneralManagerPurchaseRequestService.php:260:'purchase_request_pending_procurement',
+E:\purchasing system\app\Services\NotificationService.php:16:class NotificationService
+E:\purchasing system\app\Services\NotificationService.php:88:* Create notifications for multiple recipients.
+E:\purchasing system\app\Services\NotificationService.php:107:'type' => 'purchase_order_and_receipt_ready_accounting',
+E:\purchasing system\app\Services\NotificationService.php:125:* Get paginated notifications for user.
+E:\purchasing system\app\Services\NotificationService.php:127:public function getUserNotifications(User $user, int $perPage = 15): LengthAwarePaginator
+E:\purchasing system\app\Services\NotificationService.php:137:* Get count of unread notifications for user.
+E:\purchasing system\app\Services\NotificationService.php:164:* Mark all notifications belonging to user as read.
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:131:['event_type' => 'purchase_request.quotes_required', 'from_state' => 'PENDING_PROCUREMENT_APPROVAL', 'to_state' => 'PENDING_QUOTE_RECOMMENDATIONS', 'actor_user_id' => $procurementManager->id, 'metadata' => ['comment' => $comment]]
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:227:'action' => 'DIRECT_ACCOUNTING_REVIEW_REQUIRED',
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:237:'action' => 'DIRECT_ACCOUNTING_REVIEW_REQUIRED',
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:245:'DIRECT_ACCOUNTING_REVIEW_REQUIRED',
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:248:'event_type' => 'purchase_request.direct_accounting_review_required',
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:256:$notificationService = app(NotificationService::class);
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:257:$notificationService->notifyUsers(
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:258:$notificationService->resolveUsersWithPermission('purchase_request.accounting_view'),
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:259:'purchase_request_pending_accounting_approval',
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:317:'action' => 'DIRECT_PURCHASE_REQUEST_CREATED',
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:327:'action' => 'DIRECT_PURCHASE_REQUEST_CREATED',
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:335:'DIRECT_PURCHASE_REQUEST_CREATED',
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:338:'event_type' => 'purchase_request.direct_created',
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:346:$notificationService = app(NotificationService::class);
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:347:$notificationService->notifyUsers(
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:348:$notificationService->resolveUsersWithPermission('purchase_request.accounting_view'),
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:349:'purchase_request_pending_accounting_approval',
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:397:['event_type' => 'purchase_request.rejected_by_procurement', 'from_state' => 'PENDING_PROCUREMENT_APPROVAL', 'to_state' => 'REJECTED', 'actor_user_id' => $procurementManager->id, 'metadata' => ['comment' => $comment]]
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:411:$notificationService = app(NotificationService::class);
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:416:$notificationService->createNotification(
+E:\purchasing system\app\Services\ProcurementPurchaseRequestService.php:418:'purchase_request_rejected_procurement',
+E:\purchasing system\app\Services\PurchaseOrderService.php:121:$existingPoCount = PurchaseOrder::where('purchase_request_id', $pr->id)
+E:\purchasing system\app\Services\PurchaseOrderService.php:133:'purchase_request_id' => $pr->id,
+E:\purchasing system\app\Services\PurchaseOrderService.php:503:$notificationService = app(\App\Services\NotificationService::class);
+E:\purchasing system\app\Services\PurchaseOrderService.php:504:$accountants = $notificationService->resolveUsersWithPermission('purchase_order.view_accounting');
+E:\purchasing system\app\Services\PurchaseOrderService.php:505:$notificationService->notifyUsers(
+E:\purchasing system\app\Services\PurchaseOrderService.php:514:$gms = $notificationService->resolveUsersWithPermission('purchase_order.view_gm');
+E:\purchasing system\app\Services\PurchaseOrderService.php:515:$notificationService->notifyUsers(
+E:\purchasing system\app\Services\PurchaseQuoteService.php:106:$notificationService = app(NotificationService::class);
+E:\purchasing system\app\Services\PurchaseQuoteService.php:110:$accountants = $notificationService->resolveUsersWithPermission('purchase_quote.recommend');
+E:\purchasing system\app\Services\PurchaseQuoteService.php:111:$notificationService->notifyUsers(
+E:\purchasing system\app\Services\PurchaseQuoteService.php:155:'purchase_request_quote_id' => $quote->id,
+E:\purchasing system\app\Services\PurchaseQuoteService.php:163:$recommendationCount = PurchaseRequestQuoteRecommendation::whereHas('quote', fn ($q) => $q->where('purchase_request_id', $request->id))
+E:\purchasing system\app\Services\PurchaseQuoteService.php:171:$executives = app(NotificationService::class)->resolveUsersWithPermission('purchase_quote.decide');
+E:\purchasing system\app\Services\PurchaseQuoteService.php:172:app(NotificationService::class)->notifyUsers(
+E:\purchasing system\app\Services\PurchaseQuoteService.php:236:$notificationService = app(NotificationService::class);
+E:\purchasing system\app\Services\PurchaseQuoteService.php:237:$notificationService->notifyUsers(
+E:\purchasing system\app\Services\PurchaseQuoteService.php:238:$notificationService->resolveUsersWithPermission('purchase_request.approve_procurement'),
+E:\purchasing system\app\Services\PurchaseReceiptService.php:46:'purchase_request_id' => $purchaseOrder->purchase_request_id,
+E:\purchasing system\app\Services\PurchaseReceiptService.php:88:app(NotificationService::class)->createNotification(
+E:\purchasing system\app\Services\PurchaseReceiptService.php:175:$notificationService = app(NotificationService::class);
+E:\purchasing system\app\Services\PurchaseReceiptService.php:176:$accountants = $notificationService->resolveUsersWithPermission('purchase_order.view_accounting');
+E:\purchasing system\app\Services\PurchaseReceiptService.php:177:$notificationService->notifyAccountingWithPurchaseOrderAndReceipt(
+E:\purchasing system\app\Services\PurchaseRequestService.php:329:['event_type' => 'purchase_request.submitted', 'from_state' => 'DRAFT', 'to_state' => $nextStatus, 'actor_user_id' => $user->id]
+E:\purchasing system\app\Services\PurchaseRequestService.php:332:$notificationService = app(NotificationService::class);
+E:\purchasing system\app\Services\PurchaseRequestService.php:336:: $notificationService->resolveUsersWithPermission('purchase_request.review', $request->target_department_id);
+E:\purchasing system\app\Services\PurchaseRequestService.php:337:$notificationService->notifyUsers(
+E:\purchasing system\app\Services\PurchaseRequestService.php:339:'purchase_request_submitted',
+E:\purchasing system\app\Services\PurchaseRequestService.php:345:$notificationService->notifyUsers(
+E:\purchasing system\app\Services\PurchaseRequestService.php:346:$notificationService->resolveUsersWithPermission('purchase_request.view_gm'),
+E:\purchasing system\app\Services\PurchaseRequestService.php:347:'purchase_request_pending_executive_approval',
+E:\purchasing system\app\Services\PurchaseRequestService.php:353:$notificationService->notifyUsers(
+E:\purchasing system\app\Services\PurchaseRequestService.php:354:$notificationService->resolveUsersWithPermission('purchase_request.view_approved'),
+E:\purchasing system\app\Services\PurchaseRequestService.php:355:'purchase_request_pending_procurement',
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:56:'items:id,purchase_request_id,item_id,item_description,quantity,uom,item_reference,region',
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:161:['event_type' => 'purchase_request.review_started', 'from_state' => 'SUBMITTED', 'to_state' => 'UNDER_REVIEW', 'actor_user_id' => $reviewer->id]
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:230:if ($item->purchase_request_id !== $request->id) {
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:350:if ($item->purchase_request_id !== $request->id) {
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:426:['event_type' => 'purchase_request.approved_by_reviewer', 'from_state' => $fromState, 'to_state' => 'PENDING_EXECUTIVE_APPROVAL', 'actor_user_id' => $reviewer->id, 'metadata' => ['comment' => $comment]]
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:430:$notificationService = app(\App\Services\NotificationService::class);
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:431:$notificationService->createNotification(
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:433:'purchase_request_approved',
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:440:$executives = $notificationService->resolveUsersWithPermission('purchase_request.approve_gm');
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:441:$notificationService->notifyUsers(
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:443:'purchase_request_pending_executive',
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:492:['event_type' => 'purchase_request.rejected_by_reviewer', 'from_state' => $fromState, 'to_state' => 'REJECTED', 'actor_user_id' => $reviewer->id, 'metadata' => ['comment' => $comment]]
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:496:$notificationService = app(\App\Services\NotificationService::class);
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:501:$notificationService->createNotification(
+E:\purchasing system\app\Services\ReviewerPurchaseRequestService.php:503:'purchase_request_rejected',
+E:\purchasing system\routes\api.php:57:->middleware('permission:purchase_request.view_own');
+E:\purchasing system\routes\api.php:60:->middleware('permission:purchase_request.create');
+E:\purchasing system\routes\api.php:63:->middleware('permission:purchase_request.view_own');
+E:\purchasing system\routes\api.php:66:->middleware('permission:purchase_request.view_own');
+E:\purchasing system\routes\api.php:69:->middleware('permission:purchase_request.view_own');
+E:\purchasing system\routes\api.php:72:->middleware('permission:purchase_request.view_own');
+E:\purchasing system\routes\api.php:75:->middleware('permission:purchase_request.edit_own');
+E:\purchasing system\routes\api.php:78:->middleware('permission:purchase_request.edit_own');
+E:\purchasing system\routes\api.php:81:->middleware('permission:purchase_request.submit');
+E:\purchasing system\routes\api.php:84:->middleware('permission:purchase_request.create');
+E:\purchasing system\routes\api.php:87:->middleware('permission:purchase_request.edit_own');
+E:\purchasing system\routes\api.php:90:->middleware('permission:purchase_request.view_own');
+E:\purchasing system\routes\api.php:96:->middleware('permission:purchase_request.view_assigned');
+E:\purchasing system\routes\api.php:99:->middleware('permission:purchase_request.view_assigned');
+E:\purchasing system\routes\api.php:102:->middleware('permission:purchase_request.review');
+E:\purchasing system\routes\api.php:105:->middleware('permission:purchase_request.edit_during_review');
+E:\purchasing system\routes\api.php:108:->middleware('permission:purchase_request.edit_during_review');
+E:\purchasing system\routes\api.php:111:->middleware('permission:purchase_request.edit_during_review');
+E:\purchasing system\routes\api.php:114:->middleware('permission:purchase_request.edit_during_review');
+E:\purchasing system\routes\api.php:117:->middleware('permission:purchase_request.approve');
+E:\purchasing system\routes\api.php:120:->middleware('permission:purchase_request.reject');
+E:\purchasing system\routes\api.php:129:->middleware('permission:purchase_request.view_approved');
+E:\purchasing system\routes\api.php:135:->middleware('permission:purchase_request.view_approved');
+E:\purchasing system\routes\api.php:144:->middleware('permission:purchase_request.approve_procurement');
+E:\purchasing system\routes\api.php:147:->middleware('permission:purchase_request.approve_procurement');
+E:\purchasing system\routes\api.php:151:->middleware('permission:purchase_request.view_approved');
+E:\purchasing system\routes\api.php:235:->middleware('permission:purchase_request.accounting_view');
+E:\purchasing system\routes\api.php:237:->middleware('permission:purchase_request.accounting_view');
+E:\purchasing system\routes\api.php:239:->middleware('permission:purchase_request.accounting_approve');
+E:\purchasing system\routes\api.php:241:->middleware('permission:purchase_request.accounting_reject');
+E:\purchasing system\routes\api.php:273:->middleware('permission:purchase_request.view_gm');
+E:\purchasing system\routes\api.php:276:->middleware('permission:purchase_request.view_gm');
+E:\purchasing system\routes\api.php:279:->middleware('permission:purchase_request.edit_gm');
+E:\purchasing system\routes\api.php:282:->middleware('permission:purchase_request.approve_gm');
+E:\purchasing system\routes\api.php:285:->middleware('permission:purchase_request.reject_gm');
+E:\purchasing system\routes\api.php:339:Route::middleware('auth:sanctum')->prefix('notifications')->group(function () {

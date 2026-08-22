@@ -1,0 +1,265 @@
+import apiClient from './client';
+import { PurchaseOrder, المورد } from '../types/purchaseOrder';
+
+export interface ApprovedReceiptItem {
+  id: number;
+  ordered_quantity: string | number;
+  received_quantity: string | number;
+  notes?: string | null;
+  purchase_order_item?: {
+    id: number;
+    item_name?: string | null;
+    item_description: string;
+    item_reference?: string | null;
+    region?: string | null;
+    quantity: string | number;
+    uom?: string | null;
+    unit_price: string | number;
+    line_total?: string | number;
+    specifications?: string | null;
+    pr_item?: {
+      id: number;
+      item_description?: string | null;
+      item_reference?: string | null;
+      region?: string | null;
+      quantity?: string | number;
+      uom?: string | null;
+      specifications?: string | null;
+      notes?: string | null;
+    } | null;
+    item?: { id: number; name: string; sku?: string | null } | null;
+  } | null;
+}
+
+export interface ApprovedReceipt {
+  id: number;
+  receipt_number: string;
+  status: string;
+  received_at?: string | null;
+  warehouse_submitted_at?: string | null;
+  site_engineer_approved_at?: string | null;
+  warehouse_notes?: string | null;
+  site_engineer_notes?: string | null;
+  rejection_reason?: string | null;
+  warehouse_keeper?: { id: number; name: string } | null;
+  site_engineer?: { id: number; name: string } | null;
+  purchase_order_id: number;
+  purchase_order?: PurchaseOrder | null;
+  purchase_request?: PurchaseOrder['purchase_request'] | null;
+  items?: ApprovedReceiptItem[];
+}
+
+export type SupplierInvoiceStatus = 'DRAFT' | 'OPEN' | 'PARTIALLY_PAID' | 'PAID' | string;
+
+export interface SupplierPaymentAllocation {
+  id: number;
+  supplier_payment_id: number;
+  supplier_invoice_id: number;
+  amount: string | number;
+  invoice?: SupplierInvoice | null;
+  payment?: SupplierPayment | null;
+}
+
+export interface LandParcel {
+  id: number;
+  parcel_reference: string;
+  region: string;
+  opening_balance: string | number;
+  funded_total: string | number;
+  expense_total: string | number;
+  balance: string | number;
+  is_active: boolean;
+  notes?: string | null;
+}
+
+export interface LandParcelTransaction {
+  id: number;
+  land_parcel_id: number;
+  created_by_user_id: number;
+  transaction_type: 'OPENING_BALANCE' | 'CUSTOMER_FUNDING' | 'INVOICE_EXPENSE' | string;
+  amount: string | number;
+  balance_after: string | number;
+  reference_number?: string | null;
+  transaction_date: string;
+  source_type?: string | null;
+  source_id?: number | null;
+  notes?: string | null;
+  created_by?: { id: number; name: string } | null;
+}
+
+export interface SupplierInvoiceLandAllocation {
+  id: number;
+  supplier_invoice_id: number;
+  land_parcel_id: number;
+  created_by_user_id: number;
+  amount: string | number;
+  notes?: string | null;
+  parcel?: LandParcel | null;
+  invoice?: SupplierInvoice | null;
+}
+
+export interface SupplierInvoice {
+  id: number;
+  supplier_id: number;
+  purchase_order_id: number;
+  purchase_receipt_id: number;
+  created_by_user_id: number;
+  invoice_number: string;
+  amount: string | number;
+  invoice_date: string;
+  due_date?: string | null;
+  status: SupplierInvoiceStatus;
+  matching_status: 'PENDING' | 'MATCHED' | string;
+  matched_at?: string | null;
+  paid_amount: string | number;
+  outstanding_amount: string | number;
+  matching_notes?: string | null;
+  notes?: string | null;
+  supplier?: المورد | null;
+  purchase_order?: PurchaseOrder | null;
+  purchase_receipt?: ApprovedReceipt | null;
+  payment_allocations?: SupplierPaymentAllocation[];
+  land_allocations?: SupplierInvoiceLandAllocation[];
+}
+
+export interface SupplierPayment {
+  id: number;
+  supplier_id: number;
+  accountant_user_id: number;
+  payment_number: string;
+  amount: string | number;
+  payment_date: string;
+  payment_method: 'BANK_TRANSFER' | 'CASH' | 'CHEQUE' | string;
+  reference_number?: string | null;
+  allocated_amount: string | number;
+  overpayment_amount: string | number;
+  notes?: string | null;
+  supplier?: المورد | null;
+  allocations?: SupplierPaymentAllocation[];
+}
+
+export interface SupplierBalanceSummary {
+  total_invoiced: number;
+  total_paid: number;
+  balance: number;
+  is_overpaid: boolean;
+  last_activity_at?: string | null;
+}
+
+export interface SupplierAccountSummary extends SupplierBalanceSummary {
+  supplier_id: number;
+  company_name: string;
+  code?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  open_invoices_count: number;
+  invoices_count: number;
+  payments_count: number;
+}
+
+export interface SupplierAccountDetails {
+  supplier: المورد;
+  summary: SupplierAccountSummary;
+  invoices: SupplierInvoice[];
+  payments: SupplierPayment[];
+}
+
+export interface CreateSupplierInvoicePayload {
+  purchase_order_id: number;
+  purchase_receipt_id: number;
+  invoice_number: string;
+  amount: number;
+  invoice_date?: string;
+  due_date?: string;
+  land_allocations: Array<{
+    land_parcel_id: number;
+    amount: number;
+    notes?: string;
+  }>;
+  notes?: string;
+}
+
+export interface CreateLandParcelPayload {
+  parcel_reference: string;
+  region: string;
+  opening_balance?: number;
+  transaction_date?: string;
+  reference_number?: string;
+  notes?: string;
+}
+
+export interface CreateLandParcelFundingPayload {
+  amount: number;
+  transaction_date?: string;
+  reference_number?: string;
+  notes?: string;
+}
+
+export interface LandParcelAccountDetails {
+  parcel: LandParcel;
+  summary: {
+    opening_balance: number;
+    funded_total: number;
+    expense_total: number;
+    balance: number;
+    is_negative: boolean;
+  };
+  transactions: LandParcelTransaction[];
+  invoice_allocations: SupplierInvoiceLandAllocation[];
+}
+
+export interface CreateSupplierPaymentPayload {
+  amount: number;
+  payment_date?: string;
+  payment_method: 'BANK_TRANSFER' | 'CASH' | 'CHEQUE';
+  reference_number?: string;
+  notes?: string;
+}
+
+const accountingBase = '/accounting';
+
+export const getLandParcelsApi = async (): Promise<LandParcel[]> =>
+  (await apiClient.get<{ data: LandParcel[] }>(`${accountingBase}/land-parcels`)).data.data;
+
+export const createLandParcelApi = async (payload: CreateLandParcelPayload): Promise<LandParcel> =>
+  (await apiClient.post<{ data: LandParcel }>(`${accountingBase}/land-parcels`, payload)).data.data;
+
+export const addCustomerFundingApi = async (parcelId: number, payload: CreateLandParcelFundingPayload): Promise<LandParcel> =>
+  (await apiClient.post<{ data: LandParcel }>(`${accountingBase}/land-parcels/${parcelId}/fund`, payload)).data.data;
+
+export const getLandParcelAccountApi = async (parcelId: number): Promise<LandParcelAccountDetails> =>
+  (await apiClient.get<{ data: LandParcelAccountDetails }>(`${accountingBase}/land-parcels/${parcelId}`)).data.data;
+
+export const getApprovedReceiptsForAccountingApi = async () =>
+  (await apiClient.get<{ data: ApprovedReceipt[] }>(`${accountingBase}/receipts/approved`)).data.data;
+
+export const getSupplierInvoicesApi = async (supplierId?: number) =>
+  (await apiClient.get<{ data: SupplierInvoice[] }>(`${accountingBase}/invoices`, {
+    params: supplierId ? { supplier_id: supplierId } : undefined,
+  })).data.data;
+
+export const createSupplierInvoiceApi = async (payload: CreateSupplierInvoicePayload) =>
+  (await apiClient.post<{ data: SupplierInvoice }>(`${accountingBase}/invoices`, payload)).data.data;
+
+export const matchSupplierInvoiceApi = async (invoiceId: number) =>
+  (await apiClient.post<{ data: SupplierInvoice }>(`${accountingBase}/invoices/${invoiceId}/match`)).data.data;
+
+export interface SupplierPaymentResult {
+  payment: SupplierPayment;
+  supplier_balance: SupplierBalanceSummary;
+  overpayment_warning: boolean;
+  message: string;
+}
+
+export const recordSupplierPaymentApi = async (supplierId: number, payload: CreateSupplierPaymentPayload): Promise<SupplierPaymentResult> =>
+  (await apiClient.post<SupplierPaymentResult>(`${accountingBase}/suppliers/${supplierId}/payments`, payload)).data;
+
+/** Backward-compatible invoice route; new screens should use the supplier-level endpoint above. */
+export const recordSupplierPaymentForInvoiceApi = async (invoiceId: number, payload: CreateSupplierPaymentPayload): Promise<SupplierPaymentResult> =>
+  (await apiClient.post<SupplierPaymentResult>(`${accountingBase}/invoices/${invoiceId}/payments`, payload)).data;
+
+export const getSupplierAccountsApi = async () =>
+  (await apiClient.get<{ data: SupplierAccountSummary[] }>(`${accountingBase}/suppliers/accounts`)).data.data;
+
+export const getSupplierAccountApi = async (supplierId: number) =>
+  (await apiClient.get<{ data: SupplierAccountDetails }>(`${accountingBase}/suppliers/${supplierId}/account`)).data.data;

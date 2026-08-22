@@ -1,0 +1,913 @@
+
+> al-ashbiliya-procurement-frontend@1.0.0 test
+> vitest run --run --reporter=verbose
+
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mE:/purchasing system[39m
+
+ [32m✓[39m src/test/Units.test.ts[2m > [22mArabic unit labels[2m > [22mtranslates M3 and common aliases to متر مكعب
+ [32m✓[39m src/test/Units.test.ts[2m > [22mArabic unit labels[2m > [22mtranslates all standard construction units used by the forms
+ [32m✓[39m src/test/Units.test.ts[2m > [22mArabic unit labels[2m > [22mkeeps API values in English while accepting Arabic display values
+ [32m✓[39m src/test/Units.test.ts[2m > [22mArabic unit labels[2m > [22mbuilds Arabic select options without changing option values
+[90mstderr[2m | src/test/AccountingPurchaseOrder.test.tsx[2m > [22m[2mAccounting PO frontend[2m > [22m[2mrenders dashboard
+[22m[39m⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+[90mstderr[2m | src/test/RoleNavigation.test.tsx[2m > [22m[2mRole-based navigation and redirect flow[2m > [22m[2m1. Employee sees only employee navigation plus notifications and profile
+[22m[39m⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ [32m✓[39m src/test/AccountingPurchaseOrder.test.tsx[2m > [22mAccounting PO frontend[2m > [22mrenders dashboard
+[90mstderr[2m | src/test/Profile.test.tsx[2m > [22m[2mUser الملف الشخصي Feature Frontend[2m > [22m[2m1. الملف الشخصي page renders cleanly
+[22m[39m⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ [32m✓[39m src/test/Profile.test.tsx[2m > [22mUser الملف الشخصي Feature Frontend[2m > [22m1. الملف الشخصي page renders cleanly
+[90mstderr[2m | src/test/AuthFoundation.test.tsx[2m > [22m[2mLoginPage Component[2m > [22m[2mrenders email and password inputs and sign-in button
+[22m[39m⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ [32m✓[39m src/test/AuthFoundation.test.tsx[2m > [22mAuthStorage Utility[2m > [22mstores and retrieves Sanctum Bearer token under al_ashbiliya_auth_token key
+ [32m✓[39m src/test/AuthFoundation.test.tsx[2m > [22mPermission & Role Helpers[2m > [22mcorrectly evaluates hasRole
+ [32m✓[39m src/test/AuthFoundation.test.tsx[2m > [22mPermission & Role Helpers[2m > [22mcorrectly evaluates hasPermission including admin override
+ [32m✓[39m src/test/AuthFoundation.test.tsx[2m > [22mAPI Error Parser Utility[2m > [22mparses 401 unauthenticated errors
+ [32m✓[39m src/test/AuthFoundation.test.tsx[2m > [22mAPI Error Parser Utility[2m > [22mexplains invalid login credentials without exposing technical details
+ [32m✓[39m src/test/AuthFoundation.test.tsx[2m > [22mAPI Error Parser Utility[2m > [22mparses 403 forbidden errors without logging out user
+ [32m✓[39m src/test/AuthFoundation.test.tsx[2m > [22mAPI Error Parser Utility[2m > [22mparses 422 validation errors with field errors
+ [32m✓[39m src/test/AuthFoundation.test.tsx[2m > [22mUI Components[2m > [22mrenders LoadingSpinner with custom message
+ [32m✓[39m src/test/AuthFoundation.test.tsx[2m > [22mUI Components[2m > [22mrenders ErrorMessage component
+ [32m✓[39m src/test/AuthFoundation.test.tsx[2m > [22mLoginPage Component[2m > [22mrenders email and password inputs and sign-in button
+ [32m✓[39m src/test/AuthFoundation.test.tsx[2m > [22mLoginPage Component[2m > [22mshows a clear Arabic message when the previous session expired
+ [32m✓[39m src/test/Profile.test.tsx[2m > [22mUser الملف الشخصي Feature Frontend[2m > [22m2. Authenticated user name is displayed
+[90mstderr[2m | src/test/NotificationSystem.test.tsx[2m > [22m[2mالإشعارات System Frontend[2m > [22m[2m1. الإشعارات page renders title and elements
+[22m[39m⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ [32m✓[39m src/test/Profile.test.tsx[2m > [22mUser الملف الشخصي Feature Frontend[2m > [22m3. Email is displayed
+ [32m✓[39m src/test/NotificationSystem.test.tsx[2m > [22mالإشعارات System Frontend[2m > [22m1. الإشعارات page renders title and elements[33m 347[2mms[22m[39m
+ [32m✓[39m src/test/Profile.test.tsx[2m > [22mUser الملف الشخصي Feature Frontend[2m > [22m4. القسم is displayed when available
+[90mstderr[2m | src/test/AdminSystemMonitoring.test.tsx[2m > [22m[2mAdmin system monitoring page[2m > [22m[2mrenders health, deployment and alert sections
+[22m[39m⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ [32m✓[39m src/test/NotificationSystem.test.tsx[2m > [22mالإشعارات System Frontend[2m > [22m2. الإشعارات are loaded from API
+ [32m✓[39m src/test/Profile.test.tsx[2m > [22mUser الملف الشخصي Feature Frontend[2m > [22m5. Roles are displayed
+ [32m✓[39m src/test/NotificationSystem.test.tsx[2m > [22mالإشعارات System Frontend[2m > [22m3. Unread count is displayed correctly
+[90mstderr[2m | src/test/ProcurementPurchaseOrder.test.tsx[2m > [22m[2mProcurement purchase order frontend[2m > [22m[2mrenders the procurement dashboard from API data
+[22m[39m⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ [32m✓[39m src/test/AdminSystemMonitoring.test.tsx[2m > [22mAdmin system monitoring page[2m > [22mrenders health, deployment and alert sections[33m 447[2mms[22m[39m
+ [32m✓[39m src/test/Profile.test.tsx[2m > [22mUser الملف الشخصي Feature Frontend[2m > [22m6. Account status is displayed when available
+ [32m✓[39m src/test/NotificationSystem.test.tsx[2m > [22mالإشعارات System Frontend[2m > [22m4. Unread notification has correct visual state and indicator
+ [32m✓[39m src/test/ProcurementPurchaseOrder.test.tsx[2m > [22mProcurement purchase order frontend[2m > [22mrenders the procurement dashboard from API data
+[90mstderr[2m | src/test/ProcurementPurchaseOrder.test.tsx
+[22m[39mError: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at Request.emit (node:events:521:24)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3) [90mundefined[39m
+Error loading procurement dashboard: AxiosError: Network Error
+    at XMLHttpRequest.handleError [90m(file:///E:/purchasing%20system/[39mnode_modules/[4maxios[24m/lib/adapters/xhr.js:124:21[90m)[39m
+    at XMLHttpRequest.invokeTheCallbackFunction [90m(E:\purchasing system\[39mnode_modules\[4mjsdom[24m\lib\jsdom\living\generated\EventHandlerNonNull.js:14:28[90m)[39m
+    at XMLHttpRequest.<anonymous> [90m(E:\purchasing system\[39mnode_modules\[4mjsdom[24m\lib\jsdom\living\helpers\create-event-accessor.js:35:32[90m)[39m
+    at innerInvokeEventListeners [90m(E:\purchasing system\[39mnode_modules\[4mjsdom[24m\lib\jsdom\living\events\EventTarget-impl.js:350:25[90m)[39m
+    at invokeEventListeners [90m(E:\purchasing system\[39mnode_modules\[4mjsdom[24m\lib\jsdom\living\events\EventTarget-impl.js:286:3[90m)[39m
+    at XMLHttpRequestImpl._dispatch [90m(E:\purchasing system\[39mnode_modules\[4mjsdom[24m\lib\jsdom\living\events\EventTarget-impl.js:233:9[90m)[39m
+    at fireAnEvent [90m(E:\purchasing system\[39mnode_modules\[4mjsdom[24m\lib\jsdom\living\helpers\events.js:18:36[90m)[39m
+    at requestErrorSteps [90m(E:\purchasing system\[39mnode_modules\[4mjsdom[24m\lib\jsdom\living\xhr\xhr-utils.js:131:3[90m)[39m
+    at Object.dispatchError [90m(E:\purchasing system\[39mnode_modules\[4mjsdom[24m\lib\jsdom\living\xhr\xhr-utils.js:60:3[90m)[39m
+    at Request.<anonymous> [90m(E:\purchasing system\[39mnode_modules\[4mjsdom[24m\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18[90m)[39m
+    at Axios.request [90m(file:///E:/purchasing%20system/[39mnode_modules/[4maxios[24m/lib/core/Axios.js:46:41[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at Module.getProcurementAnalyticsApi [90m(E:\purchasing system\[39msrc\api\procurement.ts:161:11[90m)[39m
+    at async Promise.all (index 2)
+    at loadData [90m(E:\purchasing system\[39msrc\pages\procurement\ProcurementDashboardPage.tsx:31:52[90m)[39m {
+  isAxiosError: [33mtrue[39m,
+  code: [32m'ERR_NETWORK'[39m,
+  config: [Object: null prototype] {
+    transitional: {
+      silentJSONParsing: [33mtrue[39m,
+      forcedJSONParsing: [33mtrue[39m,
+      clarifyTimeoutError: [33mfalse[39m,
+      legacyInterceptorReqResOrdering: [33mtrue[39m,
+      advertiseZstdAcceptEncoding: [33mfalse[39m,
+      validateStatusUndefinedResolves: [33mtrue[39m
+    },
+    adapter: [ [32m'xhr'[39m, [32m'http'[39m, [32m'fetch'[39m ],
+    transformRequest: [ [36m[Function: transformRequest][39m ],
+    transformResponse: [ [36m[Function: transformResponse][39m ],
+    timeout: [33m10000[39m,
+    xsrfCookieName: [32m'XSRF-TOKEN'[39m,
+    xsrfHeaderName: [32m'X-XSRF-TOKEN'[39m,
+    maxContentLength: [33m-1[39m,
+    maxBodyLength: [33m-1[39m,
+    env: { FormData: [36m[Function][39m, Blob: [36m[class Blob][39m },
+    validateStatus: [36m[Function: validateStatus][39m,
+    headers: Object [AxiosHeaders] {
+      Accept: [32m'application/json'[39m,
+      [32m'Content-Type'[39m: [32m'application/json'[39m
+    },
+    baseURL: [32m'http://127.0.0.1:8000/api/v1'[39m,
+    params: { period: [32m'90'[39m },
+    method: [32m'get'[39m,
+    url: [32m'/procurement/analytics'[39m,
+    allowAbsoluteUrls: [33mtrue[39m,
+    data: [90mundefined[39m
+  },
+  request: XMLHttpRequest {},
+  event: ProgressEvent { isTrusted: [36m[Getter][39m }
+}
+
+ [32m✓[39m src/test/Profile.test.tsx[2m > [22mUser الملف الشخصي Feature Frontend[2m > [22m7. Missing optional fields do not break the page
+ [32m✓[39m src/test/NotificationSystem.test.tsx[2m > [22mالإشعارات System Frontend[2m > [22m5. Mark single notification as read works
+ [32m✓[39m src/test/NotificationSystem.test.tsx[2m > [22mالإشعارات System Frontend[2m > [22m6. Mark all notifications as read works
+ [32m✓[39m src/test/Profile.test.tsx[2m > [22mUser الملف الشخصي Feature Frontend[2m > [22m8. الصلاحيات are displayed only when available
+ [32m✓[39m src/test/NotificationSystem.test.tsx[2m > [22mالإشعارات System Frontend[2m > [22m7. Empty state renders when no notifications exist
+ [32m✓[39m src/test/RoleNavigation.test.tsx[2m > [22mRole-based navigation and redirect flow[2m > [22m1. Employee sees only employee navigation plus notifications and profile[33m 463[2mms[22m[39m
+[90mstderr[2m | src/test/RoleNavigation.test.tsx[2m > [22m[2mRole-based navigation and redirect flow[2m > [22m[2m2. Reviewer sees only reviewer navigation plus notifications and profile
+[22m[39mError: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+Error: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+
+ [32m✓[39m src/test/NotificationSystem.test.tsx[2m > [22mالإشعارات System Frontend[2m > [22m8. API error renders retry/error state
+ [32m✓[39m src/test/NotificationSystem.test.tsx[2m > [22mالإشعارات System Frontend[2m > [22m9. Notification navigation works only for supported existing resources
+[90mstderr[2m | src/test/NotificationSystem.test.tsx[2m > [22m[2mالإشعارات System Frontend[2m > [22m[2mNotificationBell loads unread count and navigates to /notifications
+[22m[39mError: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+
+ [32m✓[39m src/test/NotificationSystem.test.tsx[2m > [22mالإشعارات System Frontend[2m > [22mNotificationBell loads unread count and navigates to /notifications
+ [32m✓[39m src/test/Profile.test.tsx[2m > [22mUser الملف الشخصي Feature Frontend[2m > [22m9. Logout action uses existing logout functionality
+ [32m✓[39m src/test/Profile.test.tsx[2m > [22mUser الملف الشخصي Feature Frontend[2m > [22m10. Unauthenticated users remain protected by existing route guard
+ [32m✓[39m src/test/RoleNavigation.test.tsx[2m > [22mRole-based navigation and redirect flow[2m > [22m2. Reviewer sees only reviewer navigation plus notifications and profile
+[90mstderr[2m | src/test/RoleNavigation.test.tsx[2m > [22m[2mRole-based navigation and redirect flow[2m > [22m[2m3. Procurement Manager sees procurement navigation plus notifications and profile
+[22m[39mError: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+Error: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+
+[90mstderr[2m | src/test/ReviewerPurchaseRequest.test.tsx[2m > [22m[2mReviewer purchase request frontend[2m > [22m[2mrenders dashboard counts from backend-scoped requests
+[22m[39m⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+[90mstderr[2m | src/test/RoleNavigation.test.tsx[2m > [22m[2mRole-based navigation and redirect flow[2m > [22m[2m4. Accountant sees accounting navigation plus notifications and profile
+[22m[39mError: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+Error: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+
+ [32m✓[39m src/test/RoleNavigation.test.tsx[2m > [22mRole-based navigation and redirect flow[2m > [22m3. Procurement Manager sees procurement navigation plus notifications and profile
+[90mstderr[2m | src/test/EmployeePurchaseRequest.test.tsx[2m > [22m[2mPurchaseRequestTable Component[2m > [22m[2mrenders empty state when no requests exist
+[22m[39m⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ [32m✓[39m src/test/EmployeePurchaseRequest.test.tsx[2m > [22mPurchaseRequestStatusBadge Component[2m > [22mrenders correct labels for different statuses
+ [32m✓[39m src/test/EmployeePurchaseRequest.test.tsx[2m > [22mPurchaseRequestTable Component[2m > [22mrenders empty state when no requests exist
+ [32m✓[39m src/test/EmployeePurchaseRequest.test.tsx[2m > [22mPurchaseRequestTable Component[2m > [22mshows edit action for submitted requests before reviewer approval
+ [32m✓[39m src/test/RoleNavigation.test.tsx[2m > [22mRole-based navigation and redirect flow[2m > [22m4. Accountant sees accounting navigation plus notifications and profile
+[90mstderr[2m | src/test/RoleNavigation.test.tsx[2m > [22m[2mRole-based navigation and redirect flow[2m > [22m[2m5. General Manager sees GM navigation plus notifications and profile
+[22m[39mError: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+Error: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+
+ [32m✓[39m src/test/ReviewerPurchaseRequest.test.tsx[2m > [22mReviewer purchase request frontend[2m > [22mrenders dashboard counts from backend-scoped requests
+[90mstderr[2m | src/test/AdminDashboard.test.tsx[2m > [22m[2mAdmin Frontend Feature Suite[2m > [22m[2m1. Admin dashboard renders KPIs and status modules
+[22m[39m⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ [32m✓[39m src/test/ReviewerPurchaseRequest.test.tsx[2m > [22mReviewer purchase request frontend[2m > [22mshows Start Review only for submitted queue requests
+[90mstderr[2m | src/test/RoleNavigation.test.tsx[2m > [22m[2mRole-based navigation and redirect flow[2m > [22m[2m6. Admin sees admin navigation and shared profile links
+[22m[39mError: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+Error: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+
+ [32m✓[39m src/test/RoleNavigation.test.tsx[2m > [22mRole-based navigation and redirect flow[2m > [22m5. General Manager sees GM navigation plus notifications and profile
+ [32m✓[39m src/test/AdminDashboard.test.tsx[2m > [22mAdmin Frontend Feature Suite[2m > [22m1. Admin dashboard renders KPIs and status modules
+[90mstderr[2m | src/test/AdminDashboard.test.tsx[2m > [22m[2mAdmin Frontend Feature Suite[2m > [22m[2m2. Permission-based sidebar displays admin links for Admin user
+[22m[39mError: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+Error: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+
+ [32m✓[39m src/test/AdminDashboard.test.tsx[2m > [22mAdmin Frontend Feature Suite[2m > [22m2. Permission-based sidebar displays admin links for Admin user
+ [32m✓[39m src/test/ReviewerPurchaseRequest.test.tsx[2m > [22mReviewer purchase request frontend[2m > [22mstarts review through the reviewer API and reveals editing
+ [32m✓[39m src/test/AdminDashboard.test.tsx[2m > [22mAdmin Frontend Feature Suite[2m > [22m3. المستخدمون page renders with backend availability notice
+[90mstderr[2m | src/test/EmployeePurchaseRequest.test.tsx[2m > [22m[2mPurchaseRequestTable Component[2m > [22m[2mrenders requests and actions correctly
+[22m[39mWarning: An update to AuthProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at AuthProvider (E:\purchasing system\src\context\AuthContext.tsx:14:25)
+    at Router (E:\purchasing system\node_modules\react-router\dist\umd\react-router.development.js:1203:17)
+    at BrowserRouter (E:\purchasing system\node_modules\react-router-dom\dist\umd\react-router-dom.development.js:688:7)
+Warning: An update to AuthProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at AuthProvider (E:\purchasing system\src\context\AuthContext.tsx:14:25)
+    at Router (E:\purchasing system\node_modules\react-router\dist\umd\react-router.development.js:1203:17)
+    at BrowserRouter (E:\purchasing system\node_modules\react-router-dom\dist\umd\react-router-dom.development.js:688:7)
+Warning: An update to AuthProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at AuthProvider (E:\purchasing system\src\context\AuthContext.tsx:14:25)
+    at Router (E:\purchasing system\node_modules\react-router\dist\umd\react-router.development.js:1203:17)
+    at BrowserRouter (E:\purchasing system\node_modules\react-router-dom\dist\umd\react-router-dom.development.js:688:7)
+
+[90mstderr[2m | src/test/EmployeePurchaseRequest.test.tsx[2m > [22m[2mحذف & إرسال Dialog Modals[2m > [22m[2mrenders إرسال confirmation dialog and handles action
+[22m[39mError: Not implemented: window.scrollTo
+    at module.exports (E:\purchasing system\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at E:\purchasing system\node_modules\jsdom\lib\jsdom\browser\Window.js:960:7
+    at E:\purchasing system\src\components\ui\Modal.tsx:26:12
+    at commitHookEffectListMount (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:27078:3)
+    at flushPassiveEffects (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:27023:14) [90mundefined[39m
+
+[90mstderr[2m | src/test/EmployeePurchaseRequest.test.tsx[2m > [22m[2mحذف & إرسال Dialog Modals[2m > [22m[2mrenders حذف confirmation dialog and handles action
+[22m[39mError: Not implemented: window.scrollTo
+    at module.exports (E:\purchasing system\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at E:\purchasing system\node_modules\jsdom\lib\jsdom\browser\Window.js:960:7
+    at E:\purchasing system\src\components\ui\Modal.tsx:26:12
+    at commitHookEffectListMount (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:27078:3)
+    at flushPassiveEffects (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:27023:14) [90mundefined[39m
+
+ [32m✓[39m src/test/AdminDashboard.test.tsx[2m > [22mAdmin Frontend Feature Suite[2m > [22m4. Roles page renders with backend availability notice
+ [32m✓[39m src/test/ReviewerPurchaseRequest.test.tsx[2m > [22mReviewer purchase request frontend[2m > [22mkeeps reviewer editing available while procurement approval is pending
+ [32m✓[39m src/test/AdminDashboard.test.tsx[2m > [22mAdmin Frontend Feature Suite[2m > [22m5. الصلاحيات page renders with backend availability notice
+[90mstderr[2m | src/test/AdminDashboard.test.tsx[2m > [22m[2mAdmin Frontend Feature Suite[2m > [22m[2m6. الأقسام page renders with backend availability notice
+[22m[39mError: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+
+ [32m✓[39m src/test/ReviewerPurchaseRequest.test.tsx[2m > [22mReviewer purchase request frontend[2m > [22mkeeps finalized reviewer requests read-only after procurement approval
+ [32m✓[39m src/test/AdminDashboard.test.tsx[2m > [22mAdmin Frontend Feature Suite[2m > [22m6. الأقسام page renders with backend availability notice
+ [32m✓[39m src/test/EmployeePurchaseRequest.test.tsx[2m > [22mPurchaseRequestTable Component[2m > [22mhides edit action after reviewer approval
+ [32m✓[39m src/test/EmployeePurchaseRequest.test.tsx[2m > [22mPurchaseRequestTable Component[2m > [22mrenders requests and actions correctly
+ [32m✓[39m src/test/EmployeePurchaseRequest.test.tsx[2m > [22mحذف & إرسال Dialog Modals[2m > [22mrenders إرسال confirmation dialog and handles action
+ [32m✓[39m src/test/EmployeePurchaseRequest.test.tsx[2m > [22mحذف & إرسال Dialog Modals[2m > [22mrenders حذف confirmation dialog and handles action
+ [32m✓[39m src/test/EmployeePurchaseRequest.test.tsx[2m > [22mEmployee Pages Integration[2m > [22mrenders لوحة الموظف Page with KPI summary
+ [32m✓[39m src/test/ReviewerPurchaseRequest.test.tsx[2m > [22mReviewer purchase request frontend[2m > [22mshows all requested reviewer search filters
+[90mstderr[2m | src/test/RoleNavigation.test.tsx[2m > [22m[2mRole-based navigation and redirect flow[2m > [22m[2m7. Root redirect chooses the correct dashboard for each role with priority
+[22m[39mError: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+Error: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+
+ [32m✓[39m src/test/RoleNavigation.test.tsx[2m > [22mRole-based navigation and redirect flow[2m > [22m6. Admin sees admin navigation and shared profile links
+[90mstderr[2m | src/test/AdminDashboard.test.tsx[2m > [22m[2mAdmin Frontend Feature Suite[2m > [22m[2m8. البنود page renders and loads items from backend API
+[22m[39mError: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+
+ [32m✓[39m src/test/AdminDashboard.test.tsx[2m > [22mAdmin Frontend Feature Suite[2m > [22m7. التصنيفات page renders with backend availability notice
+ [32m✓[39m src/test/AdminDashboard.test.tsx[2m > [22mAdmin Frontend Feature Suite[2m > [22m8. البنود page renders and loads items from backend API
+[90mstderr[2m | src/test/AdminDashboard.test.tsx[2m > [22m[2mAdmin Frontend Feature Suite[2m > [22m[2m10. Unauthorized users without permissions are blocked from admin submodules
+[22m[39mError: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+Error: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+Error: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+
+ [32m✓[39m src/test/AdminDashboard.test.tsx[2m > [22mAdmin Frontend Feature Suite[2m > [22m9. الموردون page renders and loads suppliers from backend API
+ [32m✓[39m src/test/AdminDashboard.test.tsx[2m > [22mAdmin Frontend Feature Suite[2m > [22m10. Unauthorized users without permissions are blocked from admin submodules
+ [32m✓[39m src/test/AdminDashboard.test.tsx[2m > [22mAdmin Frontend Feature Suite[2m > [22m11. Unauthenticated users are redirected by ProtectedRoute
+ [32m✓[39m src/test/RoleNavigation.test.tsx[2m > [22mRole-based navigation and redirect flow[2m > [22m7. Root redirect chooses the correct dashboard for each role with priority
+ [32m✓[39m src/test/EmployeePurchaseRequest.test.tsx[2m > [22mEmployee Pages Integration[2m > [22mrenders Purchase Requests Page and handles filter selection
+[90mstderr[2m | src/test/EmployeePurchaseRequest.test.tsx[2m > [22m[2mEmployee Pages Integration[2m > [22m[2mrenders إنشاء طلب شراء Form and submits new draft
+[22m[39mError: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+
+[90mstderr[2m | src/test/RoleNavigation.test.tsx[2m > [22m[2mRole-based navigation and redirect flow[2m > [22m[2m8. Shared layout keeps RTL direction and mobile menu toggle working
+[22m[39mError: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+Error: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+
+ [32m✓[39m src/test/RoleNavigation.test.tsx[2m > [22mRole-based navigation and redirect flow[2m > [22m8. Shared layout keeps RTL direction and mobile menu toggle working
+ [31m×[39m src/test/EmployeePurchaseRequest.test.tsx[2m > [22mEmployee Pages Integration[2m > [22mrenders إنشاء طلب شراء Form and submits new draft[33m 1179[2mms[22m[39m
+[31m   → expected "createPurchaseRequestApi" to be called at least once
+
+Ignored nodes: comments, script, style
+[36m<html>[31m
+  [36m<head />[31m
+  [36m<body[31m
+    [33mstyle[31m=[32m""[31m
+  [36m>[31m
+    [36m<div>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"max-w-6xl mx-auto space-y-6 pb-8"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"flex flex-col md:flex-row md:items-center md:justify-between gap-4"[31m
+        [36m>[31m
+          [36m<div>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"flex items-center gap-2 text-cyan-400 text-xs font-semibold mb-2"[31m
+            [36m>[31m
+              [36m<span>[31m
+                [0m✍️[0m
+              [36m</span>[31m
+              [36m<span>[31m
+                [0mEmployee / الموظف[0m
+              [36m</span>[31m
+            [36m</div>[31m
+            [36m<h1[31m
+              [33mclass[31m=[32m"text-xl font-black text-slate-100"[31m
+            [36m>[31m
+              [0mإنشاء طلب شراء[0m
+            [36m</h1>[31m
+            [36m<p[31m
+              [33mclass[31m=[32m"text-xs text-slate-400 mt-1"[31m
+            [36m>[31m
+              [0mصفحة واحدة لإدخال بيانات الطلب والبنود ثم الإرسال للمراجع مباشرة.[0m
+            [36m</p>[31m
+          [36m</div>[31m
+          [36m<a[31m
+            [33mhref[31m=[32m"/employee/requests"[31m
+          [36m>[31m
+            [36m<button[31m
+              [33mclass[31m=[32m"inline-flex min-h-[44px] sm:min-h-0 items-center justify-center font-bold rounded-lg transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/80 disabled:opacity-50 disabled:cursor-not-allowed select-none bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 text-xs gap-1.5 "[31m
+              [33mtype[31m=[32m"button"[31m
+            [36m>[31m
+              [36m<span>[31m
+                [0m← طلباتي[0m
+              [36m</span>[31m
+            [36m</button>[31m
+          [36m</a>[31m
+        [36m</div>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"bg-cyan-950/30 border border-cyan-800/40 rounded-xl px-4 py-3 text-xs text-cyan-200"[31m
+        [36m>[31m
+          [0mلا توجد مراحل منفصلة أو مرفقات في نموذج إنشاء الطلب. بعد الإرسال ينتقل الطلب إلى المراجع.[0m
+        [36m</div>[31m
+        [36m<section[31m
+          [33mclass[31m=[32m"bg-slate-900/40 border border-slate-800/60 rounded-2xl p-5 md:p-6"[31m
+        [36m>[31m
+          [36m<div[31m
+            [33mclass[31m=[32m"flex items-center gap-3 mb-6"[31m
+          [36m>[31m
+            [36m<span[31m
+              [33mclass[31m=[32m"w-8 h-8 rounded-lg bg-cyan-500/15 text-cyan-300 flex items-center justify-center"[31m
+            [36m>[31m
+              [0m1[0m
+            [36m</span>[31m
+            [36m<div>[31m
+              [36m<h2[31m
+                [33mclass[31m=[32m"text-sm font-bold text-slate-100"[31m
+              [36m>[31m
+                [0mبيانات الطلب والبنود[0m
+              [36m</h2>[31m
+              [36m<p[31m
+                [33mclass[31m=[32m"text-[11px] text-slate-500"[31m
+              [36m>[31m
+                [0mاختر المراجع وأكمل البيانات المطلوبة ثم أضف البنود داخل نفس النموذج.[0m
+              [36m</p>[31m
+            [36m</div>[31m
+          [36m</div>[31m
+          [36m<div[31m
+            [33maria-label[31m=[32m"البيانات الأساسية للطلب"[31m
+            [33mclass[31m=[32m"space-y-5"[31m
+          [36m>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"grid grid-cols-1 md:grid-cols-2 gap-4"[31m
+            [36m>[31m
+              [36m<div[31m
+                [33mclass[31m=[32m"space-y-1.5 "[31m
+              [36m>[31m
+                [36m<label[31m
+                  [33mclass[31m=[32m"block text-xs font-semibold text-slate-300"[31m
+                [36m>[31m
+                  [0mالمراجع / رئيس القسم[0m
+                [36m</label>[31m
+                [36m<select[31m
+                  [33mclass[31m=[32m"w-full bg-slate-950/80 border border-slate-800 focus:border-cyan-500/80 rounded-lg px-3.5 py-2 text-xs text-slate-100 focus:outline-none transition-colors duration-200 "[31m
+                  [33mid[31m=[32m"pr-reviewer-user"[31m
+                [36m>[31m
+                  [36m<option[31m
+                    [33mvalue[31m=[32m""[31m
+                  [36m>[31m
+                    [0mاختر المراجع[0m
+                  [36m</option>[31m
+                  [36m<option[31m
+                    [33mvalue[31m=[32m"2"[31m
+                  [36m>[31m
+                    [0mReviewer Demo[0m
+                    [0m — IT Operations[0m
+                    [0m (reviewer@example.test)[0m
+                  [36m</option>[31m
+                [36m</select>[31m
+                [36m<p[31m
+                  [33mclass[31m=[32m"text-[11px] text-slate-500 mt-1"[31m
+                [36m>[31m
+                  [0mيراجع الطلب ويعدله أو يعتمده أو يرفضه.[0m
+                [36m</p>[31m
+              [36m</div>[31m
+              [36m<div[31m
+                [33mclass[31m=[32m"space-y-1.5 "[31m
+              [36m>[31m
+                [36m<label[31m
+                  [33mclass[31m=[32m"block text-xs font-semibold text-slate-300"[31m
+                [36m>[31m
+                  [0mالمهندس المسؤول بالموقع[0m
+                [36m</label>[31m
+                [36m<select[31m
+                  [33mclass[31m=[32m"w-full bg-slate-950/80 border border-slate-800 focus:border-cyan-500/80 rounded-lg px-3.5 py-2 text-xs text-slate-100 focus:outline-none transition-colors duration-200 "[31m
+                  [33mdisabled[31m=[32m""[31m
+                  [33mid[31m=[32m"pr-site-engineer-user"[31m
+                [36m>[31m
+                  [36m<option[31m
+                    [33mvalue[31m=[32m""[31m
+                  [36m>[31m
+                    [0mاختر مهندس الموقع[0m
+                  [36m</option>[31m
+                [36m</select>[31m
+                [36m<p[31m
+                  [33mclass[31m=[32m"text-[11px] text-slate-500 mt-1"[31m
+                [36m>[31m
+                  [0mيراجع إذن الاستلام بعد اعتماد أمين المخزن.[0m
+                [36m</p>[31m
+              [36m</div>[31m
+            [36m</div>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"grid grid-cols-1 md:grid-cols-2 gap-4"[31m
+            [36m>[31m
+              [36m<div[31m
+                [33mclass[31m=[32m"space-y-1.5 "[31m
+              [36m>[31m
+                [36m<label[31m
+                  [33mclass[31m=[32m"block text-xs font-semibold text-slate-300"[31m
+                [36m>[31m
+                  [0mالأولوية[0m
+                [36m</label>[31m
+                [36m<select[31m
+                  [33mclass[31m=[32m"w-full bg-slate-950/80 border border-slate-800 focus:border-cyan-500/80 rounded-lg px-3.5 py...[39m
+[90mstderr[2m | src/test/EmployeePurchaseRequest.test.tsx[2m > [22m[2mEmployee Pages Integration[2m > [22m[2mrenders Request التفاصيل Page for a draft and handles إرسال action
+[22m[39mError: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+Error: Not implemented: window.scrollTo
+    at module.exports (E:\purchasing system\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at E:\purchasing system\node_modules\jsdom\lib\jsdom\browser\Window.js:960:7
+    at E:\purchasing system\src\components\ui\Modal.tsx:26:12
+    at commitHookEffectListMount (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:27078:3)
+    at flushPassiveEffects (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:27023:14) [90mundefined[39m
+
+[90mstderr[2m | src/test/EmployeePurchaseRequest.test.tsx[2m > [22m[2mEmployee Pages Integration[2m > [22m[2mrenders Request التفاصيل Page for a draft and handles إرسال action
+[22m[39mError: Not implemented: window.scrollTo
+    at module.exports (E:\purchasing system\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at E:\purchasing system\node_modules\jsdom\lib\jsdom\browser\Window.js:960:7
+    at E:\purchasing system\src\components\ui\Modal.tsx:26:12
+    at commitHookEffectListMount (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:27078:3)
+    at flushPassiveEffects (E:\purchasing system\node_modules\react-dom\cjs\react-dom.development.js:27023:14) [90mundefined[39m
+Error: Error: connect ECONNREFUSED 127.0.0.1:8000
+    at Object.dispatchError (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+    at EventEmitter.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+    at EventEmitter.emit (node:events:521:24)
+    at Request.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:404:14)
+    at Request.emit (node:events:509:28)
+    at ClientRequest.<anonymous> (E:\purchasing system\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:127:14)
+    at ClientRequest.emit (node:events:509:28)
+    at emitErrorEvent (node:_http_client:109:11)
+    at Socket.socketErrorListener (node:_http_client:593:5)
+    at Socket.emit (node:events:509:28) [90mundefined[39m
+
+ [32m✓[39m src/test/EmployeePurchaseRequest.test.tsx[2m > [22mEmployee Pages Integration[2m > [22mrenders Request التفاصيل Page for a draft and handles إرسال action
+
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 1 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/test/EmployeePurchaseRequest.test.tsx[2m > [22mEmployee Pages Integration[2m > [22mrenders إنشاء طلب شراء Form and submits new draft
+[31m[1mAssertionError[22m[39m: expected "createPurchaseRequestApi" to be called at least once
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body[39m
+    [33mstyle[39m=[32m""[39m
+  [36m>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"max-w-6xl mx-auto space-y-6 pb-8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col md:flex-row md:items-center md:justify-between gap-4"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center gap-2 text-cyan-400 text-xs font-semibold mb-2"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0m✍️[0m
+              [36m</span>[39m
+              [36m<span>[39m
+                [0mEmployee / الموظف[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<h1[39m
+              [33mclass[39m=[32m"text-xl font-black text-slate-100"[39m
+            [36m>[39m
+              [0mإنشاء طلب شراء[0m
+            [36m</h1>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-slate-400 mt-1"[39m
+            [36m>[39m
+              [0mصفحة واحدة لإدخال بيانات الطلب والبنود ثم الإرسال للمراجع مباشرة.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<a[39m
+            [33mhref[39m=[32m"/employee/requests"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex min-h-[44px] sm:min-h-0 items-center justify-center font-bold rounded-lg transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/80 disabled:opacity-50 disabled:cursor-not-allowed select-none bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 text-xs gap-1.5 "[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0m← طلباتي[0m
+              [36m</span>[39m
+            [36m</button>[39m
+          [36m</a>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-cyan-950/30 border border-cyan-800/40 rounded-xl px-4 py-3 text-xs text-cyan-200"[39m
+        [36m>[39m
+          [0mلا توجد مراحل منفصلة أو مرفقات في نموذج إنشاء الطلب. بعد الإرسال ينتقل الطلب إلى المراجع.[0m
+        [36m</div>[39m
+        [36m<section[39m
+          [33mclass[39m=[32m"bg-slate-900/40 border border-slate-800/60 rounded-2xl p-5 md:p-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-3 mb-6"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"w-8 h-8 rounded-lg bg-cyan-500/15 text-cyan-300 flex items-center justify-center"[39m
+            [36m>[39m
+              [0m1[0m
+            [36m</span>[39m
+            [36m<div>[39m
+              [36m<h2[39m
+                [33mclass[39m=[32m"text-sm font-bold text-slate-100"[39m
+              [36m>[39m
+                [0mبيانات الطلب والبنود[0m
+              [36m</h2>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-[11px] text-slate-500"[39m
+              [36m>[39m
+                [0mاختر المراجع وأكمل البيانات المطلوبة ثم أضف البنود داخل نفس النموذج.[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33maria-label[39m=[32m"البيانات الأساسية للطلب"[39m
+            [33mclass[39m=[32m"space-y-5"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-2 gap-4"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"space-y-1.5 "[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block text-xs font-semibold text-slate-300"[39m
+                [36m>[39m
+                  [0mالمراجع / رئيس القسم[0m
+                [36m</label>[39m
+                [36m<select[39m
+                  [33mclass[39m=[32m"w-full bg-slate-950/80 border border-slate-800 focus:border-cyan-500/80 rounded-lg px-3.5 py-2 text-xs text-slate-100 focus:outline-none transition-colors duration-200 "[39m
+                  [33mid[39m=[32m"pr-reviewer-user"[39m
+                [36m>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m>[39m
+                    [0mاختر المراجع[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"2"[39m
+                  [36m>[39m
+                    [0mReviewer Demo[0m
+                    [0m — IT Operations[0m
+                    [0m (reviewer@example.test)[0m
+                  [36m</option>[39m
+                [36m</select>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-[11px] text-slate-500 mt-1"[39m
+                [36m>[39m
+                  [0mيراجع الطلب ويعدله أو يعتمده أو يرفضه.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"space-y-1.5 "[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block text-xs font-semibold text-slate-300"[39m
+                [36m>[39m
+                  [0mالمهندس المسؤول بالموقع[0m
+                [36m</label>[39m
+                [36m<select[39m
+                  [33mclass[39m=[32m"w-full bg-slate-950/80 border border-slate-800 focus:border-cyan-500/80 rounded-lg px-3.5 py-2 text-xs text-slate-100 focus:outline-none transition-colors duration-200 "[39m
+                  [33mdisabled[39m=[32m""[39m
+                  [33mid[39m=[32m"pr-site-engineer-user"[39m
+                [36m>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m>[39m
+                    [0mاختر مهندس الموقع[0m
+                  [36m</option>[39m
+                [36m</select>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-[11px] text-slate-500 mt-1"[39m
+                [36m>[39m
+                  [0mيراجع إذن الاستلام بعد اعتماد أمين المخزن.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"grid grid-cols-1 md:grid-cols-2 gap-4"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"space-y-1.5 "[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block text-xs font-semibold text-slate-300"[39m
+                [36m>[39m
+                  [0mالأولوية[0m
+                [36m</label>[39m
+                [36m<select[39m
+                  [33mclass[39m=[32m"w-full bg-slate-950/80 border border-slate-800 focus:border-cyan-500/80 rounded-lg px-3.5 py...
+[36m [2m❯[22m src/test/EmployeePurchaseRequest.test.tsx:[2m335:25[22m[39m
+    [90m333| [39m
+    [90m334| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+    [90m335| [39m      [34mexpect[39m(createSpy)[33m.[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+    [90m   | [39m                        [31m^[39m
+    [90m336| [39m    })[33m;[39m
+    [90m337| [39m  })[33m;[39m
+[90m [2m❯[22m runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:[2m47:12[22m[39m
+[90m [2m❯[22m checkCallback node_modules/@testing-library/dom/dist/wait-for.js:[2m124:77[22m[39m
+[90m [2m❯[22m Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:[2m118:16[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m10 passed[39m[22m[90m (11)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m73 passed[39m[22m[90m (74)[39m
+[2m   Start at [22m 11:08:47
+[2m   Duration [22m 6.91s[2m (transform 4.62s, setup 2.12s, collect 14.25s, tests 7.02s, environment 14.70s, prepare 2.69s)[22m
+

@@ -1,0 +1,339 @@
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import ErrorMessage from '../../components/ErrorMessage';
+import { TableSkeleton } from '../../components/ui/StateFeedback';
+import {
+  AdminItem,
+  getCatalogItemsAdminApi,
+  createItemAdminApi,
+  updateItemAdminApi,
+  toggleItemActiveAdminApi,
+  ItemInput,
+} from '../../api/admin/items';
+import { getCategoriesAdminApi, AdminCategory } from '../../api/admin/categories';
+import { parseApiError } from '../../utils/apiError';
+import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
+import TableFilterBar from '../../components/ui/TableFilterBar';
+import { Modal } from '../../components/ui/Modal';
+import { FormField, Input, Select, Textarea } from '../../components/ui/FormField';
+import { getUnitLabel, getUnitOptions, getUnitValue } from '../../utils/units';
+
+const UNIT_OPTIONS = getUnitOptions(['PCS', 'KG', 'TON', 'M', 'M2', 'M3', 'L', 'BAG', 'BOX', 'CARTON', 'SET', 'PAIR', 'UNIT', 'HOUR', 'DAY']);
+
+export const ItemsPage: React.FC = () => {
+  const { hasPermission } = useAuth();
+  const [items, setItems] = useState<AdminItem[]>([]);
+  const [categories, setCategories] = useState<AdminCategory[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [editingItem, setEditingItem] = useState<AdminItem | null>(null);
+  const [formData, setFormData] = useState<ItemInput>({
+    name: '',
+    sku: '',
+    category_id: 0,
+    uom: 'UNIT',
+    description: '',
+    is_active: true,
+  });
+  const [submitting, setSubmitting] = useState<boolean>(false);
+
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const iData = await getCatalogItemsAdminApi();
+      setItems(iData || []);
+      getCategoriesAdminApi().then((cData) => setCategories(cData || [])).catch(() => {});
+    } catch (err: unknown) {
+      setError(parseApiError(err).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleOpenAdd = () => {
+    setEditingItem(null);
+    setFormData({
+      name: '',
+      sku: `SKU-${Date.now().toString().slice(-4)}`,
+      category_id: categories.length > 0 ? categories[0].id : 0,
+      uom: 'UNIT',
+      description: '',
+      is_active: true,
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (item: AdminItem) => {
+    setEditingItem(item);
+    setFormData({
+      name: item.name,
+      sku: item.sku,
+      category_id: item.category?.id || (categories.length > 0 ? categories[0].id : 0),
+      uom: getUnitValue(item.uom),
+      description: item.description || '',
+      is_active: item.is_active,
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      if (editingItem) {
+        await updateItemAdminApi(editingItem.id, formData);
+      } else {
+        await createItemAdminApi(formData);
+      }
+      setIsModalOpen(false);
+      await loadData();
+    } catch (err: unknown) {
+      setError(parseApiError(err).message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleToggleActive = async (id: number) => {
+    try {
+      await toggleItemActiveAdminApi(id);
+      await loadData();
+    } catch (err: unknown) {
+      setError(parseApiError(err).message);
+    }
+  };
+
+  if (!hasPermission('system.items.manage') && !hasPermission('purchase_request.create')) {
+    return (
+      <div className="p-6 text-center text-rose-400 bg-rose-950/40 border border-rose-800/80 rounded-xl" dir="rtl">
+        عفواً، لا تملك الصلاحية اللازمة للوصول لكتالوج الأصناف.
+      </div>
+    );
+  }
+
+  if (loading) {
+    return <TableSkeleton rows={8} columns={5} className="min-h-[320px]" />;
+  }
+
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const filteredItems = items.filter((item) => {
+    const matchesSearch = !normalizedSearch || [item.name, item.sku, item.description, item.category?.name].filter(Boolean).join(' ').toLowerCase().includes(normalizedSearch);
+    const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? item.is_active : !item.is_active);
+    const matchesCategory = categoryFilter === 'all' || String(item.category?.id || '') === categoryFilter;
+    return matchesSearch && matchesStatus && matchesCategory;
+  });
+
+  return (
+    <div className="space-y-6 animate-fade-in" dir="rtl">
+      {/* Header */}
+      <div className="pb-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-black text-slate-100 flex items-center gap-2">
+            <span>📦</span> الأصناف والكتالوج
+          </h1>
+          <p className="mt-1 text-xs text-slate-400">
+            إدارة وتحديث أصناف ومواد الشركة ووحدات القياس وحالتها
+          </p>
+        </div>
+
+        <Button variant="primary" size="md" onClick={handleOpenAdd}>
+          + إضافة صنف جديد
+        </Button>
+      </div>
+
+      <ErrorMessage error={error} onDismiss={() => setError(null)} />
+
+      <TableFilterBar
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="بحث باسم الصنف أو الرقم أو التصنيف..."
+        selects={[
+          {
+            label: 'التصنيف',
+            value: categoryFilter,
+            onChange: setCategoryFilter,
+            options: [
+              { value: 'all', label: 'كل التصنيفات' },
+              ...categories.map((category) => ({ value: String(category.id), label: category.name })),
+            ],
+          },
+          {
+            label: 'الحالة',
+            value: statusFilter,
+            onChange: setStatusFilter,
+            options: [
+              { value: 'all', label: 'كل الحالات' },
+              { value: 'active', label: 'نشط' },
+              { value: 'inactive', label: 'معطل' },
+            ],
+          },
+        ]}
+        onClear={() => { setSearchTerm(''); setCategoryFilter('all'); setStatusFilter('all'); }}
+        hasActiveFilters={Boolean(searchTerm || categoryFilter !== 'all' || statusFilter !== 'all')}
+        resultCount={filteredItems.length}
+        totalCount={items.length}
+        resultLabel="صنف"
+      />
+
+      {/* Table */}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>اسم الصنف</TableHead>
+            <TableHead>التصنيف</TableHead>
+            <TableHead>الوحدة</TableHead>
+            <TableHead>الحالة</TableHead>
+            <TableHead className="text-center">الإجراءات</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredItems.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="p-8 text-center text-slate-400 text-xs">
+                {items.length === 0 ? 'لا توجد أصناف مسجلة حتى الآن.' : 'لم نجد أصنافًا مطابقة للفلاتر الحالية.'}
+              </TableCell>
+            </TableRow>
+          ) : filteredItems.map((item) => (
+              <TableRow key={item.id}>
+              <TableCell className="font-bold text-slate-100">
+                <div>{item.name}</div>
+                {item.description && <div className="text-[11px] text-slate-400 font-normal">{item.description}</div>}
+              </TableCell>
+              <TableCell className="text-slate-300 font-bold">{item.category?.name || 'غير مصنف'}</TableCell>
+              <TableCell className="text-slate-400">{getUnitLabel(item.uom)}</TableCell>
+              <TableCell>
+                {item.is_active ? (
+                  <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/60 rounded">
+                    نشط
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700 rounded">
+                    معطل
+                  </span>
+                )}
+              </TableCell>
+              <TableCell className="text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleOpenEdit(item)}
+                    className="px-2.5 py-1 text-[11px]"
+                  >
+                    تعديل
+                  </Button>
+                  <Button
+                    variant={item.is_active ? 'warning' : 'success'}
+                    size="sm"
+                    onClick={() => handleToggleActive(item.id)}
+                    className="px-2.5 py-1 text-[11px]"
+                  >
+                    {item.is_active ? 'تعطيل' : 'تفعيل'}
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      {/* Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingItem ? 'تعديل صنف الكتالوج' : 'إضافة صنف جديد'}
+        footer={
+          <>
+            <Button variant="secondary" size="sm" onClick={() => setIsModalOpen(false)}>
+              إلغاء
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSubmit}
+              isLoading={submitting}
+            >
+              {editingItem ? 'تحديث البيانات' : 'إضافة الصنف'}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <FormField label="اسم الصنف" required>
+            <Input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="مثال: شاشة للعرض 27 بوصة"
+            />
+          </FormField>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <FormField label="التصنيف">
+              <Select
+                value={formData.category_id}
+                onChange={(e) => setFormData({ ...formData, category_id: parseInt(e.target.value, 10) })}
+              >
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+
+            <FormField label="الوحدة" required>
+              <Select
+                value={getUnitValue(formData.uom)}
+                onChange={(e) => setFormData({ ...formData, uom: e.target.value })}
+              >
+                {UNIT_OPTIONS.map((unit) => (
+                  <option key={unit.value} value={unit.value}>{unit.label}</option>
+                ))}
+              </Select>
+            </FormField>
+
+            
+          </div>
+
+          <FormField label="وصف الصنف والمواصفات الافتراضية">
+            <Textarea
+              rows={2}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            />
+          </FormField>
+
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              type="checkbox"
+              id="item_is_active"
+              checked={formData.is_active}
+              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+              className="rounded bg-slate-950 border-slate-700 text-cyan-500 focus:ring-cyan-500"
+            />
+            <label htmlFor="item_is_active" className="text-xs text-slate-300 font-bold">
+              صنف نشط ومتاح في طلبات الشراء
+            </label>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+};
+
+export default ItemsPage;

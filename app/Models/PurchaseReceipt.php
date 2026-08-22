@@ -1,0 +1,67 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class PurchaseReceipt extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'purchase_order_id',
+        'purchase_request_id',
+        'warehouse_keeper_user_id',
+        'site_engineer_user_id',
+        'receipt_number',
+        'status',
+        'received_at',
+        'warehouse_submitted_at',
+        'site_engineer_approved_at',
+        'warehouse_notes',
+        'site_engineer_notes',
+        'rejection_reason',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'received_at' => 'date',
+            'warehouse_submitted_at' => 'datetime',
+            'site_engineer_approved_at' => 'datetime',
+        ];
+    }
+
+    public function purchaseOrder(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrder::class);
+    }
+
+    public function purchaseRequest(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseRequest::class);
+    }
+
+    public function warehouseKeeper(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'warehouse_keeper_user_id');
+    }
+
+    public function siteEngineer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'site_engineer_user_id');
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(PurchaseReceiptItem::class);
+    }
+
+    public function supplierInvoices(): HasMany
+    {
+        return $this->hasMany(SupplierInvoice::class, 'purchase_receipt_id');
+    }
+}

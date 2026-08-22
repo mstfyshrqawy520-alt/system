@@ -1,0 +1,37 @@
+﻿E:\purchasing system\src\pages\admin\AdminSystemMonitoringPage.tsx:297:<StatusList title="حالة طلبات الشراء" values={snapshot.workflow.purchase_requests_by_status} />
+E:\purchasing system\src\pages\admin\AdminSystemMonitoringPage.tsx:359:['طلبات الشراء', snapshot.counts.purchase_requests],
+E:\purchasing system\src\pages\admin\ItemsPage.tsx:330:صنف نشط ومتاح في طلبات الشراء
+E:\purchasing system\src\pages\employee\CreatePurchaseRequestPage.tsx:282:<span>إنشاء طلب شراء</span>
+E:\purchasing system\src\pages\employee\CreatePurchaseRequestPage.tsx:284:<h1 className="text-xl font-black text-slate-100">طلب شراء جديد</h1>
+E:\purchasing system\src\pages\employee\EditPurchaseRequestPage.tsx:70:&rarr; العودة إلى قائمة طلبات الشراء
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:5:import PurchaseRequestTable from '../../components/purchase-requests/PurchaseRequestTable';
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:108:أهلاً بك، <strong className="text-cyan-400 font-bold">{user?.name}</strong> ({user?.department?.name || 'قسم الموظف'}). يمكنك إدارة طلبات الشراء الخاصة بك هنا.
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:115:+ إنشاء طلب شراء جديد
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:163:📋 طلبات الشراء الأخيرة
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:174:<PurchaseRequestTable
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:5:import PurchaseRequestTable from '../../components/purchase-requests/PurchaseRequestTable';
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:137:<span>📋</span> طلبات الشراء الخاصة بي
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:140:سجل وتتبع جميع طلبات الشراء المقدمة من قبلك.
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:147:+ طلب شراء جديد
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:176:aria-label="البحث السريع في طلبات الشراء"
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:191:resultLabel="طلب شراء"
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:219:<PurchaseRequestTable
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:222:emptyDescription={hasResultFilters ? 'غيّر كلمة البحث أو التاريخ أو تبويب الحالة، أو استخدم «مسح كل الفلاتر» لعرض الطلبات.' : 'ابدأ بإنشاء أول طلب شراء جديد لمؤسستك.'}
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:122:ملخص شامل لحالة طلبات الشراء وأوامر الشراء والإنفاق حسب القسم والمورد، للعرض والرقابة التنفيذية فقط.
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:161:<RouterLink to="/employee/requests" className="block"><KpiCard title="إجمالي طلبات الشراء" value={formatNumber(metrics?.purchase_requests_count)} accentColor="cyan" icon={<span>PR</span>} /></RouterLink>
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:178:<div className="flex items-center justify-between mb-5"><h2 className="text-base font-bold text-slate-100">حالة طلبات الشراء</h2><span className="text-xs text-slate-500">حسب عدد الطلبات ضمن الفترة</span></div>
+E:\purchasing system\src\pages\general-manager\GeneralManagerReportsPage.tsx:179:{requestStatuses.length === 0 ? <EmptyState label="طلبات الشراء" /> : <div className="space-y-4">
+E:\purchasing system\src\pages\procurement\ApprovedPurchaseRequestsPage.tsx:84:طلبات الشراء المعتمدة من المراجع والمستعدة لإصدار أمر شراء رسمي للمورد
+E:\purchasing system\src\pages\procurement\ApprovedPurchaseRequestsPage.tsx:93:+ طلب شراء مباشر
+E:\purchasing system\src\pages\procurement\ApprovedPurchaseRequestsPage.tsx:121:resultLabel="طلب شراء"
+E:\purchasing system\src\pages\procurement\CreatePurchaseOrderPage.tsx:133:setError('لا يوجد طلب شراء معتمد محدد. يمكنك اختيار أمر شراء مباشر.');
+E:\purchasing system\src\pages\procurement\ProcurementDashboardPage.tsx:142:<h2 className="text-xs font-bold text-slate-200 uppercase tracking-wider">طلبات الشراء المعتمدة بانتظار إصدار أمر الشراء</h2>
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:621:<Button variant="primary" size="sm" onClick={() => setDirectPoOpen(true)}>+ طلب شراء مباشر</Button></div>
+E:\purchasing system\src\pages\reviewer\ReviewerDashboardPage.tsx:112:📋 طلبات تنتظر المراجعة والاعتماد
+E:\purchasing system\src\pages\reviewer\ReviewerRequestsPage.tsx:109:<h1 className="text-xl font-black text-slate-100 flex items-center gap-2">📋 طلبات الشراء للمراجعة</h1>
+E:\purchasing system\src\pages\reviewer\ReviewerRequestsPage.tsx:110:<p className="text-xs text-slate-400 mt-1">جميع طلبات الشراء الواردة من الموظفين ضمن قسمك المعتمد.</p>
+E:\purchasing system\src\pages\HelpCenterPage.tsx:37:employee: { title: 'الموظف', text: 'أنشئ طلباتك في صفحة واحدة، راجع حالتها، وتابع الملاحظات والإشعارات.', link: '/employee/requests', linkLabel: 'طلبات الشراء' },
+E:\purchasing system\src\pages\LoginPage.tsx:159:أهلاً بك في منظومة المشتريات التشغيلية، منصة موحدة لمتابعة طلبات الشراء واعتماداتها داخل الشركة.
+E:\purchasing system\src\pages\NotificationsPage.tsx:249:سجل التنبيهات والإشعارات الخاصة بطلبات الشراء وأوامر العمل
+E:\purchasing system\src\pages\RoleArchivePage.tsx:31:'App\\Models\\PurchaseRequest': 'طلب شراء',
+E:\purchasing system\src\pages\UserPreferencesPage.tsx:143:{['تعيين طلب شراء للمراجعة أو طلب توضيح', 'تحديثات أمر الشراء التي تتطلب متابعة', 'تنبيه انتهاء جلسة الدخول أو مشكلة النظام'].map((title) => (

@@ -1,0 +1,165 @@
+﻿
+  app\Services\AccountingPurchaseOrderService.php:66:            $gms = 
+$notificationService->resolveUsersWithPermission('purchase_order.view_gm');
+> app\Services\AccountingPurchaseOrderService.php:67:            
+$notificationService->notifyUsers(
+  app\Services\AccountingPurchaseOrderService.php:68:                $gms,
+  app\Services\AccountingPurchaseOrderService.php:69:                
+'purchase_order_approved_accounting',
+  app\Services\AccountingPurchaseOrderService.php:70:                'تمت 
+الموافقة المحاسبية على أمر الشراء',
+  app\Services\AccountingPurchaseOrderService.php:71:                "أمر 
+الشراء {$lockedPo->po_number} اعتُمد محاسبياً. يمكنك الاطلاع على التفاصيل.",
+  app\Services\AccountingPurchaseOrderService.php:120:            
+$notificationService = app(NotificationService::class);
+> app\Services\AccountingPurchaseOrderService.php:121:            
+$notificationService->createNotification(
+  app\Services\AccountingPurchaseOrderService.php:122:                
+$lockedPo->created_by_user_id,
+  app\Services\AccountingPurchaseOrderService.php:123:                
+'purchase_order_returned',
+  app\Services\AccountingPurchaseOrderService.php:124:                
+'Purchase Order Returned',
+  app\Services\AccountingPurchaseOrderService.php:125:                
+"Purchase Order {$lockedPo->po_number} was returned for correction: 
+{$comment}",
+  app\Services\NotificationService.php:39:     */
+> app\Services\NotificationService.php:40:    public function 
+createNotification(User|int $recipient, string $type, string $title, string 
+$message, Model $notifiable): ?Notification
+  app\Services\NotificationService.php:41:    {
+  app\Services\NotificationService.php:42:        $userId = $recipient 
+instanceof User ? $recipient->id : $recipient;
+  app\Services\NotificationService.php:43:
+  app\Services\NotificationService.php:44:        return 
+Notification::firstOrCreate(
+  app\Services\NotificationService.php:61:     */
+> app\Services\NotificationService.php:62:    public function 
+notifyUsers(iterable $recipients, string $type, string $title, string 
+$message, Model $notifiable): void
+  app\Services\NotificationService.php:63:    {
+  app\Services\NotificationService.php:64:        foreach ($recipients as 
+$recipient) {
+> app\Services\NotificationService.php:65:            
+$this->createNotification($recipient, $type, $title, $message, $notifiable);
+  app\Services\NotificationService.php:66:        }
+  app\Services\NotificationService.php:67:    }
+  app\Services\NotificationService.php:68:
+  app\Services\NotificationService.php:69:    /**
+  app\Services\ProcurementPurchaseRequestService.php:122:            }
+> app\Services\ProcurementPurchaseRequestService.php:123:            
+$notificationService->createNotification(
+  app\Services\ProcurementPurchaseRequestService.php:124:                
+$pr->user_id,
+  app\Services\ProcurementPurchaseRequestService.php:125:                
+'purchase_request_rejected_procurement',
+  app\Services\ProcurementPurchaseRequestService.php:126:                'طلب 
+الشراء مرفوض من المشتريات',
+  app\Services\ProcurementPurchaseRequestService.php:127:                
+$rejMsg,
+  app\Services\PurchaseOrderService.php:441:            $accountants = $notific
+ationService->resolveUsersWithPermission('purchase_order.view_accounting');
+> app\Services\PurchaseOrderService.php:442:            
+$notificationService->notifyUsers(
+  app\Services\PurchaseOrderService.php:443:                $accountants,
+  app\Services\PurchaseOrderService.php:444:                
+'purchase_order_issued_accounting',
+  app\Services\PurchaseOrderService.php:445:                'تم إصدار أمر شراء 
+جديد',
+  app\Services\PurchaseOrderService.php:446:                "تم إصدار أمر 
+الشراء {$lockedPo->po_number} للاطلاع المالي.",
+  app\Services\PurchaseOrderService.php:451:            $gms = 
+$notificationService->resolveUsersWithPermission('purchase_order.view_gm');
+> app\Services\PurchaseOrderService.php:452:            
+$notificationService->notifyUsers(
+  app\Services\PurchaseOrderService.php:453:                $gms,
+  app\Services\PurchaseOrderService.php:454:                
+'purchase_order_issued_gm',
+  app\Services\PurchaseOrderService.php:455:                'تم إصدار أمر شراء 
+جديد',
+  app\Services\PurchaseOrderService.php:456:                "تم إصدار أمر 
+الشراء {$lockedPo->po_number} للاطلاع الإداري.",
+  app\Services\PurchaseRequestService.php:228:                : 
+$notificationService->resolveUsersWithPermission('purchase_request.review', 
+$request->department_id);
+> app\Services\PurchaseRequestService.php:229:            
+$notificationService->notifyUsers(
+  app\Services\PurchaseRequestService.php:230:                $reviewers,
+  app\Services\PurchaseRequestService.php:231:                
+'purchase_request_submitted',
+  app\Services\PurchaseRequestService.php:232:                'New Purchase 
+Request',
+  app\Services\PurchaseRequestService.php:233:                "Purchase 
+Request {$request->request_number} requires your review.",
+  app\Services\ReviewerPurchaseRequestService.php:387:            
+$notificationService = app(\App\Services\NotificationService::class);
+> app\Services\ReviewerPurchaseRequestService.php:388:            
+$notificationService->createNotification(
+  app\Services\ReviewerPurchaseRequestService.php:389:                
+$pr->user_id,
+  app\Services\ReviewerPurchaseRequestService.php:390:                
+'purchase_request_approved',
+  app\Services\ReviewerPurchaseRequestService.php:391:                'تم 
+اعتماد طلب الشراء',
+  app\Services\ReviewerPurchaseRequestService.php:392:                "تم 
+اعتماد طلب الشراء {$pr->request_number} وإرساله إلى إدارة المشتريات.",
+  app\Services\ReviewerPurchaseRequestService.php:397:            
+$procManagers = $notificationService->resolveUsersWithPermission('purchase_requ
+est.approve_procurement');
+> app\Services\ReviewerPurchaseRequestService.php:398:            
+$notificationService->notifyUsers(
+  app\Services\ReviewerPurchaseRequestService.php:399:                
+$procManagers,
+  app\Services\ReviewerPurchaseRequestService.php:400:                
+'purchase_request_pending_procurement',
+  app\Services\ReviewerPurchaseRequestService.php:401:                'طلب 
+شراء بانتظار اعتماد المشتريات',
+  app\Services\ReviewerPurchaseRequestService.php:402:                "طلب 
+الشراء {$pr->request_number} اعتمده المراجع وبانتظار اعتمادك كمدير مشتريات.",
+  app\Services\ReviewerPurchaseRequestService.php:447:            }
+> app\Services\ReviewerPurchaseRequestService.php:448:            
+$notificationService->createNotification(
+  app\Services\ReviewerPurchaseRequestService.php:449:                
+$pr->user_id,
+  app\Services\ReviewerPurchaseRequestService.php:450:                
+'purchase_request_rejected',
+  app\Services\ReviewerPurchaseRequestService.php:451:                'تم 
+رفض/إرجاع طلب الشراء',
+  app\Services\ReviewerPurchaseRequestService.php:452:                $rejMsg,
+  app\Services\ReviewerPurchaseRequestService.php:493:            
+$notificationService = app(\App\Services\NotificationService::class);
+> app\Services\ReviewerPurchaseRequestService.php:494:            
+$notificationService->createNotification(
+  app\Services\ReviewerPurchaseRequestService.php:495:                
+$pr->user_id,
+  app\Services\ReviewerPurchaseRequestService.php:496:                
+'purchase_request_returned',
+  app\Services\ReviewerPurchaseRequestService.php:497:                'تم 
+إعادة طلب الشراء للتعديل',
+  app\Services\ReviewerPurchaseRequestService.php:498:                "تم 
+إعادة طلب الشراء {$pr->request_number} للتعديل. السبب: {$reason}",
+  app\Services\ReviewerPurchaseRequestService.php:536:            
+$notificationService = app(\App\Services\NotificationService::class);
+> app\Services\ReviewerPurchaseRequestService.php:537:            
+$notificationService->createNotification(
+  app\Services\ReviewerPurchaseRequestService.php:538:                
+$pr->user_id,
+  app\Services\ReviewerPurchaseRequestService.php:539:                
+'clarification_requested',
+  app\Services\ReviewerPurchaseRequestService.php:540:                'طلب 
+توضيح من المراجع',
+  app\Services\ReviewerPurchaseRequestService.php:541:                "يطلب 
+المراجع توضيحاً بخصوص طلب الشراء {$pr->request_number}: {$message}",
+  app\Http\Controllers\Api\V1\PurchaseRequestController.php:215:            );
+> app\Http\Controllers\Api\V1\PurchaseRequestController.php:216:            
+$notificationService->notifyUsers(
+  app\Http\Controllers\Api\V1\PurchaseRequestController.php:217:               
+ $reviewers,
+  app\Http\Controllers\Api\V1\PurchaseRequestController.php:218:               
+ 'clarification_reply',
+  app\Http\Controllers\Api\V1\PurchaseRequestController.php:219:               
+ 'رد الموظف على طلب التوضيح',
+  app\Http\Controllers\Api\V1\PurchaseRequestController.php:220:               
+ "رد الموظف على طلب التوضيح للطلب {$pr->request_number}.",
+
+

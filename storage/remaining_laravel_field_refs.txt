@@ -1,0 +1,1 @@
+﻿E:\purchasing system\app\Http\Resources\NotificationResource.php:27: 'title' => $this->title,

@@ -1,0 +1,98 @@
+﻿E:\purchasing system\src\pages\accounting\AccountingPurchaseOrdersPage.tsx:9:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\accounting\AccountingPurchaseOrdersPage.tsx:85:<TableFilterBar
+E:\purchasing system\src\pages\accounting\AccountingPurchaseRequestsPage.tsx:5:getDirectAccountingPurchaseRequestsApi,
+E:\purchasing system\src\pages\accounting\AccountingPurchaseRequestsPage.tsx:19:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\accounting\AccountingPurchaseRequestsPage.tsx:40:setRequests(await getDirectAccountingPurchaseRequestsApi());
+E:\purchasing system\src\pages\accounting\AccountingPurchaseRequestsPage.tsx:53:const filteredRequests = requests.filter((request) => {
+E:\purchasing system\src\pages\accounting\AccountingPurchaseRequestsPage.tsx:104:<TableFilterBar
+E:\purchasing system\src\pages\accounting\SupplierPaymentsPage.tsx:102:const linkedReceipt = await getPurchaseReceiptByIdApi(requestedReceiptId);
+E:\purchasing system\src\pages\admin\CategoriesPage.tsx:17:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\admin\CategoriesPage.tsx:143:<TableFilterBar
+E:\purchasing system\src\pages\admin\DepartmentsPage.tsx:18:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\admin\DepartmentsPage.tsx:170:<TableFilterBar
+E:\purchasing system\src\pages\admin\ItemsPage.tsx:18:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\admin\ItemsPage.tsx:159:<TableFilterBar
+E:\purchasing system\src\pages\admin\PermissionsPage.tsx:8:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\admin\PermissionsPage.tsx:60:<TableFilterBar
+E:\purchasing system\src\pages\admin\RolesPage.tsx:8:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\admin\RolesPage.tsx:60:<TableFilterBar
+E:\purchasing system\src\pages\admin\SuppliersPage.tsx:18:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\admin\SuppliersPage.tsx:167:<TableFilterBar
+E:\purchasing system\src\pages\admin\UsersPage.tsx:19:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\admin\UsersPage.tsx:188:<TableFilterBar
+E:\purchasing system\src\pages\employee\CreatePurchaseRequestPage.tsx:9:getPurchaseRequestDepartmentOptionsApi,
+E:\purchasing system\src\pages\employee\CreatePurchaseRequestPage.tsx:161:getPurchaseRequestDepartmentOptionsApi()
+E:\purchasing system\src\pages\employee\EditPurchaseRequestPage.tsx:6:import { getPurchaseRequestApi, updatePurchaseRequestApi } from '../../api/purchaseRequests';
+E:\purchasing system\src\pages\employee\EditPurchaseRequestPage.tsx:29:const data = await getPurchaseRequestApi(parseInt(id, 10));
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:11:getOwnPurchaseRequestsApi,
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:37:const data = await getOwnPurchaseRequestsApi();
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:51:const draftCount = requests.filter((r) => r.status === 'DRAFT').length;
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:52:const pendingCount = requests.filter(
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:55:const approvedCount = requests.filter((r) =>
+E:\purchasing system\src\pages\employee\EmployeeDashboardPage.tsx:58:const rejectedCount = requests.filter((r) => r.status === 'REJECTED').length;
+E:\purchasing system\src\pages\employee\PurchaseRequestDetailsPage.tsx:12:getPurchaseRequestApi,
+E:\purchasing system\src\pages\employee\PurchaseRequestDetailsPage.tsx:54:const data = await getPurchaseRequestApi(parseInt(id, 10));
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:11:getOwnPurchaseRequestsApi,
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:18:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:38:const [searchQuery, setSearchQuery] = useState<string>('');
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:56:const data = await getOwnPurchaseRequestsApi();
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:97:const filteredRequests = requests.filter((r) => {
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:115:const normalizedSearch = searchQuery.trim().toLocaleLowerCase('ar-EG');
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:129:const hasResultFilters = Boolean(searchQuery.trim() || dateFrom !== defaultDateFrom || dateTo !== todayInputDate || activeFilter !== 'ALL');
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:160:{searchQuery.trim() && (
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:161:<button type="button" onClick={() => setSearchQuery('')} className="min-h-9 shrink-0 rounded-lg px-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/10" aria-label="مسح البحث">مسح</button>
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:169:value={searchQuery}
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:170:onChange={(event) => setSearchQuery(event.target.value)}
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:171:onKeyDown={(event) => { if (event.key === 'Escape') setSearchQuery(''); }}
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:182:<TableFilterBar
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:187:onClear={() => { setSearchQuery(''); setDateFrom(defaultDateFrom); setDateTo(todayInputDate); setActiveFilter('ALL'); }}
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:188:hasActiveFilters={Boolean(searchQuery || dateFrom !== defaultDateFrom || dateTo !== todayInputDate || activeFilter !== 'ALL')}
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:200:مسودات ({requests.filter(r => r.status === 'DRAFT').length})
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:203:قيد المراجعة ({requests.filter(r => EMPLOYEE_REVIEW_STATUSES.has(r.status)).length})
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:206:مُرسلة للمراجعة ({requests.filter(r => EMPLOYEE_SUBMITTED_STATUSES.has(r.status)).length})
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:209:معتمدة ({requests.filter(r => EMPLOYEE_APPROVED_STATUSES.has(r.status)).length})
+E:\purchasing system\src\pages\employee\PurchaseRequestsPage.tsx:212:مرفوضة ({requests.filter(r => r.status === 'REJECTED').length})
+E:\purchasing system\src\pages\general-manager\GeneralManagerPurchaseOrdersPage.tsx:9:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\general-manager\GeneralManagerPurchaseOrdersPage.tsx:71:<TableFilterBar
+E:\purchasing system\src\pages\general-manager\GeneralManagerPurchaseRequestsPage.tsx:6:getGeneralManagerPurchaseRequestsApi,
+E:\purchasing system\src\pages\general-manager\GeneralManagerPurchaseRequestsPage.tsx:19:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\general-manager\GeneralManagerPurchaseRequestsPage.tsx:51:setRequests(await getGeneralManagerPurchaseRequestsApi());
+E:\purchasing system\src\pages\general-manager\GeneralManagerPurchaseRequestsPage.tsx:88:const filteredRequests = requests.filter(request => {
+E:\purchasing system\src\pages\general-manager\GeneralManagerPurchaseRequestsPage.tsx:145:<TableFilterBar
+E:\purchasing system\src\pages\general-manager\GeneralManagerPurchaseRequestsPage.tsx:213:<select value={draftPriority} onChange={event => setDraftPriority(event.target.value as PurchaseRequestPriority)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100">
+E:\purchasing system\src\pages\procurement\ApprovedPurchaseRequestsPage.tsx:16:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\procurement\ApprovedPurchaseRequestsPage.tsx:59:const filteredRequests = requests.filter(r => {
+E:\purchasing system\src\pages\procurement\ApprovedPurchaseRequestsPage.tsx:103:<TableFilterBar
+E:\purchasing system\src\pages\procurement\CreatePurchaseOrderPage.tsx:3:import { getApprovedPurchaseRequestApi } from '../../api/procurement';
+E:\purchasing system\src\pages\procurement\CreatePurchaseOrderPage.tsx:63:const prData = await getApprovedPurchaseRequestApi(prId);
+E:\purchasing system\src\pages\procurement\ProcurementDashboardPage.tsx:3:import { getApprovedPurchaseRequestsApi, getProcurementAnalyticsApi, ProcurementAnalyticsResponse } from '../../api/procurement';
+E:\purchasing system\src\pages\procurement\ProcurementDashboardPage.tsx:32:getApprovedPurchaseRequestsApi(),
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:9:getPendingQuoteRequestsApi,
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:34:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:178:const quotePending = await safeLoad('عروض الأسعار', getPendingQuoteRequestsApi(), []);
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:336:const getSelectedQuote = (request: PurchaseRequest) => request.selected_quote || request.quotes?.find((quote) => (quote as typeof quote & { is_selected?: boolean }).is_selected || quote.status === 'SELECTED');
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:460:<TableFilterBar
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:622:<TableFilterBar
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:662:<TableFilterBar
+E:\purchasing system\src\pages\procurement\ProcurementManagerPage.tsx:710:<TableFilterBar
+E:\purchasing system\src\pages\procurement\PurchaseOrdersPage.tsx:17:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\procurement\PurchaseOrdersPage.tsx:131:<TableFilterBar
+E:\purchasing system\src\pages\procurement\PurchaseRequestDetailsPage.tsx:3:import { getApprovedPurchaseRequestApi } from '../../api/procurement';
+E:\purchasing system\src\pages\procurement\PurchaseRequestDetailsPage.tsx:24:const data = await getApprovedPurchaseRequestApi(Number(id));
+E:\purchasing system\src\pages\purchase-quotes\PurchaseQuotesDecisionPage.tsx:2:import { getPendingQuoteRequestsApi, recommendPurchaseQuoteApi, decidePurchaseQuoteApi } from '../../api/purchaseQuotes';
+E:\purchasing system\src\pages\purchase-quotes\PurchaseQuotesDecisionPage.tsx:54:const source = (mode === 'executive' ? requests.filter(request => request.status === 'PENDING_EXECUTIVE_QUOTE_DECISION') : requests.filter(request => request.status === 'PENDING_QUOTE_RECOMMENDATIONS')).filter(request => { const requestDate = String(request.created_at || '').slice(0, 10); return ignoreDefaultQuoteDate || ((!quoteFilters.dateFrom || requestDate >= quoteFilters.dateFrom) && (!quoteFilters.dateTo || requestDate <= quoteFilters.dateTo)); });
+E:\purchasing system\src\pages\purchase-quotes\PurchaseQuotesDecisionPage.tsx:69:setRequests(await getPendingQuoteRequestsApi());
+E:\purchasing system\src\pages\receipts\PurchaseReceiptPage.tsx:9:import TableFilterBar from '../../components/ui/TableFilterBar';
+E:\purchasing system\src\pages\receipts\PurchaseReceiptPage.tsx:111:<TableFilterBar
+E:\purchasing system\src\pages\reviewer\ReviewerDashboardPage.tsx:40:const submittedCount = requests.filter((r) => r.status === 'SUBMITTED').length;
+E:\purchasing system\src\pages\reviewer\ReviewerDashboardPage.tsx:41:const underReviewCount = requests.filter((r) => r.status === 'UNDER_REVIEW').length;
+E:\purchasing system\src\pages\reviewer\ReviewerDashboardPage.tsx:42:const approvedCount = requests.filter((r) => r.status === 'APPROVED_BY_REVIEWER' || r.status === 'PENDING_PROCUREMENT_APPROVAL').length;
+E:\purchasing system\src\pages\reviewer\ReviewerDashboardPage.tsx:43:const rejectedCount = requests.filter((r) => r.status === 'REJECTED').length;
+E:\purchasing system\src\pages\reviewer\ReviewerPurchaseRequestDetailsPage.tsx:7:import { getReviewerPurchaseRequestApi, startReviewApi } from '../../api/reviewer';
+E:\purchasing system\src\pages\reviewer\ReviewerPurchaseRequestDetailsPage.tsx:66:const data = await getReviewerPurchaseRequestApi(parseInt(id, 10));
+E:\purchasing system\src\pages\reviewer\ReviewerRequestsPage.tsx:71:const filteredRequests = requests.filter((request) => {
+E:\purchasing system\src\pages\reviewer\ReviewerRequestsPage.tsx:102:const countFor = (status: string) => requests.filter((request) => request.status === status).length;
+E:\purchasing system\src\pages\reviewer\ReviewerRequestsPage.tsx:103:const overdueCount = requests.filter(isOverdueRequest).length;
+E:\purchasing system\src\pages\reviewer\ReviewPurchaseRequestPage.tsx:14:getReviewerPurchaseRequestApi,
+E:\purchasing system\src\pages\reviewer\ReviewPurchaseRequestPage.tsx:56:const data = await getReviewerPurchaseRequestApi(parseInt(id, 10));
+E:\purchasing system\src\pages\reviewer\ReviewPurchaseRequestPage.tsx:346:<Select disabled={!canEdit} value={headerPriority} onChange={e => setHeaderPriority(e.target.value as PurchaseRequestPriority)}>

@@ -1,0 +1,174 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\LandParcel;
+use App\Models\LandParcelTransaction;
+use App\Models\SupplierInvoice;
+use App\Models\SupplierInvoiceLandAllocation;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+
+class LandParcelService
+{
+    public function list(int $limit = 200): Collection
+    {
+        return LandParcel::query()
+            ->where('is_active', true)
+            ->orderBy('parcel_reference')
+            ->orderBy('region')
+            ->limit(min(max($limit, 1), 500))
+            ->get();
+    }
+
+    public function createParcel(User $accountant, array $data): LandParcel
+    {
+        $parcelReference = trim((string) ($data['parcel_reference'] ?? ''));
+        $region = trim((string) ($data['region'] ?? ''));
+        $openingBalance = round((float) ($data['opening_balance'] ?? 0), 2);
+        if ($parcelReference === '' || $region === '') {
+            throw ValidationException::withMessages(['parcel_reference' => ['رقم قطعة الأرض والمنطقة مطلوبان.']]);
+        }
+        if ($openingBalance < 0) {
+            throw ValidationException::withMessages(['opening_balance' => ['الرصيد الافتتاحي لا يمكن أن يكون سالبًا.']]);
+        }
+        if (LandParcel::where('parcel_reference', $parcelReference)->where('region', $region)->exists()) {
+            throw ValidationException::withMessages(['parcel_reference' => ['حساب قطعة الأرض موجود بالفعل بنفس الرقم والمنطقة.']]);
+        }
+
+        return DB::transaction(function () use ($accountant, $parcelReference, $region, $openingBalance, $data): LandParcel {
+            $parcel = LandParcel::create([
+                'parcel_reference' => $parcelReference,
+                'region' => $region,
+                'opening_balance' => $openingBalance,
+                'funded_total' => 0,
+                'expense_total' => 0,
+                'balance' => $openingBalance,
+                'is_active' => true,
+                'notes' => $data['notes'] ?? null,
+            ]);
+
+            if ($openingBalance > 0) {
+                LandParcelTransaction::create([
+                    'land_parcel_id' => $parcel->id,
+                    'created_by_user_id' => $accountant->id,
+                    'transaction_type' => 'OPENING_BALANCE',
+                    'amount' => $openingBalance,
+                    'balance_after' => $openingBalance,
+                    'transaction_date' => $data['transaction_date'] ?? now()->toDateString(),
+                    'reference_number' => $data['reference_number'] ?? null,
+                    'notes' => $data['notes'] ?? 'رصيد افتتاحي ممول من العميل.',
+                ]);
+            }
+
+            return $parcel->fresh(['transactions.createdBy']);
+        });
+    }
+
+    public function addCustomerFunding(User $accountant, LandParcel $parcel, float $amount, ?string $date = null, ?string $referenceNumber = null, ?string $notes = null): LandParcel
+    {
+        if ($amount <= 0) {
+            throw ValidationException::withMessages(['amount' => ['مبلغ تمويل العميل يجب أن يكون أكبر من صفر.']]);
+        }
+
+        return DB::transaction(function () use ($accountant, $parcel, $amount, $date, $referenceNumber, $notes): LandParcel {
+            $lockedParcel = LandParcel::query()->lockForUpdate()->findOrFail($parcel->id);
+            $newBalance = round((float) $lockedParcel->balance + $amount, 2);
+            $lockedParcel->update([
+                'funded_total' => round((float) $lockedParcel->funded_total + $amount, 2),
+                'balance' => $newBalance,
+            ]);
+            LandParcelTransaction::create([
+                'land_parcel_id' => $lockedParcel->id,
+                'created_by_user_id' => $accountant->id,
+                'transaction_type' => 'CUSTOMER_FUNDING',
+                'amount' => round($amount, 2),
+                'balance_after' => $newBalance,
+                'transaction_date' => $date ?: now()->toDateString(),
+                'reference_number' => $referenceNumber,
+                'notes' => $notes,
+            ]);
+
+            return $lockedParcel->fresh(['transactions.createdBy']);
+        });
+    }
+
+    public function getParcelAccount(LandParcel $parcel): array
+    {
+        return [
+            'parcel' => $parcel->load(['transactions.createdBy', 'invoiceAllocations.invoice.supplier']),
+            'summary' => [
+                'opening_balance' => (float) $parcel->opening_balance,
+                'funded_total' => (float) $parcel->funded_total,
+                'expense_total' => (float) $parcel->expense_total,
+                'balance' => (float) $parcel->balance,
+                'is_negative' => (float) $parcel->balance < 0,
+            ],
+            'transactions' => $parcel->transactions()->with('createdBy')->orderByDesc('transaction_date')->orderByDesc('id')->get(),
+            'invoice_allocations' => $parcel->invoiceAllocations()->with(['invoice.supplier', 'invoice.purchaseOrder'])->orderByDesc('created_at')->get(),
+        ];
+    }
+
+    public function recordInvoiceAllocations(User $accountant, SupplierInvoice $invoice, array $allocations): void
+    {
+        if (count($allocations) === 0) {
+            throw ValidationException::withMessages(['land_allocations' => ['يجب توزيع قيمة الفاتورة على قطعة أرض واحدة على الأقل.']]);
+        }
+
+        $normalized = collect($allocations)->map(function (array $allocation): array {
+            return [
+                'land_parcel_id' => (int) ($allocation['land_parcel_id'] ?? 0),
+                'amount' => round((float) ($allocation['amount'] ?? 0), 2),
+                'notes' => $allocation['notes'] ?? null,
+            ];
+        });
+        if ($normalized->pluck('land_parcel_id')->filter()->unique()->count() !== $normalized->count()) {
+            throw ValidationException::withMessages(['land_allocations' => ['يجب اختيار قطعة واحدة فقط لكل سطر توزيع وعدم تكرار القطعة.']]);
+        }
+        if ($normalized->contains(fn (array $allocation): bool => $allocation['land_parcel_id'] <= 0 || $allocation['amount'] <= 0)) {
+            throw ValidationException::withMessages(['land_allocations' => ['قيمة كل توزيع يجب أن تكون أكبر من صفر مع اختيار قطعة صحيحة.']]);
+        }
+
+        $allocatedTotal = round($normalized->sum('amount'), 2);
+        $invoiceTotal = round((float) $invoice->amount, 2);
+        if (abs($allocatedTotal - $invoiceTotal) > 0.01) {
+            throw ValidationException::withMessages([
+                'land_allocations' => [sprintf('إجمالي التوزيع %.2f ج.م يجب أن يساوي قيمة الفاتورة %.2f ج.م.', $allocatedTotal, $invoiceTotal)],
+            ]);
+        }
+
+        foreach ($normalized as $allocation) {
+            $parcel = LandParcel::query()->lockForUpdate()->find($allocation['land_parcel_id']);
+            if (! $parcel || ! $parcel->is_active) {
+                throw ValidationException::withMessages(['land_allocations' => ['إحدى قطع الأراضي المختارة غير موجودة أو غير نشطة.']]);
+            }
+            $newBalance = round((float) $parcel->balance - $allocation['amount'], 2);
+            $parcel->update([
+                'expense_total' => round((float) $parcel->expense_total + $allocation['amount'], 2),
+                'balance' => $newBalance,
+            ]);
+            $invoiceAllocation = SupplierInvoiceLandAllocation::create([
+                'supplier_invoice_id' => $invoice->id,
+                'land_parcel_id' => $parcel->id,
+                'created_by_user_id' => $accountant->id,
+                'amount' => $allocation['amount'],
+                'notes' => $allocation['notes'],
+            ]);
+            LandParcelTransaction::create([
+                'land_parcel_id' => $parcel->id,
+                'created_by_user_id' => $accountant->id,
+                'transaction_type' => 'INVOICE_EXPENSE',
+                'amount' => -$allocation['amount'],
+                'balance_after' => $newBalance,
+                'transaction_date' => $invoice->invoice_date ?: now()->toDateString(),
+                'source_type' => SupplierInvoiceLandAllocation::class,
+                'source_id' => $invoiceAllocation->id,
+                'reference_number' => $invoice->invoice_number,
+                'notes' => $allocation['notes'] ?: "مصروف من فاتورة المورد {$invoice->invoice_number}.",
+            ]);
+        }
+    }
+}
+

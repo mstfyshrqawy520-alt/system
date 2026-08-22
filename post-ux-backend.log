@@ -1,0 +1,204 @@
+
+   PASS  Tests\Unit\ExampleTest
+  ✓ that true is true
+
+   PASS  Tests\Unit\Models\ModelRelationshipsTest
+  ✓ user department and roles relationships                              1.52s  
+  ✓ department manager relationship                                      0.02s  
+  ✓ role and permission pivot relationship                               0.02s  
+  ✓ category and item relationships and casts                            0.03s  
+  ✓ supplier relationship                                                0.02s  
+  ✓ purchase request and items relationships                             0.02s  
+  ✓ purchase order and items relationships                               0.02s  
+  ✓ polymorphic approval history and attachments                         0.02s  
+  ✓ audit log and notification relationships                             0.03s  
+  ✓ soft deletes on supported models                                     0.03s  
+
+   PASS  Tests\Feature\Api\V1\AccountingPurchaseOrderTest
+  ✓ accountant can list pos pending accounting review                    0.18s  
+  ✓ accountant can view specific pending po details                      0.10s  
+  ✓ accountant cannot approve po pending accounting review               0.09s  
+  ✓ cannot approve po without approve permission                         0.09s  
+  ✓ accountant cannot return po to procurement                           0.10s  
+  ✓ return without permission returns 403                                0.09s  
+  ✓ procurement manager can edit and resubmit returned po                0.13s  
+  ✓ employee cannot access accounting endpoints                          0.09s  
+
+   PASS  Tests\Feature\Api\V1\AdminSystemMonitoringTest
+  ✓ admin can read system monitoring snapshot                            0.09s  
+  ✓ admin health check returns healthy when database and migrations are… 0.09s  
+  ✓ employee cannot read admin system monitoring                         0.08s  
+  ✓ unauthenticated user cannot read admin system monitoring             0.09s  
+
+   PASS  Tests\Feature\Api\V1\AuthenticationTest
+  ✓ valid login succeeds and returns token and user profile              0.04s  
+  ✓ login fails with invalid password                                    0.02s  
+  ✓ login fails with unknown email                                       0.03s  
+  ✓ login fails for inactive user                                        0.02s  
+  ✓ login validation fails when fields are missing                       0.03s  
+  ✓ authenticated user can access me endpoint                            0.02s  
+  ✓ unauthenticated user cannot access me endpoint                       0.02s  
+  ✓ authenticated user can change own password                           0.03s  
+  ✓ password change rejects incorrect current password                   0.03s  
+  ✓ password change requires matching confirmation                       0.02s  
+  ✓ unauthenticated user cannot change password                          0.02s  
+  ✓ authenticated user can logout                                        0.02s  
+  ✓ unauthenticated user cannot logout                                   0.03s  
+
+   PASS  Tests\Feature\Api\V1\AuthorizationTest
+  ✓ seeder populates all business roles and permissions                  0.11s  
+  ✓ user can be assigned role and inherits permissions                   0.10s  
+  ✓ user can have multiple roles                                         0.10s  
+  ✓ user with required permission receives 200                           0.10s  
+  ✓ admin can create user through admin endpoint                         0.11s  
+  ✓ authenticated user without required permission receives 403          0.10s  
+  ✓ unauthenticated user receives 401                                    0.10s  
+  ✓ admin role has admin permissions                                     0.10s  
+  ✓ employee role does not have admin permissions                        0.10s  
+  ✓ reviewer role has reviewer permissions                               0.10s  
+  ✓ procurement manager role has procurement permissions                 0.10s  
+  ✓ accountant role has accounting permissions                           0.09s  
+  ✓ obsolete invalid permissions do not exist                            0.10s  
+  ✓ general manager role has gm permissions                              0.09s  
+  ✓ employee cannot access procurement purchase requests                 0.10s  
+  ✓ employee cannot access procurement analytics                         0.11s  
+  ✓ employee cannot view procurement purchase orders                     0.11s  
+  ✓ employee cannot create purchase order                                0.11s  
+  ✓ employee cannot view suppliers                                       0.11s  
+  ✓ employee cannot access accounting purchase orders                    0.12s  
+  ✓ employee cannot access gm purchase orders                            0.13s  
+  ✓ employee cannot access admin users                                   0.11s  
+  ✓ reviewer cannot create purchase order                                0.11s  
+  ✓ reviewer cannot issue po to accounting                               0.21s  
+  ✓ reviewer cannot access admin                                         0.11s  
+  ✓ accountant can view issued po                                        0.23s  
+  ✓ accountant cannot approve po                                         0.24s  
+  ✓ accountant cannot return po to procurement                           0.21s  
+  ✓ accountant cannot modify po                                          0.21s  
+  ✓ accountant cannot access admin                                       0.11s  
+  ✓ gm cannot approve po                                                 0.21s  
+  ✓ gm cannot return po to procurement                                   0.21s  
+  ✓ gm cannot modify po                                                  0.22s  
+  ✓ gm cannot access procurement purchase requests                       0.10s  
+  ✓ gm cannot access admin                                               0.09s  
+  ✓ procurement manager can access procurement purchase requests         0.10s  
+  ✓ procurement manager can access analytics                             0.10s  
+  ✓ procurement manager can access suppliers                             0.09s  
+  ✓ procurement manager cannot access admin                              0.10s  
+
+   PASS  Tests\Feature\Api\V1\FinancialRulesTest
+  ✓ po creation calculates server side totals in egp                     0.16s  
+  ✓ client supplied totals ignored by server recalculation               0.14s  
+  ✓ tax vat discount cannot affect po total                              0.11s  
+  ✓ inactive supplier rejected on po creation                            0.11s  
+  ✓ negative quantity rejected                                           0.12s  
+  ✓ negative price rejected                                              0.09s  
+  ✓ accountant cannot modify po                                          0.09s  
+  ✓ gm cannot modify po                                                  0.11s  
+
+   PASS  Tests\Feature\Api\V1\FullEndToEndWorkflowTest
+  ✓ full procurement lifecycle end to end happy path                     0.38s  
+  ✓ procurement can route request without quotes to accounting and back  0.25s  
+  ✓ accounting can reject direct route request                           0.14s  
+
+   PASS  Tests\Feature\Api\V1\GeneralManagerPurchaseOrderTest
+  ✓ gm can list pos approved by accounting                               0.11s  
+  ✓ gm can view approved po details                                      0.10s  
+  ✓ gm cannot approve or reject po via api                               0.09s  
+  ✓ procurement and accountant and employee cannot access gm endpoints   0.09s  
+
+   PASS  Tests\Feature\Api\V1\GeneralManagerPurchaseRequestTest
+  ✓ executive can list and approve pending request                       0.11s  
+  ✓ executive edit goes directly to procurement without reviewer roundt… 0.10s  
+  ✓ executive can reject pending request with reason                     0.09s  
+
+   PASS  Tests\Feature\Api\V1\HealthCheckTest
+  ✓ health check endpoint returns ok response                            0.02s  
+
+   PASS  Tests\Feature\Api\V1\NotificationTest
+  ✓ authenticated user can list own notifications                        0.09s  
+  ✓ user cannot see another users notifications                          0.09s  
+  ✓ unauthenticated user receives 401                                    0.09s  
+  ✓ unread count is correct                                              0.09s  
+  ✓ user can mark own notification as read                               0.09s  
+  ✓ already read notification remains safely readable idempotent         0.08s  
+  ✓ empty notification list works correctly                              0.08s  
+  ✓ user cannot mark another users notification as read                  0.09s  
+  ✓ mark all as read only affects current user                           0.08s  
+  ✓ full workflow end to end notifications                               0.17s  
+  ✓ employee receives notification on reviewer approval                  0.09s  
+  ✓ employee receives notification with reason on reviewer rejection     0.09s  
+  ✓ another employee does not receive decision notification              0.09s  
+
+   PASS  Tests\Feature\Api\V1\ProcurementPurchaseOrderTest
+  ✓ procurement manager can list approved prs                            0.09s  
+  ✓ procurement manager can filter and paginate purchase orders          0.09s  
+  ✓ procurement manager can list active suppliers                        0.08s  
+  ✓ procurement manager can create po from approved pr                   0.10s  
+  ✓ cannot create po from unapproved pr                                  0.08s  
+  ✓ cannot create po with inactive supplier                              0.08s  
+  ✓ procurement manager cannot edit an auto issued po                    0.10s  
+  ✓ procurement manager cannot add or remove items after po issue        0.10s  
+  ✓ procurement manager can submit po to accounting                      0.11s  
+  ✓ cannot edit submitted po                                             0.10s  
+  ✓ employee cannot access procurement endpoints                         0.08s  
+
+   PASS  Tests\Feature\Api\V1\PurchaseQuoteWorkflowTest
+  ✓ supplier quotes are recommended and executive selects one            0.13s  
+  ✓ procurement endpoint starts quote route when requested               0.09s  
+  ✓ quote creation rejects duplicate suppliers                           0.09s  
+  ✓ quote creation accepts two quotes                                    0.10s  
+  ✓ quote creation accepts more than three quotes                        0.10s  
+
+   PASS  Tests\Feature\Api\V1\PurchaseReceiptWorkflowTest
+  ✓ warehouse submits then site engineer approves receipt                0.10s  
+  ✓ other site engineer cannot approve assigned receipt                  0.09s  
+
+   PASS  Tests\Feature\Api\V1\PurchaseRequestTest
+  ✓ employee can create purchase request starts as draft                 0.09s  
+  ✓ backend calculates line totals and total cost ignoring client manip… 0.09s  
+  ✓ employee can view own requests only                                  0.09s  
+  ✓ employee cannot view another users request                           0.09s  
+  ✓ employee can update own draft request                                0.09s  
+  ✓ employee can update submitted request before reviewer approval       0.09s  
+  ✓ employee cannot update request after reviewer approval               0.09s  
+  ✓ employee can delete own draft request                                0.09s  
+  ✓ employee cannot delete submitted request                             0.09s  
+  ✓ employee can submit valid draft                                      0.10s  
+  ✓ employee cannot submit another users request                         0.09s  
+  ✓ employee cannot submit an empty request with no items                0.09s  
+  ✓ inactive catalog item is rejected                                    0.11s  
+  ✓ invalid quantity is rejected                                         0.12s  
+  ✓ unauthorized user without permission is rejected                     0.11s  
+  ✓ unauthenticated request is rejected                                  0.08s  
+
+   PASS  Tests\Feature\Api\V1\ReviewerPurchaseRequestTest
+  ✓ reviewer can list reviewable prs in scope                            0.10s  
+  ✓ reviewer cannot view outside scope pr                                0.08s  
+  ✓ reviewer can start review submitted becomes under review             0.09s  
+  ✓ reviewer can edit request header and creates audit log               0.09s  
+  ✓ reviewer can edit after reviewer approval while procurement is pend… 0.08s  
+  ✓ reviewer cannot edit after procurement manager approval              0.09s  
+  ✓ reviewer can edit line item quantity and price and recalculates tot… 0.09s  
+  ✓ reviewer can add line item and recalculates totals                   0.09s  
+  ✓ reviewer can remove line item and recalculates totals                0.09s  
+  ✓ reviewer can approve under review request                            0.09s  
+  ✓ reviewer cannot approve already approved request                     0.08s  
+  ✓ reviewer can reject under review request with comment                0.09s  
+  ✓ reject requires comment                                              0.08s  
+  ✓ reviewer cannot modify outside scope request                         0.08s  
+  ✓ employee cannot access reviewer endpoints                            0.08s  
+  ✓ reviewer filters by all requested fields and remains department sco… 0.09s  
+
+   PASS  Tests\Feature\Api\V1\SupplierInvoiceWorkflowTest
+  ✓ accountant creates invoice matches and records partial payment       0.12s  
+  ✓ payment exceeding supplier balance is recorded with warning          0.11s  
+  ✓ payment distributes to oldest debt first                             0.13s  
+  ✓ supplier accounts are separate by supplier                           0.13s  
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ the application returns a successful response                        0.03s  
+
+  Tests:    162 passed (545 assertions)
+  Duration: 17.31s
+

@@ -1,0 +1,497 @@
+﻿import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { getApprovedPurchaseRequestApi } from '../../api/procurement';
+import { getSuppliersApi } from '../../api/suppliers';
+import { createPurchaseOrderApi, submitPurchaseOrderApi } from '../../api/purchaseOrders';
+import { المورد } from '../../types/purchaseOrder';
+import { PurchaseRequest } from '../../types/purchaseRequest';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import ErrorMessage from '../../components/ErrorMessage';
+import DirectPoModal from '../../components/procurement/DirectPoModal';
+import { parseApiError } from '../../utils/apiError';
+import { Card } from '../../components/ui/Card';
+import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
+import { getUnitLabel } from '../../utils/units';
+
+const getLocalDateIso = () => {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+};
+
+interface PoItemInput {
+  pr_item_id: number;
+  item_id?: number | null;
+  item_description: string;
+  item_reference: string;
+  region: string;
+  original_quantity: number;
+  quantity: number;
+  uom: string;
+  unit_price: number;
+  specifications: string;
+}
+
+export const CreatePurchaseOrderPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const prId = Number(searchParams.get('pr'));
+  const quoteId = Number(searchParams.get('quote'));
+
+  const [pr, setPr] = useState<PurchaseRequest | null>(null);
+  const [suppliers, setSuppliers] = useState<المورد[]>([]);
+  const [supplierId, setSupplierId] = useState<string>('');
+  const [paymentTerms, setPaymentTerms] = useState<string>('دفع عند الاستلام');
+  const [deliveryDate, setDeliveryDate] = useState<string>(getLocalDateIso());
+  const [budgetCode, setBudgetCode] = useState<string>('');
+  const [notes, setNotes] = useState<string>('');
+  const [poItems, setPoItems] = useState<PoItemInput[]>([]);
+
+  const [loading, setLoading] = useState<boolean>(false);
+  const [fetching, setFetching] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [isDirectPoModalOpen, setIsDirectPoModalOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const init = async () => {
+      setFetching(true);
+      try {
+        const sups = await getSuppliersApi();
+        setSuppliers(sups || []);
+        if (prId) {
+          const prData = await getApprovedPurchaseRequestApi(prId);
+          setPr(prData);
+          if (quoteId && prData?.selected_quote?.id && quoteId !== prData.selected_quote.id) {
+            throw new Error('العرض المختار في الرابط لا يطابق العرض المعتمد لهذا الطلب.');
+          }
+          if (prData?.selected_quote?.supplier_id) {
+            setSupplierId(String(prData.selected_quote.supplier_id));
+          } else if (prData?.direct_supplier_id) {
+            setSupplierId(String(prData.direct_supplier_id));
+          }
+          if (prData && prData.items) {
+            setPoItems(
+              prData.items.map((i) => ({
+                pr_item_id: i.id,
+                item_id: i.item_id || null,
+                item_description: i.item_description,
+                item_reference: i.item_reference || '',
+                region: i.region || '',
+                original_quantity: parseFloat(i.quantity) || 1,
+                quantity: parseFloat(i.quantity) || 1,
+                uom: i.uom || 'PCS',
+                unit_price: Number(prData.selected_quote?.unit_price || i.estimated_unit_price || 0),
+                specifications: i.specifications || '',
+              }))
+            );
+          }
+        }
+      } catch (err) {
+        const parsed = parseApiError(err);
+        setError(parsed.message);
+      } finally {
+        setFetching(false);
+      }
+    };
+    init();
+  }, [prId]);
+
+  const handleItemQuantityChange = (index: number, val: string) => {
+    const qty = parseFloat(val) || 0;
+    setPoItems((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], quantity: qty };
+      return updated;
+    });
+  };
+
+  const handleItemPriceChange = (index: number, val: string) => {
+    const price = parseFloat(val) || 0;
+    setPoItems((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], unit_price: price };
+      return updated;
+    });
+  };
+
+  const handleItemTextChange = (index: number, field: 'item_reference' | 'region', value: string) => {
+    setPoItems((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const calculateGrandTotal = () => {
+    return poItems.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!prId) {
+      setError('لا يوجد طلب شراء معتمد محدد. يمكنك اختيار أمر شراء مباشر.');
+      return;
+    }
+    if (!supplierId) {
+      setError('يرجى اختيار المورد من القائمة');
+      return;
+    }
+    if (poItems.some(item => !item.item_reference.trim() || !item.region.trim())) {
+      setError('رقم قطعة الأرض والمنطقة مطلوبان لكل بند قبل إصدار أمر الشراء.');
+      return;
+    }
+
+    const itemsWithQtyChange = poItems.filter(item => item.quantity !== item.original_quantity);
+    if (itemsWithQtyChange.length > 0 && !notes) {
+      setError('تم تغيير كمية الاصناف عن طلب الشراء الاصلي. يرجى تدوين سبب تعديل الكمية في خانة الملاحظات.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const po = await createPurchaseOrderApi({
+        purchase_request_id: prId,
+        supplier_id: Number(supplierId),
+        payment_terms: paymentTerms || undefined,
+        delivery_date: deliveryDate || undefined,
+        budget_code: budgetCode || undefined,
+        notes: notes || undefined,
+        items: poItems.map((item) => ({
+          pr_item_id: item.pr_item_id,
+          item_id: item.item_id,
+          item_description: item.item_description,
+          item_reference: item.item_reference,
+          region: item.region,
+          quantity: item.quantity,
+          uom: item.uom,
+          unit_price: item.unit_price,
+          specifications: item.specifications,
+        })),
+      });
+
+      await submitPurchaseOrderApi(po.id);
+      navigate('/procurement/purchase-orders');
+    } catch (err) {
+      const parsed = parseApiError(err);
+      setError(parsed.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (fetching) {
+    return <LoadingSpinner message="جاري تجهيز بيانيات إنشاء أمر الشراء..." />;
+  }
+
+  return (
+    <div className="procurement-reference-page space-y-6 animate-fade-in" dir="rtl">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+        <div>
+          <div className="flex items-center space-x-2 space-x-reverse">
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
+            <h1 className="text-xl font-bold text-slate-100">إصدار أمر شراء رسمي</h1>
+          </div>
+          <p className="text-xs text-slate-400 mt-1">
+            تحويل طلب الشراء المعتمد إلى أمر شراء مالي ملزم للمورد وتحديد الشروط التجاريّة
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsDirectPoModalOpen(true)}
+          className="bg-slate-800 hover:bg-slate-700 text-cyan-400 font-bold text-xs px-4 py-2.5 rounded-lg border border-slate-700 transition-colors"
+        >
+          + إصدار أمر شراء مباشر
+        </button>
+      </div>
+
+      {error && <ErrorMessage error={error} />}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        
+        {/* SECTION 1: REFERENCE PURCHASE REQUEST (READ ONLY) */}
+        {pr && (
+          <Card className="space-y-4 border-cyan-500/30 bg-slate-900/90">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h2 className="text-sm font-bold text-cyan-400 flex items-center gap-2">
+                <span>📋</span> القسم الأول: بيانات طلب الشراء المصدر (للاطلاع فقط)
+              </h2>
+              <span className="text-[10px] font-mono bg-cyan-950 text-cyan-300 border border-cyan-800/60 px-2 py-0.5 rounded font-bold">
+                #{pr.request_number}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-xs">
+              <div>
+                <span className="text-slate-400 block text-[10px]">القسم:</span>
+                <span className="font-bold text-slate-200">{pr.department?.name || '-'}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">صاحب الطلب:</span>
+                <span className="font-bold text-slate-200">{pr.requester?.name || '-'}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">رئيس القسم المعتمد:</span>
+                <span className="font-bold text-emerald-300">{pr.assigned_reviewer?.name || 'غير محدد'}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">تاريخ الحاجة:</span>
+                <span className="font-mono text-slate-300">{pr.date_needed || '-'}</span>
+              </div>
+            </div>
+
+            {/* Read-Only PR البنود List */}
+            <div className="space-y-2 pt-2">
+              <h3 className="text-xs font-bold text-slate-300">عناصر الطلب المعتمدة بالمواصفات الفنية:</h3>
+              <div className="overflow-x-auto rounded-lg border border-slate-800">
+                <table className="w-full text-right text-xs text-slate-300">
+                  <thead className="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                    <tr>
+                      <th className="p-2.5">م</th>
+                      <th className="p-2.5">رقم قطعة الأرض</th>
+                      <th className="p-2.5">المنطقة</th>
+                      <th className="p-2.5">الصنف</th>
+                      <th className="p-2.5">الوحدة</th>
+                      <th className="p-2.5">الكمية المطلوبة</th>
+                      <th className="p-2.5">المواصفات الفنية</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {pr.items?.map((item, idx) => (
+                      <tr key={item.id} className="hover:bg-slate-800/30">
+                        <td className="p-2.5 font-mono text-slate-400">{idx + 1}</td>
+                        <td className="p-2.5 font-mono text-slate-300">{item.item_reference || '-'}</td>
+                        <td className="p-2.5 text-slate-300">{item.region || '-'}</td>
+                        <td className="p-2.5 font-bold text-slate-100">{item.item?.name || item.item_description}</td>
+                        <td className="p-2.5 text-slate-400">{getUnitLabel(item.uom)}</td>
+                        <td className="p-2.5 font-mono font-bold text-cyan-300">{parseFloat(item.quantity).toLocaleString()}</td>
+                        <td className="p-2.5 text-slate-300 text-xs">{item.specifications || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* SECTION 2: PURCHASE ORDER COMMERCIAL DATA (EDITABLE) */}
+        <Card className="space-y-6 bg-slate-950 border-slate-800">
+          <div className="border-b border-slate-800 pb-3">
+            <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <span>💳</span> القسم الثاني: البيانات التجارية والمالية لأمر الشراء
+            </h2>
+          </div>
+
+          {/* المورد and Header Options */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">اختر المورد المعتمد *</label>
+              <select
+                required
+                value={supplierId}
+                disabled={Boolean(pr?.selected_quote?.id || pr?.procurement_route === 'DIRECT')}
+                onChange={(e) => setSupplierId(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-bold"
+              >
+                <option value="">-- اختر المورد النشط من القائمة --</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.company_name} ({s.code || `SUP-${s.id}`})
+                  </option>
+                ))}
+              </select>
+              {suppliers.length === 0 && (
+                <p className="text-[11px] text-rose-400 mt-1">لا يوجد موردون نشطون متاحون حالياً بالنظام.</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">تاريخ التوريد المتوقع</label>
+              <input
+                type="date"
+                value={deliveryDate}
+                onChange={(e) => setDeliveryDate(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">شروط الدفع والائتمان</label>
+              <input
+                type="text"
+                value={paymentTerms}
+                onChange={(e) => setPaymentTerms(e.target.value)}
+                placeholder="مثال: دفع عند الاستلام، آجل 30 يوم"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">ملاحظات وشروط خاصة للمورد</label>
+              <input
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="ملاحظات توريد أو شروط استلام..."
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+              />
+            </div>
+          </div>
+
+          {/* Commercial Line البنود Table */}
+          <div className="space-y-3 pt-2">
+            <h3 className="text-xs font-bold text-slate-200">جدول البنود التجارية والأسعار (بالجنيه المصري EGP / ج.م):</h3>
+            <div className="overflow-x-auto rounded-lg border border-slate-800 bg-slate-900/60">
+              <table className="w-full text-right text-xs text-slate-200 border-collapse">
+                <thead className="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                    <tr>
+                      <th className="p-3">#</th>
+                      <th className="p-3">رقم قطعة الأرض</th>
+                      <th className="p-3">المنطقة</th>
+                      <th className="p-3">الصنف</th>
+                    <th className="p-3">الوحدة</th>
+                    <th className="p-3">كمية طلب الشراء (PR)</th>
+                    <th className="p-3">كمية أمر الشراء (PO)</th>
+                    <th className="p-3">الفرق بين الكميتين</th>
+                    <th className="p-3">سعر الوحدة (EGP / ج.م)</th>
+                    <th className="p-3">إجمالي البند (EGP / ج.م)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {poItems.map((item, index) => {
+                    const lineTotal = item.quantity * item.unit_price;
+                    const diff = item.quantity - item.original_quantity;
+                    const isQtyChanged = diff !== 0;
+
+                    return (
+                      <tr key={index} className="hover:bg-slate-800/40 transition-colors">
+                        <td className="p-3 font-mono text-slate-400">{index + 1}</td>
+                        <td className="p-3">
+                          <input
+                            type="text"
+                            required
+                            value={item.item_reference}
+                            readOnly
+                            aria-readonly="true"
+                            placeholder="رقم قطعة الأرض"
+                            dir="ltr"
+                            className="w-32 bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-100 font-mono focus:border-cyan-500 focus:outline-none"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <input
+                            type="text"
+                            required
+                            value={item.region}
+                            readOnly
+                            aria-readonly="true"
+                            placeholder="المنطقة"
+                            className="w-32 bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-100 focus:border-cyan-500 focus:outline-none"
+                          />
+                        </td>
+                        <td className="p-3 font-bold text-slate-100">
+                          {item.item_description}
+                          {item.specifications && (
+                            <div className="text-[10px] text-slate-400 font-normal mt-0.5">
+                              المواصفات: {item.specifications}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-3 text-slate-400">{item.uom}</td>
+                        <td className="p-3 font-mono font-semibold text-slate-400">
+                          {item.original_quantity.toLocaleString()}
+                        </td>
+                        <td className="p-3">
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            required
+                            value={item.quantity}
+                            onChange={(e) => handleItemQuantityChange(index, e.target.value)}
+                            className="w-24 bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-100 font-mono focus:border-cyan-500 focus:outline-none"
+                          />
+                        </td>
+                        <td className="p-3 font-mono font-bold text-xs">
+                          {isQtyChanged ? (
+                            <span className={diff > 0 ? 'text-amber-400' : 'text-rose-400'}>
+                              {diff > 0 ? `+${diff.toFixed(2)}` : diff.toFixed(2)}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500">0</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            required
+                            value={item.unit_price}
+                            readOnly={Boolean(pr?.selected_quote?.id)}
+                            onChange={(e) => handleItemPriceChange(index, e.target.value)}
+                            placeholder="0.00"
+                            className="w-32 bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-emerald-400 font-mono font-bold focus:border-cyan-500 focus:outline-none"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <CurrencyDisplay
+                            amount={lineTotal}
+                            amountClassName="font-mono text-emerald-400 font-bold"
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Grand الإجمالي Summary Box (EGP) */}
+            <div className="flex items-center justify-between p-4 bg-slate-900 border border-slate-800 rounded-xl">
+              <span className="text-xs font-bold text-slate-200">
+                إجمالي أمر الشراء التجاري (بالجنيه المصري EGP / ج.م):
+              </span>
+              <CurrencyDisplay
+                amount={calculateGrandTotal()}
+                amountClassName="text-xl font-mono font-black text-emerald-400"
+              />
+            </div>
+          </div>
+
+          {/* Form الإجراءات */}
+          <div className="flex items-center justify-end space-x-3 space-x-reverse pt-4 border-t border-slate-800">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-4 py-2.5 rounded-lg font-medium"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !supplierId || !prId}
+              className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-cyan-600/20 disabled:opacity-50"
+            >
+              {loading ? 'جاري إصدار وإرسال أمر الشراء...' : 'إصدار وإرسال أمر الشراء للحسابات ←'}
+            </button>
+          </div>
+        </Card>
+      </form>
+
+      {/* Direct purchase request modal */}
+      <DirectPoModal
+        isOpen={isDirectPoModalOpen}
+        onClose={() => setIsDirectPoModalOpen(false)}
+        onSuccess={() => navigate('/procurement')}
+      />
+    </div>
+  );
+};
+
+export default CreatePurchaseOrderPage;
