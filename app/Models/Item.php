@@ -36,8 +36,8 @@ class Item extends Model
 
     protected static function booted(): void
     {
-        static::saved(fn () => Cache::forget('catalog.active.v1'));
-        static::deleted(fn () => Cache::forget('catalog.active.v1'));
+        static::saved(fn () => Cache::forget('catalog.active.v2'));
+        static::deleted(fn () => Cache::forget('catalog.active.v2'));
     }
 
     public function category(): BelongsTo
