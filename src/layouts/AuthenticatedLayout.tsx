@@ -410,16 +410,6 @@ export const AuthenticatedLayout: React.FC = () => {
                     <Outlet />
                 </main>
             </div>
-            {hasPermission('purchase_request.create') && !mobileMenuOpen && !location.pathname.includes('/requests/create') && (
-                <Link
-                    to="/requests/create"
-                    className="fixed inset-x-4 bottom-4 z-20 flex min-h-12 items-center justify-center rounded-2xl border border-cyan-300/50 bg-cyan-600 px-4 py-3 text-sm font-black text-white shadow-2xl shadow-cyan-950/60 md:hidden"
-                    aria-label="إنشاء طلب شراء جديد"
-                >
-                    <span aria-hidden="true" className="ml-2 text-lg">＋</span>
-                    طلب شراء جديد
-                </Link>
-            )}
             <footer className="mx-auto w-full max-w-[1800px] px-2 pb-3 text-center text-[10px] text-slate-500 sm:px-3 lg:px-4">
                 شركة الإشبيليّة للتطوير العقاري والمقاولات · منظومة المشتريات التشغيلية · <a href="https://ishbilia.dev" target="_blank" rel="noreferrer" className="text-[#d4b36a] hover:text-[#f0d695]">الموقع الرسمي</a> · <a href="https://web.facebook.com/Ishbilia.realestate?locale=ar_AR" target="_blank" rel="noreferrer" className="text-[#d4b36a] hover:text-[#f0d695]">صفحة Facebook</a>
             </footer>
