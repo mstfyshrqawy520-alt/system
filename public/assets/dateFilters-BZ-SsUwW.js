@@ -1,0 +1,1 @@
+const a=()=>{const e=new Date;return new Date(e.getTime()-e.getTimezoneOffset()*6e4).toISOString().slice(0,10)},n=()=>{const e=new Date,t=new Date(e.getTime()-e.getTimezoneOffset()*6e4);return t.setDate(t.getDate()-9),t.toISOString().slice(0,10)},o=(e,t)=>e===n()&&t===a();export{n as a,a as g,o as i};
