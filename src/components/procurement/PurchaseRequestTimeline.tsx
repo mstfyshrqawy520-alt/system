@@ -52,49 +52,50 @@ const currentStandardIndex = (request: PurchaseRequest) => {
 };
 
 const getActionGuidance = (request: PurchaseRequest): { text: string; bg: string; icon: string } => {
-  if (request.status === 'DRAFT') {
+  const status = String(request.status);
+  if (status === 'DRAFT') {
     return {
       icon: '✍️',
       text: 'الطلب ما زال مسودة لديك. اضغط على «إرسال الطلب» لإرساله إلى رئيس قسمك للمراجعة والاعتماد.',
       bg: 'border-slate-700 bg-slate-900/80 text-slate-200',
     };
   }
-  if (request.status === 'SUBMITTED' || request.status === 'UNDER_REVIEW') {
+  if (status === 'SUBMITTED' || status === 'UNDER_REVIEW') {
     return {
       icon: '⏳',
       text: `الطلب الآن بانتظار مراجعة واعتماد رئيس القسم (${request.target_department?.name || request.department?.name || 'قسمك'}). لا يتطلب منك أي إجراء حالياً.`,
       bg: 'border-cyan-700/50 bg-cyan-950/40 text-cyan-200',
     };
   }
-  if (request.status === 'PENDING_EXECUTIVE_APPROVAL') {
+  if (status === 'PENDING_EXECUTIVE_APPROVAL') {
     return {
       icon: '👔',
       text: 'تم اعتماد الطلب من رئيس القسم، وهو الآن بانتظار قرار المدير العام/التنفيذي.',
       bg: 'border-violet-700/50 bg-violet-950/40 text-violet-200',
     };
   }
-  if (request.status === 'PENDING_PROCUREMENT_APPROVAL' || request.status === 'PENDING_QUOTE_RECOMMENDATIONS' || request.status === 'PENDING_EXECUTIVE_QUOTE_DECISION' || request.status === 'APPROVED_BY_PROCUREMENT') {
+  if (status === 'PENDING_PROCUREMENT_APPROVAL' || status === 'PENDING_QUOTE_RECOMMENDATIONS' || status === 'PENDING_EXECUTIVE_QUOTE_DECISION' || status === 'APPROVED_BY_PROCUREMENT') {
     return {
       icon: '💼',
       text: 'الطلب معتمد ومحول لإدارة المشتريات للتسعير وتجهيز أمر الشراء للمورد.',
       bg: 'border-amber-700/50 bg-amber-950/40 text-amber-200',
     };
   }
-  if (request.status === 'PO_DRAFT' || request.status === 'ISSUED') {
+  if (status === 'PO_DRAFT' || status === 'ISSUED' || Boolean(request.purchase_order_issued)) {
     return {
       icon: '📋',
       text: 'تم إصدار أمر الشراء للمورد. الخطوة القادمة هي وصول المواد للموقع وتأكيد استلامها.',
       bg: 'border-emerald-700/50 bg-emerald-950/40 text-emerald-200',
     };
   }
-  if (request.status === 'COMPLETED') {
+  if (status === 'COMPLETED') {
     return {
       icon: '🎉',
       text: 'اكتملت دورة الشراء بالكامل وتم استلام المواد بنجاح ومطابقتها وتسجيلها في الحسابات.',
       bg: 'border-emerald-600 bg-emerald-950/60 text-emerald-100',
     };
   }
-  if (request.status === 'REJECTED') {
+  if (status === 'REJECTED') {
     return {
       icon: '❌',
       text: `تم رفض هذا الطلب. ${request.rejection_reason ? `سبب الرفض: ${request.rejection_reason}` : ''}`,
