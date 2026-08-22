@@ -80,12 +80,12 @@ export const PurchaseQuotesModal: React.FC<PurchaseQuotesModalProps> = ({ isOpen
     setSuccess(null);
   }, [isOpen]);
 
-  if (!isOpen || !request) return null;
-
   const totalQuantity = useMemo(
     () => (request?.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0),
     [request?.items]
   );
+
+  if (!isOpen || !request) return null;
 
   const updateDraft = (index: number, field: keyof QuoteDraft, value: string) => {
     setDrafts(current => current.map((draft, draftIndex) => {
