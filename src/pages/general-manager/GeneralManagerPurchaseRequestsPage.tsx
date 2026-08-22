@@ -146,7 +146,7 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="بحث برقم الطلب أو الموظف أو المورد..."
-        selects={[{ label: 'مسار الطلب', value: routeFilter, onChange: setRouteFilter, options: [{ value: 'ALL', label: 'كل المسارات' }, { value: 'DIRECT', label: 'شراء مباشر' }, { value: 'QUOTES', label: 'عروض أسعار' }] }]}
+        selects={[{ label: 'مسار الطلب', value: routeFilter, onChange: setRouteFilter, options: [{ value: 'ALL', label: 'كل المسارات' }, { value: 'QUOTES', label: 'عروض أسعار' }] }]}
         onClear={() => { setSearchTerm(''); setRouteFilter('ALL'); }}
         hasActiveFilters={Boolean(searchTerm || routeFilter !== 'ALL')}
         resultCount={filteredRequests.length}
