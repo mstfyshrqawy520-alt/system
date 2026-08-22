@@ -54,9 +54,9 @@ class SupplierController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'company_name' => ['required', 'string', 'max:150'],
+            'company_name' => ['required', 'string', 'max:150', Rule::unique('suppliers', 'company_name')],
             'contact_name' => ['nullable', 'string', 'max:100'],
-            'email' => ['nullable', 'email', 'max:150'],
+            'email' => ['nullable', 'email', 'max:150', Rule::unique('suppliers', 'email')],
             'phone' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string'],
             'payment_terms' => ['nullable', 'string', 'max:100'],
