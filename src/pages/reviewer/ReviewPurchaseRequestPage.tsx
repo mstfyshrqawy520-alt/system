@@ -293,77 +293,46 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
           <div><div className="text-[10px] text-slate-400 font-semibold">المنطقة</div><div className="mt-1 font-bold text-slate-200">{requestData.items?.map((item) => item.region).filter(Boolean).join('، ') || 'غير محددة'}</div></div>
         </Card>
 
-        {/* Desktop Action Bar */}
-        <div className="hidden md:flex items-center gap-2 flex-wrap">
+        {/* Responsive Action Bar: Sticky bottom on mobile, inline header on desktop */}
+        <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-between gap-2 border-t border-slate-800 bg-slate-900/95 p-3 shadow-2xl backdrop-blur md:static md:z-auto md:flex md:w-auto md:justify-start md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
           {requestData.status === 'SUBMITTED' && hasPermission('purchase_request.review') && (
-            <Button variant="primary" size="md" onClick={handleStartReview} isLoading={isMutating}>
+            <Button variant="primary" size="md" onClick={handleStartReview} isLoading={isMutating} className="flex-1 md:flex-none min-h-10 text-xs font-bold md:text-sm">
               {isMutating ? 'جارٍ بدء المراجعة...' : 'بدء المراجعة'}
             </Button>
           )}
 
           {isUnderReview && !isFinalized && (
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-1 md:flex-none items-center gap-2">
               {hasPermission('purchase_request.approve') && (
                 <Button
                   variant="success"
                   size="md"
                   onClick={() => setIsApproveModalOpen(true)}
                   disabled={isMutating}
+                  className="flex-1 md:flex-none min-h-10 text-xs font-bold md:text-sm"
                   title="اعتماد الطلب"
                 >
                   اعتماد
                 </Button>
               )}
               {hasPermission('purchase_request.reject') && (
-                <Button variant="danger" size="md" onClick={() => setIsRejectModalOpen(true)} disabled={isMutating}>
+                <Button
+                  variant="danger"
+                  size="md"
+                  onClick={() => setIsRejectModalOpen(true)}
+                  disabled={isMutating}
+                  className="flex-1 md:flex-none min-h-10 text-xs font-bold md:text-sm"
+                >
                   رفض
                 </Button>
               )}
             </div>
           )}
 
-          <Link to="/reviewer/requests">
-            <Button variant="secondary" size="md">← إلغاء</Button>
+          <Link to="/reviewer/requests" className="flex-1 md:flex-none">
+            <Button variant="secondary" size="md" className="w-full md:w-auto min-h-10 text-xs md:text-sm">← إلغاء</Button>
           </Link>
         </div>
-      </div>
-
-      {/* Sticky Mobile Bottom Action Bar */}
-      <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-between gap-2 border-t border-slate-800 bg-slate-900/95 p-3 shadow-2xl backdrop-blur md:hidden">
-        <Link to="/reviewer/requests" className="flex-1">
-          <Button variant="secondary" size="md" className="w-full min-h-10 text-xs">← إلغاء</Button>
-        </Link>
-        {requestData.status === 'SUBMITTED' && hasPermission('purchase_request.review') && (
-          <Button variant="primary" size="md" onClick={handleStartReview} isLoading={isMutating} className="flex-2 w-full min-h-10 text-xs font-bold">
-            {isMutating ? 'جارٍ بدء المراجعة...' : 'بدء المراجعة'}
-          </Button>
-        )}
-        {isUnderReview && !isFinalized && (
-          <div className="flex flex-1 items-center gap-2">
-            {hasPermission('purchase_request.approve') && (
-              <Button
-                variant="success"
-                size="md"
-                onClick={() => setIsApproveModalOpen(true)}
-                disabled={isMutating}
-                className="flex-1 min-h-10 text-xs font-bold"
-              >
-                اعتماد
-              </Button>
-            )}
-            {hasPermission('purchase_request.reject') && (
-              <Button
-                variant="danger"
-                size="md"
-                onClick={() => setIsRejectModalOpen(true)}
-                disabled={isMutating}
-                className="flex-1 min-h-10 text-xs font-bold"
-              >
-                رفض
-              </Button>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Editable Header */}

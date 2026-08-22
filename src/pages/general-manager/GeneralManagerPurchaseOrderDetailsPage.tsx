@@ -62,44 +62,26 @@ export const GeneralManagerPurchaseOrderDetailsPage: React.FC = () => {
             👑 للاطلاع الإداري التنفيذي (Read-Only)
           </span>
         </div>
-        <div className="hidden md:flex items-center gap-2 flex-wrap">
+        {/* Responsive Actions: Sticky bottom on mobile, inline in header on desktop */}
+        <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-between gap-2 border-t border-slate-800 bg-slate-900/95 p-3 shadow-2xl backdrop-blur md:static md:z-auto md:flex md:w-auto md:justify-start md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
           <button
             onClick={() => setPrintPo(po)}
-            className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded text-xs font-bold transition-colors flex items-center gap-1"
+            className="flex-1 md:flex-none min-h-10 md:min-h-0 px-3 py-2 md:py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg md:rounded text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-lg md:shadow-none shadow-emerald-950/50"
           >
             🖨️ طباعة PO
           </button>
           <button
             onClick={handleExportJson}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded text-xs font-semibold transition-colors flex items-center gap-1"
+            className="flex-1 md:flex-none min-h-10 md:min-h-0 px-3 py-2 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg md:rounded text-xs font-semibold transition-colors flex items-center justify-center gap-1"
           >
             📥 تصدير البيانات
           </button>
-          <Link to="/general-manager/purchase-orders">
-            <Button variant="secondary" size="sm">
+          <Link to="/general-manager/purchase-orders" className="flex-1 md:flex-none">
+            <Button variant="secondary" size="md" className="w-full md:w-auto min-h-10 md:min-h-0 text-xs">
               &rarr; العودة للقائمة
             </Button>
           </Link>
         </div>
-      </div>
-
-      {/* Sticky Mobile Bottom Action Bar */}
-      <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-between gap-2 border-t border-slate-800 bg-slate-900/95 p-3 shadow-2xl backdrop-blur md:hidden">
-        <Link to="/general-manager/purchase-orders" className="flex-1">
-          <Button variant="secondary" size="md" className="w-full min-h-10 text-xs">← القائمة</Button>
-        </Link>
-        <button
-          onClick={() => setPrintPo(po)}
-          className="flex-1 min-h-10 px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-lg shadow-emerald-950/50"
-        >
-          🖨️ طباعة PO
-        </button>
-        <button
-          onClick={handleExportJson}
-          className="flex-1 min-h-10 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1"
-        >
-          📥 تصدير
-        </button>
       </div>
 
       {/* Metadata */}

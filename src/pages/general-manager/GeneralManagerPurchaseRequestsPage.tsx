@@ -291,16 +291,10 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Desktop Modal Actions */}
-            <div className="mt-5 hidden sm:flex sm:flex-row sm:justify-start gap-2">
-              <Button type="button" variant="primary" isLoading={actionLoading} onClick={() => void performAction('approve')} className="min-h-10">اعتماد وإرسال للمشتريات</Button>
-              <Button type="button" variant="danger" isLoading={actionLoading} onClick={() => void performAction('reject')} className="min-h-10">رفض الطلب</Button>
-            </div>
-
-            {/* Mobile Sticky Modal Actions */}
-            <div className="fixed bottom-0 inset-x-0 z-30 flex items-center gap-2 border-t border-slate-800 bg-slate-950/95 p-3 shadow-2xl backdrop-blur sm:hidden">
-              <Button type="button" variant="primary" isLoading={actionLoading} onClick={() => void performAction('approve')} className="flex-1 min-h-10 text-xs font-bold">اعتماد وإرسال</Button>
-              <Button type="button" variant="danger" isLoading={actionLoading} onClick={() => void performAction('reject')} className="flex-1 min-h-10 text-xs font-bold">رفض الطلب</Button>
+            {/* Modal Actions: Sticky bottom on mobile, inline on desktop */}
+            <div className="fixed bottom-0 inset-x-0 z-30 flex items-center gap-2 border-t border-slate-800 bg-slate-950/95 p-3 shadow-2xl backdrop-blur sm:static sm:z-auto sm:mt-5 sm:flex sm:w-auto sm:justify-start sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none">
+              <Button type="button" variant="primary" isLoading={actionLoading} onClick={() => void performAction('approve')} className="flex-1 sm:flex-none min-h-10 text-xs sm:text-sm font-bold">اعتماد وإرسال للمشتريات</Button>
+              <Button type="button" variant="danger" isLoading={actionLoading} onClick={() => void performAction('reject')} className="flex-1 sm:flex-none min-h-10 text-xs sm:text-sm font-bold">رفض الطلب</Button>
             </div>
           </div>
         </div>
