@@ -11,6 +11,7 @@ class SupplierBalance extends \Illuminate\Database\Eloquent\Model
 
     protected $fillable = [
         'supplier_id',
+        'opening_balance',
         'total_invoiced',
         'total_paid',
         'balance',
@@ -20,6 +21,7 @@ class SupplierBalance extends \Illuminate\Database\Eloquent\Model
     protected function casts(): array
     {
         return [
+            'opening_balance' => 'decimal:2',
             'total_invoiced' => 'decimal:2',
             'total_paid' => 'decimal:2',
             'balance' => 'decimal:2',

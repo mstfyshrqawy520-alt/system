@@ -16,6 +16,8 @@ export interface المورد {
   email?: string | null;
   phone?: string | null;
   address?: string | null;
+  opening_balance?: string | number | null;
+  opening_balance_notes?: string | null;
   is_active: boolean;
   notes?: string | null;
   purchase_orders?: Array<{

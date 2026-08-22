@@ -267,6 +267,8 @@ Route::middleware('auth:sanctum')->prefix('accounting')->group(function () {
         ->middleware('permission:supplier.account.view');
     Route::get('/suppliers/{supplier}/account', [SupplierInvoiceController::class, 'supplierAccount'])
         ->middleware('permission:supplier.account.view');
+    Route::post('/suppliers/{supplier}/opening-balance', [SupplierInvoiceController::class, 'setOpeningBalance'])
+        ->middleware('permission:accounting.invoice.create');
 });
 
 // General Manager / Executive Purchase Request Decision Routes

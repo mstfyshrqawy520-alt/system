@@ -10,6 +10,8 @@ export interface SupplierAdmin {
   email?: string | null;
   phone?: string | null;
   address?: string | null;
+  opening_balance?: number | string | null;
+  opening_balance_notes?: string | null;
   is_active: boolean;
 }
 
@@ -20,6 +22,8 @@ export interface SupplierInput {
   email?: string;
   phone?: string;
   address?: string;
+  opening_balance?: number | string;
+  opening_balance_notes?: string;
   is_active?: boolean;
 }
 

@@ -60,7 +60,18 @@ const SupplierAccountDetailsView: React.FC<{
       </div>
     </div>
 
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="rounded-xl bg-slate-950 p-4 border border-amber-900/40">
+        <div className="text-xs text-slate-400">الرصيد الافتتاحي (مديونية سابقة)</div>
+        <div className="mt-1 whitespace-nowrap font-mono font-black text-amber-300 text-xl">
+          {money(selected.summary.opening_balance || 0)}
+        </div>
+        {selected.supplier.opening_balance_notes && (
+          <div className="mt-1 text-[11px] text-slate-400 truncate" title={selected.supplier.opening_balance_notes}>
+            {selected.supplier.opening_balance_notes}
+          </div>
+        )}
+      </div>
       <div className="rounded-xl bg-slate-950 p-4 border border-cyan-900/40">
         <div className="text-xs text-slate-400">إجمالي الفواتير المسجلة</div>
         <div className="mt-1 whitespace-nowrap font-mono font-black text-cyan-300 text-xl">

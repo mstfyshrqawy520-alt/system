@@ -61,11 +61,18 @@ class SupplierController extends Controller
             'phone' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string'],
             'payment_terms' => ['nullable', 'string', 'max:100'],
+            'opening_balance' => ['nullable', 'numeric', 'min:0'],
+            'opening_balance_notes' => ['nullable', 'string', 'max:1000'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
         $validated['is_active'] = $validated['is_active'] ?? true;
+        $validated['opening_balance'] = isset($validated['opening_balance']) ? round((float) $validated['opening_balance'], 2) : 0;
         $supplier = Supplier::create($validated);
+
+        if ($supplier->opening_balance > 0) {
+            app(\App\Services\SupplierInvoiceService::class)->setOpeningBalance($supplier, (float) $supplier->opening_balance, $supplier->opening_balance_notes);
+        }
 
         return response()->json([
             'message' => 'Supplier created successfully.',
@@ -97,10 +104,16 @@ class SupplierController extends Controller
             'phone' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string'],
             'payment_terms' => ['nullable', 'string', 'max:100'],
+            'opening_balance' => ['nullable', 'numeric', 'min:0'],
+            'opening_balance_notes' => ['nullable', 'string', 'max:1000'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
         $supplier->update($validated);
+
+        if (array_key_exists('opening_balance', $validated)) {
+            app(\App\Services\SupplierInvoiceService::class)->setOpeningBalance($supplier, (float) $supplier->opening_balance, $supplier->opening_balance_notes);
+        }
 
         return response()->json([
             'message' => 'Supplier updated successfully.',

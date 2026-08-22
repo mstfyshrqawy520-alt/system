@@ -39,6 +39,8 @@ export const SuppliersPage: React.FC = () => {
     email: '',
     phone: '',
     address: '',
+    opening_balance: 0,
+    opening_balance_notes: '',
     is_active: true,
   });
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -71,6 +73,8 @@ export const SuppliersPage: React.FC = () => {
       email: '',
       phone: '',
       address: '',
+      opening_balance: 0,
+      opening_balance_notes: '',
       is_active: true,
     });
     setIsModalOpen(true);
@@ -84,6 +88,8 @@ export const SuppliersPage: React.FC = () => {
       email: sup.email || '',
       phone: sup.phone || '',
       address: sup.address || '',
+      opening_balance: Number(sup.opening_balance || 0),
+      opening_balance_notes: sup.opening_balance_notes || '',
       is_active: sup.is_active,
     });
     setIsModalOpen(true);
@@ -196,6 +202,7 @@ export const SuppliersPage: React.FC = () => {
               <TableHead>اسم الشركة / المورد</TableHead>
               <TableHead>مسؤول التواصل</TableHead>
               <TableHead>البريد والهاتف</TableHead>
+              <TableHead>الرصيد الافتتاحي</TableHead>
               <TableHead>الحالة</TableHead>
               <TableHead className="text-center">الإجراءات</TableHead>
             </TableRow>
@@ -228,6 +235,20 @@ export const SuppliersPage: React.FC = () => {
                 <TableCell>
                   <div className="font-mono text-cyan-400">{sup.email || '—'}</div>
                   <div className="text-[11px] text-slate-400 font-mono" dir="ltr">{sup.phone || '—'}</div>
+                </TableCell>
+                <TableCell>
+                  {Number(sup.opening_balance || 0) > 0 ? (
+                    <div className="font-mono font-bold text-amber-300">
+                      {Number(sup.opening_balance).toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م
+                      {sup.opening_balance_notes && (
+                        <div className="text-[10px] text-slate-400 font-normal truncate max-w-[140px]" title={sup.opening_balance_notes}>
+                          {sup.opening_balance_notes}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-slate-500 font-mono">0.00 ج.م</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   {sup.is_active ? (
@@ -300,7 +321,13 @@ export const SuppliersPage: React.FC = () => {
                   <dt className="text-slate-500">الهاتف</dt>
                   <dd className="mt-1 font-mono text-slate-300" dir="ltr">{sup.phone || '—'}</dd>
                 </div>
-                <div className="min-[420px]:col-span-2">
+                <div>
+                  <dt className="text-slate-500">الرصيد الافتتاحي</dt>
+                  <dd className="mt-1 font-mono font-bold text-amber-300">
+                    {Number(sup.opening_balance || 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م
+                  </dd>
+                </div>
+                <div>
                   <dt className="text-slate-500">البريد الإلكتروني</dt>
                   <dd className="mt-1 font-mono text-cyan-400 break-all">{sup.email || '—'}</dd>
                 </div>
@@ -394,7 +421,39 @@ export const SuppliersPage: React.FC = () => {
             />
           </FormField>
 
-          <div className="flex items-center gap-2 pt-2">
+          {/* Opening Balance / Previous Liability Section */}
+          <div className="rounded-xl border border-amber-800/60 bg-amber-950/20 p-3.5 space-y-2.5">
+            <div className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+              <span>💰</span>
+              <span>الرصيد الافتتاحي للمديونية (مديونية سابقة مستحقة للمورد):</span>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-5">
+              إذا كان للمورد مديونية سابقة قبل تفعيل النظام، سجل المبلغ هنا ليتم إدراجه تلقائياً كمديونية افتتاحية في كشف حسابه ومحاسبته.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              <FormField label="الرصيد الافتتاحي المستحق للمورد (ج.م)">
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.opening_balance ?? 0}
+                  onChange={(e) => setFormData({ ...formData, opening_balance: e.target.value === '' ? '' : Number(e.target.value) })}
+                  placeholder="0.00"
+                />
+              </FormField>
+
+              <FormField label="ملاحظات / مرجع الرصيد الافتتاحي">
+                <Input
+                  type="text"
+                  value={formData.opening_balance_notes || ''}
+                  onChange={(e) => setFormData({ ...formData, opening_balance_notes: e.target.value })}
+                  placeholder="مثال: رصيد مرحل من الدفاتر القديمة 2025"
+                />
+              </FormField>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
             <input
               type="checkbox"
               id="is_active"

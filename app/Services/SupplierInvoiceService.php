@@ -94,13 +94,6 @@ class SupplierInvoiceService
             throw ValidationException::withMessages(['invoice_number' => ['رقم الفاتورة مستخدم من قبل. أدخل رقمًا مختلفًا أو راجع أرشيف فواتير المورد.']]);
         }
 
-        $receivedValue = $this->calculateReceiptValue($receipt);
-        if (abs($amount - $receivedValue) > 0.01) {
-            throw ValidationException::withMessages([
-                'amount' => [sprintf('قيمة الفاتورة يجب أن تساوي قيمة الكميات المستلمة: %.2f ج.م.', $receivedValue)],
-            ]);
-        }
-
         return DB::transaction(function () use ($accountant, $purchaseOrder, $receipt, $amount, $normalizedInvoiceNumber, $invoiceDate, $dueDate, $landAllocations, $notes): SupplierInvoice {
             $invoice = SupplierInvoice::create([
                 'supplier_id' => $purchaseOrder->supplier_id,
@@ -329,13 +322,30 @@ class SupplierInvoiceService
         ];
     }
 
+    public function setOpeningBalance(Supplier $supplier, float $openingBalance, ?string $notes = null): array
+    {
+        if ($openingBalance < 0) {
+            throw ValidationException::withMessages(['opening_balance' => ['الرصيد الافتتاحي لا يمكن أن يكون سالباً.']]);
+        }
+
+        $supplier->update([
+            'opening_balance' => round($openingBalance, 2),
+            'opening_balance_notes' => $notes,
+        ]);
+
+        $this->refreshSupplierBalance($supplier->id);
+
+        return $this->supplierAccount($supplier);
+    }
+
     private function supplierSummary(Supplier $supplier): array
     {
+        $openingBalance = (float) ($supplier->opening_balance ?? 0);
         $totalInvoiced = (float) SupplierInvoice::where('supplier_id', $supplier->id)
             ->where('status', '!=', 'DRAFT')
             ->sum('amount');
         $totalPaid = (float) SupplierPayment::where('supplier_id', $supplier->id)->sum('amount');
-        $balance = round($totalInvoiced - $totalPaid, 2);
+        $balance = round($openingBalance + $totalInvoiced - $totalPaid, 2);
 
         return [
             'supplier_id' => $supplier->id,
@@ -343,6 +353,8 @@ class SupplierInvoiceService
             'code' => $supplier->code ?? null,
             'email' => $supplier->email,
             'phone' => $supplier->phone,
+            'opening_balance' => $openingBalance,
+            'opening_balance_notes' => $supplier->opening_balance_notes,
             'total_invoiced' => $totalInvoiced,
             'total_paid' => $totalPaid,
             'balance' => $balance,
@@ -359,15 +371,18 @@ class SupplierInvoiceService
 
     private function refreshSupplierBalance(int $supplierId): SupplierBalance
     {
+        $supplier = Supplier::find($supplierId);
+        $openingBalance = (float) ($supplier?->opening_balance ?? 0);
         $totalInvoiced = (float) SupplierInvoice::where('supplier_id', $supplierId)
             ->where('status', '!=', 'DRAFT')
             ->sum('amount');
         $totalPaid = (float) SupplierPayment::where('supplier_id', $supplierId)->sum('amount');
-        $balance = round($totalInvoiced - $totalPaid, 2);
+        $balance = round($openingBalance + $totalInvoiced - $totalPaid, 2);
 
         return SupplierBalance::updateOrCreate(
             ['supplier_id' => $supplierId],
             [
+                'opening_balance' => $openingBalance,
                 'total_invoiced' => $totalInvoiced,
                 'total_paid' => $totalPaid,
                 'balance' => $balance,

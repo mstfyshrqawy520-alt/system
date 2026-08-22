@@ -21,12 +21,15 @@ class Supplier extends Model
         'phone',
         'address',
         'payment_terms',
+        'opening_balance',
+        'opening_balance_notes',
         'is_active',
     ];
 
     protected function casts(): array
     {
         return [
+            'opening_balance' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }

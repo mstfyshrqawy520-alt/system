@@ -8,6 +8,9 @@ export interface SupplierPayload {
   phone?: string;
   email?: string;
   address?: string;
+  payment_terms?: string;
+  opening_balance?: number | string;
+  opening_balance_notes?: string;
   notes?: string;
   is_active?: boolean;
 }

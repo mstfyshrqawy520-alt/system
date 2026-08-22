@@ -141,6 +141,8 @@ export interface SupplierPayment {
 }
 
 export interface SupplierBalanceSummary {
+  opening_balance?: number;
+  opening_balance_notes?: string | null;
   total_invoiced: number;
   total_paid: number;
   balance: number;
@@ -154,6 +156,8 @@ export interface SupplierAccountSummary extends SupplierBalanceSummary {
   code?: string | null;
   email?: string | null;
   phone?: string | null;
+  opening_balance?: number;
+  opening_balance_notes?: string | null;
   open_invoices_count: number;
   invoices_count: number;
   payments_count: number;
@@ -292,3 +296,16 @@ export const getSupplierAccountsApi = async () =>
 
 export const getSupplierAccountApi = async (supplierId: number) =>
   (await apiClient.get<{ data: SupplierAccountDetails }>(`${accountingBase}/suppliers/${supplierId}/account`)).data.data;
+
+export const setSupplierOpeningBalanceApi = async (
+  supplierId: number,
+  payload: { opening_balance: number; notes?: string }
+): Promise<{ message: string; data: SupplierAccountDetails }> => {
+  const response = await apiClient.post<{ message: string; data: SupplierAccountDetails }>(
+    `${accountingBase}/suppliers/${supplierId}/opening-balance`,
+    payload
+  );
+  invalidateCachedGet(`${accountingBase}/suppliers/accounts`);
+  invalidateCachedGet('/procurement/suppliers-manage');
+  return response.data;
+};

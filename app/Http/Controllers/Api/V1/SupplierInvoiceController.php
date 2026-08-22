@@ -134,4 +134,23 @@ class SupplierInvoiceController extends Controller
             'data' => $this->service->supplierAccount($supplier),
         ]);
     }
+
+    public function setOpeningBalance(Request $request, Supplier $supplier): JsonResponse
+    {
+        $validated = $request->validate([
+            'opening_balance' => ['required', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $result = $this->service->setOpeningBalance(
+            $supplier,
+            (float) $validated['opening_balance'],
+            $validated['notes'] ?? null
+        );
+
+        return response()->json([
+            'message' => 'تم تحديث الرصيد الافتتاحي للمورد بنجاح.',
+            'data' => $result,
+        ]);
+    }
 }
