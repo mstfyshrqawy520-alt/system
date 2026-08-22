@@ -97,21 +97,21 @@ export const SuppliersManagementPage: React.FC = () => {
       {error && <ErrorMessage error={error} />}
 
       {/* تصفية and بحث Section */}
-      <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         <div className="w-full md:w-80">
           <input
             type="text"
             placeholder="بحث باسم الشركة، الكود، الهاتف، البريد..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 min-h-10"
           />
         </div>
 
-        <div className="flex items-center space-x-2 space-x-reverse bg-slate-900 p-1 rounded-lg border border-slate-800">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
           <button
             onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            className={`flex-1 sm:flex-initial px-3 py-2 text-xs font-medium rounded-md transition-colors min-h-9 ${
               statusFilter === 'all' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -119,7 +119,7 @@ export const SuppliersManagementPage: React.FC = () => {
           </button>
           <button
             onClick={() => setStatusFilter('active')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            className={`flex-1 sm:flex-initial px-3 py-2 text-xs font-medium rounded-md transition-colors min-h-9 ${
               statusFilter === 'active' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -127,7 +127,7 @@ export const SuppliersManagementPage: React.FC = () => {
           </button>
           <button
             onClick={() => setStatusFilter('inactive')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            className={`flex-1 sm:flex-initial px-3 py-2 text-xs font-medium rounded-md transition-colors min-h-9 ${
               statusFilter === 'inactive' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -144,60 +144,109 @@ export const SuppliersManagementPage: React.FC = () => {
           لا يوجد موردون يطابقون نتائج البحث المحددة.
         </div>
       ) : (
-        <div className="bg-slate-950 rounded-xl border border-slate-800 overflow-hidden shadow-xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
-              <thead className="bg-slate-900/90 text-slate-400 font-bold uppercase border-b border-slate-800">
-                <tr>
-                  <th className="px-4 py-3">الكود</th>
-                  <th className="px-4 py-3">اسم الشركة / المورد</th>
-                  <th className="px-4 py-3">الهاتف</th>
-                  <th className="px-4 py-3">البريد الإلكتروني</th>
-                  <th className="px-4 py-3">الحالة</th>
-                  <th className="px-4 py-3 text-center">الإجراءات</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {filteredSuppliers.map(s => (
-                  <tr key={s.id} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="px-4 py-3 font-mono font-semibold text-cyan-400">{s.code || `SUP-${s.id}`}</td>
-                    <td className="px-4 py-3 font-semibold text-slate-200">{s.company_name}</td>
-                    <td className="px-4 py-3 text-slate-300">{s.phone || 'غير مدخل'}</td>
-                    <td className="px-4 py-3 text-slate-300 font-mono">{s.email || 'غير مدخل'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
-                        s.is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'
-                      }`}>
-                        {s.is_active ? 'نشط' : 'غير نشط'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex items-center justify-center space-x-2 space-x-reverse">
-                        <button
-                          onClick={() => {
-                            setSelectedSupplier(s);
-                            setIsModalOpen(true);
-                          }}
-                          className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] px-2.5 py-1 rounded font-medium transition-colors"
-                        >
-                          تعديل
-                        </button>
-                        {s.is_active && (
-                          <button
-                            onClick={() => handleDelete(s.id, s.company_name)}
-                            className="bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 text-[11px] px-2.5 py-1 rounded font-medium border border-rose-900/40 transition-colors"
-                          >
-                            حذف
-                          </button>
-                        )}
-                      </div>
-                    </td>
+        <>
+          <div className="hidden min-w-0 md:block bg-slate-950 rounded-xl border border-slate-800 overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-right text-xs">
+                <thead className="bg-slate-900/90 text-slate-400 font-bold uppercase border-b border-slate-800">
+                  <tr>
+                    <th className="px-4 py-3">الكود</th>
+                    <th className="px-4 py-3">اسم الشركة / المورد</th>
+                    <th className="px-4 py-3">الهاتف</th>
+                    <th className="px-4 py-3">البريد الإلكتروني</th>
+                    <th className="px-4 py-3">الحالة</th>
+                    <th className="px-4 py-3 text-center">الإجراءات</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {filteredSuppliers.map(s => (
+                    <tr key={s.id} className="hover:bg-slate-900/40 transition-colors">
+                      <td className="px-4 py-3 font-mono font-semibold text-cyan-400">{s.code || `SUP-${s.id}`}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-200">{s.company_name}</td>
+                      <td className="px-4 py-3 text-slate-300">{s.phone || 'غير مدخل'}</td>
+                      <td className="px-4 py-3 text-slate-300 font-mono">{s.email || 'غير مدخل'}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                          s.is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'
+                        }`}>
+                          {s.is_active ? 'نشط' : 'غير نشط'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center space-x-2 space-x-reverse">
+                          <button
+                            onClick={() => {
+                              setSelectedSupplier(s);
+                              setIsModalOpen(true);
+                            }}
+                            className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] px-2.5 py-1 rounded font-medium transition-colors"
+                          >
+                            تعديل
+                          </button>
+                          {s.is_active && (
+                            <button
+                              onClick={() => handleDelete(s.id, s.company_name)}
+                              className="bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 text-[11px] px-2.5 py-1 rounded font-medium border border-rose-900/40 transition-colors"
+                            >
+                              حذف
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+
+          <div className="space-y-3 md:hidden">
+            {filteredSuppliers.map(s => (
+              <article key={`mobile-supplier-${s.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+                <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-3">
+                  <div className="min-w-0">
+                    <h3 className="break-normal font-bold text-sm text-slate-100">{s.company_name}</h3>
+                    <span className="font-mono text-xs text-cyan-400 font-semibold">{s.code || `SUP-${s.id}`}</span>
+                  </div>
+                  <span className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-bold ${
+                    s.is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {s.is_active ? 'نشط' : 'غير نشط'}
+                  </span>
+                </div>
+                <dl className="mt-3 grid min-w-0 grid-cols-1 gap-2 text-xs min-[420px]:grid-cols-2">
+                  <div>
+                    <dt className="text-slate-500">الهاتف</dt>
+                    <dd className="mt-1 font-mono text-slate-300" dir="ltr">{s.phone || 'غير مدخل'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">البريد الإلكتروني</dt>
+                    <dd className="mt-1 font-mono text-slate-300 break-all">{s.email || 'غير مدخل'}</dd>
+                  </div>
+                </dl>
+                <div className="mt-4 flex items-center gap-2 border-t border-slate-800 pt-3">
+                  <button
+                    onClick={() => {
+                      setSelectedSupplier(s);
+                      setIsModalOpen(true);
+                    }}
+                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs py-2.5 rounded-lg font-bold transition-colors min-h-10"
+                  >
+                    تعديل
+                  </button>
+                  {s.is_active && (
+                    <button
+                      onClick={() => handleDelete(s.id, s.company_name)}
+                      className="flex-1 bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 text-xs py-2.5 rounded-lg font-bold border border-rose-900/40 transition-colors min-h-10"
+                    >
+                      حذف
+                    </button>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
       )}
 
       {/* المورد Modal */}
