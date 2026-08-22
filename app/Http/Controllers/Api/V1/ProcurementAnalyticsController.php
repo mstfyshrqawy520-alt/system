@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
 use App\Models\Supplier;
-use App\Models\User;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class ProcurementAnalyticsController extends Controller
 {
@@ -65,124 +66,142 @@ class ProcurementAnalyticsController extends Controller
             ->limit(8)
             ->get();
 
-        $allOrderRows = (clone $basePurchaseOrderQuery)->get();
         $basePurchaseRequestQuery = PurchaseRequest::query()
             ->select(['id', 'status', 'created_at'])
             ->when($cutoff !== null, fn ($query) => $query->where('created_at', '>=', $cutoff));
-        $allRequestRows = (clone $basePurchaseRequestQuery)->get();
 
-        $supplierLookup = Supplier::query()
-            ->whereIn('id', $allOrderRows->pluck('supplier_id')->filter()->unique()->values())
-            ->get(['id', 'company_name', 'code', 'is_active'])
-            ->keyBy('id');
-        $purchaseRequestLookup = PurchaseRequest::query()
-            ->whereIn('id', $allOrderRows->pluck('purchase_request_id')->filter()->unique()->values())
-            ->with('department')
-            ->get(['id', 'department_id', 'submitted_at'])
-            ->keyBy('id');
-        $creatorLookup = User::query()
-            ->whereIn('id', $allOrderRows->pluck('created_by_user_id')->filter()->unique()->values())
-            ->with('department')
-            ->get(['id', 'department_id'])
-            ->keyBy('id');
-        $totalValue = (float) $allOrderRows->sum(fn (PurchaseOrder $po) => (float) $po->grand_total);
-        $completedDeliveries = $allOrderRows->filter(fn (PurchaseOrder $po) => $po->delivery_status === 'COMPLETE');
-        $onTimeDeliveries = $completedDeliveries->filter(fn (PurchaseOrder $po) => $po->delivery_date && $po->actual_delivery_date && $po->actual_delivery_date->lte($po->delivery_date));
-        $cycleDurationsInDays = $allOrderRows->map(function (PurchaseOrder $po) use ($purchaseRequestLookup) {
-            $submittedAt = $purchaseRequestLookup->get($po->purchase_request_id)?->submitted_at;
-            if (!$submittedAt || !$po->created_at) return null;
-            return max(0, $submittedAt->diffInHours($po->created_at) / 24);
-        })->filter(fn ($days) => $days !== null);
-        $averagePoCycleDays = $cycleDurationsInDays->count() > 0 ? $cycleDurationsInDays->avg() : 0;
-        $onTimeDeliveryRate = $completedDeliveries->count() > 0 ? ($onTimeDeliveries->count() / $completedDeliveries->count()) * 100 : 0;
-
-        $statusBreakdown = $allOrderRows
+        $orderTotals = (clone $basePurchaseOrderQuery)
+            ->select([])
+            ->selectRaw('COUNT(*) as purchase_orders_count, COALESCE(SUM(grand_total), 0) as total_value')
+            ->first();
+        $statusMetrics = (clone $basePurchaseOrderQuery)
+            ->select('status')
+            ->selectRaw('COUNT(*) as row_count, COALESCE(SUM(grand_total), 0) as total_value')
             ->groupBy('status')
-            ->map(function ($rows, string $orderStatus) {
-                return [
-                    'status' => $orderStatus,
-                    'count' => $rows->count(),
-                    'total_value' => number_format((float) $rows->sum(fn (PurchaseOrder $po) => (float) $po->grand_total), 2, '.', ''),
-                ];
-            })
-            ->sortBy(function (array $item) {
-                return array_search($item['status'], self::ORDER_STATUSES, true);
-            })
+            ->get();
+        $statusBreakdown = $statusMetrics
+            ->map(fn ($row) => [
+                'status' => $row->status,
+                'count' => (int) $row->row_count,
+                'total_value' => number_format((float) $row->total_value, 2, '.', ''),
+            ])
+            ->sortBy(fn (array $item) => array_search($item['status'], self::ORDER_STATUSES, true))
             ->values();
 
-                $requestStatusBreakdown = $allRequestRows
+        $requestStatusMetrics = (clone $basePurchaseRequestQuery)
+            ->select('status')
+            ->selectRaw('COUNT(*) as row_count')
             ->groupBy('status')
-            ->map(fn ($rows, string $requestStatus) => [
-                'status' => $requestStatus,
-                'count' => $rows->count(),
+            ->get();
+        $requestStatusBreakdown = $requestStatusMetrics
+            ->map(fn ($row) => [
+                'status' => $row->status,
+                'count' => (int) $row->row_count,
             ])
             ->values();
 
-        $deliveryBreakdown = $allOrderRows
-            ->groupBy(fn (PurchaseOrder $po) => $po->delivery_status ?: 'PENDING')
-            ->map(fn ($rows, string $deliveryStatus) => [
-                'status' => $deliveryStatus,
-                'count' => $rows->count(),
-                'total_value' => number_format((float) $rows->sum(fn (PurchaseOrder $po) => (float) $po->grand_total), 2, '.', ''),
+        $deliveryMetrics = (clone $basePurchaseOrderQuery)
+            ->select('delivery_status')
+            ->selectRaw('COUNT(*) as row_count, COALESCE(SUM(grand_total), 0) as total_value')
+            ->groupBy('delivery_status')
+            ->get();
+        $deliveryBreakdown = $deliveryMetrics
+            ->map(fn ($row) => [
+                'status' => $row->delivery_status ?: 'PENDING',
+                'count' => (int) $row->row_count,
+                'total_value' => number_format((float) $row->total_value, 2, '.', ''),
             ])
             ->values();
 
-        $supplierBreakdown = $allOrderRows
+        $supplierMetrics = (clone $basePurchaseOrderQuery)
+            ->select('supplier_id')
+            ->selectRaw('COUNT(*) as row_count, COALESCE(SUM(grand_total), 0) as total_value')
+            ->whereNotNull('supplier_id')
             ->groupBy('supplier_id')
-            ->map(function ($rows) use ($supplierLookup) {
-                $supplier = $supplierLookup->get($rows->first()?->supplier_id);
+            ->orderByDesc('total_value')
+            ->limit(6)
+            ->get();
+        $supplierLookup = Supplier::query()
+            ->whereIn('id', $supplierMetrics->pluck('supplier_id')->filter()->unique()->values())
+            ->get(['id', 'company_name', 'is_active'])
+            ->keyBy('id');
+        $supplierBreakdown = $supplierMetrics
+            ->map(function ($row) use ($supplierLookup) {
+                $supplier = $supplierLookup->get($row->supplier_id);
 
                 return [
                     'supplier_id' => $supplier?->id,
                     'company_name' => $supplier?->company_name,
                     'code' => $supplier?->code,
                     'is_active' => (bool) ($supplier?->is_active ?? false),
-                    'count' => $rows->count(),
-                    'total_value' => number_format((float) $rows->sum(fn (PurchaseOrder $po) => (float) $po->grand_total), 2, '.', ''),
+                    'count' => (int) $row->row_count,
+                    'total_value' => number_format((float) $row->total_value, 2, '.', ''),
                 ];
             })
-            ->sortByDesc(fn (array $item) => (float) $item['total_value'])
-            ->take(6)
             ->values();
 
-        $departmentForPo = function (PurchaseOrder $po) use ($purchaseRequestLookup, $creatorLookup) {
-            return $purchaseRequestLookup->get($po->purchase_request_id)?->department
-                ?? $creatorLookup->get($po->created_by_user_id)?->department;
-        };
-        $poDeptName = function (PurchaseOrder $po) use ($departmentForPo) {
-            return $departmentForPo($po)?->name ?? 'غير محدد';
-        };
-
-        $departmentBreakdown = $allOrderRows
-            ->groupBy(function (PurchaseOrder $po) use ($purchaseRequestLookup, $creatorLookup): int {
-                return $purchaseRequestLookup->get($po->purchase_request_id)?->department_id
-                    ?? $creatorLookup->get($po->created_by_user_id)?->department_id
-                    ?? 0;
-            })
-            ->map(function ($rows) use ($departmentForPo) {
-                $department = $departmentForPo($rows->first());
+        $departmentMetrics = DB::table('purchase_orders as po')
+            ->leftJoin('purchase_requests as pr', 'pr.id', '=', 'po.purchase_request_id')
+            ->leftJoin('users as creator', 'creator.id', '=', 'po.created_by_user_id')
+            ->when($cutoff !== null, fn ($query) => $query->where('po.created_at', '>=', $cutoff))
+            ->selectRaw('COALESCE(pr.department_id, creator.department_id, 0) as department_id, COUNT(*) as row_count, COALESCE(SUM(po.grand_total), 0) as total_value')
+            ->groupByRaw('COALESCE(pr.department_id, creator.department_id, 0)')
+            ->get();
+        $departmentLookup = Department::query()
+            ->whereIn('id', $departmentMetrics->pluck('department_id')->filter(fn ($id) => (int) $id > 0)->unique()->values())
+            ->get(['id', 'name', 'code'])
+            ->keyBy('id');
+        $departmentBreakdown = $departmentMetrics
+            ->map(function ($row) use ($departmentLookup) {
+                $department = $departmentLookup->get($row->department_id);
 
                 return [
                     'department_id' => $department?->id,
                     'name' => $department?->name ?? 'غير محدد',
                     'code' => $department?->code ?? 'N/A',
-                    'count' => $rows->count(),
-                    'total_value' => number_format((float) $rows->sum(fn (PurchaseOrder $po) => (float) $po->grand_total), 2, '.', ''),
+                    'count' => (int) $row->row_count,
+                    'total_value' => number_format((float) $row->total_value, 2, '.', ''),
                 ];
             })
             ->sortByDesc(fn (array $item) => (float) $item['total_value'])
             ->values();
 
+        $deliveryStats = (clone $basePurchaseOrderQuery)
+            ->select([])
+            ->selectRaw("SUM(CASE WHEN delivery_status = 'COMPLETE' THEN 1 ELSE 0 END) as completed_count, SUM(CASE WHEN delivery_status = 'COMPLETE' AND delivery_date IS NOT NULL AND actual_delivery_date IS NOT NULL AND actual_delivery_date <= delivery_date THEN 1 ELSE 0 END) as on_time_count, SUM(CASE WHEN delivery_status = 'LATE' THEN 1 ELSE 0 END) as late_count, SUM(CASE WHEN delivery_status IS NULL OR delivery_status NOT IN ('COMPLETE', 'LATE') THEN 1 ELSE 0 END) as pending_count")
+            ->first();
+        $completedDeliveryCount = (int) ($deliveryStats?->completed_count ?? 0);
+        $onTimeDeliveryCount = (int) ($deliveryStats?->on_time_count ?? 0);
+        $onTimeDeliveryRate = $completedDeliveryCount > 0 ? ($onTimeDeliveryCount / $completedDeliveryCount) * 100 : 0;
+
+        $driver = DB::connection()->getDriverName();
+        $cycleHoursExpression = $driver === 'sqlite'
+            ? '(julianday(po.created_at) - julianday(pr.submitted_at)) * 24'
+            : 'TIMESTAMPDIFF(HOUR, pr.submitted_at, po.created_at)';
+        $averagePoCycleDays = (float) (DB::table('purchase_orders as po')
+            ->join('purchase_requests as pr', 'pr.id', '=', 'po.purchase_request_id')
+            ->when($cutoff !== null, fn ($query) => $query->where('po.created_at', '>=', $cutoff))
+            ->whereNotNull('pr.submitted_at')
+            ->whereNotNull('po.created_at')
+            ->selectRaw("AVG(CASE WHEN {$cycleHoursExpression} < 0 THEN 0 ELSE {$cycleHoursExpression} END) / 24 as average_cycle_days")
+            ->value('average_cycle_days') ?? 0);
+
         // Use Eloquent boolean predicates instead of `is_active = 1`, which is
         // not valid for PostgreSQL boolean columns.
         $supplierCount = Supplier::query()->count();
         $activeSupplierCount = Supplier::query()->where('is_active', true)->count();
-
-        $pendingProcurementCount = $allRequestRows->where('status', 'PENDING_PROCUREMENT_APPROVAL')->count();
-        $draftCount = $allOrderRows->where('status', 'PO_DRAFT')->count();
-        $pendingAccountingCount = $allOrderRows->where('status', 'PENDING_ACCOUNTING_REVIEW')->count();
-        $returnedCount = $allOrderRows->where('status', 'RETURNED_TO_PROCUREMENT')->count();
-        $accountingApprovedCount = $allOrderRows->where('status', 'APPROVED_BY_ACCOUNTING')->count();
+        $totalOrderCount = (int) ($orderTotals?->purchase_orders_count ?? 0);
+        $totalValue = (float) ($orderTotals?->total_value ?? 0);
+        $orderCountByStatus = $statusMetrics->keyBy('status');
+        $requestCountByStatus = $requestStatusMetrics->keyBy('status');
+        $pendingProcurementCount = (int) ($requestCountByStatus->get('PENDING_PROCUREMENT_APPROVAL')?->row_count ?? 0);
+        $draftCount = (int) ($orderCountByStatus->get('PO_DRAFT')?->row_count ?? 0);
+        $pendingAccountingCount = (int) ($orderCountByStatus->get('PENDING_ACCOUNTING_REVIEW')?->row_count ?? 0);
+        $returnedCount = (int) ($orderCountByStatus->get('RETURNED_TO_PROCUREMENT')?->row_count ?? 0);
+        $accountingApprovedCount = (int) ($orderCountByStatus->get('APPROVED_BY_ACCOUNTING')?->row_count ?? 0);
+        $purchaseRequestCount = (int) $requestStatusMetrics->sum('row_count');
+        $approvedRequestCount = (int) ($requestCountByStatus->get('PENDING_PROCUREMENT_APPROVAL')?->row_count ?? 0)
+            + (int) ($requestCountByStatus->get('APPROVED_BY_PROCUREMENT')?->row_count ?? 0);
 
         $payload = [
             'filters' => [
@@ -190,30 +209,30 @@ class ProcurementAnalyticsController extends Controller
                 'status' => is_string($status) && in_array($status, self::ORDER_STATUSES, true) ? $status : null,
             ],
             'metrics' => [
-                'purchase_requests_count' => $allRequestRows->count(),
-                'approved_requests_count' => $allRequestRows->whereIn('status', ['PENDING_PROCUREMENT_APPROVAL', 'APPROVED_BY_PROCUREMENT'])->count(),
-                'draft_request_count' => $allRequestRows->where('status', 'DRAFT')->count(),
-                'submitted_request_count' => $allRequestRows->where('status', 'SUBMITTED')->count(),
-                'under_review_request_count' => $allRequestRows->where('status', 'UNDER_REVIEW')->count(),
-                'rejected_request_count' => $allRequestRows->where('status', 'REJECTED')->count(),
+                'purchase_requests_count' => $purchaseRequestCount,
+                'approved_requests_count' => $approvedRequestCount,
+                'draft_request_count' => (int) ($requestCountByStatus->get('DRAFT')?->row_count ?? 0),
+                'submitted_request_count' => (int) ($requestCountByStatus->get('SUBMITTED')?->row_count ?? 0),
+                'under_review_request_count' => (int) ($requestCountByStatus->get('UNDER_REVIEW')?->row_count ?? 0),
+                'rejected_request_count' => (int) ($requestCountByStatus->get('REJECTED')?->row_count ?? 0),
                 'pending_procurement_count' => $pendingProcurementCount,
 
-                'purchase_orders_count' => $allOrderRows->count(),
+                'purchase_orders_count' => $totalOrderCount,
                 'draft_count' => $draftCount,
                 'pending_accounting_count' => $pendingAccountingCount,
                 'returned_count' => $returnedCount,
                 'accounting_approved_count' => $accountingApprovedCount,
-                'completed_delivery_count' => $completedDeliveries->count(),
-                'late_delivery_count' => $allOrderRows->where('delivery_status', 'LATE')->count(),
-                'on_time_delivery_count' => $onTimeDeliveries->count(),
+                'completed_delivery_count' => $completedDeliveryCount,
+                'late_delivery_count' => (int) ($deliveryStats?->late_count ?? 0),
+                'on_time_delivery_count' => $onTimeDeliveryCount,
                 'on_time_delivery_rate' => number_format($onTimeDeliveryRate, 2, '.', ''),
                 'average_po_cycle_days' => number_format($averagePoCycleDays, 2, '.', ''),
-                'pending_delivery_count' => $allOrderRows->filter(fn (PurchaseOrder $po) => !in_array($po->delivery_status, ['COMPLETE', 'LATE'], true))->count(),
+                'pending_delivery_count' => (int) ($deliveryStats?->pending_count ?? 0),
                 'supplier_count' => $supplierCount,
 
                 'active_supplier_count' => $activeSupplierCount,
                 'total_value' => number_format($totalValue, 2, '.', ''),
-                'average_value' => number_format($allOrderRows->count() > 0 ? $totalValue / $allOrderRows->count() : 0, 2, '.', ''),
+                'average_value' => number_format($totalOrderCount > 0 ? $totalValue / $totalOrderCount : 0, 2, '.', ''),
             ],
             'status_breakdown' => $statusBreakdown,
             'request_status_breakdown' => $requestStatusBreakdown,
