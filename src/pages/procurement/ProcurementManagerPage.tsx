@@ -257,8 +257,9 @@ export const ProcurementManagerPage: React.FC = () => {
   const handleStartQuotes = async (request: PurchaseRequest) => {
     setRefreshing(true);
     try {
-      await approveProcurementPrApi(request.id, { use_quotes: true });
+      const updated = await approveProcurementPrApi(request.id, { use_quotes: true });
       await loadData();
+      setQuoteRequest(updated || request);
     } catch (error) {
       setPageError(parseApiError(error).message);
     } finally {
