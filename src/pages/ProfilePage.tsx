@@ -97,16 +97,16 @@ export const ProfilePage: React.FC = () => {
     <div className="space-y-6" dir="rtl">
       {/* Page Header Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-900 border border-slate-800 rounded-2xl p-6 text-white shadow-xl shadow-slate-950/40 relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center space-x-4 space-x-reverse">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
+          <div className="flex flex-col min-[420px]:flex-row items-start min-[420px]:items-center gap-4">
             {/* Avatar */}
             <div className="w-16 h-16 rounded-2xl bg-cyan-950/90 border-2 border-cyan-500/50 flex items-center justify-center text-cyan-400 font-black text-xl shadow-inner shrink-0">
               {getInitials(user.name)}
             </div>
 
-            <div>
-              <div className="flex items-center space-x-3 space-x-reverse">
-                <h1 className="text-2xl font-black tracking-tight text-slate-100">{user.name}</h1>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-black tracking-tight text-slate-100 break-normal">{user.name}</h1>
                 <span
                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
                     user.is_active
@@ -118,16 +118,16 @@ export const ProfilePage: React.FC = () => {
                 </span>
               </div>
               <p className="mt-1 text-xs text-cyan-400 font-bold capitalize">{primaryRole}</p>
-              <p className="text-xs text-slate-400 mt-0.5 font-mono">{user.email}</p>
+              <p className="text-xs text-slate-400 mt-0.5 font-mono break-all">{user.email}</p>
             </div>
           </div>
 
-          <div>
+          <div className="w-full sm:w-auto">
             <Button
               variant="danger"
               size="md"
               onClick={() => logout()}
-              className="shadow-lg shadow-rose-950/50"
+              className="w-full sm:w-auto min-h-10 shadow-lg shadow-rose-950/50"
             >
               تسجيل الخروج
             </Button>
@@ -152,7 +152,7 @@ export const ProfilePage: React.FC = () => {
 
             <div>
               <span className="block text-[11px] font-semibold text-slate-400">البريد الإلكتروني</span>
-              <span className="text-xs font-bold text-slate-200 font-mono">{user.email || 'غير متوفر'}</span>
+              <span className="text-xs font-bold text-slate-200 font-mono break-all">{user.email || 'غير متوفر'}</span>
             </div>
 
             {user.phone && (
@@ -260,7 +260,7 @@ export const ProfilePage: React.FC = () => {
             {passwordSuccess && <p className="text-xs font-semibold text-emerald-400">{passwordSuccess}</p>}
 
             <div className="flex justify-start">
-              <Button type="submit" disabled={isChangingPassword}>
+              <Button type="submit" disabled={isChangingPassword} className="w-full sm:w-auto min-h-10">
                 {isChangingPassword ? 'جاري الحفظ...' : 'حفظ كلمة المرور الجديدة'}
               </Button>
             </div>
