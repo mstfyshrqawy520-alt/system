@@ -192,6 +192,7 @@ export const ReviewerRequestsPage: React.FC = () => {
               <TableHead>رقم الطلب</TableHead>
               <TableHead>مقدم الطلب</TableHead>
               <TableHead>القسم</TableHead>
+              <TableHead>الصنف / المواد</TableHead>
               <TableHead>رقم قطعة الأرض</TableHead>
               <TableHead>المنطقة</TableHead>
               <TableHead>الأولوية</TableHead>
@@ -201,52 +202,68 @@ export const ReviewerRequestsPage: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredRequests.map((request) => (
-              <TableRow key={request.id}>
-                <TableCell className="font-mono font-bold text-cyan-400"><Link to={`/reviewer/requests/${request.id}`} className="hover:underline">{request.request_number}</Link></TableCell>
-                <TableCell>{request.requester?.name || '—'}</TableCell>
-                <TableCell>{request.department?.name || '—'}</TableCell>
-                <TableCell className="font-mono">{request.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || '—'}</TableCell>
-                <TableCell>{request.items?.map((item) => item.region).filter(Boolean).join('، ') || '—'}</TableCell>
-                <TableCell>{priorityLabels[request.priority || 'NORMAL'] || request.priority || 'عادية'}</TableCell>
-                <TableCell className="whitespace-nowrap">{formatDate(request.created_at)}</TableCell>
-                <TableCell><div className="flex flex-wrap items-center gap-2"><PurchaseRequestStatusBadge status={request.status} />{isOverdueRequest(request) && <span className="rounded-full border border-rose-800/70 bg-rose-950/40 px-2 py-1 text-[10px] font-bold text-rose-300">متأخر</span>}</div></TableCell>
-                <TableCell className="text-center">
-                  {request.status === 'SUBMITTED' && hasPermission('purchase_request.review') && (
-                    <Link to={`/reviewer/requests/${request.id}/review`}><Button variant="warning" size="sm" className="px-2 py-1">بدء المراجعة</Button></Link>
-                  )}
-                  {REVIEWER_EDITABLE_STATUSES.includes(request.status) && hasPermission('purchase_request.edit_during_review') && (
-                    <Link to={`/reviewer/requests/${request.id}/review`}><Button variant="secondary" size="sm" className="px-2 py-1">{request.status === 'PENDING_PROCUREMENT_APPROVAL' ? 'تعديل قبل المشتريات' : 'تعديل ومراجعة'}</Button></Link>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
+            {filteredRequests.map((request) => {
+              const itemNames = request.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
+              const itemsDisplay = itemNames.length === 0
+                ? '—'
+                : itemNames.length === 1
+                  ? itemNames[0]
+                  : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
+
+              return (
+                <TableRow key={request.id}>
+                  <TableCell className="font-mono font-bold text-cyan-400"><Link to={`/reviewer/requests/${request.id}`} className="hover:underline">{request.request_number}</Link></TableCell>
+                  <TableCell>{request.requester?.name || '—'}</TableCell>
+                  <TableCell>{request.department?.name || '—'}</TableCell>
+                  <TableCell className="font-semibold text-slate-100 max-w-[200px] truncate">
+                    <span title={itemNames.join('، ')}>{itemsDisplay}</span>
+                  </TableCell>
+                  <TableCell className="font-mono">{request.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || '—'}</TableCell>
+                  <TableCell>{request.items?.map((item) => item.region).filter(Boolean).join('، ') || '—'}</TableCell>
+                  <TableCell>{priorityLabels[request.priority || 'NORMAL'] || request.priority || 'عادية'}</TableCell>
+                  <TableCell className="whitespace-nowrap">{formatDate(request.created_at)}</TableCell>
+                  <TableCell><div className="flex flex-wrap items-center gap-2"><PurchaseRequestStatusBadge status={request.status} />{isOverdueRequest(request) && <span className="rounded-full border border-rose-800/70 bg-rose-950/40 px-2 py-1 text-[10px] font-bold text-rose-300">متأخر</span>}</div></TableCell>
+                  <TableCell className="text-center">
+                    {request.status === 'SUBMITTED' && hasPermission('purchase_request.review') && (
+                      <Link to={`/reviewer/requests/${request.id}/review`}><Button variant="warning" size="sm" className="px-2 py-1">بدء المراجعة</Button></Link>
+                    )}
+                    {REVIEWER_EDITABLE_STATUSES.includes(request.status) && hasPermission('purchase_request.edit_during_review') && (
+                      <Link to={`/reviewer/requests/${request.id}/review`}><Button variant="secondary" size="sm" className="px-2 py-1">{request.status === 'PENDING_PROCUREMENT_APPROVAL' ? 'تعديل قبل المشتريات' : 'تعديل ومراجعة'}</Button></Link>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
         </div>
 
         <div className="space-y-3 md:hidden">
-          {filteredRequests.map((request) => (
-            <article key={`mobile-${request.id}`} className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <Link to={`/reviewer/requests/${request.id}`} className="font-mono text-sm font-black text-cyan-300 hover:underline">{request.request_number}</Link>
-                <div className="flex flex-wrap items-center justify-end gap-2"><PurchaseRequestStatusBadge status={request.status} />{isOverdueRequest(request) && <span className="rounded-full border border-rose-800/70 bg-rose-950/40 px-2 py-1 text-[10px] font-bold text-rose-300">متأخر</span>}</div>
-              </div>
-              <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
-                <div><dt className="text-slate-500">مقدم الطلب</dt><dd className="mt-1 font-bold text-slate-200">{request.requester?.name || 'غير محدد'}</dd></div>
-                <div><dt className="text-slate-500">الأولوية</dt><dd className="mt-1 font-bold text-slate-200">{priorityLabels[request.priority || 'NORMAL'] || 'عادية'}</dd></div>
-                <div><dt className="text-slate-500">تاريخ الطلب</dt><dd className="mt-1 font-mono text-slate-300">{formatDate(request.created_at)}</dd></div>
-                <div><dt className="text-slate-500">القسم</dt><dd className="mt-1 font-bold text-slate-200">{request.department?.name || 'غير محدد'}</dd></div>
-                <div><dt className="text-slate-500">رقم قطعة الأرض</dt><dd className="mt-1 font-mono font-bold text-slate-200">{request.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || 'غير محدد'}</dd></div>
-                <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 font-bold text-slate-200">{request.items?.map((item) => item.region).filter(Boolean).join('، ') || 'غير محددة'}</dd></div>
-              </dl>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link to={`/reviewer/requests/${request.id}`}><Button variant="secondary" size="sm">عرض الطلب</Button></Link>
-                {request.status === 'SUBMITTED' && hasPermission('purchase_request.review') && <Link to={`/reviewer/requests/${request.id}/review`}><Button variant="warning" size="sm">بدء المراجعة</Button></Link>}
-                {REVIEWER_EDITABLE_STATUSES.includes(request.status) && hasPermission('purchase_request.edit_during_review') && <Link to={`/reviewer/requests/${request.id}/review`}><Button variant="secondary" size="sm">{request.status === 'PENDING_PROCUREMENT_APPROVAL' ? 'تعديل قبل المشتريات' : 'تعديل ومراجعة'}</Button></Link>}
-              </div>
-            </article>
-          ))}
+          {filteredRequests.map((request) => {
+            const itemNames = request.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
+            return (
+              <article key={`mobile-${request.id}`} className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <Link to={`/reviewer/requests/${request.id}`} className="font-mono text-sm font-black text-cyan-300 hover:underline">{request.request_number}</Link>
+                  <div className="flex flex-wrap items-center justify-end gap-2"><PurchaseRequestStatusBadge status={request.status} />{isOverdueRequest(request) && <span className="rounded-full border border-rose-800/70 bg-rose-950/40 px-2 py-1 text-[10px] font-bold text-rose-300">متأخر</span>}</div>
+                </div>
+                <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
+                  <div className="col-span-2"><dt className="text-slate-500">الصنف / المواد المطلوبة</dt><dd className="mt-1 font-bold text-cyan-200">{itemNames.join('، ') || 'غير محدد'}</dd></div>
+                  <div><dt className="text-slate-500">مقدم الطلب</dt><dd className="mt-1 font-bold text-slate-200">{request.requester?.name || 'غير محدد'}</dd></div>
+                  <div><dt className="text-slate-500">الأولوية</dt><dd className="mt-1 font-bold text-slate-200">{priorityLabels[request.priority || 'NORMAL'] || 'عادية'}</dd></div>
+                  <div><dt className="text-slate-500">تاريخ الطلب</dt><dd className="mt-1 font-mono text-slate-300">{formatDate(request.created_at)}</dd></div>
+                  <div><dt className="text-slate-500">القسم</dt><dd className="mt-1 font-bold text-slate-200">{request.department?.name || 'غير محدد'}</dd></div>
+                  <div><dt className="text-slate-500">رقم قطعة الأرض</dt><dd className="mt-1 font-mono font-bold text-slate-200">{request.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || 'غير محدد'}</dd></div>
+                  <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 font-bold text-slate-200">{request.items?.map((item) => item.region).filter(Boolean).join('، ') || 'غير محددة'}</dd></div>
+                </dl>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link to={`/reviewer/requests/${request.id}`}><Button variant="secondary" size="sm">عرض الطلب</Button></Link>
+                  {request.status === 'SUBMITTED' && hasPermission('purchase_request.review') && <Link to={`/reviewer/requests/${request.id}/review`}><Button variant="warning" size="sm">بدء المراجعة</Button></Link>}
+                  {REVIEWER_EDITABLE_STATUSES.includes(request.status) && hasPermission('purchase_request.edit_during_review') && <Link to={`/reviewer/requests/${request.id}/review`}><Button variant="secondary" size="sm">{request.status === 'PENDING_PROCUREMENT_APPROVAL' ? 'تعديل قبل المشتريات' : 'تعديل ومراجعة'}</Button></Link>}
+                </div>
+              </article>
+            );
+          })}
         </div>
         </>
       )}

@@ -82,6 +82,7 @@ export const PurchaseRequestTable: React.FC<Props> = ({
       <TableHeader>
         <TableRow>
           <TableHead>رقم الطلب#</TableHead>
+          <TableHead>الصنف / المواد</TableHead>
           <TableHead>تاريخ الطلب</TableHead>
           <TableHead>نوع الطلب</TableHead>
           <TableHead>القسم / المشروع</TableHead>
@@ -97,6 +98,12 @@ export const PurchaseRequestTable: React.FC<Props> = ({
           const canDelete = REQUESTER_DELETABLE_STATUSES.includes(pr.status) && hasPermission('purchase_request.edit_own');
           const canSubmit = isDraft && hasPermission('purchase_request.submit');
           const overdue = isOverdueRequest(pr);
+          const itemNames = pr.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
+          const itemsDisplay = itemNames.length === 0
+            ? '—'
+            : itemNames.length === 1
+              ? itemNames[0]
+              : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
 
           return (
             <TableRow key={pr.id}>
@@ -104,6 +111,9 @@ export const PurchaseRequestTable: React.FC<Props> = ({
                 <Link to={`/requests/${pr.id}`} className="hover:underline">
                   {pr.request_number}
                 </Link>
+              </TableCell>
+              <TableCell className="font-semibold text-slate-100 max-w-[180px] truncate text-xs">
+                <span title={itemNames.join('، ')}>{itemsDisplay}</span>
               </TableCell>
               <TableCell className="text-slate-400 text-xs">{formatRequestDate(pr.created_at)}</TableCell>
               <TableCell className="text-slate-300 text-xs">{getRequestType(pr)}</TableCell>
@@ -138,7 +148,7 @@ export const PurchaseRequestTable: React.FC<Props> = ({
                       onClick={() => onOpenSubmitModal(pr)}
                       className="px-2 py-0.5 text-[10px]"
                     >
-                      تقديم
+                      إرسال
                     </Button>
                   )}
 
@@ -168,16 +178,26 @@ export const PurchaseRequestTable: React.FC<Props> = ({
           const canDelete = REQUESTER_DELETABLE_STATUSES.includes(pr.status) && hasPermission('purchase_request.edit_own');
           const canSubmit = isDraft && hasPermission('purchase_request.submit');
           const overdue = isOverdueRequest(pr);
+          const itemNames = pr.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
 
           return (
-            <article key={`mobile-${pr.id}`} className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-              <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-start min-[420px]:justify-between">
-                <Link to={`/requests/${pr.id}`} className="font-mono text-sm font-black text-cyan-300 hover:underline">{pr.request_number}</Link>
-                <div className="flex flex-wrap items-center justify-end gap-2">
+            <article key={`mobile-card-${pr.id}`} className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <Link to={`/requests/${pr.id}`} className="font-mono text-sm font-bold text-cyan-400 hover:underline">
+                  {pr.request_number}
+                </Link>
+                <div className="flex flex-wrap items-center gap-1.5">
                   <PurchaseRequestStatusBadge status={pr.status} />
-                  {overdue && <span className="rounded-full border border-rose-800/70 bg-rose-950/40 px-2 py-1 text-[10px] font-bold text-rose-300">متأخر</span>}
+                  {overdue && <span className="rounded-full border border-rose-800/70 bg-rose-950/40 px-2 py-0.5 text-[10px] font-bold text-rose-300">متأخر</span>}
                 </div>
               </div>
+
+              {itemNames.length > 0 && (
+                <div className="text-xs">
+                  <span className="text-slate-400">الأصناف: </span>
+                  <span className="font-bold text-cyan-200">{itemNames.join('، ')}</span>
+                </div>
+              )}
               <dl className="mt-4 grid grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
                 <div><dt className="text-slate-500">تاريخ الطلب</dt><dd className="mt-1 text-slate-300">{formatRequestDate(pr.created_at)}</dd></div>
                 <div><dt className="text-slate-500">نوع الطلب</dt><dd className="mt-1 font-bold text-slate-200">{getRequestType(pr)}</dd></div>
