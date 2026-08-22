@@ -6,7 +6,7 @@ use App\Models\ApprovalHistory;
 use App\Models\AuditLog;
 use App\Models\PurchaseOrder;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class AccountingPurchaseOrderService
@@ -14,12 +14,12 @@ class AccountingPurchaseOrderService
     /**
      * Get POs pending accounting financial review or history.
      */
-    public function getAccountingPurchaseOrders(): Collection
+    public function getAccountingPurchaseOrders(int $perPage = 15): LengthAwarePaginator
     {
         return PurchaseOrder::with(['purchaseRequest.requester', 'purchaseRequest.department', 'purchaseRequest.assignedReviewer', 'purchaseRequest.approvalHistory.actor', 'supplier', 'createdBy', 'accountingReviewer', 'items.item:id,name,sku'])
             ->whereIn('status', ['ISSUED', 'PENDING_ACCOUNTING_REVIEW', 'APPROVED_BY_ACCOUNTING', 'RETURNED_TO_PROCUREMENT'])
             ->orderBy('updated_at', 'desc')
-            ->get();
+            ->paginate(min(max($perPage, 1), 100));
     }
 
     /**

@@ -23,7 +23,8 @@ class AccountingPurchaseOrderController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $pos = $this->accountingService->getAccountingPurchaseOrders();
+        $perPage = min(max((int) $request->query('per_page', 15), 1), 100);
+        $pos = $this->accountingService->getAccountingPurchaseOrders($perPage);
 
         return PurchaseOrderResource::collection($pos);
     }
