@@ -238,7 +238,7 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
   }
 
   const isUnderReview = requestData.status === 'UNDER_REVIEW';
-  const reviewerEditableStatuses = ['UNDER_REVIEW', 'PENDING_PROCUREMENT_APPROVAL', 'APPROVED_BY_REVIEWER'];
+  const reviewerEditableStatuses = ['SUBMITTED', 'UNDER_REVIEW'];
   const canEdit = reviewerEditableStatuses.includes(requestData.status) && hasPermission('purchase_request.edit_during_review') && !isMutating;
   const isFinalized = !reviewerEditableStatuses.includes(requestData.status);
   const isConflictError = error?.status === 409;
@@ -262,25 +262,14 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
         </div>
       )}
 
-      {/* Procurement waiting / finalized banners */}
-      {requestData.status === 'PENDING_PROCUREMENT_APPROVAL' && (
-        <div className="bg-cyan-950/30 border border-cyan-700/50 p-4 rounded-xl text-xs text-cyan-200 flex items-center gap-3">
-          <span className="text-lg">✏️</span>
-          <div>
-            <strong>الطلب بانتظار اعتماد مدير المشتريات</strong>
-            <div className="text-cyan-300/80 mt-0.5">يمكنك تعديل البيانات والبنود حتى يصدر مدير المشتريات اعتماده.</div>
-          </div>
-        </div>
-      )}
-
-      {/* Finalized banner */}
+      {/* Finalized / locked banner */}
       {isFinalized && (
         <div className="bg-slate-800/60 border border-slate-700/50 p-4 rounded-xl text-xs text-slate-300 flex items-center gap-3">
           <span className="text-lg">🔒</span>
           <div>
             <strong>الطلب مُغلق</strong>
             <div className="text-slate-400 mt-0.5">
-              {PR_STATUS_LABELS[requestData.status] || 'حالة غير معروفة'} — لا يمكن إجراء تعديلات إضافية
+              {PR_STATUS_LABELS[requestData.status] || 'حالة غير معروفة'} — تم اعتماد المرحلة السابقة، لذلك لا يمكن إجراء تعديلات إضافية
             </div>
           </div>
         </div>

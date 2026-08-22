@@ -109,22 +109,16 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
 
   const isSubmitted = requestData.status === 'SUBMITTED';
   const isUnderReview = requestData.status === 'UNDER_REVIEW';
-  const isPendingProcurementApproval = requestData.status === 'PENDING_PROCUREMENT_APPROVAL' || requestData.status === 'APPROVED_BY_REVIEWER';
-  const canEditBeforeProcurement = (isUnderReview || isPendingProcurementApproval) && hasPermission('purchase_request.edit_during_review');
+  const canEditBeforeApproval = isUnderReview && hasPermission('purchase_request.edit_during_review');
+  const isLockedAfterApproval = !isSubmitted && !isUnderReview;
 
   return (
     <div className="space-y-6 animate-fade-in" dir="rtl">
       <ErrorMessage error={error} onDismiss={() => setError(null)} />
 
-      {isPendingProcurementApproval && (
-        <div className="rounded-xl border border-cyan-700/40 bg-cyan-950/25 px-4 py-3 text-xs text-cyan-200">
-          اعتمدت الطلب كرئيس قسم، وما زال بإمكانك تعديله حتى يعتمد مدير المشتريات. بعد اعتماد مدير المشتريات سيتم إغلاق التعديل نهائيًا.
-        </div>
-      )}
-
-      {requestData.status === 'APPROVED_BY_PROCUREMENT' && (
+      {isLockedAfterApproval && (
         <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-xs text-slate-300">
-          تم اعتماد الطلب من مدير المشتريات، لذلك تم إغلاق التعديل من جهة المراجع.
+          تم اعتماد المرحلة السابقة وإرسال الطلب إلى المرحلة التالية، لذلك تم إغلاق التعديل من جهة المراجع.
         </div>
       )}
 
@@ -153,10 +147,10 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
             </Button>
           )}
 
-          {canEditBeforeProcurement && (
+          {canEditBeforeApproval && (
             <Link to={`/reviewer/requests/${requestData.id}/review`}>
               <Button variant="warning" size="md" className="bg-amber-950/60 text-amber-300 border-amber-800/60 hover:bg-amber-900/60">
-                {isPendingProcurementApproval ? 'التعديل قبل اعتماد المشتريات' : 'مساحة العمل والتعديل'} &rarr;
+                مساحة العمل والتعديل &rarr;
               </Button>
             </Link>
           )}

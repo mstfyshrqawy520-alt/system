@@ -48,13 +48,14 @@ describe('Reviewer purchase request frontend', () => {
     expect(await screen.findByRole('button', { name: /اعتماد/i })).toBeInTheDocument();
   });
 
-  it('keeps reviewer editing available while procurement approval is pending', async () => {
+  it('locks reviewer editing after reviewer approval forwards the request', async () => {
     vi.spyOn(reviewerApi, 'getReviewerPurchaseRequestApi').mockResolvedValue(pendingProcurement);
     renderPage('/reviewer/requests/10/review', <ReviewPurchaseRequestPage />);
     await screen.findByRole('heading', { name: /PR-10/ });
-    expect(screen.getByRole('button', { name: /حفظ/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /إضافة بند/i })).toBeInTheDocument();
-    expect(screen.getByText(/يمكنك تعديل البيانات والبنود حتى يصدر مدير المشتريات اعتماده/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /حفظ/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /إضافة بند/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/يمكنك تعديل البيانات والبنود حتى يصدر مدير المشتريات اعتماده/)).not.toBeInTheDocument();
+    expect(screen.getByText(/تم اعتماد المرحلة السابقة، لذلك لا يمكن إجراء تعديلات إضافية/)).toBeInTheDocument();
   });
 
   it('keeps finalized reviewer requests read-only after procurement approval', async () => {

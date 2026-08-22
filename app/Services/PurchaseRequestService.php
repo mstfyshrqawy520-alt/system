@@ -174,6 +174,11 @@ class PurchaseRequestService
         }
 
         return DB::transaction(function () use ($user, $request, $data) {
+            $lockedRequest = PurchaseRequest::query()->whereKey($request->id)->lockForUpdate()->firstOrFail();
+            if (! $lockedRequest->isEditableByRequester()) {
+                throw new \RuntimeException('لا يمكن تعديل طلب الشراء بعد اعتماد المراجع.');
+            }
+
             $updateFields = [];
             if (array_key_exists('target_department_id', $data)) {
                 $targetDepartment = Department::with(['manager', 'siteEngineer'])->find((int) $data['target_department_id']);
@@ -266,7 +271,12 @@ class PurchaseRequestService
         }
 
         DB::transaction(function () use ($request) {
-            $request->delete();
+            $lockedRequest = PurchaseRequest::query()->whereKey($request->id)->lockForUpdate()->firstOrFail();
+            if ($lockedRequest->status !== 'DRAFT') {
+                throw new \RuntimeException('Only draft purchase requests can be deleted.');
+            }
+
+            $lockedRequest->delete();
         });
     }
 

@@ -100,7 +100,7 @@ class ReviewerPurchaseRequestController extends Controller
         }
 
         if (! $pr->isEditableByReviewer()) {
-            return response()->json(['message' => 'لا يمكن للمراجع تعديل الطلب بعد اعتماد مدير المشتريات.'], 409);
+            return response()->json(['message' => 'لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.'], 409);
         }
 
         $updatedPr = $this->reviewerService->updateHeader($request->user(), $pr, $request->validated());
@@ -125,7 +125,7 @@ class ReviewerPurchaseRequestController extends Controller
         }
 
         if (! $pr->isEditableByReviewer()) {
-            return response()->json(['message' => 'لا يمكن للمراجع تعديل الطلب بعد اعتماد مدير المشتريات.'], 409);
+            return response()->json(['message' => 'لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.'], 409);
         }
 
         $updatedPr = $this->reviewerService->updateLineItem($request->user(), $pr, $item, $request->validated());
@@ -145,7 +145,7 @@ class ReviewerPurchaseRequestController extends Controller
         }
 
         if (! $pr->isEditableByReviewer()) {
-            return response()->json(['message' => 'لا يمكن للمراجع تعديل الطلب بعد اعتماد مدير المشتريات.'], 409);
+            return response()->json(['message' => 'لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.'], 409);
         }
 
         $updatedPr = $this->reviewerService->addLineItem($request->user(), $pr, $request->validated());
@@ -170,7 +170,7 @@ class ReviewerPurchaseRequestController extends Controller
         }
 
         if (! $pr->isEditableByReviewer()) {
-            return response()->json(['message' => 'لا يمكن للمراجع تعديل الطلب بعد اعتماد مدير المشتريات.'], 409);
+            return response()->json(['message' => 'لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.'], 409);
         }
 
         $updatedPr = $this->reviewerService->deleteLineItem($request->user(), $pr, $item);

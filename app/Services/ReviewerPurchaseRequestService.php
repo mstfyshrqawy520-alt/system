@@ -180,11 +180,14 @@ class ReviewerPurchaseRequestService
         }
 
         if (! $request->isEditableByReviewer()) {
-            throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماد مدير المشتريات.');
+            throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.');
         }
 
         return DB::transaction(function () use ($reviewer, $request, $data) {
             $pr = PurchaseRequest::where('id', $request->id)->lockForUpdate()->first();
+            if (! $pr->isEditableByReviewer()) {
+                throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.');
+            }
 
             $allowedFields = ['priority', 'date_needed', 'notes'];
             $updateFields = [];
@@ -237,11 +240,14 @@ class ReviewerPurchaseRequestService
         }
 
         if (! $request->isEditableByReviewer()) {
-            throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماد مدير المشتريات.');
+            throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.');
         }
 
         return DB::transaction(function () use ($reviewer, $request, $item, $data) {
             $pr = PurchaseRequest::where('id', $request->id)->lockForUpdate()->first();
+            if (! $pr->isEditableByReviewer()) {
+                throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.');
+            }
             $prItem = PurchaseRequestItem::where('id', $item->id)->lockForUpdate()->first();
 
             $newQty = array_key_exists('quantity', $data) ? (float) $data['quantity'] : (float) $prItem->quantity;
@@ -300,11 +306,14 @@ class ReviewerPurchaseRequestService
         }
 
         if (! $request->isEditableByReviewer()) {
-            throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماد مدير المشتريات.');
+            throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.');
         }
 
         return DB::transaction(function () use ($reviewer, $request, $data) {
             $pr = PurchaseRequest::where('id', $request->id)->lockForUpdate()->first();
+            if (! $pr->isEditableByReviewer()) {
+                throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.');
+            }
 
             $qty = (float) $data['quantity'];
             [$itemReference, $region] = $this->requireReferenceFields(
@@ -357,11 +366,14 @@ class ReviewerPurchaseRequestService
         }
 
         if (! $request->isEditableByReviewer()) {
-            throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماد مدير المشتريات.');
+            throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.');
         }
 
         return DB::transaction(function () use ($reviewer, $request, $item) {
             $pr = PurchaseRequest::where('id', $request->id)->lockForUpdate()->first();
+            if (! $pr->isEditableByReviewer()) {
+                throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.');
+            }
 
             AuditLog::create([
                 'user_id' => $reviewer->id,

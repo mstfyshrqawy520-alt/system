@@ -40,6 +40,9 @@ class AccountingPurchaseRequestService
 
         return DB::transaction(function () use ($accountant, $request, $financialData, $comment): PurchaseRequest {
             $pr = PurchaseRequest::with('items')->lockForUpdate()->findOrFail($request->id);
+            if ($pr->status !== self::PENDING_STATUS) {
+                throw new \RuntimeException('تم اتخاذ قرار بشأن الطلب المباشر أو لم يعد بانتظار الموافقة المالية.');
+            }
             $grandTotal = $this->applyFinancialData($accountant, $pr, $financialData);
             $pr->update([
                 'status' => self::APPROVED_STATUS,
@@ -105,6 +108,9 @@ class AccountingPurchaseRequestService
 
         return DB::transaction(function () use ($accountant, $request, $comment): PurchaseRequest {
             $pr = PurchaseRequest::query()->lockForUpdate()->findOrFail($request->id);
+            if ($pr->status !== self::PENDING_STATUS) {
+                throw new \RuntimeException('تم اتخاذ قرار بشأن الطلب المباشر أو لم يعد بانتظار الموافقة المالية.');
+            }
             $pr->update([
                 'status' => 'REJECTED',
                 'rejection_reason' => $comment,

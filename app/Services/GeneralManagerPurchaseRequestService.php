@@ -59,6 +59,9 @@ class GeneralManagerPurchaseRequestService
 
         return DB::transaction(function () use ($executive, $request, $data): PurchaseRequest {
             $pr = PurchaseRequest::query()->lockForUpdate()->findOrFail($request->id);
+            if ($pr->status !== self::PENDING_STATUS) {
+                throw new \RuntimeException('الطلب ليس بانتظار قرار المدير التنفيذي أو تم اتخاذ قرار بشأنه بالفعل.');
+            }
             $oldState = $pr->status;
             $updateFields = [];
 
@@ -159,6 +162,9 @@ class GeneralManagerPurchaseRequestService
 
         return DB::transaction(function () use ($executive, $request, $comment): PurchaseRequest {
             $pr = PurchaseRequest::query()->lockForUpdate()->findOrFail($request->id);
+            if ($pr->status !== self::PENDING_STATUS) {
+                throw new \RuntimeException('تم اتخاذ قرار بشأن طلب الشراء بالفعل أو لم يعد بانتظار المدير التنفيذي.');
+            }
             $pr->update([
                 'status' => 'PENDING_PROCUREMENT_APPROVAL',
             ]);
@@ -205,6 +211,9 @@ class GeneralManagerPurchaseRequestService
 
         return DB::transaction(function () use ($executive, $request, $comment): PurchaseRequest {
             $pr = PurchaseRequest::query()->lockForUpdate()->findOrFail($request->id);
+            if ($pr->status !== self::PENDING_STATUS) {
+                throw new \RuntimeException('تم اتخاذ قرار بشأن طلب الشراء بالفعل أو لم يعد بانتظار المدير التنفيذي.');
+            }
             $pr->update([
                 'status' => 'REJECTED',
                 'rejection_reason' => $comment,

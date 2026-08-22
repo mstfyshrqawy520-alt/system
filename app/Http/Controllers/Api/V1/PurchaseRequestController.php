@@ -278,6 +278,12 @@ class PurchaseRequestController extends Controller
             return response()->json(['message' => 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'], 403);
         }
 
+        if (! $pr->isEditableByRequester()) {
+            return response()->json([
+                'message' => 'لا يمكن تعديل مرفقات طلب الشراء بعد اعتماده وإرساله إلى المرحلة التالية.',
+            ], 409);
+        }
+
         $attachment = Attachment::where('id', $attachmentId)
             ->where('attachable_type', PurchaseRequest::class)
             ->where('attachable_id', $pr->id)

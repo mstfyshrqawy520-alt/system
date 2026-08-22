@@ -112,6 +112,9 @@ class ProcurementPurchaseRequestService
 
         return DB::transaction(function () use ($procurementManager, $request, $comment) {
             $pr = PurchaseRequest::where('id', $request->id)->lockForUpdate()->first();
+            if (! $pr || $pr->status !== 'PENDING_PROCUREMENT_APPROVAL') {
+                throw new \RuntimeException('تم اتخاذ قرار بشأن طلب الشراء أو لم يعد بانتظار اعتماد المشتريات.');
+            }
 
             $pr->update([
                 'status' => 'PENDING_QUOTE_RECOMMENDATIONS',
@@ -171,6 +174,9 @@ class ProcurementPurchaseRequestService
 
         return DB::transaction(function () use ($procurementManager, $request, $supplierId, $submittedItems, $hasNotes, $notes, $comment): PurchaseRequest {
             $pr = PurchaseRequest::with('items')->where('id', $request->id)->lockForUpdate()->firstOrFail();
+            if ($pr->status !== 'PENDING_PROCUREMENT_APPROVAL') {
+                throw new \RuntimeException('تم اتخاذ قرار بشأن طلب الشراء أو لم يعد بانتظار اعتماد المشتريات.');
+            }
             $supplier = Supplier::whereKey($supplierId)->where('is_active', true)->first();
             if (! $supplier) {
                 throw ValidationException::withMessages(['supplier_id' => ['المورد المختار غير موجود أو غير نشط.']]);
@@ -378,6 +384,9 @@ class ProcurementPurchaseRequestService
 
         return DB::transaction(function () use ($procurementManager, $request, $comment) {
             $pr = PurchaseRequest::where('id', $request->id)->lockForUpdate()->first();
+            if (! $pr || $pr->status !== 'PENDING_PROCUREMENT_APPROVAL') {
+                throw new \RuntimeException('تم اتخاذ قرار بشأن طلب الشراء أو لم يعد بانتظار اعتماد المشتريات.');
+            }
 
             $pr->update([
                 'status' => 'REJECTED',

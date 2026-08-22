@@ -220,9 +220,9 @@ class ReviewerPurchaseRequestTest extends TestCase
 
     }
 
-    public function test_reviewer_can_edit_after_reviewer_approval_while_procurement_is_pending(): void
+    public function test_reviewer_cannot_edit_after_reviewer_approval_while_next_stage_is_pending(): void
     {
-        $this->itSubmittedPr->update(['status' => 'PENDING_PROCUREMENT_APPROVAL']);
+        $this->itSubmittedPr->update(['status' => 'PENDING_EXECUTIVE_APPROVAL']);
         $token = $this->itReviewer->createToken('test_token')->plainTextToken;
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
@@ -230,9 +230,24 @@ class ReviewerPurchaseRequestTest extends TestCase
                 'priority' => 'HIGH',
             ]);
 
-        $response->assertStatus(200)
-            ->assertJsonPath('data.priority', 'HIGH')
-            ->assertJsonPath('data.status', 'PENDING_PROCUREMENT_APPROVAL');
+        $response->assertStatus(409)
+            ->assertJson(['message' => 'لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.']);
+    }
+
+    public function test_reviewer_cannot_edit_line_item_after_reviewer_approval(): void
+    {
+        $this->itSubmittedPr->update(['status' => 'PENDING_EXECUTIVE_APPROVAL']);
+        $token = $this->itReviewer->createToken('test_token')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->putJson('/api/v1/reviewer/purchase-requests/' . $this->itSubmittedPr->id . '/items/' . $this->itPrItem->id, [
+                'item_reference' => 'LOCKED-PART-001',
+                'region' => 'المنطقة السابعة والعشرون',
+                'quantity' => 4,
+            ]);
+
+        $response->assertStatus(409)
+            ->assertJson(['message' => 'لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.']);
     }
 
     public function test_reviewer_cannot_edit_after_procurement_manager_approval(): void
@@ -246,7 +261,7 @@ class ReviewerPurchaseRequestTest extends TestCase
             ]);
 
         $response->assertStatus(409)
-            ->assertJson(['message' => 'لا يمكن للمراجع تعديل الطلب بعد اعتماد مدير المشتريات.']);
+            ->assertJson(['message' => 'لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.']);
     }
 
     public function test_reviewer_can_edit_line_item_quantity_and_price_and_recalculates_totals(): void

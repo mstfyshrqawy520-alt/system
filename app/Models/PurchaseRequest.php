@@ -27,13 +27,12 @@ class PurchaseRequest extends Model
     }
 
     /**
-     * The assigned reviewer may edit until procurement manager approval.
+     * The assigned reviewer may edit only while the request is awaiting the reviewer's decision.
+     * Once the reviewer approves, the request is locked for the reviewer and requester.
      */
     public const REVIEWER_EDITABLE_STATUSES = [
         'SUBMITTED',
         'UNDER_REVIEW',
-        'PENDING_PROCUREMENT_APPROVAL',
-        'APPROVED_BY_REVIEWER',
     ];
 
     public function isEditableByReviewer(): bool
