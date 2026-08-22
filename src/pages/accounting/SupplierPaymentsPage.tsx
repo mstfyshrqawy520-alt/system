@@ -71,6 +71,9 @@ export const SupplierPaymentsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [invoiceForm, setInvoiceForm] = useState({ invoice_number: '', invoice_date: today(), due_date: '', amount: '', land_allocations: [] as LandAllocationDraft[] });
   const [invoiceAllocationError, setInvoiceAllocationError] = useState<string | null>(null);
+  const [invoiceModalError, setInvoiceModalError] = useState<string | null>(null);
+  const [openingBalanceModalError, setOpeningBalanceModalError] = useState<string | null>(null);
+  const [paymentModalError, setPaymentModalError] = useState<string | null>(null);
   const [parcelForm, setParcelForm] = useState<CreateLandParcelPayload>({ parcel_reference: '', region: '', opening_balance: 0, transaction_date: today(), reference_number: '', notes: '' });
   const [fundingForm, setFundingForm] = useState<CreateLandParcelFundingPayload>({ amount: 0, transaction_date: today(), reference_number: '', notes: '' });
   const [paymentForm, setPaymentForm] = useState<CreateSupplierPaymentPayload>({ amount: 0, payment_date: today(), payment_method: 'BANK_TRANSFER', reference_number: '', notes: '' });
@@ -167,6 +170,7 @@ export const SupplierPaymentsPage: React.FC = () => {
     setNotice(null);
     setInvoiceReceipt(receipt);
     setInvoiceAllocationError(null);
+    setInvoiceModalError(null);
     const receiptTotal = receiptValue(receipt).toFixed(2);
     const defaultDeptId = receipt.purchase_order?.purchase_request?.department?.id || (departments.length ? departments[0].id : '');
     // #3 — Smart auto-fill: if only one parcel exists, auto-select it and fill amount
@@ -184,40 +188,49 @@ export const SupplierPaymentsPage: React.FC = () => {
 
   const submitInvoice = async (event: FormEvent) => {
     event.preventDefault();
-    if (!invoiceReceipt?.purchase_order) return;
-    const amount = Number(invoiceForm.amount);
-    const invoiceNumber = invoiceForm.invoice_number.trim();
+    if (!invoiceReceipt) return;
+    setInvoiceModalError(null);
+    setInvoiceAllocationError(null);
+
+    const poId = invoiceReceipt.purchase_order_id || invoiceReceipt.purchase_order?.id;
+    if (!poId) {
+      setInvoiceModalError('بيانات أمر الشراء المرتبط غير متوفرة لهذا الإذن.');
+      return;
+    }
+
+    const amount = Number(String(invoiceForm.amount || '').replace(/,/g, '').trim());
+    const invoiceNumber = (invoiceForm.invoice_number || '').trim();
     if (!invoiceNumber) {
-      setError('رقم فاتورة المورد مطلوب.');
+      setInvoiceModalError('رقم فاتورة المورد مطلوب.');
       return;
     }
     if (invoiceForm.due_date && invoiceForm.due_date < invoiceForm.invoice_date) {
-      setError('تاريخ الاستحقاق لا يمكن أن يسبق تاريخ الفاتورة.');
+      setInvoiceModalError('تاريخ الاستحقاق لا يمكن أن يسبق تاريخ الفاتورة.');
       return;
     }
     const amountError = validatePositiveAmount(amount, 'مبلغ الفاتورة');
     if (amountError) {
-      setError(amountError);
+      setInvoiceModalError(amountError);
       return;
     }
-    const normalizedAllocations = invoiceForm.land_allocations
-      .filter((allocation) => allocation.land_parcel_id && Number(allocation.amount) > 0)
+    const normalizedAllocations = (invoiceForm.land_allocations || [])
+      .filter((allocation) => Boolean(allocation.land_parcel_id) && Number(allocation.amount) > 0)
       .map((allocation) => ({
         land_parcel_id: Number(allocation.land_parcel_id),
         department_id: allocation.department_id ? Number(allocation.department_id) : undefined,
         amount: Number(allocation.amount),
-        notes: allocation.notes.trim() || undefined,
+        notes: (allocation.notes || '').trim() || undefined,
       }));
     if (!normalizedAllocations.length) {
       setInvoiceAllocationError('اختر قطعة أرض واحدة على الأقل وأدخل مبلغ المصروف المخصص لها.');
+      setInvoiceModalError('يرجى اختيار قطعة الأرض وتحديد مبلغ المصروف.');
       return;
     }
-    setInvoiceAllocationError(null);
     setSaving(true);
     setError(null);
     try {
       const payload: CreateSupplierInvoicePayload = {
-        purchase_order_id: invoiceReceipt.purchase_order_id,
+        purchase_order_id: poId,
         purchase_receipt_id: invoiceReceipt.id,
         invoice_number: invoiceNumber,
         amount,
@@ -238,11 +251,12 @@ export const SupplierPaymentsPage: React.FC = () => {
           setNotice('تم تسجيل الفاتورة بنجاح. لم تتم المطابقة التلقائية — يمكنك تنفيذها يدويًا من أرشيف الفواتير.');
         }
       } else {
-        setNotice('تم تسجيل فاتورة المورد وترحيل مصروفها على قطع الأراضي. يجب تنفيذ المطابقة الثلاثية قبل تسجيل الدفع.');
+        setNotice('تم تسجيل فاتورة المورد وترحيل مصروفها على قطع الأراضي بنجاح ✅');
       }
       await Promise.all([refreshReceipts(), refreshInvoices(), refreshAccounts(), refreshParcels()]);
     } catch (err) {
-      setError(parseApiError(err).message);
+      const parsed = parseApiError(err).message;
+      setInvoiceModalError(parsed);
     } finally {
       setSaving(false);
     }
@@ -265,6 +279,7 @@ export const SupplierPaymentsPage: React.FC = () => {
   const openPaymentForm = (account: SupplierAccountSummary) => {
     setError(null);
     setNotice(null);
+    setPaymentModalError(null);
     setPaymentAccount(account);
     setPaymentForm({
       amount: Math.max(Number(account.balance || 0), 0),
@@ -281,10 +296,11 @@ export const SupplierPaymentsPage: React.FC = () => {
   const submitPayment = async (event: FormEvent) => {
     event.preventDefault();
     if (!paymentAccount) return;
+    setPaymentModalError(null);
     const amount = Number(paymentForm.amount);
     const amountError = validatePositiveAmount(amount, 'قيمة الدفعة');
     if (amountError) {
-      setError(amountError);
+      setPaymentModalError(amountError);
       return;
     }
     setSaving(true);
@@ -300,7 +316,7 @@ export const SupplierPaymentsPage: React.FC = () => {
       setPaymentAccount(null);
       await Promise.all([refreshInvoices(), refreshAccounts()]);
     } catch (err) {
-      setError(parseApiError(err).message);
+      setPaymentModalError(parseApiError(err).message);
     } finally {
       setSaving(false);
     }
@@ -309,6 +325,7 @@ export const SupplierPaymentsPage: React.FC = () => {
   const openOpeningBalanceForm = (account: SupplierAccountSummary) => {
     setError(null);
     setNotice(null);
+    setOpeningBalanceModalError(null);
     setOpeningBalanceAccount(account);
     setOpeningBalanceForm({
       amount: account.opening_balance ?? 0,
@@ -319,9 +336,10 @@ export const SupplierPaymentsPage: React.FC = () => {
   const submitOpeningBalance = async (event: FormEvent) => {
     event.preventDefault();
     if (!openingBalanceAccount) return;
+    setOpeningBalanceModalError(null);
     const amount = Number(openingBalanceForm.amount || 0);
     if (amount < 0) {
-      setError('الرصيد الافتتاحي لا يمكن أن يكون سالباً.');
+      setOpeningBalanceModalError('الرصيد الافتتاحي لا يمكن أن يكون سالباً.');
       return;
     }
     setSaving(true);
@@ -335,7 +353,7 @@ export const SupplierPaymentsPage: React.FC = () => {
       setOpeningBalanceAccount(null);
       await refreshAccounts();
     } catch (err) {
-      setError(parseApiError(err).message);
+      setOpeningBalanceModalError(parseApiError(err).message);
     } finally {
       setSaving(false);
     }
@@ -692,6 +710,16 @@ export const SupplierPaymentsPage: React.FC = () => {
               }}
             />
 
+            {invoiceModalError && (
+              <div role="alert" className="rounded-xl border border-rose-600/80 bg-rose-950/80 p-3.5 text-xs font-bold text-rose-200 flex items-center justify-between gap-3 shadow-lg">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">⚠️</span>
+                  <span>{invoiceModalError}</span>
+                </div>
+                <button type="button" onClick={() => setInvoiceModalError(null)} className="text-xs text-rose-400 hover:text-white px-1">✕</button>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 border-t border-slate-800 pt-3">
               <Button type="button" variant="secondary" className="min-h-10" onClick={() => setInvoiceReceipt(null)}>
@@ -734,6 +762,12 @@ export const SupplierPaymentsPage: React.FC = () => {
               سجل المديونية السابقة المستحقة لهذا المورد قبل التحويل لنظام المشتريات الجديد. سيتم احتساب هذا المبلغ في كشف حسابه تلقائياً.
             </div>
 
+            {openingBalanceModalError && (
+              <div role="alert" className="rounded-xl border border-rose-600 bg-rose-950/80 p-3 text-xs font-bold text-rose-200">
+                ⚠️ {openingBalanceModalError}
+              </div>
+            )}
+
             <div className="space-y-3">
               <label className="block text-xs font-bold text-slate-300">
                 قيمة الرصيد الافتتاحي للمديونية (ج.م) *
@@ -774,7 +808,7 @@ export const SupplierPaymentsPage: React.FC = () => {
         document.body
       )}
 
-      {paymentAccount && createPortal(<div className="modal-top-viewport fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/80 p-2 sm:p-4" role="dialog" aria-modal="true"><form onSubmit={submitPayment} className="max-h-[calc(100vh-1rem)] w-full max-w-xl space-y-5 overflow-y-auto rounded-2xl border border-cyan-800/70 bg-slate-900 p-4 shadow-2xl sm:max-h-[calc(100vh-3rem)] sm:p-5"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-black text-slate-100">تسجيل دفعة على حساب المورد</h2><p className="mt-1 text-xs text-slate-400">{paymentAccount.company_name} — الدفعة لا ترتبط بفاتورة محددة.</p></div><button type="button" onClick={() => setPaymentAccount(null)} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-2xl font-black text-slate-300 transition-colors hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-400" aria-label="إغلاق النافذة" title="إغلاق النافذة">×</button></div><div className="grid grid-cols-3 gap-2 rounded-xl border border-cyan-800/50 bg-cyan-950/20 p-3 text-center text-xs"><div><span className="text-slate-500">إجمالي الفواتير</span><strong className="mt-1 block font-mono text-cyan-200">{money(paymentAccount.total_invoiced)}</strong></div><div><span className="text-slate-500">إجمالي المدفوع</span><strong className="mt-1 block font-mono text-emerald-300">{money(paymentAccount.total_paid)}</strong></div><div><span className="text-slate-500">الرصيد المستحق</span><strong className="mt-1 block font-mono text-amber-300">{money(Math.max(paymentAccount.balance, 0))}</strong></div></div><div className="rounded-xl border border-amber-700/50 bg-amber-950/20 p-3 text-xs leading-6 text-amber-200">سيتم تسجيل المبلغ على حساب المورد وتوزيعه تلقائيًا على أقدم الفواتير المطابقة أولًا. إذا زاد المبلغ عن إجمالي المديونية، سيُسجل الفرق كرصيد دائن أو دفعة مقدمة.</div><div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><label className="text-xs font-bold text-slate-300">قيمة الدفعة (ج.م)<input type="number" step="0.01" min="0.01" required aria-invalid={Boolean(error && Number(paymentForm.amount) <= 0)} value={paymentForm.amount} onChange={event => { const value = event.target.value; const numericValue = Number(value); setPaymentForm({ ...paymentForm, amount: numericValue }); setError(value && numericValue <= 0 ? 'قيمة الدفعة يجب أن تكون رقماً أكبر من صفر.' : null); }} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" /></label><label className="text-xs font-bold text-slate-300">تاريخ الدفع<input type="date" required value={paymentForm.payment_date} onChange={event => setPaymentForm({ ...paymentForm, payment_date: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" /></label><label className="text-xs font-bold text-slate-300">طريقة الدفع<select value={paymentForm.payment_method} onChange={event => setPaymentForm({ ...paymentForm, payment_method: event.target.value as CreateSupplierPaymentPayload['payment_method'] })} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"><option value="BANK_TRANSFER">تحويل بنكي</option><option value="CASH">نقدي</option><option value="CHEQUE">شيك</option></select></label><label className="text-xs font-bold text-slate-300">رقم المرجع<input value={paymentForm.reference_number || ''} onChange={event => setPaymentForm({ ...paymentForm, reference_number: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" /></label></div><label className="block text-xs font-bold text-slate-300">ملاحظات<textarea value={paymentForm.notes || ''} onChange={event => setPaymentForm({ ...paymentForm, notes: event.target.value })} className="mt-1 min-h-20 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100" /></label><div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setPaymentAccount(null)}>إلغاء</Button><Button type="submit" variant="success" isLoading={saving}>تسجيل الدفعة على الحساب</Button></div></form></div>, document.body)}
+      {paymentAccount && createPortal(<div className="modal-top-viewport fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/80 p-2 sm:p-4" role="dialog" aria-modal="true"><form onSubmit={submitPayment} className="max-h-[calc(100vh-1rem)] w-full max-w-xl space-y-5 overflow-y-auto rounded-2xl border border-cyan-800/70 bg-slate-900 p-4 shadow-2xl sm:max-h-[calc(100vh-3rem)] sm:p-5"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-black text-slate-100">تسجيل دفعة على حساب المورد</h2><p className="mt-1 text-xs text-slate-400">{paymentAccount.company_name} — الدفعة لا ترتبط بفاتورة محددة.</p></div><button type="button" onClick={() => setPaymentAccount(null)} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-2xl font-black text-slate-300 transition-colors hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-400" aria-label="إغلاق النافذة" title="إغلاق النافذة">×</button></div><div className="grid grid-cols-3 gap-2 rounded-xl border border-cyan-800/50 bg-cyan-950/20 p-3 text-center text-xs"><div><span className="text-slate-500">إجمالي الفواتير</span><strong className="mt-1 block font-mono text-cyan-200">{money(paymentAccount.total_invoiced)}</strong></div><div><span className="text-slate-500">إجمالي المدفوع</span><strong className="mt-1 block font-mono text-emerald-300">{money(paymentAccount.total_paid)}</strong></div><div><span className="text-slate-500">الرصيد المستحق</span><strong className="mt-1 block font-mono text-amber-300">{money(Math.max(paymentAccount.balance, 0))}</strong></div></div><div className="rounded-xl border border-amber-700/50 bg-amber-950/20 p-3 text-xs leading-6 text-amber-200">سيتم تسجيل المبلغ على حساب المورد وتوزيعه تلقائيًا على أقدم الفواتير المطابقة أولًا. إذا زاد المبلغ عن إجمالي المديونية، سيُسجل الفرق كرصيد دائن أو دفعة مقدمة.</div>{paymentModalError && (<div role="alert" className="rounded-xl border border-rose-600 bg-rose-950/80 p-3 text-xs font-bold text-rose-200">⚠️ {paymentModalError}</div>)}<div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><label className="text-xs font-bold text-slate-300">قيمة الدفعة (ج.م)<input type="number" step="0.01" min="0.01" required aria-invalid={Boolean(error && Number(paymentForm.amount) <= 0)} value={paymentForm.amount} onChange={event => { const value = event.target.value; const numericValue = Number(value); setPaymentForm({ ...paymentForm, amount: numericValue }); setError(value && numericValue <= 0 ? 'قيمة الدفعة يجب أن تكون رقماً أكبر من صفر.' : null); }} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" /></label><label className="text-xs font-bold text-slate-300">تاريخ الدفع<input type="date" required value={paymentForm.payment_date} onChange={event => setPaymentForm({ ...paymentForm, payment_date: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" /></label><label className="text-xs font-bold text-slate-300">طريقة الدفع<select value={paymentForm.payment_method} onChange={event => setPaymentForm({ ...paymentForm, payment_method: event.target.value as CreateSupplierPaymentPayload['payment_method'] })} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"><option value="BANK_TRANSFER">تحويل بنكي</option><option value="CASH">نقدي</option><option value="CHEQUE">شيك</option></select></label><label className="text-xs font-bold text-slate-300">رقم المرجع<input value={paymentForm.reference_number || ''} onChange={event => setPaymentForm({ ...paymentForm, reference_number: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" /></label></div><label className="block text-xs font-bold text-slate-300">ملاحظات<textarea value={paymentForm.notes || ''} onChange={event => setPaymentForm({ ...paymentForm, notes: event.target.value })} className="mt-1 min-h-20 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100" /></label><div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setPaymentAccount(null)}>إلغاء</Button><Button type="submit" variant="success" isLoading={saving}>تسجيل الدفعة على الحساب</Button></div></form></div>, document.body)}
     </div>
   );
 };
