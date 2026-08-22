@@ -156,9 +156,8 @@ export const NotificationsPage: React.FC = () => {
       if (!notification.read_at) {
         try {
           await markNotificationAsReadApi(notification.id);
-          setNotifications((prev) =>
-            prev.map((n) => (n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n)),
-          );
+          // Permanently remove the opened notification from the active list
+          setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
           setUnreadCount((prev) => Math.max(0, prev - 1));
           window.dispatchEvent(new CustomEvent('notifications-updated'));
         } catch (err) {
@@ -178,9 +177,8 @@ export const NotificationsPage: React.FC = () => {
     setMarkingId(notification.id);
     try {
       await markNotificationAsReadApi(notification.id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n)),
-      );
+      // Remove immediately from active view
+      setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
       setUnreadCount((prev) => Math.max(0, prev - 1));
       window.dispatchEvent(new CustomEvent('notifications-updated'));
     } catch (err: any) {
@@ -198,9 +196,8 @@ export const NotificationsPage: React.FC = () => {
     try {
       await markAllNotificationsAsReadApi();
       window.dispatchEvent(new CustomEvent('notifications-marked-all'));
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() })),
-      );
+      // Clear all active notifications immediately
+      setNotifications([]);
       setUnreadCount(0);
       window.dispatchEvent(new CustomEvent('notifications-updated'));
     } catch (err: any) {
