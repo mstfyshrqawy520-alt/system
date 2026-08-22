@@ -41,22 +41,9 @@ export const NotificationBell: React.FC = () => {
     };
   }, []);
 
-  const handleOpenNotifications = async () => {
-    setOpening(true);
-    // Optimistic UI: the badge must clear immediately when the menu is opened.
-    setCount(0);
+  const handleOpenNotifications = () => {
     setLatest(null);
-    window.dispatchEvent(new CustomEvent('notifications-marked-all'));
-    // Navigate immediately; the server synchronization must not delay opening the page.
     navigate('/notifications');
-    try {
-      await markAllNotificationsAsReadApi();
-      window.dispatchEvent(new CustomEvent('notifications-updated'));
-    } catch {
-      // Keep the optimistic zero while the API reconnects.
-    } finally {
-      setOpening(false);
-    }
   };
 
   return (

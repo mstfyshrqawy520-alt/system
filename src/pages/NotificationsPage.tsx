@@ -9,16 +9,16 @@ import {
 import { Notification } from '../types/notification';
 import ErrorMessage from '../components/ErrorMessage';
 import { TableSkeleton, EmptyState } from '../components/ui/StateFeedback';
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-
 import { parseApiError } from '../utils/apiError';
 
 export const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [activeTab, setActiveTab] = useState<'ALL' | 'UNREAD'>('ALL');
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,11 +38,11 @@ export const NotificationsPage: React.FC = () => {
         getUnreadNotificationCountApi().catch(() => undefined),
       ]);
       if (currentVersion !== requestVersion.current) return;
-            const nextNotifications = data || [];
+      const nextNotifications = data || [];
       nextNotifications.forEach((notification) => realtimeNotificationIds.current.add(notification.id));
       setNotifications(nextNotifications);
-      setUnreadCount(count !== undefined ? count : nextNotifications.filter((n) => !n.read_at).length);
-
+      const calculatedUnread = nextNotifications.filter((n) => !n.read_at).length;
+      setUnreadCount(count !== undefined ? count : calculatedUnread);
     } catch (err: any) {
       if (currentVersion !== requestVersion.current) return;
       const parsed = parseApiError(err);
@@ -67,7 +67,9 @@ export const NotificationsPage: React.FC = () => {
 
     const handleNotificationsMarkedAll = () => {
       const readAt = new Date().toISOString();
-      setNotifications((current) => current.map((notification) => ({ ...notification, read_at: notification.read_at || readAt })));
+      setNotifications((current) =>
+        current.map((notification) => ({ ...notification, read_at: notification.read_at || readAt })),
+      );
       setUnreadCount(0);
     };
 
@@ -80,19 +82,21 @@ export const NotificationsPage: React.FC = () => {
   }, []);
 
   const getTargetRoute = (notification: Notification & { data?: any; target_url?: string }): string | null => {
-    const roleSlugs = (user?.roles || []).map((role) => typeof role === 'string' ? role : role.slug);
-    const notifiableId = notification.notifiable_id || notification.data?.purchase_request_id || notification.data?.purchase_order_id || notification.data?.id;
+    const roleSlugs = (user?.roles || []).map((role) => (typeof role === 'string' ? role : role.slug));
+    const notifiableId =
+      notification.notifiable_id ||
+      notification.data?.purchase_request_id ||
+      notification.data?.purchase_order_id ||
+      notification.data?.id;
     const type = notification.type || '';
     const notifiableType = notification.notifiable_type || '';
     const isPurchaseRequest = type.includes('purchase_request') || notifiableType.includes('PurchaseRequest');
     const isPurchaseOrder = type.includes('purchase_order') || notifiableType.includes('PurchaseOrder');
     const isPurchaseReceipt = type.includes('purchase_receipt') || notifiableType.includes('PurchaseReceipt');
-    const isCombinedAccountingDocuments = type === 'purchase_order_and_receipt_ready_accounting'
-      || Boolean(notification.data?.purchase_order_id && notification.data?.purchase_receipt_id);
+    const isCombinedAccountingDocuments =
+      type === 'purchase_order_and_receipt_ready_accounting' ||
+      Boolean(notification.data?.purchase_order_id && notification.data?.purchase_receipt_id);
 
-    // Build the destination from the current user's role first. This prevents a
-    // procurement/accounting/GM user from being sent to the employee route and
-    // receiving a false 403 page.
     if (type.includes('purchase_quote') || type.includes('quote_recommendation')) {
       if (roleSlugs.includes('general_manager')) return notifiableId ? `/general-manager/purchase-quotes?open=${notifiableId}` : '/general-manager/purchase-quotes';
       if (roleSlugs.includes('procurement_manager')) return notifiableId ? `/procurement?open=${notifiableId}` : '/procurement';
@@ -101,31 +105,21 @@ export const NotificationsPage: React.FC = () => {
     }
 
     if (isCombinedAccountingDocuments && roleSlugs.includes('accountant')) {
-      const purchaseOrderId = notification.data?.purchase_order_id || notification.notifiable_id;
-      const purchaseReceiptId = notification.data?.purchase_receipt_id;
-      if (purchaseOrderId && purchaseReceiptId) {
-        return `/accounting/supplier-payments?purchase_order_id=${purchaseOrderId}&purchase_receipt_id=${purchaseReceiptId}`;
-      }
-      return '/accounting/supplier-payments';
+      return `/accounting/purchase-orders?po_id=${notification.data?.purchase_order_id}&receipt_id=${notification.data?.purchase_receipt_id}`;
     }
 
     if (isPurchaseReceipt) {
-      if (roleSlugs.includes('site_engineer')) return '/site-engineer';
-      if (roleSlugs.includes('warehouse_keeper')) return '/warehouse';
-      if (roleSlugs.includes('accountant')) return '/accounting/supplier-payments';
+      if (roleSlugs.includes('warehouse_keeper')) return notifiableId ? `/warehouse?receipt_id=${notifiableId}` : '/warehouse';
+      if (roleSlugs.includes('site_engineer')) return notifiableId ? `/site-engineer?receipt_id=${notifiableId}` : '/site-engineer';
     }
 
     if (isPurchaseRequest) {
-      if (roleSlugs.includes('accountant')) {
-        const accountingApprovalType = type.includes('pending_accounting') || type.includes('direct_sent_accounting') || type === 'purchase_request_pending_accounting_approval';
-        return accountingApprovalType
-          ? (notifiableId ? `/accounting/purchase-requests?open=${notifiableId}` : '/accounting/purchase-requests')
-          : (notifiableId ? `/requests/${notifiableId}` : '/requests');
-      }
       if (roleSlugs.includes('reviewer')) return notifiableId ? `/reviewer/requests/${notifiableId}` : '/reviewer/requests';
-      if (roleSlugs.includes('procurement_manager')) return notifiableId ? `/procurement?open=${notifiableId}` : '/procurement';
       if (roleSlugs.includes('general_manager')) return notifiableId ? `/general-manager/purchase-requests?open=${notifiableId}` : '/general-manager/purchase-requests';
+      if (roleSlugs.includes('procurement_manager')) return notifiableId ? `/procurement/purchase-requests?open=${notifiableId}` : '/procurement/purchase-requests';
+      if (roleSlugs.includes('accountant')) return notifiableId ? `/accounting/purchase-requests?open=${notifiableId}` : '/accounting/purchase-requests';
       if (roleSlugs.includes('employee')) return notifiableId ? `/employee/requests/${notifiableId}` : '/employee/requests';
+      return notifiableId ? `/requests/${notifiableId}` : '/requests';
     }
 
     if (isPurchaseOrder) {
@@ -134,8 +128,6 @@ export const NotificationsPage: React.FC = () => {
       if (roleSlugs.includes('general_manager')) return notifiableId ? `/general-manager/purchase-orders/${notifiableId}` : '/general-manager/purchase-orders';
     }
 
-    // target_url is accepted only for a route that belongs to the current role.
-    // Unknown or legacy links fall back to the notifications page instead of a 403.
     if (notification.target_url) {
       const allowedPrefixes = roleSlugs.includes('reviewer')
         ? ['/reviewer/']
@@ -165,7 +157,7 @@ export const NotificationsPage: React.FC = () => {
         try {
           await markNotificationAsReadApi(notification.id);
           setNotifications((prev) =>
-            prev.map((n) => (n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n))
+            prev.map((n) => (n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n)),
           );
           setUnreadCount((prev) => Math.max(0, prev - 1));
           window.dispatchEvent(new CustomEvent('notifications-updated'));
@@ -187,7 +179,7 @@ export const NotificationsPage: React.FC = () => {
     try {
       await markNotificationAsReadApi(notification.id);
       setNotifications((prev) =>
-        prev.map((n) => (n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n))
+        prev.map((n) => (n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n)),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
       window.dispatchEvent(new CustomEvent('notifications-updated'));
@@ -204,11 +196,10 @@ export const NotificationsPage: React.FC = () => {
     setMarkingAll(true);
     setError(null);
     try {
-            await markAllNotificationsAsReadApi();
+      await markAllNotificationsAsReadApi();
       window.dispatchEvent(new CustomEvent('notifications-marked-all'));
       setNotifications((prev) =>
-
-        prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
+        prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() })),
       );
       setUnreadCount(0);
       window.dispatchEvent(new CustomEvent('notifications-updated'));
@@ -224,7 +215,7 @@ export const NotificationsPage: React.FC = () => {
     if (!dateString) return '-';
     try {
       const date = new Date(dateString);
-      return new Intl.DateTimeFormat('ar-SA', {
+      return new Intl.DateTimeFormat('ar-EG', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -239,11 +230,14 @@ export const NotificationsPage: React.FC = () => {
   const getNotificationActionLabel = (notification: Notification): string | null => {
     if (!getTargetRoute(notification)) return null;
     if (notification.data?.purchase_order_id && notification.data?.purchase_receipt_id) return 'فتح أمر الشراء وإذن الاستلام';
-    if (notification.type.includes('quote') || notification.type.includes('recommendation')) return 'فتح عروض الأسعار';
-    if (notification.type.includes('purchase_order')) return 'فتح أمر الشراء';
-    if (notification.type.includes('purchase_request')) return 'فتح طلب الشراء';
+    if (notification.type?.includes('quote') || notification.type?.includes('recommendation')) return 'فتح عروض الأسعار';
+    if (notification.type?.includes('purchase_order')) return 'فتح أمر الشراء';
+    if (notification.type?.includes('purchase_request')) return 'فتح طلب الشراء';
     return 'فتح الإجراء';
   };
+
+  const unreadNotifications = notifications.filter((n) => !n.read_at);
+  const displayedNotifications = activeTab === 'UNREAD' ? unreadNotifications : notifications;
 
   if (loading) {
     return (
@@ -271,21 +265,49 @@ export const NotificationsPage: React.FC = () => {
             )}
           </div>
           <p className="mt-1 text-xs text-slate-400 font-medium">
-            سجل التنبيهات والإشعارات الخاصة بطلبات الشراء وأوامر العمل
+            تنبيهات وإشعارات دورة المشتريات — بمجرد الاطلاع على الإشعار يختفي من القائمة النشطة.
           </p>
         </div>
 
-        <div className="w-full sm:w-auto">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleMarkAllAsRead}
-            disabled={unreadCount === 0 || markingAll}
-            isLoading={markingAll}
-            className="w-full sm:w-auto min-h-10"
-          >
-            تحديد الكل كمقروء
-          </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Tab Selector */}
+          <div className="flex rounded-xl bg-slate-950 p-1 border border-slate-800">
+            <button
+              type="button"
+              onClick={() => setActiveTab('UNREAD')}
+              className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
+                activeTab === 'UNREAD'
+                  ? 'bg-cyan-600 text-white shadow'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              📬 غير المقروءة ({unreadNotifications.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('ALL')}
+              className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
+                activeTab === 'ALL'
+                  ? 'bg-cyan-600 text-white shadow'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              📁 كل الإشعارات ({notifications.length})
+            </button>
+          </div>
+
+          {unreadCount > 0 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleMarkAllAsRead}
+              disabled={markingAll}
+              isLoading={markingAll}
+              className="min-h-10 text-xs"
+            >
+              تحديد الكل كمقروء
+            </Button>
+          )}
         </div>
       </div>
 
@@ -299,7 +321,7 @@ export const NotificationsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Empty State */}
+      {/* Empty State when no notifications exist at all */}
       {!error && notifications.length === 0 && (
         <EmptyState
           title="لا توجد إشعارات حالياً"
@@ -308,10 +330,24 @@ export const NotificationsPage: React.FC = () => {
         />
       )}
 
-      {/* الإشعارات List */}
-      {!error && notifications.length > 0 && (
+      {/* Empty State for Unread when there are notifications in archive */}
+      {!error && notifications.length > 0 && activeTab === 'UNREAD' && unreadNotifications.length === 0 && (
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-12 text-center space-y-4">
+          <span className="text-4xl block">🎉</span>
+          <h3 className="text-base font-bold text-slate-100">تم الاطلاع على جميع الإشعارات!</h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto leading-6">
+            لا توجد إشعارات غير مقروءة حالياً. يمكنك التبديل إلى تبويب «كل الإشعارات» لمراجعة السجل السابق في أي وقت.
+          </p>
+          <Button variant="secondary" size="sm" onClick={() => setActiveTab('ALL')}>
+            📁 عرض أرشيف كافة الإشعارات ({notifications.length})
+          </Button>
+        </div>
+      )}
+
+      {/* Notifications List */}
+      {!error && displayedNotifications.length > 0 && (
         <div className="space-y-3">
-          {notifications.map((notif) => {
+          {displayedNotifications.map((notif) => {
             const isUnread = !notif.read_at;
             const route = getTargetRoute(notif);
             const hasRoute = !!route;
@@ -320,13 +356,15 @@ export const NotificationsPage: React.FC = () => {
             return (
               <Card
                 key={notif.id}
-                onClick={() => { if (route) void handleNotificationClick(notif); }}
+                onClick={() => {
+                  if (route) void handleNotificationClick(notif);
+                }}
                 className={`p-4 transition-all duration-200 ${
-                  hasRoute ? 'cursor-pointer hover:border-slate-700' : 'cursor-default'
+                  hasRoute ? 'cursor-pointer hover:border-cyan-700/80 hover:bg-slate-800/80' : 'cursor-default'
                 } ${
                   isUnread
                     ? 'bg-slate-800/90 border-slate-700/90 shadow-md shadow-cyan-500/5'
-                    : 'bg-slate-900/50 border-slate-800/80 opacity-90'
+                    : 'bg-slate-900/50 border-slate-800/80 opacity-80'
                 }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -338,20 +376,35 @@ export const NotificationsPage: React.FC = () => {
                     />
 
                     <div className="min-w-0">
-                      <h4
-                        className={`text-xs ${
-                          isUnread ? 'font-bold text-slate-100' : 'font-normal text-slate-300'
-                        }`}
-                      >
-                        {notif.title}
-                      </h4>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4
+                          className={`text-xs ${
+                            isUnread ? 'font-bold text-slate-100' : 'font-medium text-slate-300'
+                          }`}
+                        >
+                          {notif.title}
+                        </h4>
+                        {isUnread ? (
+                          <span className="rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 px-2 py-0.5 text-[10px] font-bold">
+                            جديد
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-slate-800 text-slate-400 px-2 py-0.5 text-[10px]">
+                            تمت القراءة
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-1 text-xs text-slate-400 leading-relaxed break-normal">
                         {notif.message}
                       </p>
                       {notif.data?.purchase_order_id && notif.data?.purchase_receipt_id && (
                         <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-bold">
-                          <span className="rounded-md border border-cyan-800/70 bg-cyan-950/40 px-2 py-1 text-cyan-200">أمر الشراء رقم {notif.data.purchase_order_id}</span>
-                          <span className="rounded-md border border-amber-800/70 bg-amber-950/40 px-2 py-1 text-amber-200">إذن الاستلام رقم {notif.data.purchase_receipt_id}</span>
+                          <span className="rounded-md border border-cyan-800/70 bg-cyan-950/40 px-2 py-1 text-cyan-200">
+                            أمر الشراء رقم {notif.data.purchase_order_id}
+                          </span>
+                          <span className="rounded-md border border-amber-800/70 bg-amber-950/40 px-2 py-1 text-amber-200">
+                            إذن الاستلام رقم {notif.data.purchase_receipt_id}
+                          </span>
                           <span className="text-slate-500">اضغط لعرض أمر الشراء وإذن الاستلام معًا</span>
                         </div>
                       )}
@@ -366,7 +419,10 @@ export const NotificationsPage: React.FC = () => {
                       <Button
                         variant="primary"
                         size="sm"
-                        onClick={(e) => { e.stopPropagation(); void handleNotificationClick(notif); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleNotificationClick(notif);
+                        }}
                         isLoading={openingId === notif.id}
                         disabled={openingId !== null && openingId !== notif.id}
                         className="text-xs min-h-10 flex-1 sm:flex-initial whitespace-nowrap"
