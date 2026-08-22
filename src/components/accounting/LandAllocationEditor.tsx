@@ -1,9 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Button } from '../ui/Button';
 import { LandParcel, createLandParcelApi } from '../../api/supplierFinance';
-import { parseApiError } from '../../utils/apiError';
-
-export interface LandAllocationDraft {
+import { parseApiError } from '../../utils/apiError';t interface LandAllocationDraft {
   land_parcel_id: number | '';
   amount: string;
   notes: string;
