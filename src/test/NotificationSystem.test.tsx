@@ -87,6 +87,11 @@ describe('الإشعارات System Frontend', () => {
 
     await waitFor(() => {
       expect(screen.getByText('New Purchase Request Submitted')).toBeInTheDocument();
+    });
+
+    // Switch to all notifications tab to see read notifications
+    fireEvent.click(screen.getByText(/كل الإشعارات/));
+    await waitFor(() => {
       expect(screen.getByText('System Maintenance Completed')).toBeInTheDocument();
     });
   });
@@ -134,6 +139,11 @@ describe('الإشعارات System Frontend', () => {
     const unreadTitle = screen.getByText('New Purchase Request Submitted');
     expect(unreadTitle.className).toContain('font-bold');
 
+    // Switch to all to check read notification styling
+    fireEvent.click(screen.getByText(/كل الإشعارات/));
+    await waitFor(() => {
+      expect(screen.getByText('System Maintenance Completed')).toBeInTheDocument();
+    });
     const readTitle = screen.getByText('System Maintenance Completed');
     expect(readTitle.className).not.toContain('font-bold');
   });

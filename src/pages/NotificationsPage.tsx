@@ -18,7 +18,7 @@ export const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [activeTab, setActiveTab] = useState<'ALL' | 'UNREAD'>('ALL');
+  const [activeTab, setActiveTab] = useState<'UNREAD' | 'ALL'>('UNREAD');
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
