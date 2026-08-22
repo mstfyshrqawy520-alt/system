@@ -56,6 +56,7 @@ class PurchaseOrderService
         return PurchaseRequest::with(['requester', 'department', 'assignedReviewer', 'approvalHistory.actor', 'items.item'])
             ->where('status', 'APPROVED_BY_PROCUREMENT')
             ->orderBy('updated_at', 'desc')
+            ->limit(500)
             ->get();
     }
 
@@ -66,6 +67,7 @@ class PurchaseOrderService
     {
         return Supplier::where('is_active', true)
             ->orderBy('company_name', 'asc')
+            ->limit(500)
             ->get();
     }
 
