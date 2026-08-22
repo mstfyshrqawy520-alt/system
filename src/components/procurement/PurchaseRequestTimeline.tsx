@@ -51,18 +51,87 @@ const currentStandardIndex = (request: PurchaseRequest) => {
   return 0;
 };
 
+const getActionGuidance = (request: PurchaseRequest): { text: string; bg: string; icon: string } => {
+  if (request.status === 'DRAFT') {
+    return {
+      icon: '✍️',
+      text: 'الطلب ما زال مسودة لديك. اضغط على «إرسال الطلب» لإرساله إلى رئيس قسمك للمراجعة والاعتماد.',
+      bg: 'border-slate-700 bg-slate-900/80 text-slate-200',
+    };
+  }
+  if (request.status === 'SUBMITTED' || request.status === 'UNDER_REVIEW') {
+    return {
+      icon: '⏳',
+      text: `الطلب الآن بانتظار مراجعة واعتماد رئيس القسم (${request.target_department?.name || request.department?.name || 'قسمك'}). لا يتطلب منك أي إجراء حالياً.`,
+      bg: 'border-cyan-700/50 bg-cyan-950/40 text-cyan-200',
+    };
+  }
+  if (request.status === 'PENDING_EXECUTIVE_APPROVAL') {
+    return {
+      icon: '👔',
+      text: 'تم اعتماد الطلب من رئيس القسم، وهو الآن بانتظار قرار المدير العام/التنفيذي.',
+      bg: 'border-violet-700/50 bg-violet-950/40 text-violet-200',
+    };
+  }
+  if (request.status === 'PENDING_PROCUREMENT_APPROVAL' || request.status === 'PENDING_QUOTE_RECOMMENDATIONS' || request.status === 'PENDING_EXECUTIVE_QUOTE_DECISION' || request.status === 'APPROVED_BY_PROCUREMENT') {
+    return {
+      icon: '💼',
+      text: 'الطلب معتمد ومحول لإدارة المشتريات للتسعير وتجهيز أمر الشراء للمورد.',
+      bg: 'border-amber-700/50 bg-amber-950/40 text-amber-200',
+    };
+  }
+  if (request.status === 'PO_DRAFT' || request.status === 'ISSUED') {
+    return {
+      icon: '📋',
+      text: 'تم إصدار أمر الشراء للمورد. الخطوة القادمة هي وصول المواد للموقع وتأكيد استلامها.',
+      bg: 'border-emerald-700/50 bg-emerald-950/40 text-emerald-200',
+    };
+  }
+  if (request.status === 'COMPLETED') {
+    return {
+      icon: '🎉',
+      text: 'اكتملت دورة الشراء بالكامل وتم استلام المواد بنجاح ومطابقتها وتسجيلها في الحسابات.',
+      bg: 'border-emerald-600 bg-emerald-950/60 text-emerald-100',
+    };
+  }
+  if (request.status === 'REJECTED') {
+    return {
+      icon: '❌',
+      text: `تم رفض هذا الطلب. ${request.rejection_reason ? `سبب الرفض: ${request.rejection_reason}` : ''}`,
+      bg: 'border-rose-800 bg-rose-950/50 text-rose-200',
+    };
+  }
+  return {
+    icon: 'ℹ️',
+    text: 'الطلب جارٍ متابعته في دورة المشتريات.',
+    bg: 'border-slate-700 bg-slate-900/60 text-slate-300',
+  };
+};
+
 const PurchaseRequestTimeline: React.FC<PurchaseRequestTimelineProps> = ({ request, compact = false }) => {
   const isDirect = request.procurement_route === 'DIRECT';
   const steps = isDirect ? DIRECT_STEPS : STANDARD_STEPS;
   const currentIndex = isDirect ? currentDirectIndex(request) : currentStandardIndex(request);
   const rejected = request.status === 'REJECTED';
+  const guidance = getActionGuidance(request);
 
   return (
-    <section className={compact ? 'space-y-2' : 'space-y-3'} dir="rtl" aria-label="شريط تقدم طلب الشراء">
+    <section className={compact ? 'space-y-2.5' : 'space-y-3.5'} dir="rtl" aria-label="شريط تقدم طلب الشراء">
+      {/* Smart Plain Arabic Guidance Banner */}
+      <div className={`flex items-center gap-3 rounded-xl border p-3 text-xs font-semibold shadow-inner ${guidance.bg}`}>
+        <span className="text-xl shrink-0">{guidance.icon}</span>
+        <div className="flex-1 leading-5">
+          <strong className="block text-[11px] font-black opacity-80 uppercase tracking-wider mb-0.5">
+            الوضع الحالي للطلب:
+          </strong>
+          {guidance.text}
+        </div>
+      </div>
+
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h3 className="text-sm font-black text-cyan-200">متابعة تقدم طلب الشراء</h3>
-          <p className="mt-1 text-[11px] text-slate-400">{rejected ? 'تم إيقاف الطلب بسبب الرفض.' : PR_STATUS_LABELS[request.status] || request.status}</p>
+          <h3 className="text-sm font-black text-cyan-200">مراحل سير الطلب</h3>
+          <p className="mt-0.5 text-[11px] text-slate-400">{rejected ? 'تم إيقاف الطلب بسبب الرفض.' : PR_STATUS_LABELS[request.status] || request.status}</p>
         </div>
           <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${rejected ? 'border-rose-400/40 bg-rose-400/10 text-rose-300' : 'border-cyan-400/30 bg-cyan-400/10 text-cyan-200'}`}>
             {isDirect ? 'شراء مباشر' : request.procurement_route === 'QUOTES' ? 'عروض أسعار' : 'مسار الشراء'}
