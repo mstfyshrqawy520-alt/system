@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { parseApiError } from '../utils/apiError';
+import { PushNotificationPrompt } from '../components/notifications/PushNotificationPrompt';
 
 export const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -308,10 +309,13 @@ export const NotificationsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Push Notification PWA Activation Prompt */}
+      <PushNotificationPrompt variant="banner" />
+
       {/* Error State */}
       {error && (
         <div className="space-y-3">
-          <ErrorMessage error={error} />
+          <ErrorMessage error={error} onDismiss={() => setError(null)} />
           <Button variant="primary" size="sm" onClick={loadNotificationsData} className="w-full sm:w-auto min-h-10">
             إعادة المحاولة
           </Button>
