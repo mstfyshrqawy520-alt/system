@@ -281,8 +281,8 @@ export const SuppliersPage: React.FC = () => {
             <article key={`mobile-admin-sup-${sup.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
               <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-3">
                 <div className="min-w-0">
-                  <h3 className="break-normal font-bold text-sm text-slate-100">{sup.name}</h3>
-                  <span className="font-mono text-xs text-cyan-400 font-semibold">{sup.code || `SUP-${sup.id}`}</span>
+                  <h3 className="break-normal font-bold text-sm text-slate-100">{`المورد: ${sup.name}`}</h3>
+                  <span className="font-mono text-xs text-cyan-400 font-semibold">{`كود: ${sup.code || `SUP-${sup.id}`}`}</span>
                   {sup.address && <p className="text-[11px] text-slate-400 mt-0.5">{sup.address}</p>}
                 </div>
                 <span className={`shrink-0 inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded ${
