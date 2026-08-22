@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { getGeneralManagerPurchaseOrdersApi } from '../../api/generalManager';
+import { getGeneralManagerPurchaseOrdersApi, getGeneralManagerPurchaseRequestsApi } from '../../api/generalManager';
 import { PurchaseOrder } from '../../types/purchaseOrder';
+import { PurchaseRequest } from '../../types/purchaseRequest';
+import { Button } from '../../components/ui/Button';
 import { KpiCard } from '../../components/ui/Card';
 import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import { DashboardBars, DashboardDonut } from '../../components/ui/DashboardCharts';
@@ -9,6 +11,7 @@ import { getDefaultDateFrom, getTodayInputDate } from '../../utils/dateFilters';
 
 export const GeneralManagerDashboardPage: React.FC = () => {
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
+  const [requests, setRequests] = useState<PurchaseRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const today = getTodayInputDate();
   const defaultDateFrom = getDefaultDateFrom();
@@ -18,9 +21,10 @@ export const GeneralManagerDashboardPage: React.FC = () => {
   const [supplierId, setSupplierId] = useState('');
 
   useEffect(() => {
-    getGeneralManagerPurchaseOrdersApi()
-      .then(setPos)
-      .finally(() => setLoading(false));
+    Promise.all([
+      getGeneralManagerPurchaseOrdersApi().then(setPos).catch(() => []),
+      getGeneralManagerPurchaseRequestsApi().then(setRequests).catch(() => []),
+    ]).finally(() => setLoading(false));
   }, []);
 
   const filteredPos = useMemo(() => {
@@ -64,6 +68,8 @@ export const GeneralManagerDashboardPage: React.FC = () => {
   }
 
   const totalValue = filteredPos.reduce((acc, x) => acc + Number(x.grand_total || 0), 0);
+  const pendingGmRequestsCount = requests.length;
+
   // القسم Spend Breakdown
   const deptSpendMap = filteredPos.reduce((acc: Record<string, number>, p) => {
     const deptName = p.purchase_request?.department?.name || 'عام';
@@ -94,12 +100,81 @@ export const GeneralManagerDashboardPage: React.FC = () => {
               <span>👑</span> لوحة المدير العام التنفيذية
             </h1>
             <p className="text-xs text-slate-400 mt-1">
-              متابعة التدفقات التنفيذية وأوامر الشراء المصدرة وتقارير الإنفاق بـ (EGP / ج.م) للاطلاع الإداري.
+              متابعة التدفقات التنفيذية والقرارات المعلقة وأوامر الشراء المصدرة وتقارير الإنفاق بـ (EGP / ج.م).
             </p>
           </div>
           <div className="inline-flex items-center gap-1.5 bg-blue-900/40 border border-blue-700/50 rounded-lg px-3 py-1.5">
-            <span className="text-blue-400 text-xs">👁️</span>
-            <span className="text-blue-300 text-xs font-medium">وصول للاطلاع والرقابة التنفيذية فقط</span>
+            <span className="text-xs text-blue-300 font-medium">🛡️ الإدارة التنفيذية العليا</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── صندوق القرارات التنفيذية المطلوبة منك الآن (Executive Action Inbox) ── */}
+      <div className="rounded-2xl border-2 border-amber-500/40 bg-gradient-to-r from-slate-900 via-amber-950/20 to-slate-900 p-4 sm:p-5 shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-amber-900/40 pb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-600/30 border border-amber-500/50 text-amber-300 text-lg font-black shadow-inner">
+              ⚡
+            </span>
+            <div>
+              <h2 className="text-base font-black text-slate-100 flex items-center gap-2">
+                القرارات والإجراءات التنفيذية المطلوبة منك الآن
+                {pendingGmRequestsCount > 0 && (
+                  <span className="rounded-full bg-amber-500 text-slate-950 px-2.5 py-0.5 text-xs font-black">
+                    {pendingGmRequestsCount} طلب بانتظار قرارك
+                  </span>
+                )}
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                طلبات الشراء وعروض الأسعار التي تتطلب اعتماد أو قرار المدير العام للبدء في التنفيذ.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+          {/* Card 1: Pending GM PRs */}
+          <div className="rounded-xl border border-amber-800/60 bg-slate-950/80 p-4 flex flex-col justify-between gap-3 hover:border-amber-500/80 transition-colors">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-200 text-sm flex items-center gap-1.5">
+                  <span>📝</span> طلبات الشراء بانتظار الاعتماد
+                </span>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-black ${pendingGmRequestsCount > 0 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-800 text-slate-400'}`}>
+                  {pendingGmRequestsCount} طلب
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1.5 leading-5">
+                طلبات الشراء المحالة للإدارة العامة للاطلاع والموافقة أو الرفض أو تعديل الكميات والبنود.
+              </p>
+            </div>
+            <RouterLink to="/general-manager/purchase-requests">
+              <Button variant="primary" size="sm" className="w-full font-bold bg-amber-600 hover:bg-amber-500 text-slate-950">
+                مراجعة واتخاذ القرار في الطلبات ←
+              </Button>
+            </RouterLink>
+          </div>
+
+          {/* Card 2: Executive Quotes Decision */}
+          <div className="rounded-xl border border-indigo-800/60 bg-slate-950/80 p-4 flex flex-col justify-between gap-3 hover:border-indigo-500/80 transition-colors">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-200 text-sm flex items-center gap-1.5">
+                  <span>⚖️</span> البت في عروض الأسعار والترسية
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                  قرار الترسية
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1.5 leading-5">
+                المقارنة بين عروض أسعار الموردين واختيار العرض الأنسب لإصدار أمر الشراء.
+              </p>
+            </div>
+            <RouterLink to="/purchase-quotes/decision">
+              <Button variant="secondary" size="sm" className="w-full font-bold border-indigo-800/60 text-indigo-200 hover:bg-indigo-950">
+                شاشة البت في عروض الأسعار ←
+              </Button>
+            </RouterLink>
           </div>
         </div>
       </div>

@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getAccountingPurchaseOrdersApi, getAccountingPurchaseOrderApi } from '../../api/accounting';
+import { getDirectAccountingPurchaseRequestsApi } from '../../api/accountingPurchaseRequests';
+import { getApprovedReceiptsForAccountingApi, getSupplierAccountsApi, ApprovedReceipt, SupplierAccountSummary } from '../../api/supplierFinance';
 import { PurchaseOrder } from '../../types/purchaseOrder';
+import { PurchaseRequest } from '../../types/purchaseRequest';
+import { Button } from '../../components/ui/Button';
 import { KpiCard } from '../../components/ui/Card';
 import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import PurchaseOrderPrintModal from '../../components/procurement/PurchaseOrderPrintModal';
@@ -9,6 +13,9 @@ import { DashboardBars, DashboardDonut } from '../../components/ui/DashboardChar
 
 export const AccountingDashboardPage: React.FC = () => {
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
+  const [directPrs, setDirectPrs] = useState<PurchaseRequest[]>([]);
+  const [receipts, setReceipts] = useState<ApprovedReceipt[]>([]);
+  const [accounts, setAccounts] = useState<SupplierAccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPo, setSelectedPo] = useState<PurchaseOrder | null>(null);
   const [openingPoId, setOpeningPoId] = useState<number | null>(null);
@@ -26,18 +33,25 @@ export const AccountingDashboardPage: React.FC = () => {
   };
 
   useEffect(() => {
-    getAccountingPurchaseOrdersApi()
-      .then(setPos)
-      .finally(() => setLoading(false));
+    Promise.all([
+      getAccountingPurchaseOrdersApi().then(setPos).catch(() => []),
+      getDirectAccountingPurchaseRequestsApi().then(setDirectPrs).catch(() => []),
+      getApprovedReceiptsForAccountingApi().then(setReceipts).catch(() => []),
+      getSupplierAccountsApi().then(setAccounts).catch(() => []),
+    ]).finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return <div className="text-cyan-400 animate-pulse text-xs p-6" dir="rtl">جاري تحميل بيانات لوحة المحاسبة...</div>;
   }
 
+  const pendingReviewPos = pos.filter(x => x.status === 'PENDING_ACCOUNTING_REVIEW');
   const issuedPos = pos.filter(x => x.status === 'ISSUED');
   const totalIssuedEgp = issuedPos.reduce((acc, x) => acc + Number(x.grand_total || 0), 0);
   const upcomingDeliveriesCount = pos.filter(x => x.delivery_status === 'NOT_STARTED' || x.delivery_status === 'PARTIAL').length;
+  const overdueOrIndebtedAccounts = accounts.filter(a => a.balance > 0);
+  const totalAccountingTasks = directPrs.length + pendingReviewPos.length + receipts.length;
+
   const deliverySegments = [
     { label: 'تم الإصدار', value: issuedPos.length, color: '#22c55e' },
     { label: 'قيد التوريد', value: upcomingDeliveriesCount, color: '#f59e0b' },
@@ -70,12 +84,118 @@ export const AccountingDashboardPage: React.FC = () => {
               <span>📊</span> لوحة المحاسبة والرقابة المالية
             </h1>
             <p className="text-xs text-slate-400 mt-1">
-              الاطلاع على الحركات المالية والتحليلات لأوامر الشراء المعتمدة والمصدرة بـ (EGP / ج.م).
+              الاطلاع على الحركات المالية والتحليلات والمهام المحاسبية المطلوبة بـ (EGP / ج.م).
             </p>
           </div>
           <span className="bg-blue-900/40 text-blue-300 border border-blue-700/50 px-3 py-1.5 rounded-lg text-xs font-medium">
-            👁️ للاطلاع المالي والرقابة فقط
+            🏦 الإدارة المالية والمحاسبة
           </span>
+        </div>
+      </div>
+
+      {/* ── صندوق المهام والإجراءات المالية المطلوبة منك الآن (Action Inbox) ── */}
+      <div className="rounded-2xl border-2 border-emerald-500/40 bg-gradient-to-r from-slate-900 via-emerald-950/30 to-slate-900 p-4 sm:p-5 shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-emerald-900/40 pb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600/30 border border-emerald-500/50 text-emerald-300 text-lg font-black shadow-inner">
+              ⚡
+            </span>
+            <div>
+              <h2 className="text-base font-black text-slate-100 flex items-center gap-2">
+                المهام والإجراءات المالية المطلوبة منك الآن
+                {totalAccountingTasks > 0 && (
+                  <span className="rounded-full bg-emerald-500 text-slate-950 px-2.5 py-0.5 text-xs font-black">
+                    {totalAccountingTasks} إجراء مالي معلق
+                  </span>
+                )}
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                قائمة العمليات المالية التي تتطلب مراجعتك أو اعتمادك أو تسجيل الفواتير والسداد.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+          {/* Action Card 1: Direct PRs */}
+          <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 flex flex-col justify-between gap-2.5 hover:border-cyan-500/60 transition-colors">
+            <div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-bold">طلبات شراء مباشرة</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${directPrs.length > 0 ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'bg-slate-800 text-slate-400'}`}>
+                  {directPrs.length} بانتظار الاعتماد
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                طلبات شراء بالمسار المباشر تحتاج مراجعة واعتماد الحسابات.
+              </p>
+            </div>
+            <Link to="/accounting/requests">
+              <Button variant="secondary" size="sm" className="w-full text-xs font-bold border-cyan-800/60 text-cyan-200 hover:bg-cyan-950">
+                مراجعة الطلبات المباشرة ←
+              </Button>
+            </Link>
+          </div>
+
+          {/* Action Card 2: POs pending review */}
+          <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 flex flex-col justify-between gap-2.5 hover:border-amber-500/60 transition-colors">
+            <div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-bold">أوامر شراء للتدقيق</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${pendingReviewPos.length > 0 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-800 text-slate-400'}`}>
+                  {pendingReviewPos.length} بانتظار التدقيق
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                أوامر شراء تم إنشاؤها وتتطلب مراجعة الشروط المالية.
+              </p>
+            </div>
+            <Link to="/accounting/purchase-orders">
+              <Button variant="secondary" size="sm" className="w-full text-xs font-bold border-amber-800/60 text-amber-200 hover:bg-amber-950">
+                تدقيق أوامر الشراء ←
+              </Button>
+            </Link>
+          </div>
+
+          {/* Action Card 3: Approved receipts for invoicing */}
+          <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 flex flex-col justify-between gap-2.5 hover:border-emerald-500/60 transition-colors">
+            <div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-bold">إذونات استلام جاهزة للفوترة</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${receipts.length > 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 text-slate-400'}`}>
+                  {receipts.length} جاهز للفوترة
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                بضائع تم استلامها واعتمادها بالموقع وجاهزة لتسجيل فاتورة المورد.
+              </p>
+            </div>
+            <Link to="/accounting/supplier-payments">
+              <Button variant="primary" size="sm" className="w-full text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-slate-950">
+                تسجيل الفواتير والمصروف ←
+              </Button>
+            </Link>
+          </div>
+
+          {/* Action Card 4: Supplier balances and payment */}
+          <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 flex flex-col justify-between gap-2.5 hover:border-indigo-500/60 transition-colors">
+            <div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-bold">حسابات ومديونيات الموردين</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${overdueOrIndebtedAccounts.length > 0 ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40' : 'bg-slate-800 text-slate-400'}`}>
+                  {overdueOrIndebtedAccounts.length} حساب به مديونية
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                كشوف حسابات الموردين وتسجيل الدفعات البنكية والنقدية.
+              </p>
+            </div>
+            <Link to="/accounting/supplier-accounts">
+              <Button variant="secondary" size="sm" className="w-full text-xs font-bold border-indigo-800/60 text-indigo-200 hover:bg-indigo-950">
+                فتح كشوف الحسابات ←
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 

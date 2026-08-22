@@ -459,6 +459,116 @@ export const ProcurementManagerPage: React.FC = () => {
 
       {pageError && <ErrorMessage error={pageError} onDismiss={() => setPageError(null)} onRetry={() => void loadData()} />}
 
+      {/* ── صندوق المهام والإجراءات المطلوبة من المشتريات الآن (Action Inbox) ── */}
+      <div className="rounded-2xl border-2 border-cyan-500/40 bg-gradient-to-r from-slate-900 via-cyan-950/20 to-slate-900 p-4 sm:p-5 shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-cyan-900/40 pb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-600/30 border border-cyan-500/50 text-cyan-300 text-lg font-black shadow-inner">
+              ⚡
+            </span>
+            <div>
+              <h2 className="text-base font-black text-slate-100 flex items-center gap-2">
+                المهام والإجراءات المطلوبة منك الآن
+                {queueRows.length > 0 && (
+                  <span className="rounded-full bg-cyan-500 text-slate-950 px-2.5 py-0.5 text-xs font-black">
+                    {queueRows.length} طلبات تحتاج إجراءات مشتريات
+                  </span>
+                )}
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                طلبات الشراء المعتمدة المحالة لقسم المشتريات لاختيار المسار وتجهيز العروض وإصدار أوامر الشراء.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+          {/* Card 1: Pending Route */}
+          <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 flex flex-col justify-between gap-2.5 hover:border-amber-500/60 transition-colors">
+            <div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-300 font-bold flex items-center gap-1">
+                  <span>🧭</span> تحديد مسار التوريد
+                </span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${pendingPrs.length > 0 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-800 text-slate-400'}`}>
+                  {pendingPrs.length} طلب بانتظار المسار
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1 leading-5">
+                طلبات معتمدة تتطلب اختيار مسار الشراء المباشر أو جمع عروض أسعار.
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full text-xs font-bold border-amber-800/60 text-amber-200 hover:bg-amber-950"
+              onClick={() => {
+                setActiveTab(0);
+                setQueueStage('PENDING_ROUTE');
+              }}
+            >
+              عرض طلبات تحديد المسار ({pendingPrs.length}) ←
+            </Button>
+          </div>
+
+          {/* Card 2: Quote Setup */}
+          <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 flex flex-col justify-between gap-2.5 hover:border-indigo-500/60 transition-colors">
+            <div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-300 font-bold flex items-center gap-1">
+                  <span>🏷️</span> جمع وتجهيز عروض الأسعار
+                </span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${quotePrs.length > 0 ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40' : 'bg-slate-800 text-slate-400'}`}>
+                  {quotePrs.length} طلب بانتظار العروض
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1 leading-5">
+                طلبات بمسار المنافسة تحتاج تسجيل عروض أسعار الموردين ورفع التوصيات.
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full text-xs font-bold border-indigo-800/60 text-indigo-200 hover:bg-indigo-950"
+              onClick={() => {
+                setActiveTab(0);
+                setQueueStage('QUOTE_SETUP');
+              }}
+            >
+              تجهيز عروض الأسعار ({quotePrs.length}) ←
+            </Button>
+          </div>
+
+          {/* Card 3: Ready for PO */}
+          <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 flex flex-col justify-between gap-2.5 hover:border-emerald-500/60 transition-colors">
+            <div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-300 font-bold flex items-center gap-1">
+                  <span>📄</span> جاهزة لإصدار أمر شراء (PO)
+                </span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${approvedPrs.length > 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 text-slate-400'}`}>
+                  {approvedPrs.length} طلب جاهز للـ PO
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1 leading-5">
+                طلبات معتمدة بالكامل وجاهزة لإنشاء وإصدار أمر الشراء فوراً.
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              className="w-full text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-slate-950"
+              onClick={() => {
+                setActiveTab(0);
+                setQueueStage('READY_FOR_PO');
+              }}
+            >
+              إنشاء أوامر الشراء ({approvedPrs.length}) ←
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {activeTab === 0 && (
         <section className="space-y-4">
           <div className="flex flex-col gap-3 border-b border-slate-800 pb-4 lg:flex-row lg:items-start lg:justify-between">

@@ -75,6 +75,86 @@ export const ReviewerDashboardPage: React.FC = () => {
 
       <ErrorMessage error={error} onDismiss={() => setError(null)} />
 
+      {/* ── صندوق المهام والإجراءات المطلوبة منك الآن (Action Inbox) ── */}
+      <div className="rounded-2xl border-2 border-indigo-500/40 bg-gradient-to-r from-slate-900 via-indigo-950/30 to-slate-900 p-4 sm:p-5 shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-indigo-900/40 pb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600/30 border border-indigo-500/50 text-indigo-300 text-lg font-black shadow-inner">
+              ⚡
+            </span>
+            <div>
+              <h2 className="text-base font-black text-slate-100 flex items-center gap-2">
+                المهام والإجراءات المطلوبة منك الآن
+                {(submittedCount + underReviewCount) > 0 && (
+                  <span className="rounded-full bg-indigo-500 text-white px-2.5 py-0.5 text-xs font-black">
+                    {submittedCount + underReviewCount} طلب بانتظارك
+                  </span>
+                )}
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                هذه الطلبات مقدمة من موظفي قسمك وتتطلب مراجعتك واعتمادك الفني للانتقال إلى قسم المشتريات.
+              </p>
+            </div>
+          </div>
+
+          {(submittedCount + underReviewCount) > 0 && hasPermission('purchase_request.view_assigned') && (
+            <Link to="/reviewer/requests" className="shrink-0">
+              <Button variant="primary" size="sm" className="whitespace-nowrap font-bold">
+                فتح جدول مراجعة الكل ({submittedCount + underReviewCount}) ←
+              </Button>
+            </Link>
+          )}
+        </div>
+
+        {(submittedCount + underReviewCount) > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 pt-1">
+            {requests
+              .filter(r => r.status === 'SUBMITTED' || r.status === 'UNDER_REVIEW')
+              .slice(0, 6)
+              .map(req => (
+                <div
+                  key={`pending-act-${req.id}`}
+                  className="rounded-xl border border-indigo-900/60 bg-slate-950/80 p-3.5 flex flex-col justify-between gap-3 hover:border-indigo-500/60 transition-colors shadow-sm"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-sm font-black text-cyan-300">{req.request_number}</span>
+                      <PurchaseRequestStatusBadge status={req.status} />
+                    </div>
+                    <div className="text-xs font-bold text-slate-200 truncate">
+                      مقدم الطلب: <span className="text-indigo-200">{req.requester?.name || 'غير محدد'}</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 line-clamp-1">
+                      القسم: {req.department?.name || 'غير محدد'} — {req.items?.length || 0} بنود
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                    <Link to={`/reviewer/requests/${req.id}`} className="flex-1">
+                      <Button variant="secondary" size="sm" className="w-full text-xs">
+                        تفاصيل
+                      </Button>
+                    </Link>
+                    {hasPermission('purchase_request.review') && (
+                      <Link to={`/reviewer/requests/${req.id}/review`} className="flex-[2]">
+                        <Button variant="primary" size="sm" className="w-full text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white">
+                          {req.status === 'SUBMITTED' ? 'مراجعة واعتماد الآن ←' : 'متابعة المراجعة ←'}
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-emerald-900/40 bg-emerald-950/20 p-4 text-center">
+            <span className="text-2xl block mb-1">🎉</span>
+            <div className="text-sm font-bold text-emerald-300">لا توجد طلبات معلقة بانتظار مراجعتك حالياً!</div>
+            <p className="text-xs text-slate-400 mt-1">كافة طلبات الشراء الواردة لقسمك تمت مراجعتها بالكامل.</p>
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <KpiCard title="في انتظار المراجعة" value={submittedCount} accentColor="indigo" icon={<span className="text-sm">⏳</span>} />
         <KpiCard title="قيد المراجعة" value={underReviewCount} accentColor="cyan" icon={<span className="text-sm">🔍</span>} />

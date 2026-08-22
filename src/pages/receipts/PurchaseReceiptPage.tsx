@@ -103,10 +103,32 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
 
   return (
     <div className="space-y-5" dir="rtl">
-      <div>
-        <h1 className="text-xl font-black text-slate-100">{mode === 'warehouse' ? 'استلام المواد — أمين المخزن' : 'اعتماد الاستلام — مهندس الموقع'}</h1>
-        <p className="mt-1 text-sm text-slate-400">{mode === 'warehouse' ? 'سجل الكمية المستلمة فعليًا لكل بند، ثم أرسل الإذن إلى مهندس الموقع.' : 'راجع الكميات المسجلة من أمين المخزن واعتمد إذن الاستلام لإرساله إلى الحسابات.'}</p>
+      {/* ── Action Inbox Header ── */}
+      <div className={`rounded-2xl border-2 p-4 sm:p-5 shadow-xl space-y-3 ${mode === 'warehouse' ? 'border-amber-500/40 bg-gradient-to-r from-slate-900 via-amber-950/20 to-slate-900' : 'border-emerald-500/40 bg-gradient-to-r from-slate-900 via-emerald-950/20 to-slate-900'}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-lg font-black shadow-inner ${mode === 'warehouse' ? 'bg-amber-600/30 border border-amber-500/50 text-amber-300' : 'bg-emerald-600/30 border border-emerald-500/50 text-emerald-300'}`}>
+              {mode === 'warehouse' ? '📦' : '🏗️'}
+            </span>
+            <div>
+              <h1 className="text-lg font-black text-slate-100 flex items-center gap-2">
+                {mode === 'warehouse' ? 'مهام استلام المواد بالمخزن' : 'مهام فحص واعتماد الاستلام الميداني'}
+                {(mode === 'warehouse' ? orders.length : receipts.length) > 0 && (
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-black ${mode === 'warehouse' ? 'bg-amber-500 text-slate-950' : 'bg-emerald-500 text-slate-950'}`}>
+                    {(mode === 'warehouse' ? orders.length : receipts.length)} مهمة بانتظار إجرائك
+                  </span>
+                )}
+              </h1>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {mode === 'warehouse'
+                  ? 'هذه أوامر الشراء المصدرة للموردين. فور وصول البضاعة للمخزن، سجّل الكميات المستلمة واضغط "إرسال إلى مهندس الموقع".'
+                  : 'هذه أذون الاستلام المسجلة من أمين المخزن. افحص البضاعة هندسيًا وفنيًا في الموقع واضغط "اعتماد الاستلام وإرساله للحسابات".'}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
+
       {error && <ErrorMessage error={error} onDismiss={() => setError(null)} />}
       <TableFilterBar
         searchValue={searchTerm}

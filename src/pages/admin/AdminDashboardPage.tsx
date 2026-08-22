@@ -89,17 +89,67 @@ export const AdminDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      <Card className="flex flex-col gap-4 border-cyan-500/20 bg-cyan-950/10 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h2 className="text-sm font-bold text-cyan-200">مركز مراقبة النظام والـDeploy</h2>
-          <p className="mt-1 text-xs leading-6 text-slate-400">
-            تابع صحة Laravel وPostgreSQL وSSE والـMigrations والتنبيهات وسجل التشغيل من شاشة واحدة.
-          </p>
+      {/* ── صندوق العمليات والإدارة السريعة (Admin Quick Actions Hub) ── */}
+      <div className="rounded-2xl border-2 border-indigo-500/40 bg-gradient-to-r from-slate-900 via-indigo-950/20 to-slate-900 p-4 sm:p-5 shadow-xl space-y-4">
+        <div className="flex items-center gap-2.5 border-b border-indigo-900/40 pb-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600/30 border border-indigo-500/50 text-indigo-300 text-lg font-black shadow-inner">
+            ⚡
+          </span>
+          <div>
+            <h2 className="text-base font-black text-slate-100">
+              مركز الإجراءات والعمليات الإدارية السريعة
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              إدارة المستخدمين والأقسام والأصناف والموردين ومراقبة أداء النظام.
+            </p>
+          </div>
         </div>
-        <Link to="/admin/system-monitor" className="shrink-0">
-          <Button variant="secondary" size="sm" className="w-full lg:w-auto">فتح مركز المراقبة ←</Button>
-        </Link>
-      </Card>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 pt-1">
+          {hasPermission('system.users.manage') && (
+            <Link to="/admin/users">
+              <Button variant="secondary" size="sm" className="w-full h-auto py-2.5 text-xs flex flex-col gap-1 items-center border-slate-700 bg-slate-950/80 hover:border-cyan-500/60">
+                <span className="text-base">👥</span>
+                <span className="font-bold text-slate-200">إدارة المستخدمين</span>
+              </Button>
+            </Link>
+          )}
+
+          {hasPermission('system.departments.manage') && (
+            <Link to="/admin/departments">
+              <Button variant="secondary" size="sm" className="w-full h-auto py-2.5 text-xs flex flex-col gap-1 items-center border-slate-700 bg-slate-950/80 hover:border-indigo-500/60">
+                <span className="text-base">🏢</span>
+                <span className="font-bold text-slate-200">الأقسام والهيكل</span>
+              </Button>
+            </Link>
+          )}
+
+          {hasPermission('system.items.manage') && (
+            <Link to="/admin/items">
+              <Button variant="secondary" size="sm" className="w-full h-auto py-2.5 text-xs flex flex-col gap-1 items-center border-slate-700 bg-slate-950/80 hover:border-emerald-500/60">
+                <span className="text-base">📦</span>
+                <span className="font-bold text-slate-200">كتالوج الأصناف</span>
+              </Button>
+            </Link>
+          )}
+
+          {(hasPermission('system.suppliers.manage') || hasPermission('supplier.view')) && (
+            <Link to="/admin/suppliers">
+              <Button variant="secondary" size="sm" className="w-full h-auto py-2.5 text-xs flex flex-col gap-1 items-center border-slate-700 bg-slate-950/80 hover:border-amber-500/60">
+                <span className="text-base">🏭</span>
+                <span className="font-bold text-slate-200">الموردين والأرصدة</span>
+              </Button>
+            </Link>
+          )}
+
+          <Link to="/admin/system-monitor">
+            <Button variant="secondary" size="sm" className="w-full h-auto py-2.5 text-xs flex flex-col gap-1 items-center border-cyan-800/60 bg-cyan-950/30 text-cyan-300 hover:border-cyan-400">
+              <span className="text-base">🖥️</span>
+              <span className="font-bold text-cyan-200">مراقبة صحة النظام</span>
+            </Button>
+          </Link>
+        </div>
+      </div>
 
       {error && <ErrorMessage error={error} />}
 

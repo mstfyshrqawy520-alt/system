@@ -130,14 +130,26 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
 
   return (
     <div className="space-y-5" dir="rtl">
-      <div className="flex flex-col gap-2 border-b border-slate-800 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-slate-800 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-black text-slate-100">طلبات القرار التنفيذي</h1>
-          <p className="mt-1 text-xs text-slate-400">طلبات اعتمدها المراجع وتنتظر قرار المدير التنفيذي / المدير العام.</p>
+          <h1 className="text-xl font-black text-slate-100 flex items-center gap-2">
+            <span>👑</span> طلبات القرار التنفيذي
+          </h1>
+          <p className="mt-1 text-xs text-slate-400">
+            طلبات الشراء التي اعتمدها المراجع وتنتظر موافقتك أو تعديلك أو رفضك التنفيذي.
+          </p>
         </div>
-        <span className="rounded-lg border border-amber-700/50 bg-amber-950/30 px-3 py-2 text-xs font-bold text-amber-200">
-          {requests.length} طلب منتظر
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-lg border border-amber-700/50 bg-amber-950/40 px-3 py-2 text-xs font-black text-amber-200">
+            {requests.length} طلب بانتظار قرارك
+          </span>
+          <a
+            href="/purchase-quotes/decision"
+            className="rounded-lg border border-indigo-700/50 bg-indigo-950/40 px-3 py-2 text-xs font-bold text-indigo-200 hover:bg-indigo-900/60 transition-colors"
+          >
+            ⚖️ شاشة البت في عروض الأسعار ←
+          </a>
+        </div>
       </div>
 
       {error && <div className="rounded-xl border border-rose-800/50 bg-rose-950/40 px-4 py-3 text-sm text-rose-200">{error}</div>}
