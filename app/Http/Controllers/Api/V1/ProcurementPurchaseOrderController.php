@@ -7,6 +7,7 @@ use App\Http\Requests\Procurement\AddPurchaseOrderItemRequest;
 use App\Http\Requests\Procurement\CreatePurchaseOrderRequest;
 use App\Http\Requests\Procurement\UpdatePurchaseOrderHeaderRequest;
 use App\Http\Requests\Procurement\UpdatePurchaseOrderItemRequest;
+use App\Http\Requests\Procurement\StoreDirectPurchaseOrderRequest;
 use App\Http\Resources\PurchaseOrderResource;
 use App\Http\Resources\PurchaseRequestResource;
 use App\Http\Resources\SupplierResource;
@@ -350,25 +351,9 @@ class ProcurementPurchaseOrderController extends Controller
      * Create a direct purchase request. It must be approved by accounting and
      * the executive manager before procurement can create its purchase order.
      */
-    public function storeDirectPo(Request $request): JsonResponse
+    public function storeDirectPo(StoreDirectPurchaseOrderRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'supplier_id' => ['required', 'integer', 'exists:suppliers,id'],
-            'department_id' => ['required', 'integer', 'exists:departments,id'],
-            'site_engineer_user_id' => ['required', 'integer', 'exists:users,id'],
-            'delivery_date' => ['nullable', 'date'],
-            'priority' => ['nullable', 'string', 'in:LOW,NORMAL,HIGH,URGENT'],
-            'notes' => ['nullable', 'string', 'max:2000'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.item_id' => ['nullable', 'integer', 'exists:items,id'],
-            'items.*.item_description' => ['required', 'string', 'max:255'],
-            'items.*.item_reference' => ['required', 'string', 'max:100'],
-            'items.*.region' => ['required', 'string', 'max:150'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
-            'items.*.uom' => ['required', 'string', 'max:30'],
-            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'items.*.specifications' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $engineerIsAssigned = \App\Models\User::query()
             ->whereKey($validated['site_engineer_user_id'])
