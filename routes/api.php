@@ -346,6 +346,8 @@ Route::middleware('auth:sanctum')->prefix('notifications')->group(function () {
     Route::get('/stream', [NotificationController::class, 'stream'])->middleware('throttle:30,1');
     Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::post('/device-token', [NotificationController::class, 'registerDeviceToken']);
+    Route::delete('/device-token', [NotificationController::class, 'deleteDeviceToken']);
 });
 
 // Admin System Management Routes

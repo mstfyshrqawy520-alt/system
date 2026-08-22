@@ -114,4 +114,49 @@ class NotificationController extends Controller
             'message' => 'تم تحديد جميع الإشعارات كمقروءة.',
         ]);
     }
+
+    public function registerDeviceToken(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'token' => ['required', 'string'],
+            'device_type' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $user = $request->user();
+        $token = trim($validated['token']);
+        $deviceType = $validated['device_type'] ?? 'web';
+
+        $deviceToken = \App\Models\UserDeviceToken::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'token' => $token,
+            ],
+            [
+                'device_type' => $deviceType,
+                'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                'last_used_at' => now(),
+            ]
+        );
+
+        return response()->json([
+            'message' => 'تم تسجيل رمز الجهاز بنجاح للإشعارات الفورية.',
+            'device_token' => $deviceToken,
+        ], 200);
+    }
+
+    public function deleteDeviceToken(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'token' => ['required', 'string'],
+        ]);
+
+        $request->user()->deviceTokens()
+            ->where('token', trim($validated['token']))
+            ->delete();
+
+        return response()->json([
+            'message' => 'تم إلغاء تفعيل الإشعارات الفورية على هذا الجهاز.',
+        ]);
+    }
 }
+
