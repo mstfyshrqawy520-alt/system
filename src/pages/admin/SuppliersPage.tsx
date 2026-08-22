@@ -188,81 +188,145 @@ export const SuppliersPage: React.FC = () => {
       <TableColumnFilters filters={[{ key: 'code', label: 'الكود', value: columnFilters.code, onChange: (value) => setColumnFilters(current => ({ ...current, code: value })) }, { key: 'name', label: 'اسم الشركة / المورد', value: columnFilters.name, onChange: (value) => setColumnFilters(current => ({ ...current, name: value })) }, { key: 'contact', label: 'مسؤول التواصل', value: columnFilters.contact, onChange: (value) => setColumnFilters(current => ({ ...current, contact: value })) }, { key: 'contactData', label: 'البريد والهاتف', value: columnFilters.contactData, onChange: (value) => setColumnFilters(current => ({ ...current, contactData: value })) }, { key: 'status', label: 'الحالة', value: columnFilters.status, onChange: (value) => setColumnFilters(current => ({ ...current, status: value })) }, { key: 'action', label: 'الإجراءات', value: columnFilters.action, onChange: (value) => setColumnFilters(current => ({ ...current, action: value })) }]} hasActiveFilters={Object.values(columnFilters).some(Boolean)} onClear={() => setColumnFilters({ code: '', name: '', contact: '', contactData: '', status: '', action: '' })} />
 
       {/* الموردون Table */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>الكود</TableHead>
-            <TableHead>اسم الشركة / المورد</TableHead>
-            <TableHead>مسؤول التواصل</TableHead>
-            <TableHead>البريد والهاتف</TableHead>
-            <TableHead>الحالة</TableHead>
-            <TableHead className="text-center">الإجراءات</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredSuppliers.length === 0 ? (
+      <div className="hidden min-w-0 md:block">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-slate-400 text-xs">
-                <div className="space-y-2">
-                  <p>{suppliers.length === 0 ? 'لا يوجد موردون مسجلون حتى الآن.' : 'لم نجد موردين مطابقين للفلاتر الحالية.'}</p>
-                  {searchTerm ? (
-                    <Button variant="secondary" size="sm" onClick={() => setSearchTerm('')}>مسح البحث</Button>
+              <TableHead>الكود</TableHead>
+              <TableHead>اسم الشركة / المورد</TableHead>
+              <TableHead>مسؤول التواصل</TableHead>
+              <TableHead>البريد والهاتف</TableHead>
+              <TableHead>الحالة</TableHead>
+              <TableHead className="text-center">الإجراءات</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredSuppliers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8 text-slate-400 text-xs">
+                  <div className="space-y-2">
+                    <p>{suppliers.length === 0 ? 'لا يوجد موردون مسجلون حتى الآن.' : 'لم نجد موردين مطابقين للفلاتر الحالية.'}</p>
+                    {searchTerm ? (
+                      <Button variant="secondary" size="sm" onClick={() => setSearchTerm('')}>مسح البحث</Button>
+                    ) : (
+                      <Button variant="secondary" size="sm" onClick={() => void loadSuppliers()}>إعادة التحميل</Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredSuppliers.map((sup) => (
+              <TableRow key={sup.id}>
+                <TableCell className="font-mono font-bold text-cyan-400">
+                  {sup.code || `SUP-${sup.id}`}
+                </TableCell>
+                <TableCell className="font-bold text-slate-100">
+                  <div>{sup.name}</div>
+                  {sup.address && <div className="text-[11px] text-slate-400 font-normal">{sup.address}</div>}
+                </TableCell>
+                <TableCell className="font-bold text-slate-200">{sup.contact_name || 'غير محدد'}</TableCell>
+                <TableCell>
+                  <div className="font-mono text-cyan-400">{sup.email || '—'}</div>
+                  <div className="text-[11px] text-slate-400 font-mono" dir="ltr">{sup.phone || '—'}</div>
+                </TableCell>
+                <TableCell>
+                  {sup.is_active ? (
+                    <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/60 rounded">
+                      معتمد
+                    </span>
                   ) : (
-                    <Button variant="secondary" size="sm" onClick={() => void loadSuppliers()}>إعادة التحميل</Button>
+                    <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700 rounded">
+                      غير مفعّل
+                    </span>
                   )}
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleOpenEdit(sup)}
+                      className="px-2.5 py-1 text-[11px]"
+                    >
+                      تعديل
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleDelete(sup)}
+                      className="px-2.5 py-1 text-[11px]"
+                    >
+                      حذف
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="space-y-3 md:hidden">
+        {filteredSuppliers.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-800 bg-slate-900/50 p-8 text-center text-xs text-slate-400 space-y-2">
+            <p>{suppliers.length === 0 ? 'لا يوجد موردون مسجلون حتى الآن.' : 'لم نجد موردين مطابقين للفلاتر الحالية.'}</p>
+            {searchTerm ? (
+              <Button variant="secondary" size="sm" onClick={() => setSearchTerm('')} className="w-full min-h-10">مسح البحث</Button>
+            ) : (
+              <Button variant="secondary" size="sm" onClick={() => void loadSuppliers()} className="w-full min-h-10">إعادة التحميل</Button>
+            )}
+          </div>
+        ) : (
+          filteredSuppliers.map((sup) => (
+            <article key={`mobile-admin-sup-${sup.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+              <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-3">
+                <div className="min-w-0">
+                  <h3 className="break-normal font-bold text-sm text-slate-100">{sup.name}</h3>
+                  <span className="font-mono text-xs text-cyan-400 font-semibold">{sup.code || `SUP-${sup.id}`}</span>
+                  {sup.address && <p className="text-[11px] text-slate-400 mt-0.5">{sup.address}</p>}
                 </div>
-              </TableCell>
-            </TableRow>
-          ) : (
-            filteredSuppliers.map((sup) => (
-            <TableRow key={sup.id}>
-              <TableCell className="font-mono font-bold text-cyan-400">
-                {sup.code || `SUP-${sup.id}`}
-              </TableCell>
-              <TableCell className="font-bold text-slate-100">
-                <div>{sup.name}</div>
-                {sup.address && <div className="text-[11px] text-slate-400 font-normal">{sup.address}</div>}
-              </TableCell>
-              <TableCell className="font-bold text-slate-200">{sup.contact_name || 'غير محدد'}</TableCell>
-              <TableCell>
-                <div className="font-mono text-cyan-400">{sup.email || '—'}</div>
-                <div className="text-[11px] text-slate-400 font-mono" dir="ltr">{sup.phone || '—'}</div>
-              </TableCell>
-              <TableCell>
-                {sup.is_active ? (
-                  <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/60 rounded">
-                    معتمد
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700 rounded">
-                    غير مفعّل
-                  </span>
-                )}
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleOpenEdit(sup)}
-                    className="px-2.5 py-1 text-[11px]"
-                  >
-                    تعديل
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handleDelete(sup)}
-                    className="px-2.5 py-1 text-[11px]"
-                  >
-                    حذف
-                  </Button>
+                <span className={`shrink-0 inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded ${
+                  sup.is_active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/60' : 'bg-slate-800 text-slate-400 border border-slate-700'
+                }`}>
+                  {sup.is_active ? 'معتمد' : 'غير مفعّل'}
+                </span>
+              </div>
+              <dl className="mt-3 grid min-w-0 grid-cols-1 gap-2 text-xs min-[420px]:grid-cols-2">
+                <div>
+                  <dt className="text-slate-500">مسؤول التواصل</dt>
+                  <dd className="mt-1 font-bold text-slate-200">{sup.contact_name || 'غير محدد'}</dd>
                 </div>
-              </TableCell>
-            </TableRow>
-          )))}
-        </TableBody>
-      </Table>
+                <div>
+                  <dt className="text-slate-500">الهاتف</dt>
+                  <dd className="mt-1 font-mono text-slate-300" dir="ltr">{sup.phone || '—'}</dd>
+                </div>
+                <div className="min-[420px]:col-span-2">
+                  <dt className="text-slate-500">البريد الإلكتروني</dt>
+                  <dd className="mt-1 font-mono text-cyan-400 break-all">{sup.email || '—'}</dd>
+                </div>
+              </dl>
+              <div className="mt-4 flex items-center gap-2 border-t border-slate-800 pt-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleOpenEdit(sup)}
+                  className="flex-1 min-h-10 text-xs font-bold"
+                >
+                  تعديل
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => handleDelete(sup)}
+                  className="flex-1 min-h-10 text-xs font-bold"
+                >
+                  حذف
+                </Button>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
 
       {/* Modal */}
       <Modal
