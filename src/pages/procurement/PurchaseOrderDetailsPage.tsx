@@ -94,7 +94,7 @@ export const PurchaseOrderDetailsPage: React.FC = () => {
   };
 
   return (
-    <div className="procurement-reference-page space-y-6 animate-fade-in" dir="rtl">
+    <div className="procurement-reference-page space-y-6 pb-24 md:pb-0 animate-fade-in" dir="rtl">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
@@ -107,7 +107,8 @@ export const PurchaseOrderDetailsPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Desktop Header Actions */}
+        <div className="hidden md:flex flex-wrap items-center gap-2">
           {isEditable && hasPermission('purchase_order.edit') && (
             <Link to={`/procurement/purchase-orders/${po.id}/edit`}>
               <Button variant="warning" size="md" className="bg-amber-950/60 text-amber-300 border-amber-800/60 hover:bg-amber-900/60">
@@ -135,6 +136,38 @@ export const PurchaseOrderDetailsPage: React.FC = () => {
             🖨️ معاينة وتصدير للطباعة
           </Button>
         </div>
+      </div>
+
+      {/* Sticky Mobile Bottom Action Bar */}
+      <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-between gap-2 border-t border-slate-800 bg-slate-900/95 p-3 shadow-2xl backdrop-blur md:hidden">
+        {isEditable && hasPermission('purchase_order.edit') && (
+          <Link to={`/procurement/purchase-orders/${po.id}/edit`} className="flex-1">
+            <Button variant="warning" size="md" className="w-full min-h-10 text-xs bg-amber-950/60 text-amber-300 border-amber-800/60 hover:bg-amber-900/60">
+              ✏️ تعديل
+            </Button>
+          </Link>
+        )}
+
+        {isEditable && hasPermission('purchase_order.edit') && (
+          <Button
+            variant="primary"
+            size="md"
+            onClick={handleSubmitToAccounting}
+            isLoading={submitting}
+            className="flex-1 min-h-10 text-xs font-bold"
+          >
+            {po.status === 'RETURNED_TO_PROCUREMENT' ? 'إعادة الإرسال' : 'إرسال للحسابات'}
+          </Button>
+        )}
+
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={() => setIsPrintModalOpen(true)}
+          className="flex-1 min-h-10 text-xs"
+        >
+          🖨️ طباعة
+        </Button>
       </div>
 
       {error && <ErrorMessage error={error} />}
