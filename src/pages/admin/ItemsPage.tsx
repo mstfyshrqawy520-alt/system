@@ -189,66 +189,120 @@ export const ItemsPage: React.FC = () => {
       />
 
       {/* Table */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>اسم الصنف</TableHead>
-            <TableHead>التصنيف</TableHead>
-            <TableHead>الوحدة</TableHead>
-            <TableHead>الحالة</TableHead>
-            <TableHead className="text-center">الإجراءات</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredItems.length === 0 ? (
+      <div className="hidden min-w-0 md:block">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={6} className="p-8 text-center text-slate-400 text-xs">
-                {items.length === 0 ? 'لا توجد أصناف مسجلة حتى الآن.' : 'لم نجد أصنافًا مطابقة للفلاتر الحالية.'}
-              </TableCell>
+              <TableHead>اسم الصنف</TableHead>
+              <TableHead>التصنيف</TableHead>
+              <TableHead>الوحدة</TableHead>
+              <TableHead>الحالة</TableHead>
+              <TableHead className="text-center">الإجراءات</TableHead>
             </TableRow>
-          ) : filteredItems.map((item) => (
-              <TableRow key={item.id}>
-              <TableCell className="font-bold text-slate-100">
-                <div>{item.name}</div>
-                {item.description && <div className="text-[11px] text-slate-400 font-normal">{item.description}</div>}
-              </TableCell>
-              <TableCell className="text-slate-300 font-bold">{item.category?.name || 'غير مصنف'}</TableCell>
-              <TableCell className="text-slate-400">{getUnitLabel(item.uom)}</TableCell>
-              <TableCell>
-                {item.is_active ? (
-                  <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/60 rounded">
-                    نشط
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700 rounded">
-                    معطل
-                  </span>
-                )}
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleOpenEdit(item)}
-                    className="px-2.5 py-1 text-[11px]"
-                  >
-                    تعديل
-                  </Button>
-                  <Button
-                    variant={item.is_active ? 'warning' : 'success'}
-                    size="sm"
-                    onClick={() => handleToggleActive(item.id)}
-                    className="px-2.5 py-1 text-[11px]"
-                  >
-                    {item.is_active ? 'تعطيل' : 'تفعيل'}
-                  </Button>
+          </TableHeader>
+          <TableBody>
+            {filteredItems.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="p-8 text-center text-slate-400 text-xs">
+                  {items.length === 0 ? 'لا توجد أصناف مسجلة حتى الآن.' : 'لم نجد أصنافًا مطابقة للفلاتر الحالية.'}
+                </TableCell>
+              </TableRow>
+            ) : filteredItems.map((item) => (
+                <TableRow key={item.id}>
+                <TableCell className="font-bold text-slate-100">
+                  <div>{item.name}</div>
+                  {item.description && <div className="text-[11px] text-slate-400 font-normal">{item.description}</div>}
+                </TableCell>
+                <TableCell className="text-slate-300 font-bold">{item.category?.name || 'غير مصنف'}</TableCell>
+                <TableCell className="text-slate-400">{getUnitLabel(item.uom)}</TableCell>
+                <TableCell>
+                  {item.is_active ? (
+                    <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/60 rounded">
+                      نشط
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700 rounded">
+                      معطل
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleOpenEdit(item)}
+                      className="px-2.5 py-1 text-[11px]"
+                    >
+                      تعديل
+                    </Button>
+                    <Button
+                      variant={item.is_active ? 'warning' : 'success'}
+                      size="sm"
+                      onClick={() => handleToggleActive(item.id)}
+                      className="px-2.5 py-1 text-[11px]"
+                    >
+                      {item.is_active ? 'تعطيل' : 'تفعيل'}
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="space-y-3 md:hidden">
+        {filteredItems.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-800 bg-slate-900/50 p-8 text-center text-xs text-slate-400">
+            {items.length === 0 ? 'لا توجد أصناف مسجلة حتى الآن.' : 'لم نجد أصنافًا مطابقة للفلاتر الحالية.'}
+          </div>
+        ) : (
+          filteredItems.map((item) => (
+            <article key={`mobile-item-${item.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+              <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-3">
+                <div className="min-w-0">
+                  <h3 className="break-normal font-bold text-sm text-slate-100">{item.name}</h3>
+                  {item.description && <p className="text-[11px] text-slate-400 mt-0.5">{item.description}</p>}
                 </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                <span className={`shrink-0 inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded ${
+                  item.is_active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/60' : 'bg-slate-800 text-slate-400 border border-slate-700'
+                }`}>
+                  {item.is_active ? 'نشط' : 'معطل'}
+                </span>
+              </div>
+              <dl className="mt-3 grid min-w-0 grid-cols-1 gap-2 text-xs min-[420px]:grid-cols-2">
+                <div>
+                  <dt className="text-slate-500">التصنيف</dt>
+                  <dd className="mt-1 font-bold text-slate-200">{item.category?.name || 'غير مصنف'}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">الوحدة</dt>
+                  <dd className="mt-1 text-slate-300">{getUnitLabel(item.uom)}</dd>
+                </div>
+              </dl>
+              <div className="mt-4 flex items-center gap-2 border-t border-slate-800 pt-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleOpenEdit(item)}
+                  className="flex-1 min-h-10 text-xs font-bold"
+                >
+                  تعديل
+                </Button>
+                <Button
+                  variant={item.is_active ? 'warning' : 'success'}
+                  size="sm"
+                  onClick={() => handleToggleActive(item.id)}
+                  className="flex-1 min-h-10 text-xs font-bold"
+                >
+                  {item.is_active ? 'تعطيل' : 'تفعيل'}
+                </Button>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
 
       {/* Modal */}
       <Modal
