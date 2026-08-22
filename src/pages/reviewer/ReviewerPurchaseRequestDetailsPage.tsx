@@ -11,7 +11,6 @@ import { parseApiError } from '../../utils/apiError';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
-import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import { getUnitLabel } from '../../utils/units';
 import SystemEventTimeline from '../../components/ui/SystemEventTimeline';
 
@@ -228,33 +227,67 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
           <span>📦</span> عناصر طلب الشراء
         </h3>
 
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>#</TableHead>
-              <TableHead>رقم قطعة الأرض</TableHead>
-              <TableHead>المنطقة</TableHead>
-              <TableHead>وصف العنصر</TableHead>
-              <TableHead>الكمية</TableHead>
-              <TableHead>الوحدة</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {requestData.items?.map((item, index) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-bold text-slate-400">{index + 1}</TableCell>
-                <TableCell className="font-mono text-slate-300">{item.item_reference || '—'}</TableCell>
-                <TableCell className="text-slate-300">{item.region || '—'}</TableCell>
-                <TableCell className="font-bold text-slate-100">{item.item_description}</TableCell>
-                <TableCell className="font-mono font-bold text-slate-200">
-                  {parseFloat(item.quantity).toLocaleString()}
-                </TableCell>
-                <TableCell className="text-slate-400">{getUnitLabel(item.uom)}</TableCell>
+        <div className="hidden min-w-0 md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead>رقم قطعة الأرض</TableHead>
+                <TableHead>المنطقة</TableHead>
+                <TableHead>وصف العنصر</TableHead>
+                <TableHead>الكمية</TableHead>
+                <TableHead>الوحدة</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {requestData.items?.map((item, index) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-bold text-slate-400">{index + 1}</TableCell>
+                  <TableCell className="font-mono text-slate-300">{item.item_reference || '—'}</TableCell>
+                  <TableCell className="text-slate-300">{item.region || '—'}</TableCell>
+                  <TableCell className="font-bold text-slate-100">{item.item_description}</TableCell>
+                  <TableCell className="font-mono font-bold text-slate-200">
+                    {parseFloat(item.quantity).toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-slate-400">{getUnitLabel(item.uom)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
 
+        <div className="space-y-3 md:hidden">
+          {requestData.items?.map((item, index) => (
+            <article key={`mobile-reviewer-item-${item.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <span className="shrink-0 rounded-md bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-300">
+                  بند {index + 1}
+                </span>
+                <span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">
+                  {item.item_reference || 'بدون رقم قطعة'}
+                </span>
+              </div>
+              <dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
+                <div className="min-w-0 min-[420px]:col-span-2">
+                  <dt className="text-slate-500">وصف العنصر</dt>
+                  <dd className="mt-1 break-normal font-bold leading-6 text-slate-100">
+                    {item.item_description}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">المنطقة</dt>
+                  <dd className="mt-1 break-normal text-slate-300">{item.region || 'غير محددة'}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">الكمية والوحدة</dt>
+                  <dd className="mt-1 whitespace-nowrap font-mono text-slate-200">
+                    {parseFloat(item.quantity).toLocaleString()} {getUnitLabel(item.uom)}
+                  </dd>
+                </div>
+              </dl>
+            </article>
+          ))}
+        </div>
       </div>
 
       <SystemEventTimeline entity="purchase_request" entityId={requestData.id} />
