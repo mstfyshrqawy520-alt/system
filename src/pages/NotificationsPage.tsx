@@ -268,13 +268,14 @@ export const NotificationsPage: React.FC = () => {
           </p>
         </div>
 
-        <div>
+        <div className="w-full sm:w-auto">
           <Button
             variant="secondary"
             size="sm"
             onClick={handleMarkAllAsRead}
             disabled={unreadCount === 0 || markingAll}
             isLoading={markingAll}
+            className="w-full sm:w-auto min-h-10"
           >
             تحديد الكل كمقروء
           </Button>
@@ -285,7 +286,7 @@ export const NotificationsPage: React.FC = () => {
       {error && (
         <div className="space-y-3">
           <ErrorMessage error={error} />
-          <Button variant="primary" size="sm" onClick={loadNotificationsData}>
+          <Button variant="primary" size="sm" onClick={loadNotificationsData} className="w-full sm:w-auto min-h-10">
             إعادة المحاولة
           </Button>
         </div>
@@ -321,15 +322,15 @@ export const NotificationsPage: React.FC = () => {
                     : 'bg-slate-900/50 border-slate-800/80 opacity-90'
                 }`}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start space-x-3 space-x-reverse">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                  <div className="flex items-start space-x-3 space-x-reverse min-w-0">
                     <span
                       className={`mt-1.5 h-2.5 w-2.5 rounded-full shrink-0 ${
                         isUnread ? 'bg-cyan-400 shadow-sm shadow-cyan-400/50 animate-pulse' : 'bg-slate-700'
                       }`}
                     />
 
-                    <div>
+                    <div className="min-w-0">
                       <h4
                         className={`text-xs ${
                           isUnread ? 'font-bold text-slate-100' : 'font-normal text-slate-300'
@@ -337,7 +338,7 @@ export const NotificationsPage: React.FC = () => {
                       >
                         {notif.title}
                       </h4>
-                      <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+                      <p className="mt-1 text-xs text-slate-400 leading-relaxed break-normal">
                         {notif.message}
                       </p>
                       {notif.data?.purchase_order_id && notif.data?.purchase_receipt_id && (
@@ -353,7 +354,7 @@ export const NotificationsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center justify-stretch sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/60">
                     {actionLabel && (
                       <Button
                         variant="primary"
@@ -361,7 +362,7 @@ export const NotificationsPage: React.FC = () => {
                         onClick={(e) => { e.stopPropagation(); void handleNotificationClick(notif); }}
                         isLoading={openingId === notif.id}
                         disabled={openingId !== null && openingId !== notif.id}
-                        className="text-[11px]"
+                        className="text-xs min-h-10 flex-1 sm:flex-initial whitespace-nowrap"
                       >
                         {actionLabel}
                       </Button>
@@ -372,7 +373,7 @@ export const NotificationsPage: React.FC = () => {
                         size="sm"
                         onClick={(e) => handleMarkAsRead(e, notif)}
                         isLoading={markingId === notif.id}
-                        className="text-[11px] hover:bg-slate-800 border border-slate-700/60"
+                        className="text-xs min-h-10 flex-1 sm:flex-initial hover:bg-slate-800 border border-slate-700/60 whitespace-nowrap"
                       >
                         تحديد كمقروء
                       </Button>
