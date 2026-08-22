@@ -1,5 +1,5 @@
 import React, { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   CreateSupplierPaymentPayload,
   SupplierAccountDetails,
@@ -21,214 +21,418 @@ const today = getTodayInputDate;
 const money = (value: string | number | null | undefined) => `${Number(value || 0).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م`;
 const paymentMethods: Record<string, string> = { BANK_TRANSFER: 'تحويل بنكي', CASH: 'نقدي', CHEQUE: 'شيك' };
 
-const SupplierAccountDetailsView: React.FC<{
+/**
+ * Dedicated Full-Page Supplier Account Statement View
+ */
+const SupplierAccountDedicatedPage: React.FC<{
   selected: SupplierAccountDetails;
-  onClose: () => void;
+  onBack: () => void;
   onRecordPayment: (account: SupplierAccountSummary) => void;
-}> = ({ selected, onClose, onRecordPayment }) => (
-  <Card className="space-y-5 border-cyan-800/60">
-    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between border-b border-slate-800 pb-4">
-      <div className="min-w-0">
-        <h2 className="break-normal text-lg font-black text-slate-100 flex items-center gap-2">
-          <span>📋</span> كشف حساب: {selected.supplier.company_name}
-        </h2>
-        <p className="mt-1 break-normal text-xs text-slate-400">
-          {selected.supplier.code ? `كود: ${selected.supplier.code} — ` : ''}
-          {selected.supplier.phone || 'بدون هاتف'} — {selected.supplier.email || 'بدون بريد'}
-        </p>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          size="sm"
-          variant="success"
-          onClick={() => onRecordPayment(selected.summary)}
-        >
-          ➕ تسجيل دفعة سداد
-        </Button>
-        <Link to={`/accounting/supplier-payments?supplier_id=${selected.supplier.id}`}>
-          <Button size="sm" variant="primary">
-            تسجيل فاتورة جديدة
+}> = ({ selected, onBack, onRecordPayment }) => {
+  return (
+    <div className="min-w-0 space-y-6 animate-fade-in" dir="rtl">
+      {/* Top Header & Navigation */}
+      <div className="flex flex-col gap-4 border-b border-slate-800 pb-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 space-y-1.5">
+          <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
+            <button
+              type="button"
+              onClick={onBack}
+              className="hover:underline flex items-center gap-1 text-slate-400 hover:text-cyan-300 transition-colors"
+            >
+              <span>← حسابات الموردين</span>
+            </button>
+            <span className="text-slate-600">/</span>
+            <span>كشف حساب المورد</span>
+          </div>
+
+          <h1 className="text-xl md:text-2xl font-black text-slate-100 flex items-center gap-2 flex-wrap">
+            <span>📋</span>
+            <span>كشف حساب: {selected.supplier.company_name}</span>
+            <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+              selected.summary.is_overpaid
+                ? 'bg-cyan-950 text-cyan-300 border border-cyan-800/60'
+                : selected.summary.balance > 0
+                ? 'bg-amber-950 text-amber-300 border border-amber-800/60'
+                : 'bg-emerald-950 text-emerald-300 border border-emerald-800/60'
+            }`}>
+              {selected.summary.is_overpaid ? 'رصيد دائن (دفع زائد)' : selected.summary.balance > 0 ? 'مديونية قائمة مستحقة' : 'الحساب مسدد بالكامل'}
+            </span>
+          </h1>
+
+          <p className="text-xs text-slate-400 flex items-center gap-3 flex-wrap">
+            {selected.supplier.code && <span className="font-mono bg-slate-800/80 px-2 py-0.5 rounded text-slate-300">الكود: {selected.supplier.code}</span>}
+            {selected.supplier.phone && <span>📞 {selected.supplier.phone}</span>}
+            {selected.supplier.email && <span>✉️ {selected.supplier.email}</span>}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="font-bold flex items-center gap-1.5"
+            onClick={onBack}
+          >
+            <span>⬅</span>
+            <span>العودة لجميع الموردين</span>
           </Button>
-        </Link>
-        <button
-          type="button"
-          className="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
-          onClick={onClose}
-        >
-          ✕ إغلاق الكشف
-        </button>
-      </div>
-    </div>
 
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="rounded-xl bg-slate-950 p-4 border border-amber-900/40">
-        <div className="text-xs text-slate-400">الرصيد الافتتاحي (مديونية سابقة)</div>
-        <div className="mt-1 whitespace-nowrap font-mono font-black text-amber-300 text-xl">
-          {money(selected.summary.opening_balance || 0)}
-        </div>
-        {selected.supplier.opening_balance_notes && (
-          <div className="mt-1 text-[11px] text-slate-400 truncate" title={selected.supplier.opening_balance_notes}>
-            {selected.supplier.opening_balance_notes}
-          </div>
-        )}
-      </div>
-      <div className="rounded-xl bg-slate-950 p-4 border border-cyan-900/40">
-        <div className="text-xs text-slate-400">إجمالي الفواتير المسجلة</div>
-        <div className="mt-1 whitespace-nowrap font-mono font-black text-cyan-300 text-xl">
-          {money(selected.summary.total_invoiced)}
-        </div>
-      </div>
-      <div className="rounded-xl bg-slate-950 p-4 border border-emerald-900/40">
-        <div className="text-xs text-slate-400">إجمالي المدفوع للمورد</div>
-        <div className="mt-1 whitespace-nowrap font-mono font-black text-emerald-300 text-xl">
-          {money(selected.summary.total_paid)}
-        </div>
-      </div>
-      <div className={`rounded-xl p-4 border ${selected.summary.is_overpaid ? 'bg-rose-950/30 border-rose-800/60' : 'bg-slate-950 border-amber-900/40'}`}>
-        <div className="text-xs text-slate-400">الرصيد الحالي المستحق</div>
-        <div className={`mt-1 whitespace-nowrap font-mono font-black text-xl ${selected.summary.is_overpaid ? 'text-rose-300' : 'text-amber-300'}`}>
-          {money(Math.max(selected.summary.balance, 0))}
-        </div>
-        {selected.summary.is_overpaid && (
-          <div className="mt-1 text-xs font-bold text-cyan-300">
-            رصيد دائن / دفع زائد: {money(Math.abs(selected.summary.balance))}
-          </div>
-        )}
-      </div>
-    </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="font-bold flex items-center gap-1.5"
+            onClick={() => window.print()}
+          >
+            <span>🖨️</span>
+            <span>طباعة الكشف</span>
+          </Button>
 
-    <div>
-      <h3 className="mb-2 text-sm font-black text-slate-200">الفواتير وأوامر الشراء ({selected.invoices.length})</h3>
-      <div className="hidden min-w-0 md:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="whitespace-nowrap">الفاتورة</TableHead>
-              <TableHead className="whitespace-nowrap">أمر الشراء</TableHead>
-              <TableHead className="whitespace-nowrap">التاريخ</TableHead>
-              <TableHead className="whitespace-nowrap">المبلغ</TableHead>
-              <TableHead className="whitespace-nowrap">المدفوع</TableHead>
-              <TableHead className="whitespace-nowrap">المتبقي</TableHead>
-              <TableHead className="whitespace-nowrap">الحالة</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {selected.invoices.map(invoice => (
-              <TableRow key={invoice.id}>
-                <TableCell className="whitespace-nowrap font-mono font-bold text-cyan-300">{invoice.invoice_number}</TableCell>
-                <TableCell className="whitespace-nowrap font-mono">{invoice.purchase_order?.po_number || '—'}</TableCell>
-                <TableCell className="whitespace-nowrap font-mono">{invoice.invoice_date}</TableCell>
-                <TableCell className="whitespace-nowrap font-mono">{money(invoice.amount)}</TableCell>
-                <TableCell className="whitespace-nowrap font-mono text-emerald-300">{money(invoice.paid_amount)}</TableCell>
-                <TableCell className="whitespace-nowrap font-mono font-bold text-amber-300">{money(invoice.outstanding_amount)}</TableCell>
-                <TableCell className="whitespace-nowrap">
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
-                    invoice.status === 'PAID' ? 'bg-emerald-500/20 text-emerald-300' :
-                    invoice.status === 'PARTIALLY_PAID' ? 'bg-amber-500/20 text-amber-300' :
-                    'bg-cyan-500/20 text-cyan-300'
-                  }`}>
-                    {invoice.status === 'PAID' ? 'مدفوعة بالكامل' : invoice.status === 'PARTIALLY_PAID' ? 'مدفوعة جزئياً' : 'مفتوحة'}
-                  </span>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+          <Button
+            size="sm"
+            variant="success"
+            className="font-bold flex items-center gap-1.5"
+            onClick={() => onRecordPayment(selected.summary)}
+          >
+            <span>➕</span>
+            <span>تسجيل دفعة سداد</span>
+          </Button>
+
+          <Link to={`/accounting/supplier-payments?supplier_id=${selected.supplier.id}`}>
+            <Button size="sm" variant="primary" className="font-bold">
+              <span>🧾</span> تسجيل فاتورة جديدة
+            </Button>
+          </Link>
+        </div>
       </div>
-      <div className="space-y-3 md:hidden">
-        {selected.invoices.map(invoice => (
-          <article key={`mobile-invoice-${invoice.id}`} className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <div className="flex min-w-0 items-start justify-between gap-3">
-              <span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">{invoice.invoice_number}</span>
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${
-                invoice.status === 'PAID' ? 'bg-emerald-500/20 text-emerald-300' :
-                invoice.status === 'PARTIALLY_PAID' ? 'bg-amber-500/20 text-amber-300' :
-                'bg-cyan-500/20 text-cyan-300'
-              }`}>
-                {invoice.status === 'PAID' ? 'مدفوعة' : invoice.status === 'PARTIALLY_PAID' ? 'جزئية' : 'مفتوحة'}
-              </span>
+
+      {/* 4 Financial Summary KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl bg-slate-900/90 p-4 border border-amber-900/50 shadow-lg">
+          <div className="text-xs font-bold text-slate-400">💰 الرصيد الافتتاحي (مديونية سابقة)</div>
+          <div className="mt-2 whitespace-nowrap font-mono font-black text-amber-300 text-2xl">
+            {money(selected.summary.opening_balance || 0)}
+          </div>
+          {selected.supplier.opening_balance_notes ? (
+            <div className="mt-2 text-[11px] text-slate-400 truncate bg-slate-950/60 p-1.5 rounded" title={selected.supplier.opening_balance_notes}>
+              {selected.supplier.opening_balance_notes}
             </div>
-            <dl className="mt-3 grid grid-cols-1 gap-2 text-xs min-[420px]:grid-cols-2">
-              <div><dt className="text-slate-500">أمر الشراء</dt><dd className="mt-1 break-normal font-mono text-slate-300">{invoice.purchase_order?.po_number || '—'}</dd></div>
-              <div><dt className="text-slate-500">التاريخ</dt><dd className="mt-1 text-slate-300 font-mono">{invoice.invoice_date}</dd></div>
-              <div><dt className="text-slate-500">المبلغ</dt><dd className="mt-1 whitespace-nowrap font-mono text-slate-200">{money(invoice.amount)}</dd></div>
-              <div><dt className="text-slate-500">المدفوع</dt><dd className="mt-1 whitespace-nowrap font-mono text-emerald-300">{money(invoice.paid_amount)}</dd></div>
-              <div className="min-[420px]:col-span-2"><dt className="text-slate-500">المتبقي</dt><dd className="mt-1 whitespace-nowrap font-mono font-bold text-amber-300">{money(invoice.outstanding_amount)}</dd></div>
-            </dl>
-          </article>
-        ))}
-        {!selected.invoices.length && <div className="py-6 text-center text-sm text-slate-500">لا توجد فواتير مسجلة لهذا المورد.</div>}
-      </div>
-    </div>
+          ) : (
+            <div className="mt-2 text-[11px] text-slate-500">لا توجد ملاحظات رصيد سابق</div>
+          )}
+        </div>
 
-    <div>
-      <h3 className="mb-2 text-sm font-black text-slate-200">سجل الدفعات ({selected.payments.length})</h3>
-      <div className="hidden min-w-0 md:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="whitespace-nowrap">رقم الدفعة</TableHead>
-              <TableHead className="whitespace-nowrap">التاريخ</TableHead>
-              <TableHead className="whitespace-nowrap">طريقة الدفع</TableHead>
-              <TableHead className="whitespace-nowrap">المبلغ</TableHead>
-              <TableHead className="whitespace-nowrap">الموزع على الفواتير</TableHead>
-              <TableHead className="whitespace-nowrap">الزيادة</TableHead>
-              <TableHead className="whitespace-nowrap">المرجع</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {selected.payments.map(payment => (
-              <TableRow key={payment.id}>
-                <TableCell className="whitespace-nowrap font-mono font-bold text-emerald-300">{payment.payment_number}</TableCell>
-                <TableCell className="whitespace-nowrap font-mono">{payment.payment_date}</TableCell>
-                <TableCell className="whitespace-nowrap">{paymentMethods[payment.payment_method] || payment.payment_method}</TableCell>
-                <TableCell className="whitespace-nowrap font-mono font-bold text-emerald-300">{money(payment.amount)}</TableCell>
-                <TableCell className="min-w-[220px] font-mono">
-                  {payment.allocations?.length ? (
-                    <div className="space-y-1">
+        <div className="rounded-2xl bg-slate-900/90 p-4 border border-cyan-900/50 shadow-lg">
+          <div className="text-xs font-bold text-slate-400">📑 إجمالي الفواتير المسجلة ({selected.invoices.length})</div>
+          <div className="mt-2 whitespace-nowrap font-mono font-black text-cyan-300 text-2xl">
+            {money(selected.summary.total_invoiced)}
+          </div>
+          <div className="mt-2 text-[11px] text-cyan-400/80">
+            {selected.summary.open_invoices_count} فواتير مفتوحة غير مسددة بالكامل
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-slate-900/90 p-4 border border-emerald-900/50 shadow-lg">
+          <div className="text-xs font-bold text-slate-400">💳 إجمالي المدفوع للمورد ({selected.payments.length})</div>
+          <div className="mt-2 whitespace-nowrap font-mono font-black text-emerald-300 text-2xl">
+            {money(selected.summary.total_paid)}
+          </div>
+          <div className="mt-2 text-[11px] text-emerald-400/80">
+            {selected.summary.payments_count} عمليات سداد مسجلة
+          </div>
+        </div>
+
+        <div className={`rounded-2xl p-4 border shadow-lg ${
+          selected.summary.is_overpaid
+            ? 'bg-cyan-950/40 border-cyan-800/80'
+            : selected.summary.balance > 0
+            ? 'bg-amber-950/30 border-amber-800/70'
+            : 'bg-slate-900/90 border-slate-800'
+        }`}>
+          <div className="text-xs font-bold text-slate-400">
+            {selected.summary.is_overpaid ? '🏷️ رصيد دائن (دفع زائد للمورد)' : '⚖️ الرصيد الحالي المستحق'}
+          </div>
+          <div className={`mt-2 whitespace-nowrap font-mono font-black text-2xl ${
+            selected.summary.is_overpaid ? 'text-cyan-300' : selected.summary.balance > 0 ? 'text-amber-300' : 'text-emerald-300'
+          }`}>
+            {money(selected.summary.is_overpaid ? Math.abs(selected.summary.balance) : Math.max(selected.summary.balance, 0))}
+          </div>
+          <div className="mt-2 text-[11px] font-medium text-slate-400">
+            {selected.summary.is_overpaid
+              ? 'مبالغ سددت بالزيادة ومتاحة للخصم من فواتير قادمة'
+              : selected.summary.balance > 0
+              ? 'المبلغ المطلوب سداده للمورد لتسوية كافة الحسابات'
+              : 'تمت تسوية جميع الفواتير بالكامل'}
+          </div>
+        </div>
+      </div>
+
+      {/* Section 1: Invoices & POs */}
+      <Card className="space-y-4 border-slate-800 bg-slate-900/90">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div>
+            <h3 className="text-base font-black text-slate-100 flex items-center gap-2">
+              <span>🧾</span>
+              <span>سجل الفواتير وأوامر الشراء ({selected.invoices.length})</span>
+            </h3>
+            <p className="mt-0.5 text-xs text-slate-400">
+              جميع الفواتير المسجلة على هذا المورد مع حالة السداد ومطابقة الاستلام
+            </p>
+          </div>
+        </div>
+
+        {selected.invoices.length > 0 ? (
+          <>
+            <div className="hidden min-w-0 md:block overflow-x-auto">
+              <Table className="min-w-[750px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="whitespace-nowrap">الفاتورة</TableHead>
+                    <TableHead className="whitespace-nowrap">أمر الشراء</TableHead>
+                    <TableHead className="whitespace-nowrap">تاريخ الفاتورة</TableHead>
+                    <TableHead className="whitespace-nowrap">تاريخ الاستحقاق</TableHead>
+                    <TableHead className="whitespace-nowrap">قيمة الفاتورة</TableHead>
+                    <TableHead className="whitespace-nowrap">المدفوع</TableHead>
+                    <TableHead className="whitespace-nowrap">المتبقي</TableHead>
+                    <TableHead className="whitespace-nowrap">حالة السداد</TableHead>
+                    <TableHead className="whitespace-nowrap">المطابقة</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selected.invoices.map(invoice => {
+                    const isOverdue = invoice.due_date && invoice.due_date < today() && ['OPEN', 'PARTIALLY_PAID'].includes(invoice.status);
+                    return (
+                      <TableRow key={invoice.id} className={isOverdue ? 'bg-rose-950/20' : undefined}>
+                        <TableCell className="whitespace-nowrap font-mono font-bold text-cyan-300">
+                          {invoice.invoice_number}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap font-mono text-slate-300">
+                          {invoice.purchase_order?.po_number || `PO #${invoice.purchase_order_id}`}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap font-mono text-slate-400">
+                          {invoice.invoice_date}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap font-mono text-slate-400">
+                          {invoice.due_date || '—'}
+                          {isOverdue && <span className="mr-1.5 text-[10px] font-bold text-rose-400 bg-rose-950 px-1.5 py-0.5 rounded border border-rose-800/60">متأخر</span>}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap font-mono font-bold text-slate-100">
+                          {money(invoice.amount)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap font-mono font-bold text-emerald-300">
+                          {money(invoice.paid_amount)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap font-mono font-black text-amber-300">
+                          {money(invoice.outstanding_amount)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-black ${
+                            invoice.status === 'PAID' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-700/50' :
+                            invoice.status === 'PARTIALLY_PAID' ? 'bg-amber-500/20 text-amber-300 border border-amber-700/50' :
+                            'bg-cyan-500/20 text-cyan-300 border border-cyan-700/50'
+                          }`}>
+                            {invoice.status === 'PAID' ? 'مدفوعة بالكامل' : invoice.status === 'PARTIALLY_PAID' ? 'مدفوعة جزئياً' : 'مفتوحة'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {invoice.matching_status === 'MATCHED' ? (
+                            <span className="text-xs font-bold text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/50">مطابقة ✅</span>
+                          ) : (
+                            <span className="text-xs font-bold text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/50">بانتظار المطابقة ⏳</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="space-y-3 md:hidden">
+              {selected.invoices.map(invoice => {
+                const isOverdue = invoice.due_date && invoice.due_date < today() && ['OPEN', 'PARTIALLY_PAID'].includes(invoice.status);
+                return (
+                  <article key={`mobile-invoice-${invoice.id}`} className={`min-w-0 rounded-2xl border p-4 shadow-sm ${
+                    isOverdue ? 'border-rose-800/70 bg-rose-950/20' : 'border-slate-800 bg-slate-950/60'
+                  }`}>
+                    <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-2.5">
+                      <div>
+                        <span className="font-mono text-sm font-black text-cyan-300 block">{invoice.invoice_number}</span>
+                        <span className="text-[11px] font-mono text-slate-400">أمر الشراء: {invoice.purchase_order?.po_number || `PO #${invoice.purchase_order_id}`}</span>
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-black ${
+                        invoice.status === 'PAID' ? 'bg-emerald-500/20 text-emerald-300' :
+                        invoice.status === 'PARTIALLY_PAID' ? 'bg-amber-500/20 text-amber-300' :
+                        'bg-cyan-500/20 text-cyan-300'
+                      }`}>
+                        {invoice.status === 'PAID' ? 'مدفوعة' : invoice.status === 'PARTIALLY_PAID' ? 'جزئية' : 'مفتوحة'}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className="rounded-lg bg-slate-900 p-2 border border-slate-800">
+                        <span className="text-[10px] text-slate-500 block">القيمة</span>
+                        <strong className="font-mono text-slate-200 mt-0.5 block">{money(invoice.amount)}</strong>
+                      </div>
+                      <div className="rounded-lg bg-slate-900 p-2 border border-slate-800">
+                        <span className="text-[10px] text-slate-500 block">المدفوع</span>
+                        <strong className="font-mono text-emerald-300 mt-0.5 block">{money(invoice.paid_amount)}</strong>
+                      </div>
+                      <div className="rounded-lg bg-slate-900 p-2 border border-slate-800">
+                        <span className="text-[10px] text-slate-500 block">المتبقي</span>
+                        <strong className="font-mono text-amber-300 mt-0.5 block">{money(invoice.outstanding_amount)}</strong>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80">
+                      <div>التاريخ: <span className="font-mono">{invoice.invoice_date}</span></div>
+                      <div>الاستحقاق: <span className="font-mono">{invoice.due_date || '—'}</span></div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <div className="py-8 text-center text-sm text-slate-500 bg-slate-950/40 rounded-xl border border-slate-800/60">
+            لا توجد فواتير مسجلة لهذا المورد حتى الآن.
+          </div>
+        )}
+      </Card>
+
+      {/* Section 2: Payments History */}
+      <Card className="space-y-4 border-slate-800 bg-slate-900/90">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div>
+            <h3 className="text-base font-black text-slate-100 flex items-center gap-2">
+              <span>💳</span>
+              <span>سجل المدفوعات وتوزيعها على الفواتير ({selected.payments.length})</span>
+            </h3>
+            <p className="mt-0.5 text-xs text-slate-400">
+              تفاصيل الدفعات المسددة للمورد وتوزيع مبالغها على الفواتير حسب الأقدمية
+            </p>
+          </div>
+        </div>
+
+        {selected.payments.length > 0 ? (
+          <>
+            <div className="hidden min-w-0 md:block overflow-x-auto">
+              <Table className="min-w-[750px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="whitespace-nowrap">رقم الدفعة</TableHead>
+                    <TableHead className="whitespace-nowrap">تاريخ السداد</TableHead>
+                    <TableHead className="whitespace-nowrap">طريقة الدفع</TableHead>
+                    <TableHead className="whitespace-nowrap">قيمة الدفعة</TableHead>
+                    <TableHead className="whitespace-nowrap">التوزيع على الفواتير</TableHead>
+                    <TableHead className="whitespace-nowrap">رصيد زائد (دائن)</TableHead>
+                    <TableHead className="whitespace-nowrap">المرجع</TableHead>
+                    <TableHead className="whitespace-nowrap">الملاحظات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selected.payments.map(payment => (
+                    <TableRow key={payment.id}>
+                      <TableCell className="whitespace-nowrap font-mono font-bold text-emerald-300">
+                        {payment.payment_number}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap font-mono text-slate-300">
+                        {payment.payment_date}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <span className="rounded-md bg-slate-800 px-2 py-1 text-xs font-bold text-slate-200">
+                          {paymentMethods[payment.payment_method] || payment.payment_method}
+                        </span>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap font-mono font-bold text-emerald-300">
+                        {money(payment.amount)}
+                      </TableCell>
+                      <TableCell className="min-w-[220px] font-mono">
+                        {payment.allocations?.length ? (
+                          <div className="space-y-1">
+                            {payment.allocations.map((allocation) => (
+                              <div key={allocation.id} className="whitespace-nowrap text-xs bg-slate-950/80 p-1 rounded border border-slate-800">
+                                فاتورة <span className="font-bold text-cyan-300">{allocation.invoice?.invoice_number || `#${allocation.supplier_invoice_id}`}</span>: {money(allocation.amount)}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400">{money(payment.allocated_amount)}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap font-mono text-cyan-300 font-bold">
+                        {Number(payment.overpayment_amount || 0) > 0 ? money(payment.overpayment_amount) : '—'}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-slate-300">
+                        {payment.reference_number || '—'}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        <span className="text-xs text-slate-400 truncate block" title={payment.notes || ''}>
+                          {payment.notes || '—'}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="space-y-3 md:hidden">
+              {selected.payments.map(payment => (
+                <article key={`mobile-payment-${payment.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-950/60 p-4 shadow-sm space-y-3">
+                  <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-2.5">
+                    <div>
+                      <span className="font-mono text-sm font-black text-emerald-300 block">{payment.payment_number}</span>
+                      <span className="text-[11px] font-mono text-slate-400">{payment.payment_date}</span>
+                    </div>
+                    <span className="rounded-md bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-200">
+                      {paymentMethods[payment.payment_method] || payment.payment_method}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400">إجمالي المبلغ المسدد:</span>
+                    <strong className="font-mono text-emerald-300 text-sm">{money(payment.amount)}</strong>
+                  </div>
+
+                  {payment.allocations && payment.allocations.length > 0 && (
+                    <div className="rounded-xl bg-slate-900/90 p-2.5 border border-slate-800/80 space-y-1.5">
+                      <span className="text-[10px] text-slate-400 font-bold block">التوزيع على الفواتير:</span>
                       {payment.allocations.map((allocation) => (
-                        <div key={allocation.id} className="whitespace-nowrap text-[11px]">
-                          فاتورة {allocation.invoice?.invoice_number || `#${allocation.supplier_invoice_id}`}: <span className="font-bold text-cyan-300">{money(allocation.amount)}</span>
+                        <div key={allocation.id} className="text-xs font-mono flex items-center justify-between">
+                          <span className="text-cyan-300">فاتورة {allocation.invoice?.invoice_number || `#${allocation.supplier_invoice_id}`}</span>
+                          <strong className="text-slate-200">{money(allocation.amount)}</strong>
                         </div>
                       ))}
                     </div>
-                  ) : money(payment.allocated_amount)}
-                </TableCell>
-                <TableCell className="whitespace-nowrap font-mono text-rose-300">{money(payment.overpayment_amount)}</TableCell>
-                <TableCell className="font-mono">{payment.reference_number || '—'}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="space-y-3 md:hidden">
-        {selected.payments.map(payment => (
-          <article key={`mobile-payment-${payment.id}`} className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <div className="flex min-w-0 items-start justify-between gap-3">
-              <span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">{payment.payment_number}</span>
-              <span className="shrink-0 text-[11px] text-slate-400 font-mono">{payment.payment_date}</span>
+                  )}
+
+                  {Number(payment.overpayment_amount || 0) > 0 && (
+                    <div className="flex items-center justify-between text-xs text-cyan-300 bg-cyan-950/40 p-2 rounded-lg border border-cyan-800/50">
+                      <span>رصيد دائن / دفع زائد:</span>
+                      <strong className="font-mono">{money(payment.overpayment_amount)}</strong>
+                    </div>
+                  )}
+
+                  {(payment.reference_number || payment.notes) && (
+                    <div className="text-[11px] text-slate-400 space-y-1 pt-1 border-t border-slate-800/60">
+                      {payment.reference_number && <div><span className="text-slate-500">المرجع:</span> <span className="font-mono text-slate-300">{payment.reference_number}</span></div>}
+                      {payment.notes && <div><span className="text-slate-500">الملاحظات:</span> {payment.notes}</div>}
+                    </div>
+                  )}
+                </article>
+              ))}
             </div>
-            <dl className="mt-3 grid grid-cols-1 gap-2 text-xs min-[420px]:grid-cols-2">
-              <div><dt className="text-slate-500">طريقة الدفع</dt><dd className="mt-1 break-normal text-slate-300">{paymentMethods[payment.payment_method] || payment.payment_method}</dd></div>
-              <div><dt className="text-slate-500">المبلغ</dt><dd className="mt-1 whitespace-nowrap font-mono text-emerald-300">{money(payment.amount)}</dd></div>
-              <div className="min-[420px]:col-span-2">
-                <dt className="text-slate-500">الموزع على الفواتير</dt>
-                <dd className="mt-1 break-normal font-mono leading-6 text-slate-300">
-                  {payment.allocations?.length ? payment.allocations.map((allocation) => (
-                    <div key={allocation.id}>فاتورة {allocation.invoice?.invoice_number || `#${allocation.supplier_invoice_id}`}: <span className="font-bold text-cyan-300">{money(allocation.amount)}</span></div>
-                  )) : money(payment.allocated_amount)}
-                </dd>
-              </div>
-              <div><dt className="text-slate-500">الزيادة</dt><dd className="mt-1 whitespace-nowrap font-mono text-rose-300">{money(payment.overpayment_amount)}</dd></div>
-              <div><dt className="text-slate-500">المرجع</dt><dd className="mt-1 break-normal text-slate-300 font-mono">{payment.reference_number || '—'}</dd></div>
-            </dl>
-          </article>
-        ))}
-        {!selected.payments.length && <div className="py-6 text-center text-sm text-slate-500">لا توجد دفعات مسجلة لهذا المورد.</div>}
-      </div>
+          </>
+        ) : (
+          <div className="py-8 text-center text-sm text-slate-500 bg-slate-950/40 rounded-xl border border-slate-800/60">
+            لا توجد دفعات مسجلة لهذا المورد حتى الآن.
+          </div>
+        )}
+      </Card>
     </div>
-  </Card>
-);
+  );
+};
 
 export const SupplierAccountsPage: React.FC = () => {
   const [accounts, setAccounts] = useState<SupplierAccountSummary[]>([]);
@@ -239,6 +443,7 @@ export const SupplierAccountsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [supplierSearch, setSupplierSearch] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
   const [paymentAccount, setPaymentAccount] = useState<SupplierAccountSummary | null>(null);
   const [paymentForm, setPaymentForm] = useState<CreateSupplierPaymentPayload>({
     amount: 0,
@@ -260,18 +465,53 @@ export const SupplierAccountsPage: React.FC = () => {
     }
   };
 
-  useEffect(() => { void loadAccounts(); }, []);
+  useEffect(() => {
+    void loadAccounts();
+  }, []);
+
+  // Handle URL query parameter `?supplier_id=X`
+  const supplierIdParam = searchParams.get('supplier_id');
+  useEffect(() => {
+    if (supplierIdParam) {
+      const supplierId = Number(supplierIdParam);
+      if (supplierId && (!selected || selected.supplier.id !== supplierId)) {
+        setDetailsLoading(true);
+        getSupplierAccountApi(supplierId)
+          .then((details) => {
+            setSelected(details);
+            window.scrollTo({ top: 0, behavior: 'instant' });
+          })
+          .catch((err) => {
+            setError(parseApiError(err).message);
+          })
+          .finally(() => {
+            setDetailsLoading(false);
+          });
+      }
+    } else {
+      setSelected(null);
+    }
+  }, [supplierIdParam]);
 
   const openAccount = async (account: SupplierAccountSummary) => {
     setDetailsLoading(true);
     setError(null);
     try {
-      setSelected(await getSupplierAccountApi(account.supplier_id));
+      const details = await getSupplierAccountApi(account.supplier_id);
+      setSelected(details);
+      setSearchParams({ supplier_id: String(account.supplier_id) });
+      window.scrollTo({ top: 0, behavior: 'instant' });
     } catch (err) {
       setError(parseApiError(err).message);
     } finally {
       setDetailsLoading(false);
     }
+  };
+
+  const closeAccount = () => {
+    setSelected(null);
+    setSearchParams({});
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const openPaymentForm = (account: SupplierAccountSummary) => {
@@ -311,7 +551,8 @@ export const SupplierAccountsPage: React.FC = () => {
       setPaymentAccount(null);
       await loadAccounts();
       if (selected && selected.supplier.id === paymentAccount.supplier_id) {
-        setSelected(await getSupplierAccountApi(paymentAccount.supplier_id));
+        const updatedDetails = await getSupplierAccountApi(paymentAccount.supplier_id);
+        setSelected(updatedDetails);
       }
     } catch (err) {
       setError(parseApiError(err).message);
@@ -323,7 +564,11 @@ export const SupplierAccountsPage: React.FC = () => {
   const filteredAccounts = useMemo(() => {
     const normalized = supplierSearch.trim().toLocaleLowerCase('ar-EG');
     if (!normalized) return accounts;
-    return accounts.filter((account) => `${account.company_name} ${account.code || ''} ${account.email || ''} ${account.phone || ''} ${account.supplier_id}`.toLocaleLowerCase('ar-EG').includes(normalized));
+    return accounts.filter((account) =>
+      `${account.company_name} ${account.code || ''} ${account.email || ''} ${account.phone || ''} ${account.supplier_id}`
+        .toLocaleLowerCase('ar-EG')
+        .includes(normalized)
+    );
   }, [accounts, supplierSearch]);
 
   const totalInvoiced = accounts.reduce((sum, account) => sum + account.total_invoiced, 0);
@@ -331,8 +576,125 @@ export const SupplierAccountsPage: React.FC = () => {
   const totalBalance = accounts.reduce((sum, account) => sum + Math.max(account.balance, 0), 0);
   const overpaidCount = accounts.filter(account => account.is_overpaid).length;
 
-  if (loading) return <div className="min-h-[360px] p-6 text-sm font-bold text-cyan-300" dir="rtl">جاري تحميل حسابات الموردين...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-[360px] flex items-center justify-center p-6 text-sm font-bold text-cyan-300" dir="rtl">
+        <div className="flex items-center gap-3">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
+          <span>جاري تحميل حسابات الموردين...</span>
+        </div>
+      </div>
+    );
+  }
 
+  // If a supplier is selected, show the Dedicated Full-Page View!
+  if (selected) {
+    return (
+      <>
+        <SupplierAccountDedicatedPage
+          selected={selected}
+          onBack={closeAccount}
+          onRecordPayment={openPaymentForm}
+        />
+
+        {paymentAccount && createPortal(
+          <div className="modal-top-viewport fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/85 p-2 sm:p-4" role="dialog" aria-modal="true">
+            <form onSubmit={submitPayment} className="max-h-[calc(100vh-1rem)] w-full max-w-xl space-y-5 overflow-y-auto rounded-2xl border border-cyan-800/70 bg-slate-900 p-4 shadow-2xl sm:max-h-[calc(100vh-3rem)] sm:p-5">
+              <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-3">
+                <div>
+                  <h2 className="text-lg font-black text-slate-100 flex items-center gap-2">
+                    <span>💳</span>
+                    <span>تسجيل دفعة على حساب المورد</span>
+                  </h2>
+                  <p className="mt-1 text-xs text-slate-400">{paymentAccount.company_name} — سيتم خصم المبلغ من مديونية المورد.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPaymentAccount(null)}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-2xl font-black text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
+                  aria-label="إغلاق النافذة"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 rounded-xl border border-cyan-800/50 bg-cyan-950/20 p-3 text-center text-xs">
+                <div><span className="text-slate-500">إجمالي الفواتير</span><strong className="mt-1 block font-mono text-cyan-200">{money(paymentAccount.total_invoiced)}</strong></div>
+                <div><span className="text-slate-500">إجمالي المدفوع</span><strong className="mt-1 block font-mono text-emerald-300">{money(paymentAccount.total_paid)}</strong></div>
+                <div><span className="text-slate-500">الرصيد المستحق</span><strong className="mt-1 block font-mono text-amber-300">{money(Math.max(paymentAccount.balance, 0))}</strong></div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="text-xs font-bold text-slate-300">
+                  قيمة الدفعة (ج.م) *
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    value={paymentForm.amount}
+                    onChange={event => setPaymentForm({ ...paymentForm, amount: Number(event.target.value) })}
+                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 font-mono"
+                  />
+                </label>
+                <label className="text-xs font-bold text-slate-300">
+                  تاريخ الدفع *
+                  <input
+                    type="date"
+                    required
+                    value={paymentForm.payment_date}
+                    onChange={event => setPaymentForm({ ...paymentForm, payment_date: event.target.value })}
+                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+                  />
+                </label>
+                <label className="text-xs font-bold text-slate-300">
+                  طريقة الدفع
+                  <select
+                    value={paymentForm.payment_method}
+                    onChange={event => setPaymentForm({ ...paymentForm, payment_method: event.target.value as CreateSupplierPaymentPayload['payment_method'] })}
+                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+                  >
+                    <option value="BANK_TRANSFER">تحويل بنكي</option>
+                    <option value="CASH">نقدي</option>
+                    <option value="CHEQUE">شيك</option>
+                  </select>
+                </label>
+                <label className="text-xs font-bold text-slate-300">
+                  رقم المرجع (شيك / تحويل)
+                  <input
+                    value={paymentForm.reference_number || ''}
+                    onChange={event => setPaymentForm({ ...paymentForm, reference_number: event.target.value })}
+                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+                  />
+                </label>
+              </div>
+
+              <label className="block text-xs font-bold text-slate-300">
+                ملاحظات
+                <textarea
+                  value={paymentForm.notes || ''}
+                  onChange={event => setPaymentForm({ ...paymentForm, notes: event.target.value })}
+                  className="mt-1 min-h-20 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100"
+                />
+              </label>
+
+              <div className="flex justify-end gap-2 border-t border-slate-800 pt-3">
+                <Button type="button" variant="secondary" onClick={() => setPaymentAccount(null)}>
+                  إلغاء
+                </Button>
+                <Button type="submit" variant="success" isLoading={savingPayment}>
+                  تسجيل الدفعة وتحديث الرصيد
+                </Button>
+              </div>
+            </form>
+          </div>,
+          document.body
+        )}
+      </>
+    );
+  }
+
+  // All Suppliers Overview Page
   return (
     <div className="min-w-0 space-y-6 animate-fade-in" dir="rtl">
       <div className="flex flex-col gap-3 border-b border-slate-800 pb-4 md:flex-row md:items-center md:justify-between">
@@ -366,19 +728,11 @@ export const SupplierAccountsPage: React.FC = () => {
         <Card><div className="text-xs text-slate-400">حسابات بها دفع زائد</div><div className="mt-2 text-xl font-black text-rose-300">{overpaidCount}</div></Card>
       </div>
 
-      {selected && (
-        <SupplierAccountDetailsView
-          selected={selected}
-          onClose={() => setSelected(null)}
-          onRecordPayment={openPaymentForm}
-        />
-      )}
-
       <Card className="min-w-0 space-y-4">
         <div>
           <h2 className="text-base font-black text-slate-100">ملخص الموردين ({filteredAccounts.length} من {accounts.length})</h2>
           <p className="mt-1 break-normal text-xs leading-6 text-slate-400">
-            اضغط على أي مورد لعرض كشف الحساب التفصيلي وسجل الدفعات المرتبط بالفواتير وأوامر الشراء. يمكنك البحث بالاسم أو الكود أو البريد أو الهاتف.
+            اضغط على أي مورد لفتح كشف حسابه الكامل وسجل الفواتير والدفعات في صفحة مخصصة ومستقلة.
           </p>
         </div>
 
@@ -419,7 +773,7 @@ export const SupplierAccountsPage: React.FC = () => {
                   <TableCell>
                     <div className="flex flex-wrap gap-2">
                       <Button size="sm" variant="secondary" isLoading={detailsLoading} onClick={() => void openAccount(account)}>
-                        فتح الحساب
+                        فتح كشف الحساب
                       </Button>
                       <Button size="sm" variant="success" onClick={() => openPaymentForm(account)}>
                         تسجيل دفعة
@@ -449,10 +803,10 @@ export const SupplierAccountsPage: React.FC = () => {
                 <div className="min-[420px]:col-span-2"><dt className="text-slate-500">الرصيد الحالي</dt><dd className={`mt-1 whitespace-nowrap font-mono font-black ${account.balance < 0 ? 'text-rose-300' : 'text-amber-300'}`}>{money(account.balance)}</dd></div>
               </dl>
               <div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
-                <Button size="sm" variant="secondary" className="w-full whitespace-nowrap" isLoading={detailsLoading} onClick={() => void openAccount(account)}>
+                <Button size="sm" variant="secondary" className="w-full whitespace-nowrap font-bold" isLoading={detailsLoading} onClick={() => void openAccount(account)}>
                   فتح كشف الحساب
                 </Button>
-                <Button size="sm" variant="success" className="w-full whitespace-nowrap" onClick={() => openPaymentForm(account)}>
+                <Button size="sm" variant="success" className="w-full whitespace-nowrap font-bold" onClick={() => openPaymentForm(account)}>
                   تسجيل دفعة
                 </Button>
               </div>
@@ -466,9 +820,12 @@ export const SupplierAccountsPage: React.FC = () => {
       {paymentAccount && createPortal(
         <div className="modal-top-viewport fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/80 p-2 sm:p-4" role="dialog" aria-modal="true">
           <form onSubmit={submitPayment} className="max-h-[calc(100vh-1rem)] w-full max-w-xl space-y-5 overflow-y-auto rounded-2xl border border-cyan-800/70 bg-slate-900 p-4 shadow-2xl sm:max-h-[calc(100vh-3rem)] sm:p-5">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-3">
               <div>
-                <h2 className="text-lg font-black text-slate-100">تسجيل دفعة على حساب المورد</h2>
+                <h2 className="text-lg font-black text-slate-100 flex items-center gap-2">
+                  <span>💳</span>
+                  <span>تسجيل دفعة على حساب المورد</span>
+                </h2>
                 <p className="mt-1 text-xs text-slate-400">{paymentAccount.company_name} — سيتم خصم المبلغ من مديونية المورد.</p>
               </div>
               <button
@@ -497,7 +854,7 @@ export const SupplierAccountsPage: React.FC = () => {
                   required
                   value={paymentForm.amount}
                   onChange={event => setPaymentForm({ ...paymentForm, amount: Number(event.target.value) })}
-                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 font-mono"
                 />
               </label>
               <label className="text-xs font-bold text-slate-300">
@@ -541,7 +898,7 @@ export const SupplierAccountsPage: React.FC = () => {
               />
             </label>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 border-t border-slate-800 pt-3">
               <Button type="button" variant="secondary" onClick={() => setPaymentAccount(null)}>
                 إلغاء
               </Button>
