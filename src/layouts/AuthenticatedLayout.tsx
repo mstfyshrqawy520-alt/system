@@ -349,7 +349,7 @@ export const AuthenticatedLayout: React.FC = () => {
                         </span>
                     </div>
                     <nav
-                        className="space-y-1.5"
+                        className="space-y-1.5 pb-16 md:pb-0"
                         onClick={(event) => {
                             if ((event.target as HTMLElement).closest('a')) closeMobileMenu();
                         }}
@@ -410,10 +410,10 @@ export const AuthenticatedLayout: React.FC = () => {
                     <Outlet />
                 </main>
             </div>
-            {hasPermission('purchase_request.create') && !location.pathname.includes('/requests/create') && (
+            {hasPermission('purchase_request.create') && !mobileMenuOpen && !location.pathname.includes('/requests/create') && (
                 <Link
                     to="/requests/create"
-                    className="fixed inset-x-4 bottom-4 z-50 flex min-h-12 items-center justify-center rounded-2xl border border-cyan-300/50 bg-cyan-600 px-4 py-3 text-sm font-black text-white shadow-2xl shadow-cyan-950/60 md:hidden"
+                    className="fixed inset-x-4 bottom-4 z-20 flex min-h-12 items-center justify-center rounded-2xl border border-cyan-300/50 bg-cyan-600 px-4 py-3 text-sm font-black text-white shadow-2xl shadow-cyan-950/60 md:hidden"
                     aria-label="إنشاء طلب شراء جديد"
                 >
                     <span aria-hidden="true" className="ml-2 text-lg">＋</span>
