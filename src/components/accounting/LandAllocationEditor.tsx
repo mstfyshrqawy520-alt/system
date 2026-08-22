@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button } from '../ui/Button';
-import { LandParcel } from '../../api/supplierFinance';
+import { LandParcel, createLandParcelApi } from '../../api/supplierFinance';
+import { parseApiError } from '../../api/client';
 
 export interface LandAllocationDraft {
   land_parcel_id: number | '';
@@ -15,6 +16,7 @@ interface LandAllocationEditorProps {
   disabled?: boolean;
   error?: string | null;
   onChange: (allocations: LandAllocationDraft[]) => void;
+  onParcelCreated?: (newParcel: LandParcel) => void;
 }
 
 const money = (value: number) => `${value.toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م`;
@@ -26,7 +28,16 @@ export const LandAllocationEditor: React.FC<LandAllocationEditorProps> = ({
   disabled = false,
   error,
   onChange,
+  onParcelCreated,
 }) => {
+  const [isAddingParcel, setIsAddingParcel] = useState(false);
+  const [newParcelRef, setNewParcelRef] = useState('');
+  const [newParcelRegion, setNewParcelRegion] = useState('');
+  const [newParcelOpeningBalance, setNewParcelOpeningBalance] = useState('');
+  const [newParcelNotes, setNewParcelNotes] = useState('');
+  const [isSavingParcel, setIsSavingParcel] = useState(false);
+  const [parcelCreateError, setParcelCreateError] = useState<string | null>(null);
+
   const allocatedTotal = useMemo(
     () => allocations.reduce((sum, allocation) => sum + Number(allocation.amount || 0), 0),
     [allocations],
@@ -44,8 +55,49 @@ export const LandAllocationEditor: React.FC<LandAllocationEditorProps> = ({
   const addRow = () => onChange([...allocations, { land_parcel_id: '', amount: '', notes: '' }]);
   const removeRow = (index: number) => onChange(allocations.filter((_, allocationIndex) => allocationIndex !== index));
 
+  const handleCreateParcel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newParcelRef.trim() || !newParcelRegion.trim()) {
+      setParcelCreateError('رقم قطعة الأرض والمنطقة مطلوبان.');
+      return;
+    }
+
+    setIsSavingParcel(true);
+    setParcelCreateError(null);
+
+    try {
+      const created = await createLandParcelApi({
+        parcel_reference: newParcelRef.trim(),
+        region: newParcelRegion.trim(),
+        opening_balance: Number(newParcelOpeningBalance || 0),
+        notes: newParcelNotes.trim() || undefined,
+      });
+
+      onParcelCreated?.(created);
+
+      // Auto-assign the newly created parcel to the first empty row or a new row
+      const emptyRowIndex = allocations.findIndex((a) => a.land_parcel_id === '');
+      if (emptyRowIndex >= 0) {
+        updateAllocation(emptyRowIndex, 'land_parcel_id', String(created.id));
+      } else {
+        onChange([...allocations, { land_parcel_id: created.id, amount: '', notes: '' }]);
+      }
+
+      // Reset form
+      setNewParcelRef('');
+      setNewParcelRegion('');
+      setNewParcelOpeningBalance('');
+      setNewParcelNotes('');
+      setIsAddingParcel(false);
+    } catch (err) {
+      setParcelCreateError(parseApiError(err).message);
+    } finally {
+      setIsSavingParcel(false);
+    }
+  };
+
   return (
-    <div className="rounded-xl border border-amber-700/60 bg-amber-950/20 p-4">
+    <div className="rounded-xl border border-amber-700/60 bg-amber-950/20 p-4 space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-black text-amber-200">توزيع مصروف الفاتورة على قطع الأراضي <span className="text-rose-400">*</span></h3>
@@ -58,8 +110,87 @@ export const LandAllocationEditor: React.FC<LandAllocationEditorProps> = ({
         </div>
       </div>
 
-      {parcels.length === 0 ? (
-        <div className="mt-3 rounded-lg border border-rose-500/50 bg-rose-950/30 px-3 py-2 text-xs font-bold leading-6 text-rose-200">لا توجد حسابات قطع أراضٍ نشطة. يجب إنشاء حساب قطعة أرض أو إضافة رصيد لها قبل تسجيل الفاتورة.</div>
+      {/* Quick Add Parcel Form */}
+      {isAddingParcel && (
+        <form onSubmit={handleCreateParcel} className="rounded-xl border border-cyan-700/70 bg-slate-900/95 p-4 space-y-3 shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h4 className="text-xs font-bold text-cyan-300">🏢 إنشاء حساب قطعة أرض جديدة سريعاً</h4>
+            <button
+              type="button"
+              onClick={() => setIsAddingParcel(false)}
+              className="text-xs font-bold text-slate-400 hover:text-white"
+            >
+              ✕ إلغاء
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">رقم قطعة الأرض *</label>
+              <input
+                required
+                value={newParcelRef}
+                onChange={(e) => setNewParcelRef(e.target.value)}
+                placeholder="مثال: 256"
+                className="h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-xs text-slate-100 font-mono"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">المنطقة *</label>
+              <input
+                required
+                value={newParcelRegion}
+                onChange={(e) => setNewParcelRegion(e.target.value)}
+                placeholder="مثال: السابعة"
+                className="h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-xs text-slate-100"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">رصيد العميل الافتتاحي (ج.م)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={newParcelOpeningBalance}
+                onChange={(e) => setNewParcelOpeningBalance(e.target.value)}
+                placeholder="0.00"
+                className="h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-xs text-slate-100 font-mono"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">ملاحظات (اختياري)</label>
+              <input
+                value={newParcelNotes}
+                onChange={(e) => setNewParcelNotes(e.target.value)}
+                placeholder="ملاحظات على القطعة..."
+                className="h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-xs text-slate-100"
+              />
+            </div>
+          </div>
+          {parcelCreateError && <p className="text-xs font-bold text-rose-300">{parcelCreateError}</p>}
+          <div className="flex justify-end gap-2 pt-1">
+            <Button type="button" size="sm" variant="secondary" onClick={() => setIsAddingParcel(false)}>
+              إلغاء
+            </Button>
+            <Button type="submit" size="sm" variant="primary" isLoading={isSavingParcel} className="font-bold">
+              حفظ القطعة واختيارها فوراً
+            </Button>
+          </div>
+        </form>
+      )}
+
+      {parcels.length === 0 && !isAddingParcel ? (
+        <div className="mt-3 rounded-lg border border-rose-500/50 bg-rose-950/30 p-3 text-xs leading-6 text-rose-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <span>لا توجد حسابات قطع أراضٍ نشطة حالياً.</span>
+          <Button
+            type="button"
+            size="sm"
+            variant="primary"
+            onClick={() => setIsAddingParcel(true)}
+            className="font-bold whitespace-nowrap min-h-10"
+          >
+            + إضافة أول قطعة أرض الآن
+          </Button>
+        </div>
       ) : (
         <div className="mt-4 space-y-3">
           {allocations.map((allocation, index) => (
@@ -105,14 +236,28 @@ export const LandAllocationEditor: React.FC<LandAllocationEditorProps> = ({
                   className="mt-1 h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-2 text-xs text-slate-100 outline-none focus:border-amber-400 disabled:opacity-60"
                 />
               </label>
-              <Button type="button" size="sm" variant="danger" onClick={() => removeRow(index)} disabled={disabled || allocations.length <= 1}>
+              <Button type="button" size="sm" variant="danger" onClick={() => removeRow(index)} disabled={disabled || allocations.length <= 1} className="min-h-10">
                 حذف
               </Button>
             </div>
           ))}
-          <Button type="button" size="sm" variant="secondary" onClick={addRow} disabled={disabled}>
-            + إضافة قطعة للتوزيع
-          </Button>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <Button type="button" size="sm" variant="secondary" onClick={addRow} disabled={disabled} className="min-h-10 text-xs">
+              + إضافة سطر توزيع
+            </Button>
+            {!isAddingParcel && (
+              <Button
+                type="button"
+                size="sm"
+                variant="primary"
+                onClick={() => setIsAddingParcel(true)}
+                disabled={disabled}
+                className="min-h-10 text-xs font-bold bg-cyan-800 hover:bg-cyan-700 text-white"
+              >
+                + إضافة قطعة أرض جديدة للنظام
+              </Button>
+            )}
+          </div>
         </div>
       )}
       {error && <p role="alert" className="mt-3 text-xs font-bold text-rose-300">{error}</p>}
@@ -121,4 +266,5 @@ export const LandAllocationEditor: React.FC<LandAllocationEditorProps> = ({
 };
 
 export default LandAllocationEditor;
+
 
