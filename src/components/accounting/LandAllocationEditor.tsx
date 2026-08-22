@@ -109,13 +109,14 @@ export const LandAllocationEditor: React.FC<LandAllocationEditorProps> = ({
     <div className="rounded-xl border border-amber-700/60 bg-amber-950/20 p-4 space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-black text-amber-200">توزيع مصروف الفاتورة على قطع الأراضي <span className="text-rose-400">*</span></h3>
-          <p className="mt-1 text-xs leading-6 text-amber-100/75">التوزيع يدوي بواسطة الحسابات. اختر قطعة الأرض واكتب المبلغ الذي يخصها. يجب أن يساوي مجموع التوزيعات قيمة الفاتورة بالكامل.</p>
+          <h3 className="text-sm font-black text-amber-200">توزيع مصروف الفاتورة على قطع الأراضي (ديناميكي ومرن) <span className="text-rose-400">*</span></h3>
+          <p className="mt-1 text-xs leading-6 text-amber-100/75">
+            اختر قطعة الأرض وحدد مبلغ المصروف المحمل عليها. المبلغ ديناميكي ويمكن أن يكون أقل أو أكثر من إجمالي الفاتورة أو موزعاً على عدة قطع بحرية كاملة.
+          </p>
         </div>
-        <div className="text-left text-xs">
+        <div className="text-left text-xs bg-slate-950/60 border border-slate-800 p-2.5 rounded-lg">
           <div className="text-slate-400">قيمة الفاتورة: <strong className="font-mono text-slate-100">{money(invoiceAmount)}</strong></div>
-          <div className={Math.abs(difference) <= 0.01 ? 'text-emerald-300' : 'text-rose-300'}>إجمالي التوزيع: <strong className="font-mono">{money(allocatedTotal)}</strong></div>
-          <div className="text-slate-400">الفرق المتبقي: <strong className="font-mono">{money(difference)}</strong></div>
+          <div className="text-emerald-300 mt-0.5">إجمالي المصروف الموزع: <strong className="font-mono">{money(allocatedTotal)}</strong></div>
         </div>
       </div>
 

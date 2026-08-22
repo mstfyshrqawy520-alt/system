@@ -184,18 +184,14 @@ export const SupplierPaymentsPage: React.FC = () => {
       return;
     }
     const normalizedAllocations = invoiceForm.land_allocations
+      .filter((allocation) => allocation.land_parcel_id && Number(allocation.amount) > 0)
       .map((allocation) => ({
         land_parcel_id: Number(allocation.land_parcel_id),
         amount: Number(allocation.amount),
         notes: allocation.notes.trim() || undefined,
       }));
-    if (!normalizedAllocations.length || normalizedAllocations.some((allocation) => !allocation.land_parcel_id || !Number.isFinite(allocation.amount) || allocation.amount <= 0)) {
-      setInvoiceAllocationError('اختر قطعة أرض وأدخل مبلغًا صحيحًا لكل سطر توزيع.');
-      return;
-    }
-    const allocatedTotal = normalizedAllocations.reduce((sum, allocation) => sum + allocation.amount, 0);
-    if (Math.abs(allocatedTotal - amount) > 0.01) {
-      setInvoiceAllocationError(`مجموع التوزيع ${money(allocatedTotal)} يجب أن يساوي قيمة الفاتورة ${money(amount)}.`);
+    if (!normalizedAllocations.length) {
+      setInvoiceAllocationError('اختر قطعة أرض واحدة على الأقل وأدخل مبلغ المصروف المخصص لها.');
       return;
     }
     setInvoiceAllocationError(null);

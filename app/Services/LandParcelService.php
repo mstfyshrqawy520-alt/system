@@ -131,13 +131,7 @@ class LandParcelService
             throw ValidationException::withMessages(['land_allocations' => ['قيمة كل توزيع يجب أن تكون أكبر من صفر مع اختيار قطعة صحيحة.']]);
         }
 
-        $allocatedTotal = round($normalized->sum('amount'), 2);
-        $invoiceTotal = round((float) $invoice->amount, 2);
-        if (abs($allocatedTotal - $invoiceTotal) > 0.01) {
-            throw ValidationException::withMessages([
-                'land_allocations' => [sprintf('إجمالي التوزيع %.2f ج.م يجب أن يساوي قيمة الفاتورة %.2f ج.م.', $allocatedTotal, $invoiceTotal)],
-            ]);
-        }
+        // Allow dynamic allocation: parcel expenses can be more, less, or independent of invoice total
 
         foreach ($normalized as $allocation) {
             $parcel = LandParcel::query()->lockForUpdate()->find($allocation['land_parcel_id']);
