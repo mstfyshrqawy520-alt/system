@@ -130,7 +130,7 @@ export const AccountingDashboardPage: React.FC = () => {
                 طلبات شراء بالمسار المباشر تحتاج مراجعة واعتماد الحسابات.
               </p>
             </div>
-            <Link to="/accounting/requests">
+            <Link to="/accounting/purchase-requests">
               <Button variant="secondary" size="sm" className="w-full text-xs font-bold border-cyan-800/60 text-cyan-200 hover:bg-cyan-950">
                 مراجعة الطلبات المباشرة ←
               </Button>
