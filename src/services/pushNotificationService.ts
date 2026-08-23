@@ -104,11 +104,9 @@ export const requestAndRegisterPushToken = async (): Promise<{ success: boolean;
 
     return { success: true, token };
   } catch (err: unknown) {
-    const rawMessage = err instanceof Error ? err.message : '';
-    const message = /api key|invalid_argument|installations\/request-failed/i.test(rawMessage)
-      ? 'تعذر تفعيل الإشعارات الفورية لأن إعداد Firebase غير صالح أو غير مكتمل. تواصل مع مسؤول النظام.'
-      : (rawMessage || 'حدث خطأ أثناء تفعيل الإشعارات الفورية.');
-    return { success: false, error: message };
+    console.error('FCM Registration Error:', err);
+    const rawMessage = err instanceof Error ? err.message : String(err);
+    return { success: false, error: rawMessage || 'تعذر تفعيل الإشعارات الفورية.' };
   }
 };
 
