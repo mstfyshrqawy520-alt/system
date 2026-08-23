@@ -8,6 +8,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import TableFilterBar from '../../components/ui/TableFilterBar';
 import { getDefaultDateFrom, getTodayInputDate, isDefaultTodayRange } from '../../utils/dateFilters';
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
 
 export const GeneralManagerPurchaseOrdersPage: React.FC = () => {
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
@@ -21,11 +22,21 @@ export const GeneralManagerPurchaseOrdersPage: React.FC = () => {
   const [dateFrom, setDateFrom] = useState(defaultDateFrom);
   const [dateTo, setDateTo] = useState(today);
 
+  const fetchPos = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const data = await getGeneralManagerPurchaseOrdersApi();
+      setPos(data);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    getGeneralManagerPurchaseOrdersApi()
-      .then(setPos)
-      .finally(() => setLoading(false));
+    void fetchPos(false);
   }, []);
+
+  useRealtimeRefresh(() => { void fetchPos(true); });
 
   if (loading) {
     return <div className="text-cyan-400 animate-pulse text-xs" dir="rtl">جاري تحميل البيانات...</div>;

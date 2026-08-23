@@ -102,6 +102,9 @@ class NotificationService
     {
         $userId = $recipient instanceof User ? $recipient->id : (int) $recipient;
 
+        // Persist notification to database immediately for instant realtime delivery
+        $this->createNotification($userId, $type, $title, $message, $notifiable);
+
         SendNotificationsJob::dispatch([$userId], $type, $title, $message, $notifiable);
     }
 
@@ -121,6 +124,9 @@ class NotificationService
             return;
         }
 
+        // Persist notifications to database immediately for instant realtime delivery
+        $this->notifyUsers($recipientIds, $type, $title, $message, $notifiable);
+
         SendNotificationsJob::dispatch($recipientIds, $type, $title, $message, $notifiable);
     }
 
@@ -139,6 +145,9 @@ class NotificationService
         if ($recipientIds === []) {
             return;
         }
+
+        // Persist notification to database immediately for instant realtime delivery
+        $this->notifyAccountingWithPurchaseOrderAndReceipt($recipientIds, $purchaseOrder, $purchaseReceipt);
 
         SendNotificationsJob::dispatch(
             $recipientIds,

@@ -42,12 +42,9 @@ class NotificationController extends Controller
     {
         $user = $request->user();
         $lastId = max(0, (int) $request->query('last_id', 0));
-        $requestedSeconds = max(0, (int) $request->query('timeout', 120));
-        // PHP's built-in server is single-worker in local development. Keep SSE short
-        // locally so it cannot block normal POST/GET requests such as request submission.
-        $maxSeconds = app()->environment('local')
-            ? 0
-            : min(300, max(1, $requestedSeconds));
+        $requestedSeconds = max(0, (int) $request->query('timeout', 20));
+        // Keep SSE connection cycle at 20-30s max so it releases workers quickly and reconnects seamlessly
+        $maxSeconds = min(30, max(1, $requestedSeconds));
 
         return response()->stream(function () use ($user, $lastId, $maxSeconds): void {
             $cursor = $lastId;
@@ -58,12 +55,6 @@ class NotificationController extends Controller
                 @ob_flush();
             }
             flush();
-
-            // In the single-worker PHP development server, return immediately.
-            // The browser reconnects automatically, preserving realtime without blocking API calls.
-            if ($maxSeconds === 0) {
-                return;
-            }
 
             while (! connection_aborted() && (microtime(true) - $startedAt) < $maxSeconds) {
                 $notifications = Notification::query()
@@ -86,7 +77,7 @@ class NotificationController extends Controller
                     @ob_flush();
                 }
                 flush();
-                usleep(500000);
+                usleep(1000000); // 1-second check interval
             }
         }, 200, [
             'Content-Type' => 'text/event-stream',

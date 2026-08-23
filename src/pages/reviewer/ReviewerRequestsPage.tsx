@@ -43,6 +43,8 @@ const isOverdueRequest = (request: PurchaseRequest): boolean => {
   return new Date(`${request.date_needed}T23:59:59`).getTime() < Date.now();
 };
 
+import { useRealtimeRefresh, emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
+
 export const ReviewerRequestsPage: React.FC = () => {
   const { hasPermission } = useAuth();
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
@@ -53,22 +55,24 @@ export const ReviewerRequestsPage: React.FC = () => {
   const [error, setError] = useState<ApiError | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const fetchRequests = async (filters: ReviewerRequestFilters = searchFilters) => {
-    setIsLoading(true);
+  const fetchRequests = async (filters: ReviewerRequestFilters = searchFilters, silent = false) => {
+    if (!silent) setIsLoading(true);
     setError(null);
     try {
       const data = await getReviewableRequestsApi(filters);
       setRequests(data);
     } catch (err) {
-      setError(parseApiError(err));
+      if (!silent) setError(parseApiError(err));
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    void fetchRequests(searchFilters);
+    void fetchRequests(searchFilters, false);
   }, []);
+
+  useRealtimeRefresh(() => fetchRequests(searchFilters, true));
 
   const handleQuickApprove = async (id: number) => {
     setApprovingId(id);
@@ -77,7 +81,8 @@ export const ReviewerRequestsPage: React.FC = () => {
     try {
       await approvePurchaseRequestApi(id, 'تم الاعتماد المباشر بواسطة المراجع');
       setSuccessMsg('✅ تم اعتماد طلب الشراء فوراً بخطوة واحدة.');
-      await fetchRequests(searchFilters);
+      emitAppDataUpdated();
+      await fetchRequests(searchFilters, true);
     } catch (err) {
       setError(parseApiError(err));
     } finally {

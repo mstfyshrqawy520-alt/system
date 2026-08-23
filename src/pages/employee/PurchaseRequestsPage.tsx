@@ -32,6 +32,8 @@ const EMPLOYEE_APPROVED_STATUSES = new Set([
   'PENDING_EXECUTIVE_QUOTE_DECISION',
 ]);
 
+import { useRealtimeRefresh, emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
+
 export const PurchaseRequestsPage: React.FC = () => {
   const { hasPermission } = useAuth();
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
@@ -51,22 +53,24 @@ export const PurchaseRequestsPage: React.FC = () => {
   const [selectedDeletePr, setSelectedDeletePr] = useState<PurchaseRequest | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  const fetchRequests = async () => {
-    setIsLoading(true);
+  const fetchRequests = async (silent = false) => {
+    if (!silent) setIsLoading(true);
     setError(null);
     try {
       const data = await getOwnPurchaseRequestsApi();
       setRequests(data);
     } catch (err) {
-      setError(parseApiError(err));
+      if (!silent) setError(parseApiError(err));
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchRequests();
+    fetchRequests(false);
   }, []);
+
+  useRealtimeRefresh(() => fetchRequests(true));
 
   const handleConfirmSubmit = async () => {
     if (!selectedSubmitPr) return;
@@ -74,7 +78,8 @@ export const PurchaseRequestsPage: React.FC = () => {
     try {
       await submitPurchaseRequestApi(selectedSubmitPr.id);
       setSelectedSubmitPr(null);
-      await fetchRequests();
+      emitAppDataUpdated();
+      await fetchRequests(true);
     } catch (err) {
       setError(parseApiError(err));
     } finally {
@@ -88,7 +93,8 @@ export const PurchaseRequestsPage: React.FC = () => {
     try {
       await deletePurchaseRequestApi(selectedDeletePr.id);
       setSelectedDeletePr(null);
-      await fetchRequests();
+      emitAppDataUpdated();
+      await fetchRequests(true);
     } catch (err) {
       setError(parseApiError(err));
     } finally {

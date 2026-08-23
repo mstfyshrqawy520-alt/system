@@ -13,28 +13,32 @@ import { Button } from '../../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import { DashboardDonut } from '../../components/ui/DashboardCharts';
 
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
+
 export const ReviewerDashboardPage: React.FC = () => {
   const { user, hasPermission } = useAuth();
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<ApiError | null>(null);
 
-  const fetchRequests = async () => {
-    setIsLoading(true);
+  const fetchRequests = async (silent = false) => {
+    if (!silent) setIsLoading(true);
     setError(null);
     try {
       const data = await getReviewableRequestsApi();
       setRequests(data);
     } catch (err) {
-      setError(parseApiError(err));
+      if (!silent) setError(parseApiError(err));
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    void fetchRequests();
+    void fetchRequests(false);
   }, []);
+
+  useRealtimeRefresh(() => fetchRequests(true));
 
   const submittedCount = requests.filter((r) => r.status === 'SUBMITTED').length;
   const underReviewCount = requests.filter((r) => r.status === 'UNDER_REVIEW').length;

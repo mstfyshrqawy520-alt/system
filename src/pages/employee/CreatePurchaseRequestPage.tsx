@@ -21,6 +21,7 @@ import { getUnitLabel, getUnitOptions } from '../../utils/units';
 import { parseApiError } from '../../utils/apiError';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { useAuth } from '../../context/AuthContext';
+import { emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
 
 const UNIT_OPTIONS = getUnitOptions(['PCS', 'KG', 'TON', 'M', 'M2', 'M3', 'L', 'BAG', 'BOX', 'CARTON', 'SET', 'PAIR', 'UNIT', 'HOUR', 'DAY']);
 
@@ -273,6 +274,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
       const draft = await ensureServerDraft();
       await submitPurchaseRequestApi(draft.id);
       window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+      emitAppDataUpdated();
       navigate(`/requests/${draft.id}`, {
         state: {
           message: isGeneralManager

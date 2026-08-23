@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
 import { usePersistedState } from '../../hooks/usePersistedState';
 import {
   approveProcurementPrApi,
@@ -221,6 +222,8 @@ export const ProcurementManagerPage: React.FC = () => {
   };
 
   useEffect(() => { void loadData(); }, []);
+
+  useRealtimeRefresh(() => { void loadData(); });
 
   useEffect(() => {
     const requestId = Number(searchParams.get('open') || 0);

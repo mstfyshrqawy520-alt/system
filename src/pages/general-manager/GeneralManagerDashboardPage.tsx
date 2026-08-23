@@ -9,6 +9,8 @@ import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import { DashboardBars, DashboardDonut } from '../../components/ui/DashboardCharts';
 import { getDefaultDateFrom, getTodayInputDate } from '../../utils/dateFilters';
 
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
+
 export const GeneralManagerDashboardPage: React.FC = () => {
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
@@ -20,12 +22,25 @@ export const GeneralManagerDashboardPage: React.FC = () => {
   const [departmentId, setDepartmentId] = useState('');
   const [supplierId, setSupplierId] = useState('');
 
+  const loadData = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const [posData, reqsData] = await Promise.all([
+        getGeneralManagerPurchaseOrdersApi().catch(() => []),
+        getGeneralManagerPurchaseRequestsApi().catch(() => []),
+      ]);
+      setPos(posData);
+      setRequests(reqsData);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    Promise.all([
-      getGeneralManagerPurchaseOrdersApi().then(setPos).catch(() => []),
-      getGeneralManagerPurchaseRequestsApi().then(setRequests).catch(() => []),
-    ]).finally(() => setLoading(false));
+    void loadData(false);
   }, []);
+
+  useRealtimeRefresh(() => { void loadData(true); });
 
   const filteredPos = useMemo(() => {
     const from = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;

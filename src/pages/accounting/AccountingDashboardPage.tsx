@@ -11,6 +11,8 @@ import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import PurchaseOrderPrintModal from '../../components/procurement/PurchaseOrderPrintModal';
 import { DashboardBars, DashboardDonut } from '../../components/ui/DashboardCharts';
 
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
+
 export const AccountingDashboardPage: React.FC = () => {
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
   const [directPrs, setDirectPrs] = useState<PurchaseRequest[]>([]);
@@ -32,14 +34,29 @@ export const AccountingDashboardPage: React.FC = () => {
     }
   };
 
+  const loadData = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const [posData, directData, receiptsData, accountsData] = await Promise.all([
+        getAccountingPurchaseOrdersApi().catch(() => []),
+        getDirectAccountingPurchaseRequestsApi().catch(() => []),
+        getApprovedReceiptsForAccountingApi().catch(() => []),
+        getSupplierAccountsApi().catch(() => []),
+      ]);
+      setPos(posData);
+      setDirectPrs(directData);
+      setReceipts(receiptsData);
+      setAccounts(accountsData);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    Promise.all([
-      getAccountingPurchaseOrdersApi().then(setPos).catch(() => []),
-      getDirectAccountingPurchaseRequestsApi().then(setDirectPrs).catch(() => []),
-      getApprovedReceiptsForAccountingApi().then(setReceipts).catch(() => []),
-      getSupplierAccountsApi().then(setAccounts).catch(() => []),
-    ]).finally(() => setLoading(false));
+    void loadData(false);
   }, []);
+
+  useRealtimeRefresh(() => { void loadData(true); });
 
   if (loading) {
     return <div className="text-cyan-400 animate-pulse text-xs p-6" dir="rtl">جاري تحميل بيانات لوحة المحاسبة...</div>;

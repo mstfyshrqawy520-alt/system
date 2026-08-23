@@ -34,8 +34,10 @@ export interface PurchaseOrderPage {
   };
 }
 
-export const getPurchaseOrdersApi = async (params: PurchaseOrderQueryParams = {}): Promise<PurchaseOrderPage> =>
-  cachedGetData<PurchaseOrderPage>(base, { params });
+export const getPurchaseOrdersApi = async (params: PurchaseOrderQueryParams = {}): Promise<PurchaseOrderPage> => {
+  const response = await apiClient.get<PurchaseOrderPage>(base, { params });
+  return response.data;
+};
 
 export const getPurchaseOrderApi = async (id: number) =>
   (await apiClient.get<{ data: PurchaseOrder }>(`${base}/${id}`)).data.data;

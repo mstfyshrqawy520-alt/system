@@ -19,6 +19,7 @@ import PrDetailsModal from '../../components/procurement/PrDetailsModal';
 import DirectAccountingReviewModal from '../../components/procurement/DirectAccountingReviewModal';
 import TableFilterBar from '../../components/ui/TableFilterBar';
 import { getDefaultDateFrom, getTodayInputDate, isDefaultTodayRange } from '../../utils/dateFilters';
+import { useRealtimeRefresh, emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
 
 const AccountingPurchaseRequestsPage: React.FC = () => {
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
@@ -35,20 +36,28 @@ const AccountingPurchaseRequestsPage: React.FC = () => {
   const [dateTo, setDateTo] = useState(today);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
-      setRequests(await getDirectAccountingPurchaseRequestsApi());
-      setSuppliers(await getAccountingActiveSuppliersApi());
+      const [reqs, supps] = await Promise.all([
+        getDirectAccountingPurchaseRequestsApi(),
+        getAccountingActiveSuppliersApi(),
+      ]);
+      setRequests(reqs);
+      setSuppliers(supps);
     } catch (err) {
-      setError(parseApiError(err).message);
+      if (!silent) setError(parseApiError(err).message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load(false);
+  }, []);
+
+  useRealtimeRefresh(() => { void load(true); });
 
   useEffect(() => {
     const requestId = Number(searchParams.get('open') || 0);

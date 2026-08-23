@@ -16,6 +16,8 @@ import {
   PR_STATUS_LABELS,
 } from '../../types/purchaseRequest';
 import { parseApiError } from '../../utils/apiError';
+import { useRealtimeRefresh, emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
+import PrDetailsModal from '../../components/procurement/PrDetailsModal';
 import TableFilterBar from '../../components/ui/TableFilterBar';
 import PurchaseRequestTimeline from '../../components/procurement/PurchaseRequestTimeline';
 
@@ -45,21 +47,24 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const loadRequests = async () => {
-    setLoading(true);
+  const loadRequests = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      setRequests(await getGeneralManagerPurchaseRequestsApi());
-      setError(null);
+      const data = await getGeneralManagerPurchaseRequestsApi();
+      setRequests(data);
+      if (!silent) setError(null);
     } catch (err) {
-      setError(parseApiError(err).message);
+      if (!silent) setError(parseApiError(err).message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    void loadRequests();
+    void loadRequests(false);
   }, []);
+
+  useRealtimeRefresh(() => { void loadRequests(true); });
 
   useEffect(() => {
     const requestId = Number(searchParams.get('open'));

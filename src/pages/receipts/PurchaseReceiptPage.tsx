@@ -12,6 +12,8 @@ import { approvePurchaseReceiptApi, createPurchaseReceiptApi, getAssignedReceipt
 
 type ReceiptMode = 'warehouse' | 'site';
 
+import { useRealtimeRefresh, emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
+
 export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) => {
   const [orders, setOrders] = useState<ReceiptPurchaseOrder[]>([]);
   const [receipts, setReceipts] = useState<ReceiptRecord[]>([]);
@@ -26,20 +28,22 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
   const [dateFrom, setDateFrom] = useState(defaultDateFrom);
   const [dateTo, setDateTo] = useState(today);
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       if (mode === 'warehouse') setOrders(await getWarehouseReceiptQueueApi());
       else setReceipts(await getAssignedReceiptsApi());
     } catch (err) {
-      setError(parseApiError(err).message);
+      if (!silent) setError(parseApiError(err).message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
-  useEffect(() => { void load(); }, [mode]);
+  useEffect(() => { void load(false); }, [mode]);
+
+  useRealtimeRefresh(() => { void load(true); });
 
   const normalizedSearch = searchTerm.trim().toLocaleLowerCase('ar-EG');
   const ignoreDefaultDateForSearch = Boolean(normalizedSearch) && isDefaultTodayRange(dateFrom, dateTo);
