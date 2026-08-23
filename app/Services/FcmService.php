@@ -121,12 +121,19 @@ class FcmService
                             'body' => $body,
                         ],
                         'webpush' => [
+                            'headers' => [
+                                'Urgency' => 'high',
+                                'TTL' => '86400',
+                            ],
                             'notification' => [
-                                'icon' => '/favicon.svg',
-                                'badge' => '/favicon.svg',
+                                'title' => $title,
+                                'body' => $body,
+                                'icon' => 'https://system-production-7ba9.up.railway.app/eshbelia-logo.png',
+                                'badge' => 'https://system-production-7ba9.up.railway.app/eshbelia-logo.png',
                                 'dir' => 'rtl',
                                 'lang' => 'ar',
                                 'vibrate' => [200, 100, 200],
+                                'requireInteraction' => true,
                             ],
                             'fcm_options' => [
                                 'link' => $data['url'] ?? '/notifications',
@@ -135,6 +142,15 @@ class FcmService
                         'data' => $stringData,
                         'android' => [
                             'priority' => 'high',
+                            'notification' => [
+                                'title' => $title,
+                                'body' => $body,
+                                'sound' => 'default',
+                                'default_sound' => true,
+                                'default_vibrate_timings' => true,
+                                'notification_priority' => 'PRIORITY_HIGH',
+                                'visibility' => 'PUBLIC',
+                            ],
                         ],
                     ],
                 ];
