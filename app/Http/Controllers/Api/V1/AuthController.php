@@ -58,7 +58,7 @@ class AuthController extends Controller
      */
     public function demoAccounts(): JsonResponse
     {
-        abort_unless(app()->environment(['local', 'testing']) && config('app.demo_login_panel'), 404);
+        abort_unless(app()->environment(['local', 'testing', 'staging']) && config('app.demo_login_panel'), 404);
 
         $users = User::query()
             ->where('is_active', true)
