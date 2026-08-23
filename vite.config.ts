@@ -15,6 +15,9 @@ export default defineConfig({
     port: 3000,
     allowedHosts: ['.lhr.life'],
     open: false,
+    watch: {
+      ignored: ['**/tools/**', '**/storage/**', '**/vendor/**', '**/*.log', '**/*.phar', '**/*.zip', '**/data/**'],
+    },
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8000',

@@ -25,9 +25,72 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Storage text/log files
 /storage/**/*.txt
 /storage/**/*.log
-/storage/**/*.json
-/storage/**/*.csv
-/storage/**/*.sql
-*.bak
+
+# Build/test logs
+*.log
+*.err.log
+*.out.log
+
+# Temporary files
+*.zip
+*.phar
+/php_bin
+/php82.zip
+/composer.phar
+
+# Test/audit output files
+*.txt
+!README.txt
+
+# Temp PHP scripts
+tmp_*.php
+
+# Data and scratch directories
+/data
+/scratch
+/laravel_temp
+
+# Build artifacts
+/uat
+
+# Report markdown files (keep only README.md)
+*_REPORT*.md
+*_PLAN*.md
+*_FIX*.md
+*_AUDIT*.md
+AGREEMENT_*.md
+AUTH_*.md
+BRAND_*.md
+DASHBOARDS_*.md
+DEMO_*.md
+FINAL_*.md
+FILTERS_*.md
+FIVE_*.md
+GM_*.md
+HOSTINGER_*.md
+LATENCY_*.md
+LOADING_*.md
+NOT_NULL_*.md
+PO_*.md
+PROCUREMENT_*.md
+PRODUCTION_*.md
+QUEUE_*.md
+REALTIME_*.md
+TEST_*.md
+UAT_*.md
+
+# Arabic report files
+تقرير-*.md
+
+# Misc temp files
+check_ports.cmd
+run_project.cmd
+merge_procurement_queue.py
+login-check.json
+route-check.json
+scenario-validation.json
+audit-routes.json
