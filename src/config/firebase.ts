@@ -2,7 +2,7 @@ import { initializeApp, getApps, FirebaseApp, FirebaseOptions } from 'firebase/a
 import { getMessaging, Messaging, isSupported } from 'firebase/messaging';
 
 const firebaseConfig: FirebaseOptions = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyD302gnOe62JCFrXILhn2RoeRMiOqE90kc',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyD302gnOe62JCFrXILhn2RoeRMiOqE9Okc',
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'aghbilia.firebaseapp.com',
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'aghbilia',
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'aghbilia.firebasestorage.app',
