@@ -1,5 +1,5 @@
 import { getToken, onMessage, MessagePayload } from 'firebase/messaging';
-import { getFirebaseMessaging } from '../config/firebase';
+import { getFirebaseConfig, getFirebaseMessaging, isFirebaseConfigured } from '../config/firebase';
 import { apiClient } from '../api/client';
 
 export type PushPermissionState = 'default' | 'granted' | 'denied' | 'unsupported';
@@ -31,7 +31,16 @@ export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration
   }
 
   try {
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+    const config = getFirebaseConfig();
+    const params = new URLSearchParams({
+      apiKey: config.apiKey || '',
+      authDomain: config.authDomain || '',
+      projectId: config.projectId || '',
+      storageBucket: config.storageBucket || '',
+      messagingSenderId: config.messagingSenderId || '',
+      appId: config.appId || '',
+    });
+    const registration = await navigator.serviceWorker.register(`/firebase-messaging-sw.js?${params.toString()}`, {
       scope: '/',
     });
     return registration;
@@ -47,6 +56,13 @@ export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration
 export const requestAndRegisterPushToken = async (): Promise<{ success: boolean; token?: string; error?: string }> => {
   if (!getPushSupportStatus()) {
     return { success: false, error: 'المتصفح الحالي لا يدعم الإشعارات الفورية (Web Push).' };
+  }
+
+  if (!isFirebaseConfigured()) {
+    return {
+      success: false,
+      error: 'الإشعارات الفورية غير مهيأة لهذه النسخة. استخدم إشعارات النظام الداخلية أو تواصل مع مسؤول النظام لتفعيل Firebase.',
+    };
   }
 
   try {
@@ -88,7 +104,10 @@ export const requestAndRegisterPushToken = async (): Promise<{ success: boolean;
 
     return { success: true, token };
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'حدث خطأ أثناء تفعيل الإشعارات الفورية.';
+    const rawMessage = err instanceof Error ? err.message : '';
+    const message = /api key|invalid_argument|installations\/request-failed/i.test(rawMessage)
+      ? 'تعذر تفعيل الإشعارات الفورية لأن إعداد Firebase غير صالح أو غير مكتمل. تواصل مع مسؤول النظام.'
+      : (rawMessage || 'حدث خطأ أثناء تفعيل الإشعارات الفورية.');
     return { success: false, error: message };
   }
 };
