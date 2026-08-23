@@ -25,7 +25,7 @@ export const markAllNotificationsAsReadApi = async (): Promise<void> => {
   await apiClient.post('/notifications/read-all');
 };
 
-const realtimeBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+const realtimeBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const realtimeStreamTimeout = Number(
   import.meta.env.VITE_NOTIFICATIONS_STREAM_TIMEOUT || (import.meta.env.DEV ? 0 : 120),
 );
