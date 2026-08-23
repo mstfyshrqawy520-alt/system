@@ -53,16 +53,69 @@ export const PushNotificationPrompt: React.FC<PushNotificationPromptProps> = ({
     );
   }
 
-  if (permission === 'granted' && !message) {
-    if (variant === 'compact') {
-      return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-950/80 px-2.5 py-1 text-xs font-bold text-emerald-300 border border-emerald-800/60">
-          <span>🔔</span>
-          <span>الإشعارات الفورية مفعّلة على هذا الجهاز</span>
-        </span>
-      );
+  const [testingPush, setTestingPush] = useState(false);
+
+  const handleTestPush = async () => {
+    setTestingPush(true);
+    setMessage(null);
+    try {
+      const response = await (await import('../../api/client')).apiClient.post('/api/v1/notifications/test-push');
+      const data = response.data;
+      setIsSuccess(true);
+      setMessage(`تم إرسال الإشعار التجريبي بنجاح! تم استهداف (${data.device_count || 1}) جهاز. تفقد شريط إشعارات هاتفك الآن.`);
+    } catch (err: any) {
+      setIsSuccess(false);
+      const errMsg = err?.response?.data?.message || err?.message || 'تعذر إرسال الإشعار التجريبي.';
+      setMessage(errMsg);
+    } finally {
+      setTestingPush(false);
     }
-    return null;
+  };
+
+  if (permission === 'granted') {
+    return (
+      <div className="rounded-2xl border border-emerald-800/60 bg-gradient-to-r from-slate-900 via-emerald-950/20 to-slate-900 p-4 shadow-lg space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-xl text-emerald-300 border border-emerald-500/30">
+              🔔
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-black text-emerald-300">الإشعارات الفورية مفعّلة على هذا الجهاز</h4>
+                <span className="inline-flex items-center rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                  نشط ⚡
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-slate-400">
+                جهازك مسجل الآن لاستقبال التنبيهات حتى عند إغلاق المتصفح أو قفل الشاشة.
+              </p>
+            </div>
+          </div>
+
+          <div className="shrink-0 flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="font-bold text-xs border-emerald-700/60 text-emerald-300 hover:bg-emerald-950/40"
+              isLoading={testingPush}
+              onClick={handleTestPush}
+            >
+              <span>🔔</span>
+              <span>إرسال إشعار تجريبي لاختبار الهاتف</span>
+            </Button>
+          </div>
+        </div>
+
+        {message && (
+          <div className={`rounded-xl p-2.5 text-xs font-bold ${
+            isSuccess ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60' : 'bg-rose-950/80 text-rose-300 border border-rose-800/60'
+          }`}>
+            {message}
+          </div>
+        )}
+      </div>
+    );
   }
 
   if (permission === 'denied') {
@@ -70,7 +123,7 @@ export const PushNotificationPrompt: React.FC<PushNotificationPromptProps> = ({
       <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3.5 text-xs text-slate-400 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="text-amber-400 text-base">⚠️</span>
-          <span>تم تعطيل إشعارات المتصفح من إعدادات جهازك. يمكنك تفعيلها من إعدادات المتصفح لتصلك التنبيهات الفورية.</span>
+          <span>تم تعطيل إشعارات المتصفح من إعدادات جهازك. يرجى تفعيلها من إعدادات المتصفح (Site Settings) لتصلك التنبيهات الفورية.</span>
         </div>
       </div>
     );

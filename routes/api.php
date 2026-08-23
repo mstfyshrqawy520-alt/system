@@ -348,6 +348,7 @@ Route::middleware('auth:sanctum')->prefix('notifications')->group(function () {
     Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
     Route::post('/device-token', [NotificationController::class, 'registerDeviceToken']);
     Route::delete('/device-token', [NotificationController::class, 'deleteDeviceToken']);
+    Route::post('/test-push', [NotificationController::class, 'testPush']);
 });
 
 // Admin System Management Routes

@@ -149,5 +149,35 @@ class NotificationController extends Controller
             'message' => 'تم إلغاء تفعيل الإشعارات الفورية على هذا الجهاز.',
         ]);
     }
+
+    public function testPush(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $tokens = $user->deviceTokens()->pluck('token')->all();
+
+        if (empty($tokens)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'لم يتم العثور على أي أجهزة مسجلة لهذا الحساب. يرجى الضغط على زر تفعيل الإشعارات من متصفح الهاتف أولاً.',
+                'device_count' => 0,
+            ], 400);
+        }
+
+        /** @var \App\Services\FcmService $fcmService */
+        $fcmService = app(\App\Services\FcmService::class);
+        $result = $fcmService->sendToUser(
+            $user,
+            '🔔 إشعار تجريبي من نظام الإشبيليّة',
+            'تم إرسال هذا الإشعار بنجاح إلى شريط إشعارات جهازك!',
+            ['url' => '/notifications']
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم إرسال الإشعار التجريبي عبر Google FCM بنجاح!',
+            'device_count' => count($tokens),
+            'result' => $result,
+        ]);
+    }
 }
 
