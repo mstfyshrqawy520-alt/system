@@ -231,7 +231,20 @@ class FcmService
             }
         }
 
-        return null;
+        // 3. Built-in default production credentials for aghbilia project
+        return [
+            'type' => 'service_account',
+            'project_id' => 'aghbilia',
+            'private_key_id' => '5846d6992570e01ba4a56a242f8f2d221a9a9ed6',
+            'private_key' => "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC0L/5EYwnt42Th\nz+oIQ7sA6ljrRq82/7/zWe6Yp2/NOrIXrS113lyDz04BzF567q6Nd95iXi2e2GvM\nyN72w3pMBQcKValcUaABa9rZ+Nmm3VTDb2UHq2Qczf1lCo30XzDKURcuS26WI4hV\nHUAKXaPl3Rpbt4hf99MYr8hw7jXi5iyy2gnIZcl806UP2McxOA2DYWvHLZOX55oC\nzKes1ojpDlw1p9paNI2Y8xy9ZXXkWlZ8VtD0aGK9iSUwohR6M7E/9OHspJchsYeU\nDBi9Q4GUKljmu8Xazx5+l/jRKReWXy5h38CeGInyyAu6oZIYDljOe903DBo0IatA\njRraabKvAgMBAAECggEAWXqv2QQZrTHMKjsWrC3+UpENwSCj6DsO9mkFjHcxlQf9\n4rYUKkFXTfmHcmsry/51XjlVjSHZo9Uzi0mBN6eRNukUOvSZGwhJ3grSboYeh7fH\n3RmXYTyihY9hs2iPX/hZgU7NpSa+bv6MOEBDSiKAPqkS6tL0fTvTb6HzdulEhz0T\nO6Iky3Uzg6CnwvgqGl/rBZV/P4Whpy5/FBKtQ+nB8dr9ksnnQvBwcNweRSwKW+Io\n3T7sV/Uu3nzSL8VbHvy10MLLa4w1pBx0XsKjGTX2amKqsyQjj7Q99oWl78dSzp/w\nj1jgZ9hP1qxc4U6JB9+D7eC23c7of0P0flAxEF/BCQKBgQDb/lAbYLs9LjtdAt9t\nxEiLeV8Xd173Ri92Q10KL9g0KRZ4Eei0LM6Teptpi86mf0sBGAKwImtIVh/nhoQB\nBSg/zD5bk2CcedMDJrYKWyS+d6LeLAao2aMs2HOguBUD5nKI94u2X3TOfg+oPeig\nw4o6XG853obp1+qpBu2R5jSNRQKBgQDRrdF4Ln70alA7wEvpHjJJlqhT2PXMPZTB\nlUancysrJkQ+TUSIdO80b1ey7o1l73t0Q00DPrNybWxVtNGif5Aa+BnzNDoxOk1w\nto+c8MkwxuQd83RMroxkWG++irOCRrHSkGmEJ5YiZhiB1kIZm99XxSIZPuD3pQ8D\nBnsQqYFdYwKBgQC5l9YLEtNDrRIlyLunxfURvYYsrOcwI0T9N51xb6Wtc5BiIXG5\nNyfboY8lPu5K5o7nUFNMNu1dLFNkJsaMecZX9D4TUcUqnVgYi3r+R6A7E4ESf//q\nSRlxRvZde483KB4uUPDMHcHURuN8oyXzIqQl0j9/ia018JMmoBKiiJyDJQKBgERo\n13zEfrszrHWyKZInPfTwaH7ivF8kgFIgZ+reEmmDlKRXBVMYA6sx4IUKe6uUVMz7\n4DZ80IM23C+iTPsdb2C9LYpBsfK5uOZbScPEc3+shGSZN4qFMFzU1bBvBF4uvnma\nkDKDz+HtOXWy9+HvDxFNyfA+qZtiiOFNzf0DsKdNAoGAFVVQovu6imPLM4Kb9ltA\nxERcGq/0mTzn0TDku0RRYxftVGpQnLwyCD3RywLoWFb8JCGG1Oc4J5t/VS6leBJj\nlZ+Tnqf9EngBxCKRWCIaf06wy6gVhMZo17V+gJ0XUs2OBPTbQcIg+hyzb1nXIZYy\n3BmNElJAwIRluStSxlJd4kM=\n-----END PRIVATE KEY-----\n",
+            'client_email' => 'firebase-adminsdk-fbsvc@aghbilia.iam.gserviceaccount.com',
+            'client_id' => '116813085294811433607',
+            'auth_uri' => 'https://accounts.google.com/o/oauth2/auth',
+            'token_uri' => 'https://oauth2.googleapis.com/token',
+            'auth_provider_x509_cert_url' => 'https://www.googleapis.com/oauth2/v1/certs',
+            'client_x509_cert_url' => 'https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40aghbilia.iam.gserviceaccount.com',
+            'universe_domain' => 'googleapis.com',
+        ];
     }
 
     /**
