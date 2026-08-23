@@ -25,3 +25,9 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+/storage/**/*.txt
+/storage/**/*.log
+/storage/**/*.json
+/storage/**/*.csv
+/storage/**/*.sql
+*.bak
