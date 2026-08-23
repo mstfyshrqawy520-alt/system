@@ -78,7 +78,7 @@ export const requestAndRegisterPushToken = async (): Promise<{ success: boolean;
       return { success: false, error: 'تعذر تشغيل خدمة Firebase Messaging في هذا المتصفح.' };
     }
 
-    const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY || undefined;
+    const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BICSsZm8NiS8LQ1cCzaXTIby3b6fXoGYTGHt7h-CfdbBnm0cXJxSA2-GUFr91CgVnnzA-anvwKdMFE3XKYdVmlA';
 
     const token = await getToken(messaging, {
       serviceWorkerRegistration: swRegistration || undefined,

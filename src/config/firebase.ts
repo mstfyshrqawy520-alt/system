@@ -2,12 +2,12 @@ import { initializeApp, getApps, FirebaseApp, FirebaseOptions } from 'firebase/a
 import { getMessaging, Messaging, isSupported } from 'firebase/messaging';
 
 const firebaseConfig: FirebaseOptions = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyD302gnOe62JCFrXILhn2RoeRMiOqE90kc',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'aghbilia.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'aghbilia',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'aghbilia.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '614382303024',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:614382303024:web:333d30552b2bc07e30baf5',
 };
 
 const requiredConfigKeys: Array<keyof FirebaseOptions> = [
