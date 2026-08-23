@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ['...', 'php82', 'php82Extensions.pdo', 'php82Extensions.pdo_mysql', 'php82Extensions.mbstring', 'php82Extensions.xml', 'php82Extensions.curl', 'php82Extensions.tokenizer', 'php82Extensions.ctype', 'php82Extensions.bcmath', 'php82Extensions.openssl', 'php82Extensions.fileinfo', 'nodejs_20', 'npm-9_x']
+nixPkgs = ['...', 'php82', 'php82Extensions.pdo', 'php82Extensions.pdo_mysql', 'php82Extensions.mbstring', 'php82Extensions.xml', 'php82Extensions.curl', 'php82Extensions.tokenizer', 'php82Extensions.ctype', 'php82Extensions.bcmath', 'php82Extensions.openssl', 'php82Extensions.fileinfo', 'php82Extensions.gd', 'php82Extensions.zip', 'php82Extensions.intl', 'php82Extensions.dom', 'php82Extensions.simplexml', 'nodejs_20', 'npm-9_x']
 
 [phases.install]
 cmds = [
