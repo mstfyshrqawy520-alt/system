@@ -1,0 +1,10 @@
+<IfModule mod_rewrite.c>
+    Options -Indexes
+    RewriteEngine On
+
+    # Never expose environment files, source metadata, dependencies, or test assets.
+    RewriteRule ^(?:\.env(?:\..*)?|\.git(?:/|$)|composer\.(?:json|lock)|package(?:-lock)?\.json|phpunit\.xml(?:\.dist)?|vite\.config\.(?:js|ts)|database(?:/|$)|tests(?:/|$)|vendor(?:/|$)) - [F,L,NC]
+
+    # Keep the Laravel public directory as the only web-facing application root.
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
