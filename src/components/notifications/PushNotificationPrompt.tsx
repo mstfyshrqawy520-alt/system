@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '../ui/Button';
+import { isFirebaseConfigured } from '../../config/firebase';
 import {
   getPushPermissionState,
   getPushSupportStatus,
@@ -21,14 +22,35 @@ export const PushNotificationPrompt: React.FC<PushNotificationPromptProps> = ({
   const [message, setMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
+  const [isConfigured, setIsConfigured] = useState(true);
 
   useEffect(() => {
     setIsSupported(getPushSupportStatus());
     setPermission(getPushPermissionState());
+    setIsConfigured(isFirebaseConfigured());
   }, []);
 
   if (!isSupported) {
     return null;
+  }
+
+  if (!isConfigured) {
+    if (variant === 'compact') {
+      return (
+        <span className="inline-flex items-center rounded-full border border-slate-700 bg-slate-900/80 px-2.5 py-1 text-xs font-bold text-slate-400">
+          الإشعارات الفورية غير مهيأة حاليًا
+        </span>
+      );
+    }
+
+    return (
+      <div className="rounded-2xl border border-amber-800/60 bg-slate-900/80 p-4 text-sm text-amber-200">
+        <div className="font-black">الإشعارات الفورية غير مهيأة لهذه النسخة</div>
+        <p className="mt-1 text-xs leading-5 text-slate-400">
+          يمكنك استخدام إشعارات النظام الداخلية، أو التواصل مع مسؤول النظام لتفعيل إعدادات Firebase.
+        </p>
+      </div>
+    );
   }
 
   if (permission === 'granted' && !message) {
