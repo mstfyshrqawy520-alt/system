@@ -15,11 +15,13 @@ import { Card } from '../components/ui/Card';
 import { parseApiError } from '../utils/apiError';
 import { PushNotificationPrompt } from '../components/notifications/PushNotificationPrompt';
 
+type NotificationCategoryTab = 'UNREAD' | 'REQUESTS' | 'ORDERS' | 'FINANCE' | 'ALL';
+
 export const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [activeTab, setActiveTab] = useState<'UNREAD' | 'ALL'>('UNREAD');
+  const [activeTab, setActiveTab] = useState<NotificationCategoryTab>('UNREAD');
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -236,7 +238,13 @@ export const NotificationsPage: React.FC = () => {
   };
 
   const unreadNotifications = notifications.filter((n) => !n.read_at);
-  const displayedNotifications = activeTab === 'UNREAD' ? unreadNotifications : notifications;
+  const displayedNotifications = notifications.filter((n) => {
+    if (activeTab === 'UNREAD') return !n.read_at;
+    if (activeTab === 'REQUESTS') return n.type?.includes('purchase_request') || n.type?.includes('pr_');
+    if (activeTab === 'ORDERS') return n.type?.includes('purchase_order') || n.type?.includes('po_') || n.type?.includes('receipt');
+    if (activeTab === 'FINANCE') return n.type?.includes('quote') || n.type?.includes('recommendation') || n.type?.includes('invoice') || n.type?.includes('payment');
+    return true;
+  });
 
   if (loading) {
     return (
@@ -256,7 +264,7 @@ export const NotificationsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
           <div className="flex items-center space-x-3 space-x-reverse">
-            <h1 className="text-2xl font-black text-slate-100 tracking-tight">الإشعارات</h1>
+            <h1 className="text-2xl font-black text-slate-100 tracking-tight">الإشعارات والتنبيهات</h1>
             {unreadCount > 0 && (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-950 text-cyan-400 border border-cyan-800/60 shadow-sm">
                 {`${unreadCount} غير مقروء`}
@@ -264,50 +272,83 @@ export const NotificationsPage: React.FC = () => {
             )}
           </div>
           <p className="mt-1 text-xs text-slate-400 font-medium">
-            تنبيهات وإشعارات دورة المشتريات — بمجرد الاطلاع على الإشعار يختفي من القائمة النشطة.
+            تنبيهات وإشعارات دورة المشتريات والاعتمادات المالية والتشغيلية المباشرة.
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Tab Selector */}
-          <div className="flex rounded-xl bg-slate-950 p-1 border border-slate-800">
-            <button
-              type="button"
-              onClick={() => setActiveTab('UNREAD')}
-              className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
-                activeTab === 'UNREAD'
-                  ? 'bg-cyan-600 text-white shadow'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              📬 غير المقروءة ({unreadNotifications.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('ALL')}
-              className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
-                activeTab === 'ALL'
-                  ? 'bg-cyan-600 text-white shadow'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              📁 كل الإشعارات ({notifications.length})
-            </button>
-          </div>
-
           {unreadCount > 0 && (
             <Button
               variant="secondary"
               size="sm"
-              onClick={handleMarkAllAsRead}
               disabled={markingAll}
-              isLoading={markingAll}
-              className="min-h-10 text-xs"
+              onClick={handleMarkAllAsRead}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 text-xs font-bold"
             >
-              تحديد الكل كمقروء
+              <span>✓✓</span>
+              <span>{markingAll ? 'جاري التحديد...' : 'تحديد الكل كمقروء'}</span>
             </Button>
           )}
         </div>
+      </div>
+
+      {/* Smart Category Tabs Bar */}
+      <div className="flex items-center gap-1.5 overflow-x-auto rounded-xl bg-slate-950 p-1.5 border border-slate-800/80">
+        <button
+          type="button"
+          onClick={() => setActiveTab('UNREAD')}
+          className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap ${
+            activeTab === 'UNREAD'
+              ? 'bg-cyan-600 text-white shadow'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          📬 غير المقروءة ({unreadNotifications.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('REQUESTS')}
+          className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap ${
+            activeTab === 'REQUESTS'
+              ? 'bg-cyan-600 text-white shadow'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          📋 طلبات الشراء
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('ORDERS')}
+          className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap ${
+            activeTab === 'ORDERS'
+              ? 'bg-cyan-600 text-white shadow'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          📦 أوامر الشراء والاستلام
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('FINANCE')}
+          className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap ${
+            activeTab === 'FINANCE'
+              ? 'bg-cyan-600 text-white shadow'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          💰 عروض الأسعار والمالية
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('ALL')}
+          className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap ${
+            activeTab === 'ALL'
+              ? 'bg-cyan-600 text-white shadow'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          📁 كل الإشعارات ({notifications.length})
+        </button>
       </div>
 
       {/* Push Notification PWA Activation Prompt */}

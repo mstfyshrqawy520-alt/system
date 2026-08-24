@@ -192,6 +192,7 @@ export const GlobalSearchBar: React.FC = () => {
       parcels.forEach((parcel) => {
         const textToSearch = `${parcel.parcel_reference} ${parcel.region} ${parcel.notes || ''}`.toLowerCase();
         if (textToSearch.includes(q)) {
+          const parcelUrl = primaryRole === 'general_manager' ? '/general-manager/land-parcels' : '/accounting/land-parcels';
           results.push({
             id: `parcel-${parcel.id}`,
             type: 'PARCEL',
@@ -200,7 +201,7 @@ export const GlobalSearchBar: React.FC = () => {
             subtitle: `رصيد العميل المتاح: ${money(parcel.balance)} | ملاحظات: ${parcel.notes || 'لا توجد'}`,
             badge: Number(parcel.balance) < 0 ? 'عجز تمويل' : 'رصيد كافٍ',
             badgeColor: Number(parcel.balance) < 0 ? 'bg-rose-950 text-rose-300 border border-rose-800/60' : 'bg-emerald-950 text-emerald-300 border border-emerald-800/60',
-            url: `/accounting/supplier-payments`,
+            url: parcelUrl,
           });
         }
       });
