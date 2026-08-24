@@ -543,16 +543,16 @@ const LandParcelsPage: React.FC = () => {
                 <Table className="print:text-black">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="whitespace-nowrap">اسم الصنف / المادة</TableHead>
-                      <TableHead className="whitespace-nowrap">رقم القطعة والمنطقة</TableHead>
-                      <TableHead className="whitespace-nowrap">أمر الشراء</TableHead>
-                      <TableHead className="whitespace-nowrap">المورد</TableHead>
-                      <TableHead className="whitespace-nowrap">الكمية المطلوبة</TableHead>
-                      <TableHead className="whitespace-nowrap">الكمية المستلمة</TableHead>
-                      <TableHead className="whitespace-nowrap">الوحدة</TableHead>
-                      <TableHead className="whitespace-nowrap">سعر الوحدة</TableHead>
-                      <TableHead className="whitespace-nowrap">إجمالي البند</TableHead>
-                      <TableHead className="whitespace-nowrap">تاريخ التوريد</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">الصنف / المادة</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">القطعة والمنطقة</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">أمر الشراء</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">المورد</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">المطلوب</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">المستلم</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">الوحدة</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">السعر</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">الإجمالي</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">التاريخ</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -634,12 +634,12 @@ const LandParcelsPage: React.FC = () => {
                 <Table className="print:text-black">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="whitespace-nowrap">الفاتورة</TableHead>
-                      <TableHead className="whitespace-nowrap">المورد</TableHead>
-                      <TableHead className="whitespace-nowrap">أمر الشراء</TableHead>
-                      <TableHead className="whitespace-nowrap">القسم / نوع الصرف</TableHead>
-                      <TableHead className="whitespace-nowrap">قيمة المصروف على القطعة</TableHead>
-                      <TableHead className="whitespace-nowrap">ملاحظات</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">الفاتورة</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">المورد</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">أمر الشراء</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">القسم</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">قيمة المصروف</TableHead>
+                      <TableHead className="whitespace-nowrap text-center">ملاحظات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

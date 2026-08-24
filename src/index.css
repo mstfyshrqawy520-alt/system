@@ -351,7 +351,7 @@ input:focus, select:focus, textarea:focus {
     margin: 0 auto 4px !important;
   }
 
-  /* تنسيق الجداول للطباعة A4 بدون تداخل نصوص */
+  /* تنسيق الجداول للطباعة A4 بدون تداخل أو تكسير نصوص */
   table,
   .print-document table {
     width: 100% !important;
@@ -361,19 +361,20 @@ input:focus, select:focus, textarea:focus {
     table-layout: auto !important;
     page-break-inside: auto !important;
     border-collapse: collapse !important;
-    font-size: 11px !important;
+    font-size: 10px !important;
   }
 
   th,
   td,
   .print-document th,
   .print-document td {
-    padding: 6px 8px !important;
-    line-height: 1.5 !important;
+    padding: 5px 6px !important;
+    line-height: 1.4 !important;
     letter-spacing: normal !important;
-    word-break: normal !important;
-    overflow-wrap: break-word !important;
-    white-space: normal !important;
+    word-spacing: normal !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+    hyphens: none !important;
     border: 1px solid #94a3b8 !important;
     color: #000000 !important;
     vertical-align: middle !important;
@@ -384,8 +385,15 @@ input:focus, select:focus, textarea:focus {
   .print-document th {
     background-color: #f1f5f9 !important;
     font-weight: 700 !important;
-    font-size: 11px !important;
+    font-size: 10px !important;
     text-align: center !important;
+    white-space: nowrap !important;
+  }
+
+  th.whitespace-nowrap,
+  td.whitespace-nowrap,
+  .whitespace-nowrap {
+    white-space: nowrap !important;
   }
 
   tr {
