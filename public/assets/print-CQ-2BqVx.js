@@ -1,28 +1,10 @@
-export const printDocumentOnly = (selector = '.print-container .print-document'): void => {
-  const sourceDocument = document.querySelector<HTMLElement>(selector);
-  if (!sourceDocument) {
-    window.print();
-    return;
-  }
-
-  const printWindow = window.open('', '_blank', 'width=960,height=720');
-  if (!printWindow) {
-    window.print();
-    return;
-  }
-
-  const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
-    .map((style) => style.outerHTML)
-    .join('\n');
-  const clonedDocument = sourceDocument.cloneNode(true) as HTMLElement;
-
-  printWindow.document.open();
-  printWindow.document.write(`<!doctype html>
+const l=(a=".print-container .print-document")=>{const r=document.querySelector(a);if(!r){window.print();return}const t=window.open("","_blank","width=960,height=720");if(!t){window.print();return}const m=Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).map(o=>o.outerHTML).join(`
+`),p=r.cloneNode(!0);t.document.open(),t.document.write(`<!doctype html>
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <base href="${document.baseURI}" />
-    ${styles}
+    ${m}
     <style>
       @page { size: A4 portrait; margin: 8mm; }
       html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; min-height: 0 !important; background: #fff !important; font-family: 'Cairo', 'Tajawal', 'Noto Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif !important; direction: rtl !important; }
@@ -36,29 +18,6 @@ export const printDocumentOnly = (selector = '.print-container .print-document')
     </style>
   </head>
   <body>
-    <div class="print-container print-target-document">${clonedDocument.outerHTML}</div>
+    <div class="print-container print-target-document">${p.outerHTML}</div>
   </body>
-</html>`);
-  printWindow.document.close();
-
-  const printAfterResourcesLoad = async () => {
-    const images = Array.from(printWindow.document.images);
-    await Promise.all(images.map((image) => {
-      if (image.complete) return Promise.resolve();
-      return new Promise<void>((resolve) => {
-        image.addEventListener('load', () => resolve(), { once: true });
-        image.addEventListener('error', () => resolve(), { once: true });
-      });
-    }));
-
-    if (printWindow.document.fonts?.ready) {
-      await printWindow.document.fonts.ready;
-    }
-
-    printWindow.addEventListener('afterprint', () => printWindow.close(), { once: true });
-    printWindow.focus();
-    printWindow.print();
-  };
-
-  void printAfterResourcesLoad();
-};
+</html>`),t.document.close(),(async()=>{var i;const o=Array.from(t.document.images);await Promise.all(o.map(n=>n.complete?Promise.resolve():new Promise(e=>{n.addEventListener("load",()=>e(),{once:!0}),n.addEventListener("error",()=>e(),{once:!0})}))),(i=t.document.fonts)!=null&&i.ready&&await t.document.fonts.ready,t.addEventListener("afterprint",()=>t.close(),{once:!0}),t.focus(),t.print()})()};export{l as p};
