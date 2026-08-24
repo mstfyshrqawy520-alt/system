@@ -172,7 +172,9 @@ export const CreatePurchaseOrderPage: React.FC = () => {
         })),
       });
 
-      await submitPurchaseOrderApi(po.id);
+      if (po?.status === 'PO_DRAFT' || po?.status === 'RETURNED_TO_PROCUREMENT') {
+        await submitPurchaseOrderApi(po.id);
+      }
       navigate('/procurement/purchase-orders');
     } catch (err) {
       const parsed = parseApiError(err);

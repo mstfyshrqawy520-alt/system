@@ -329,9 +329,9 @@ class ProcurementPurchaseOrderController extends Controller
     {
         $po = PurchaseOrder::with(['purchaseRequest.requester', 'purchaseRequest.department', 'items', 'supplier', 'createdBy'])->findOrFail($id);
 
-        if ($po->status === 'ISSUED') {
+        if (in_array($po->status, ['ISSUED', 'PENDING_ACCOUNTING_REVIEW', 'APPROVED_BY_ACCOUNTING', 'FINAL_APPROVED'], true)) {
             return response()->json([
-                'message' => 'Purchase order has already been issued.',
+                'message' => 'تم تقديم أمر الشراء للحسابات بنجاح.',
                 'data' => new PurchaseOrderResource($po),
             ], 200);
         }

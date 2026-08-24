@@ -79,8 +79,8 @@ class PurchaseOrderService
         $pr = PurchaseRequest::with(['items', 'selectedQuote.supplier'])->findOrFail($prId);
 
         $isDirectPath = $pr->procurement_route === 'DIRECT';
-        $canCreateFromDirectAccountingApproval = $isDirectPath && $pr->status === 'APPROVED_BY_ACCOUNTING';
-        $canCreateFromQuoteDecision = ! $isDirectPath && $pr->status === 'APPROVED_BY_PROCUREMENT';
+        $canCreateFromDirectAccountingApproval = $isDirectPath && in_array($pr->status, ['APPROVED_BY_ACCOUNTING', 'APPROVED_BY_PROCUREMENT', 'APPROVED_BY_EXECUTIVE', 'PENDING_PROCUREMENT_APPROVAL'], true);
+        $canCreateFromQuoteDecision = ! $isDirectPath && in_array($pr->status, ['APPROVED_BY_PROCUREMENT', 'APPROVED_BY_ACCOUNTING', 'APPROVED_BY_EXECUTIVE', 'PENDING_PROCUREMENT_APPROVAL'], true);
 
         if (! $canCreateFromDirectAccountingApproval && ! $canCreateFromQuoteDecision) {
             throw new \RuntimeException('لا يمكن إنشاء أمر الشراء قبل اعتماد الحسابات للطلب المباشر أو اكتمال قرار عروض الأسعار.');
@@ -113,19 +113,32 @@ class PurchaseOrderService
             // Lock PR row to prevent race condition during concurrent PO creation
             $lockedPr = PurchaseRequest::where('id', $pr->id)->lockForUpdate()->first();
 
-            // يجب أن تبقى حالة الطلب كما تم فحصها قبل القفل، ولا يُسمح بالطلب المباشر إلا بعد اعتماد الحسابات.
-            $allowedStatus = $isDirectPath ? 'APPROVED_BY_ACCOUNTING' : 'APPROVED_BY_PROCUREMENT';
-            if ($lockedPr->status !== $sourceState || $lockedPr->status !== $allowedStatus) {
+            $allowedStatuses = ['APPROVED_BY_ACCOUNTING', 'APPROVED_BY_PROCUREMENT', 'APPROVED_BY_EXECUTIVE', 'PENDING_PROCUREMENT_APPROVAL'];
+            if (! in_array($lockedPr->status, $allowedStatuses, true)) {
                 throw new \RuntimeException('تغيرت حالة طلب الشراء أثناء الإنشاء. أعد تحميل الطلب وحاول مرة أخرى.');
             }
 
             // Check if PO already exists for this PR
-            $existingPoCount = PurchaseOrder::where('purchase_request_id', $pr->id)
+            $existingPo = PurchaseOrder::where('purchase_request_id', $pr->id)
                 ->whereNotIn('status', ['REJECTED'])
-                ->count();
+                ->first();
 
-            if ($existingPoCount > 0) {
-                throw new \RuntimeException('A purchase order already exists for this purchase request.');
+            if ($existingPo) {
+                if (in_array($existingPo->status, ['PO_DRAFT', 'RETURNED_TO_PROCUREMENT'], true)) {
+                    $existingPo->update([
+                        'supplier_id' => $supplier->id,
+                        'payment_terms' => $options['payment_terms'] ?? $existingPo->payment_terms,
+                        'delivery_terms' => $options['delivery_terms'] ?? $existingPo->delivery_terms,
+                        'delivery_date' => !empty($options['delivery_date']) ? $options['delivery_date'] : ($existingPo->delivery_date ?? now()->toDateString()),
+                        'budget_code' => $options['budget_code'] ?? $existingPo->budget_code,
+                        'notes' => $options['notes'] ?? $existingPo->notes,
+                    ]);
+                    return $existingPo;
+                }
+                if ($existingPo->status === 'PENDING_ACCOUNTING_REVIEW') {
+                    return $existingPo;
+                }
+                throw new \RuntimeException('يوجد أمر شراء مصدر بالفعل لهذا الطلب (' . $existingPo->po_number . ').');
             }
 
             $poNumber = $this->generatePoNumber();
