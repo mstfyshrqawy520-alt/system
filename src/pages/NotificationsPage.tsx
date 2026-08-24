@@ -14,14 +14,196 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { parseApiError } from '../utils/apiError';
 import { PushNotificationPrompt } from '../components/notifications/PushNotificationPrompt';
+import { getPrimaryRoleSlug, AppRoleSlug } from '../routes/roleRouting';
 
-type NotificationCategoryTab = 'UNREAD' | 'REQUESTS' | 'ORDERS' | 'FINANCE' | 'ALL';
+interface RoleTabConfig {
+  key: string;
+  label: string;
+  match: (n: Notification) => boolean;
+}
+
+const getRoleTabs = (role: AppRoleSlug | null): RoleTabConfig[] => {
+  const commonUnread: RoleTabConfig = {
+    key: 'UNREAD',
+    label: '📬 غير المقروءة',
+    match: (n) => !n.read_at,
+  };
+
+  const commonAll: RoleTabConfig = {
+    key: 'ALL',
+    label: '📁 كل الإشعارات',
+    match: () => true,
+  };
+
+  switch (role) {
+    case 'general_manager':
+      return [
+        commonUnread,
+        {
+          key: 'GM_QUOTES',
+          label: '⚖️ قرارات عروض الأسعار',
+          match: (n) => Boolean(n.type?.includes('quote') || n.type?.includes('recommendation')),
+        },
+        {
+          key: 'GM_APPROVALS',
+          label: '✅ طلبات القرار التنفيذي',
+          match: (n) => Boolean(n.type?.includes('purchase_request') || n.type?.includes('executive')),
+        },
+        {
+          key: 'GM_ORDERS',
+          label: '📋 أوامر الشراء الصادرة',
+          match: (n) => Boolean(n.type?.includes('purchase_order') || n.type?.includes('po_')),
+        },
+        {
+          key: 'GM_PARCELS',
+          label: '🏗️ مشاريع وقطع الأراضي',
+          match: (n) => Boolean(n.type?.includes('parcel') || (n.data as any)?.item_reference || (n.data as any)?.region),
+        },
+        commonAll,
+      ];
+
+    case 'accountant':
+      return [
+        commonUnread,
+        {
+          key: 'ACC_INVOICES',
+          label: '💳 فواتير ودفعات الموردين',
+          match: (n) => Boolean(n.type?.includes('invoice') || n.type?.includes('payment') || n.type?.includes('receipt')),
+        },
+        {
+          key: 'ACC_ORDERS',
+          label: '📋 أوامر الشراء للحسابات',
+          match: (n) => Boolean(n.type?.includes('purchase_order') || n.type?.includes('po_')),
+        },
+        {
+          key: 'ACC_PRS',
+          label: '✅ موافقات الطلبات المالية',
+          match: (n) => Boolean(n.type?.includes('purchase_request') || n.type?.includes('accounting')),
+        },
+        {
+          key: 'ACC_PARCELS',
+          label: '🏗️ قطع الأراضي والتمويل',
+          match: (n) => Boolean(n.type?.includes('parcel') || n.type?.includes('fund')),
+        },
+        commonAll,
+      ];
+
+    case 'procurement_manager':
+      return [
+        commonUnread,
+        {
+          key: 'PROC_PRS',
+          label: '📋 طلبات الشراء المعتمدة',
+          match: (n) => Boolean(n.type?.includes('purchase_request') || n.type?.includes('pr_')),
+        },
+        {
+          key: 'PROC_QUOTES',
+          label: '📑 عروض الأسعار',
+          match: (n) => Boolean(n.type?.includes('quote') || n.type?.includes('recommendation')),
+        },
+        {
+          key: 'PROC_ORDERS',
+          label: '📦 أوامر الشراء الصادرة',
+          match: (n) => Boolean(n.type?.includes('purchase_order') || n.type?.includes('po_')),
+        },
+        {
+          key: 'PROC_RECEIPTS',
+          label: '🚚 أذونات الاستلام والتوريد',
+          match: (n) => Boolean(n.type?.includes('receipt') || n.type?.includes('warehouse')),
+        },
+        commonAll,
+      ];
+
+    case 'reviewer':
+      return [
+        commonUnread,
+        {
+          key: 'REV_PENDING',
+          label: '📋 طلبات بانتظار مراجعتي',
+          match: (n) => Boolean(n.type?.includes('purchase_request') || n.type?.includes('submitted')),
+        },
+        {
+          key: 'REV_QUOTES',
+          label: '💰 ترشيح عروض الأسعار',
+          match: (n) => Boolean(n.type?.includes('quote') || n.type?.includes('recommendation')),
+        },
+        {
+          key: 'REV_APPROVED',
+          label: '✅ طلبات قسمي المعتمدة',
+          match: (n) => Boolean(n.type?.includes('approved') || n.type?.includes('reviewer')),
+        },
+        commonAll,
+      ];
+
+    case 'site_engineer':
+      return [
+        commonUnread,
+        {
+          key: 'SITE_RECEIPTS',
+          label: '🧰 اعتمادات استلام الموقع',
+          match: (n) => Boolean(n.type?.includes('receipt') || n.type?.includes('site') || n.type?.includes('warehouse')),
+        },
+        {
+          key: 'SITE_PRS',
+          label: '📋 طلبات مشروعي وموقعي',
+          match: (n) => Boolean(n.type?.includes('purchase_request') || n.type?.includes('pr_')),
+        },
+        {
+          key: 'SITE_MATERIALS',
+          label: '📦 المواد الواردة للموقع',
+          match: (n) => Boolean(n.type?.includes('purchase_order') || n.type?.includes('receipt')),
+        },
+        commonAll,
+      ];
+
+    case 'warehouse_keeper':
+      return [
+        commonUnread,
+        {
+          key: 'WH_RECEIPTS',
+          label: '📦 أذونات فحص واستلام المواد',
+          match: (n) => Boolean(n.type?.includes('receipt') || n.type?.includes('warehouse')),
+        },
+        {
+          key: 'WH_INCOMING',
+          label: '🚚 أوامر الشراء المتوقعة',
+          match: (n) => Boolean(n.type?.includes('purchase_order') || n.type?.includes('po_')),
+        },
+        commonAll,
+      ];
+
+    case 'employee':
+    default:
+      return [
+        commonUnread,
+        {
+          key: 'EMP_UNDER_REVIEW',
+          label: '📋 طلباتي قيد المراجعة',
+          match: (n) => Boolean(n.type?.includes('purchase_request') || n.type?.includes('submitted') || n.type?.includes('review')),
+        },
+        {
+          key: 'EMP_APPROVED',
+          label: '✅ طلباتي المعتمدة',
+          match: (n) => Boolean(n.type?.includes('approved') || n.type?.includes('reviewer')),
+        },
+        {
+          key: 'EMP_ORDERS',
+          label: '📦 أوامر الشراء الصادرة لطلباتي',
+          match: (n) => Boolean(n.type?.includes('purchase_order') || n.type?.includes('po_') || n.type?.includes('receipt')),
+        },
+        commonAll,
+      ];
+  }
+};
 
 export const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const primaryRole = getPrimaryRoleSlug(user);
+  const roleTabs = React.useMemo(() => getRoleTabs(primaryRole), [primaryRole]);
+
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [activeTab, setActiveTab] = useState<NotificationCategoryTab>('UNREAD');
+  const [activeTab, setActiveTab] = useState<string>('UNREAD');
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -237,14 +419,10 @@ export const NotificationsPage: React.FC = () => {
     return 'فتح الإجراء';
   };
 
+  const currentTabConfig = roleTabs.find((t) => t.key === activeTab) || roleTabs[0];
+
   const unreadNotifications = notifications.filter((n) => !n.read_at);
-  const displayedNotifications = notifications.filter((n) => {
-    if (activeTab === 'UNREAD') return !n.read_at;
-    if (activeTab === 'REQUESTS') return n.type?.includes('purchase_request') || n.type?.includes('pr_');
-    if (activeTab === 'ORDERS') return n.type?.includes('purchase_order') || n.type?.includes('po_') || n.type?.includes('receipt');
-    if (activeTab === 'FINANCE') return n.type?.includes('quote') || n.type?.includes('recommendation') || n.type?.includes('invoice') || n.type?.includes('payment');
-    return true;
-  });
+  const displayedNotifications = notifications.filter((n) => currentTabConfig.match(n));
 
   if (loading) {
     return (
@@ -272,7 +450,7 @@ export const NotificationsPage: React.FC = () => {
             )}
           </div>
           <p className="mt-1 text-xs text-slate-400 font-medium">
-            تنبيهات وإشعارات دورة المشتريات والاعتمادات المالية والتشغيلية المباشرة.
+            تنبيهات وإشعارات دورة المشتريات والاعتمادات المالية والتشغيلية المباشرة المخصصة لدورك.
           </p>
         </div>
 
@@ -289,66 +467,53 @@ export const NotificationsPage: React.FC = () => {
               <span>{markingAll ? 'جاري التحديد...' : 'تحديد الكل كمقروء'}</span>
             </Button>
           )}
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={loadNotificationsData}
+            className="bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 text-xs font-bold"
+          >
+            <span>🔄</span>
+            <span>تحديث</span>
+          </Button>
         </div>
       </div>
 
-      {/* Smart Category Tabs Bar */}
+      {/* Smart Role-tailored Category Tabs Bar */}
       <div className="flex items-center gap-1.5 overflow-x-auto rounded-xl bg-slate-950 p-1.5 border border-slate-800/80">
-        <button
-          type="button"
-          onClick={() => setActiveTab('UNREAD')}
-          className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap ${
-            activeTab === 'UNREAD'
-              ? 'bg-cyan-600 text-white shadow'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          📬 غير المقروءة ({unreadNotifications.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('REQUESTS')}
-          className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap ${
-            activeTab === 'REQUESTS'
-              ? 'bg-cyan-600 text-white shadow'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          📋 طلبات الشراء
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('ORDERS')}
-          className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap ${
-            activeTab === 'ORDERS'
-              ? 'bg-cyan-600 text-white shadow'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          📦 أوامر الشراء والاستلام
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('FINANCE')}
-          className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap ${
-            activeTab === 'FINANCE'
-              ? 'bg-cyan-600 text-white shadow'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          💰 عروض الأسعار والمالية
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('ALL')}
-          className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap ${
-            activeTab === 'ALL'
-              ? 'bg-cyan-600 text-white shadow'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          📁 كل الإشعارات ({notifications.length})
-        </button>
+        {roleTabs.map((tab) => {
+          const tabCount = notifications.filter((n) => tab.match(n)).length;
+          const isActive = activeTab === tab.key;
+
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                isActive
+                  ? 'bg-cyan-600 text-white shadow'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+              }`}
+            >
+              <span>{tab.label}</span>
+              {tab.key === 'UNREAD' ? (
+                unreadNotifications.length > 0 && (
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-cyan-950 text-cyan-400 border border-cyan-800/60'
+                    }`}
+                  >
+                    {unreadNotifications.length}
+                  </span>
+                )
+              ) : (
+                <span className="text-[10px] opacity-70 font-mono">({tabCount})</span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Push Notification PWA Activation Prompt */}
