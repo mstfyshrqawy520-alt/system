@@ -185,7 +185,7 @@ export const GeneralManagerDashboardPage: React.FC = () => {
                 المقارنة بين عروض أسعار الموردين واختيار العرض الأنسب لإصدار أمر الشراء.
               </p>
             </div>
-            <RouterLink to="/purchase-quotes/decision">
+            <RouterLink to="/general-manager/purchase-quotes">
               <Button variant="secondary" size="sm" className="w-full font-bold border-indigo-800/60 text-indigo-200 hover:bg-indigo-950">
                 شاشة البت في عروض الأسعار ←
               </Button>
