@@ -289,6 +289,14 @@ const CreatePurchaseRequestPage: React.FC = () => {
     }
   };
 
+  const handleClearDraft = () => {
+    window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+    setData(INITIAL_DATA);
+    setServerDraftId(null);
+    setDraftMessage('تم مسح المسودة والبدء من جديد.');
+    setTimeout(() => setDraftMessage(null), 3000);
+  };
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12" dir="rtl">
       {/* Header */}
@@ -307,11 +315,6 @@ const CreatePurchaseRequestPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {draftMessage && (
-            <span className="hidden sm:inline-block rounded-lg bg-emerald-950/60 border border-emerald-800/60 px-3 py-1.5 text-[11px] font-bold text-emerald-300">
-              ✓ {draftMessage}
-            </span>
-          )}
           <Link to="/requests">
             <Button type="button" variant="secondary" size="sm">
               ← أرشيف طلباتي
@@ -319,6 +322,23 @@ const CreatePurchaseRequestPage: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      {/* Auto-save Draft Status Card */}
+      {draftMessage && (
+        <div className="flex items-center justify-between rounded-xl border border-emerald-800/60 bg-emerald-950/40 px-4 py-2.5 text-xs text-emerald-200 shadow-md animate-fade-in">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="font-bold">💾 {draftMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleClearDraft}
+            className="text-[11px] font-bold text-slate-400 hover:text-rose-300 transition-colors underline underline-offset-4"
+          >
+            مسح المسودة والبدء من جديد
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-xl border border-rose-800/80 bg-rose-950/40 p-4 text-xs font-bold text-rose-200 shadow-lg" role="alert">

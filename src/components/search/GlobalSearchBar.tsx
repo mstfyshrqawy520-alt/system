@@ -8,6 +8,7 @@ import { PurchaseRequest } from '../../types/purchaseRequest';
 import { PurchaseOrder } from '../../types/purchaseOrder';
 import { LandParcel, SupplierAccountSummary, getLandParcelsApi, getSupplierAccountsApi } from '../../api/supplierFinance';
 import { getPurchaseOrdersApi } from '../../api/purchaseOrders';
+import QuickPeekDrawer, { PeekType } from '../ui/QuickPeekDrawer';
 
 type SearchCategory = 'ALL' | 'PR' | 'PO' | 'SUPPLIER' | 'PARCEL' | 'PAGE';
 
@@ -34,6 +35,11 @@ export const GlobalSearchBar: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<SearchCategory>('ALL');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [peekState, setPeekState] = useState<{ isOpen: boolean; type: PeekType; id: number | null }>({
+    isOpen: false,
+    type: 'PR',
+    id: null,
+  });
 
   // Cached data for instant search
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
@@ -380,6 +386,25 @@ export const GlobalSearchBar: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
+                      {(item.type === 'PR' || item.type === 'PO') && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rawId = parseInt(item.id.replace(/^[a-z]+-/, ''), 10);
+                            setPeekState({
+                              isOpen: true,
+                              type: item.type as PeekType,
+                              id: rawId,
+                            });
+                          }}
+                          title="معاينة سريعة"
+                          className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] font-bold text-cyan-300 hover:bg-slate-800 hover:border-cyan-500 transition-colors flex items-center gap-1"
+                        >
+                          <span>👁️</span>
+                          <span className="hidden sm:inline">معاينة</span>
+                        </button>
+                      )}
                       {item.badge && (
                         <span className={`rounded-md px-2 py-0.5 text-[10px] font-black ${item.badgeColor || 'bg-slate-800 text-slate-300'}`}>
                           {item.badge}
@@ -405,6 +430,14 @@ export const GlobalSearchBar: React.FC = () => {
         </div>,
         document.body
       )}
+
+      {/* Quick Peek Slide-over Drawer */}
+      <QuickPeekDrawer
+        isOpen={peekState.isOpen}
+        onClose={() => setPeekState((prev) => ({ ...prev, isOpen: false }))}
+        type={peekState.type}
+        id={peekState.id}
+      />
     </>
   );
 };
