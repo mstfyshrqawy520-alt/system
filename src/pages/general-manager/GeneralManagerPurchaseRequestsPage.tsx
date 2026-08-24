@@ -19,6 +19,8 @@ import { parseApiError } from '../../utils/apiError';
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
 import TableFilterBar from '../../components/ui/TableFilterBar';
 import PurchaseRequestTimeline from '../../components/procurement/PurchaseRequestTimeline';
+import RejectRequestDialog from '../../components/reviewer/RejectRequestDialog';
+import ErrorMessage from '../../components/ErrorMessage';
 import { getUnitLabel } from '../../utils/units';
 
 interface DraftItemState extends PurchaseRequestItemFormInput {
@@ -50,6 +52,7 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [directApprovingId, setDirectApprovingId] = useState<number | null>(null);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -66,6 +69,23 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
       setError(parseApiError(err).message);
     } finally {
       setDirectApprovingId(null);
+    }
+  };
+
+  const handleConfirmReject = async (rejectionReason: string) => {
+    if (!selected) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      await rejectGeneralManagerPurchaseRequestApi(selected.id, rejectionReason.trim());
+      setIsRejectModalOpen(false);
+      setSelected(null);
+      setSearchParams({}, { replace: true });
+      await loadRequests(true);
+    } catch (err) {
+      setError(parseApiError(err).message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -108,6 +128,7 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
     setDraftItems(toDraftItems(request));
     setComment('');
     setError(null);
+    setIsRejectModalOpen(false);
   };
 
   const updateItem = (index: number, field: keyof PurchaseRequestItemFormInput, value: any) => {
@@ -149,22 +170,7 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
     if (!selected) return;
 
     if (action === 'reject') {
-      if (!comment.trim()) {
-        setError('يرجى كتابة سبب الرفض في خانة تعليق القرار قبل تنفيذ الرفض.');
-        return;
-      }
-      setActionLoading(true);
-      setError(null);
-      try {
-        await rejectGeneralManagerPurchaseRequestApi(selected.id, comment.trim());
-        setSelected(null);
-        setSearchParams({}, { replace: true });
-        await loadRequests();
-      } catch (err) {
-        setError(parseApiError(err).message);
-      } finally {
-        setActionLoading(false);
-      }
+      setIsRejectModalOpen(true);
       return;
     }
 
@@ -803,8 +809,15 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Error Message inside Modal */}
+              {error && (
+                <div className="pt-1">
+                  <ErrorMessage error={error} onDismiss={() => setError(null)} />
+                </div>
+              )}
+
               {/* Modal Actions */}
-              <div className="fixed bottom-0 inset-x-0 z-30 flex items-center gap-3 border-t border-slate-800 bg-slate-950/95 p-3 shadow-2xl backdrop-blur sm:static sm:z-auto sm:mt-5 sm:flex sm:w-auto sm:justify-start sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none">
+              <div className="fixed bottom-0 inset-x-0 z-30 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 border-t border-slate-800 bg-slate-950/95 p-3 shadow-2xl backdrop-blur sm:static sm:z-auto sm:mt-5 sm:flex sm:w-auto sm:justify-start sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none">
                 <Button
                   type="button"
                   variant="primary"
@@ -820,8 +833,8 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                   type="button"
                   variant="danger"
                   isLoading={actionLoading}
-                  onClick={() => void performAction('reject')}
-                  className="flex-1 sm:flex-none min-h-11 text-xs sm:text-sm font-bold"
+                  onClick={() => setIsRejectModalOpen(true)}
+                  className="flex-1 sm:flex-none min-h-11 text-xs sm:text-sm font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-lg"
                 >
                   <span>✕ رفض الطلب بالكامل</span>
                 </Button>
@@ -830,6 +843,17 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
           </div>,
           document.body,
         )}
+
+      {/* Rejection Confirmation Dialog */}
+      {selected && (
+        <RejectRequestDialog
+          isOpen={isRejectModalOpen}
+          requestNumber={selected.request_number}
+          isRejecting={actionLoading}
+          onConfirm={handleConfirmReject}
+          onCancel={() => setIsRejectModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
