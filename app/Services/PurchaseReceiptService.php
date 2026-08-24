@@ -13,7 +13,14 @@ class PurchaseReceiptService
 {
     public function warehouseQueue(int $perPage = 15)
     {
-        return PurchaseOrder::with(['supplier', 'purchaseRequest.requester', 'purchaseRequest.department', 'purchaseRequest.siteEngineer', 'items.item'])
+        return PurchaseOrder::with([
+            'supplier',
+            'purchaseRequest.requester',
+            'purchaseRequest.department',
+            'purchaseRequest.siteEngineer',
+            'items.item',
+            'items.prItem',
+        ])
             ->where('status', 'ISSUED')
             ->whereDoesntHave('receipts', fn ($query) => $query->whereIn('status', ['PENDING_SITE_ENGINEER', 'APPROVED']))
             ->orderByDesc('updated_at')

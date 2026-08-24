@@ -8,15 +8,27 @@ export interface ReceiptOrderItem {
   quantity: string | number;
   uom?: string | null;
   unit_price?: string | number | null;
-  item?: { id: number; name: string; sku?: string } | null;
+  specifications?: string | null;
+  notes?: string | null;
+  item?: { id: number; name: string; sku?: string; category?: { name: string } } | null;
+  pr_item?: { id: number; specifications?: string | null; notes?: string | null; item_description?: string | null } | null;
 }
 
 export interface ReceiptPurchaseOrder {
   id: number;
   po_number: string;
   created_at?: string | null;
-  supplier?: { id: number; company_name: string } | null;
-  purchase_request?: { request_number: string; created_at?: string | null; requester?: { name: string } | null; department?: { name: string } | null } | null;
+  notes?: string | null;
+  supplier?: { id: number; company_name: string; contact_person?: string | null; phone?: string | null } | null;
+  purchase_request?: {
+    id: number;
+    request_number: string;
+    created_at?: string | null;
+    project_name?: string | null;
+    requester?: { id: number; name: string; email?: string } | null;
+    department?: { id: number; name: string } | null;
+    site_engineer?: { id: number; name: string } | null;
+  } | null;
   items?: ReceiptOrderItem[];
 }
 
@@ -26,10 +38,20 @@ export interface ReceiptRecord {
   status: string;
   created_at?: string | null;
   received_at?: string | null;
+  warehouse_submitted_at?: string | null;
   warehouse_notes?: string | null;
   site_engineer_notes?: string | null;
+  warehouse_keeper?: { id: number; name: string } | null;
+  site_engineer?: { id: number; name: string } | null;
   purchase_order?: ReceiptPurchaseOrder | null;
-  items?: Array<{ id: number; received_quantity: string | number; ordered_quantity: string | number; purchase_order_item?: ReceiptOrderItem | null }>;
+  purchase_request?: ReceiptPurchaseOrder['purchase_request'];
+  items?: Array<{
+    id: number;
+    received_quantity: string | number;
+    ordered_quantity: string | number;
+    notes?: string | null;
+    purchase_order_item?: ReceiptOrderItem | null;
+  }>;
 }
 
 export const getWarehouseReceiptQueueApi = async (): Promise<ReceiptPurchaseOrder[]> =>

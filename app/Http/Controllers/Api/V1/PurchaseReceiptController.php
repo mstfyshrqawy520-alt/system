@@ -48,7 +48,21 @@ class PurchaseReceiptController extends Controller
 
     public function indexAssigned(Request $request)
     {
-        $receipts = PurchaseReceipt::with(['purchaseOrder.supplier', 'purchaseOrder.items.item', 'purchaseRequest', 'warehouseKeeper', 'siteEngineer', 'items.purchaseOrderItem'])
+        $receipts = PurchaseReceipt::with([
+            'purchaseOrder.supplier',
+            'purchaseOrder.purchaseRequest.department',
+            'purchaseOrder.purchaseRequest.requester',
+            'purchaseOrder.purchaseRequest.siteEngineer',
+            'purchaseOrder.items.item',
+            'purchaseOrder.items.prItem',
+            'purchaseRequest.department',
+            'purchaseRequest.requester',
+            'purchaseRequest.siteEngineer',
+            'warehouseKeeper',
+            'siteEngineer',
+            'items.purchaseOrderItem.item',
+            'items.purchaseOrderItem.prItem',
+        ])
             ->where('site_engineer_user_id', $request->user()->id)
             ->where('status', 'PENDING_SITE_ENGINEER')
             ->orderByDesc('created_at')
