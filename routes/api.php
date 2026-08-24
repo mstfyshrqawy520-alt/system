@@ -351,6 +351,13 @@ Route::middleware('auth:sanctum')->prefix('notifications')->group(function () {
     Route::post('/test-push', [NotificationController::class, 'testPush']);
 });
 
+// Fallback aliases for cached client requests
+Route::middleware('auth:sanctum')->prefix('api/v1/notifications')->group(function () {
+    Route::post('/device-token', [NotificationController::class, 'registerDeviceToken']);
+    Route::delete('/device-token', [NotificationController::class, 'deleteDeviceToken']);
+    Route::post('/test-push', [NotificationController::class, 'testPush']);
+});
+
 // Admin System Management Routes
 Route::middleware(['auth:sanctum', 'permission:system.users.manage'])->prefix('admin')->group(function () {
     // Users

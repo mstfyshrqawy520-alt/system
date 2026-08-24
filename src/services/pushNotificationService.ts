@@ -94,7 +94,7 @@ export const requestAndRegisterPushToken = async (): Promise<{ success: boolean;
     const deviceType = isMobile ? 'mobile' : 'web';
 
     // Register token with backend
-    await apiClient.post('/api/v1/notifications/device-token', {
+    await apiClient.post('/notifications/device-token', {
       token,
       device_type: deviceType,
     });
@@ -118,7 +118,7 @@ export const unregisterPushToken = async (): Promise<void> => {
   if (!token) return;
 
   try {
-    await apiClient.delete('/api/v1/notifications/device-token', {
+    await apiClient.delete('/notifications/device-token', {
       data: { token },
     });
     localStorage.removeItem('fcm_device_token');
