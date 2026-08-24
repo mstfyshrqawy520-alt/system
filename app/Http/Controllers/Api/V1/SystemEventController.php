@@ -75,12 +75,17 @@ class SystemEventController extends Controller
             return false;
         }
 
-        if ($user->hasRole('admin') || $user->hasRole('procurement_manager')) {
+        if (
+            $user->hasRole('admin')
+            || $user->hasRole('general_manager')
+            || $user->hasRole('procurement_manager')
+            || $user->hasRole('accountant')
+        ) {
             return true;
         }
 
-        if ($user->hasRole('employee')) {
-            return (int) $purchaseRequest->user_id === (int) $user->id;
+        if ((int) $purchaseRequest->user_id === (int) $user->id) {
+            return true;
         }
 
         if ($user->hasRole('reviewer')) {
@@ -89,7 +94,7 @@ class SystemEventController extends Controller
                     && (int) $purchaseRequest->department_id === (int) $user->department_id);
         }
 
-        return false;
+        return (int) $purchaseRequest->department_id === (int) $user->department_id;
     }
 
     private function canViewPurchaseOrder(Request $request, PurchaseOrder $purchaseOrder): bool
@@ -100,8 +105,11 @@ class SystemEventController extends Controller
         }
 
         return $user->hasRole('admin')
+            || $user->hasRole('general_manager')
             || $user->hasRole('procurement_manager')
             || $user->hasRole('accountant')
-            || $user->hasRole('general_manager');
+            || $user->hasRole('site_engineer')
+            || (int) ($purchaseOrder->purchaseRequest?->user_id) === (int) $user->id
+            || (int) ($purchaseOrder->created_by_user_id) === (int) $user->id;
     }
 }
