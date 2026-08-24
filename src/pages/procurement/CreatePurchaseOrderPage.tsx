@@ -9,6 +9,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import DirectPoModal from '../../components/procurement/DirectPoModal';
 import { parseApiError } from '../../utils/apiError';
+import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import { getUnitLabel } from '../../utils/units';
@@ -210,7 +211,26 @@ export const CreatePurchaseOrderPage: React.FC = () => {
         </button>
       </div>
 
-      {error && <ErrorMessage error={error} />}
+      {error && (
+        <div className="space-y-3">
+          <ErrorMessage error={error} />
+          {error.includes('يوجد أمر شراء مصدر بالفعل') && (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-950/30 p-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="text-xs text-amber-200">
+                <span>⚠️ تم إصدار أمر شراء لهذا الطلب سابقاً. يمكنك متابعة واعتماد أو تعديل أمر الشراء من قائمة أوامر الشراء.</span>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="primary" onClick={() => navigate('/procurement/purchase-orders')}>
+                  <span>📑</span> الانتقال لأوامر الشراء
+                </Button>
+                <Button size="sm" variant="secondary" onClick={() => navigate('/procurement/purchase-requests/approved')}>
+                  <span>📋</span> الطلبات المعتمدة
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         

@@ -441,7 +441,9 @@ export const ProcurementManagerPage: React.FC = () => {
   const supplierOptions = suppliers.map(s => ({ value: String(s.id), label: s.company_name }));
   const poStatuses = Array.from(new Set(pos.map(po => po.status)));
 
-  const selectedQuotePrs = approvedPrs.filter((pr) => Boolean(getSelectedQuote(pr)));
+  const selectedQuotePrs = approvedPrs.filter(
+    (pr) => Boolean(getSelectedQuote(pr)) && !(pr.issued_purchase_orders_count && pr.issued_purchase_orders_count > 0)
+  );
 
   if (loading) return <div className="min-h-[400px] p-8"><TableSkeleton rows={8} columns={6} /></div>;
 

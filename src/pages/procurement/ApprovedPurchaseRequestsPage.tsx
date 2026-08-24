@@ -57,6 +57,9 @@ export const ApprovedPurchaseRequestsPage: React.FC = () => {
   );
 
   const filteredRequests = requests.filter(r => {
+    if (r.issued_purchase_orders_count && r.issued_purchase_orders_count > 0) {
+      return false;
+    }
     const matchesSearch =
       r.request_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (r.requester?.name && r.requester.name.toLowerCase().includes(searchTerm.toLowerCase()));

@@ -147,6 +147,8 @@ export interface PurchaseRequest {
   direct_supplier?: { id: number; company_name: string; code?: string | null } | null;
   total_estimated_cost?: string | number | null;
   purchase_order_issued?: boolean;
+  issued_purchase_orders_count?: number;
+  purchase_orders_count?: number;
   priority: PurchaseRequestPriority;
   date_needed?: string | null;
 

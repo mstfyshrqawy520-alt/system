@@ -59,6 +59,9 @@ class ProcurementAnalyticsController extends Controller
         $approvedRequestQuery = PurchaseRequest::query()
             ->with(['requester', 'department'])
             ->whereIn('status', ['PENDING_PROCUREMENT_APPROVAL', 'APPROVED_BY_PROCUREMENT'])
+            ->whereDoesntHave('purchaseOrders', function ($query): void {
+                $query->whereNotIn('status', ['REJECTED']);
+            })
             ->when($cutoff !== null, fn ($query) => $query->where('created_at', '>=', $cutoff));
 
         $approvedRequests = $approvedRequestQuery

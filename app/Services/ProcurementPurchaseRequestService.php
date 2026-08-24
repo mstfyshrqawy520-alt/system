@@ -80,9 +80,13 @@ class ProcurementPurchaseRequestService
      */
     public function getApprovedByProcurementRequests(int $perPage = 15)
     {
-        return PurchaseRequest::with(['requester.roles', 'department', 'assignedReviewer', 'siteEngineer', 'directSupplier', 'items.item', 'selectedQuote.supplier', 'quotes.supplier', 'approvalHistory.actor'])->withCount(['purchaseOrders as issued_purchase_orders_count' => function ($query) {
+        return PurchaseRequest::with(['requester.roles', 'department', 'assignedReviewer', 'siteEngineer', 'directSupplier', 'items.item', 'selectedQuote.supplier', 'quotes.supplier', 'approvalHistory.actor'])
+            ->withCount(['purchaseOrders as issued_purchase_orders_count' => function ($query) {
                 $query->whereNotIn('status', ['REJECTED']);
             }])
+            ->whereDoesntHave('purchaseOrders', function ($query): void {
+                $query->whereNotIn('status', ['REJECTED']);
+            })
             ->where(function ($query): void {
                 $query->where(function ($quotePath): void {
                     $quotePath
