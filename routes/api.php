@@ -243,11 +243,11 @@ Route::middleware('auth:sanctum')->prefix('accounting')->group(function () {
     Route::get('/departments', [AdminController::class, 'indexDepartments'])
         ->middleware('permission:accounting.invoice.view');
     Route::get('/land-parcels', [LandParcelController::class, 'index'])
-        ->middleware('permission:accounting.invoice.view');
+        ->middleware('permission:accounting.invoice.view|purchase_order.view_gm');
     Route::post('/land-parcels', [LandParcelController::class, 'store'])
         ->middleware('permission:accounting.invoice.create');
     Route::get('/land-parcels/{landParcel}', [LandParcelController::class, 'show'])
-        ->middleware('permission:accounting.invoice.view');
+        ->middleware('permission:accounting.invoice.view|purchase_order.view_gm');
     Route::post('/land-parcels/{landParcel}/fund', [LandParcelController::class, 'fund'])
         ->middleware('permission:accounting.invoice.create');
 

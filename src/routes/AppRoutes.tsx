@@ -157,6 +157,7 @@ export const AppRoutes: React.FC = () => {
                     <Route path="/general-manager/purchase-quotes" element={<PurchaseQuotesDecisionPage mode="executive" />} />
                     <Route path="/general-manager/purchase-orders" element={<GeneralManagerPurchaseOrdersPage />} />
                     <Route path="/general-manager/purchase-orders/:id" element={<GeneralManagerPurchaseOrderDetailsPage />} />
+                    <Route path="/general-manager/land-parcels" element={<LandParcelsPage />} />
                     <Route path="/general-manager/reports" element={<GeneralManagerReportsPage />} />
                 </Route>
 
