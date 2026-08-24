@@ -106,10 +106,11 @@ export const NotificationsPage: React.FC = () => {
     }
 
     if (isCombinedAccountingDocuments && roleSlugs.includes('accountant')) {
-      return `/accounting/purchase-orders?po_id=${notification.data?.purchase_order_id}&receipt_id=${notification.data?.purchase_receipt_id}`;
+      return `/accounting/supplier-payments?purchase_receipt_id=${notification.data?.purchase_receipt_id}&purchase_order_id=${notification.data?.purchase_order_id}`;
     }
 
     if (isPurchaseReceipt) {
+      if (roleSlugs.includes('accountant')) return notifiableId ? `/accounting/supplier-payments?purchase_receipt_id=${notifiableId}` : '/accounting/supplier-payments';
       if (roleSlugs.includes('warehouse_keeper')) return notifiableId ? `/warehouse?receipt_id=${notifiableId}` : '/warehouse';
       if (roleSlugs.includes('site_engineer')) return notifiableId ? `/site-engineer?receipt_id=${notifiableId}` : '/site-engineer';
     }
