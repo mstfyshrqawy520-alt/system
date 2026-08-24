@@ -22,8 +22,8 @@ type EditableFinancialItem = {
   region?: string | null;
   item_description: string;
   uom?: string | null;
-  quantity: number;
-  unit_price: number;
+  quantity: number | string;
+  unit_price: number | string;
 };
 
 const formatAmount = (value: number | string | null | undefined) =>
@@ -32,9 +32,9 @@ const formatAmount = (value: number | string | null | undefined) =>
     maximumFractionDigits: 2,
   });
 
-const lineTotal = (quantity: number, unitPrice: number) => {
-  const safeQuantity = Number.isFinite(quantity) ? quantity : 0;
-  const safeUnitPrice = Number.isFinite(unitPrice) ? unitPrice : 0;
+const lineTotal = (quantity: number | string, unitPrice: number | string) => {
+  const safeQuantity = Number.isFinite(Number(quantity)) ? Number(quantity) : 0;
+  const safeUnitPrice = Number.isFinite(Number(unitPrice)) ? Number(unitPrice) : 0;
   return Math.round(safeQuantity * safeUnitPrice * 100) / 100;
 };
 
@@ -63,8 +63,8 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
       region: item.region,
       item_description: item.item_description || item.item?.name || '',
       uom: item.uom,
-      quantity: Number(item.quantity || 0),
-      unit_price: Number(item.estimated_unit_price || 0),
+      quantity: Number(item.quantity) || 1,
+      unit_price: Number(item.estimated_unit_price) > 0 ? Number(item.estimated_unit_price) : '',
     })));
     setNotes(request.notes || '');
     setValidationError(null);
@@ -78,7 +78,7 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
   if (!isOpen || !request) return null;
 
   const updateItem = (index: number, field: 'quantity' | 'unit_price', value: string) => {
-    const parsedValue = value === '' ? 0 : Number(value);
+    const parsedValue = value === '' ? '' : Number(value);
     setItems((current) => current.map((item, itemIndex) => (
       itemIndex === index ? { ...item, [field]: parsedValue } : item
     )));
@@ -94,11 +94,11 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
       setValidationError('لا توجد بنود مالية مرتبطة بهذا الطلب.');
       return;
     }
-    if (items.some((item) => !Number.isFinite(item.quantity) || item.quantity <= 0)) {
+    if (items.some((item) => !Number.isFinite(Number(item.quantity)) || Number(item.quantity) <= 0)) {
       setValidationError('يجب أن تكون الكمية أكبر من صفر في جميع البنود.');
       return;
     }
-    if (items.some((item) => !Number.isFinite(item.unit_price) || item.unit_price < 0)) {
+    if (items.some((item) => !Number.isFinite(Number(item.unit_price)) || Number(item.unit_price) < 0)) {
       setValidationError('يجب إدخال سعر وحدة صحيح لا يقل عن صفر في جميع البنود.');
       return;
     }
@@ -244,7 +244,8 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                         type="number"
                         min="0.01"
                         step="0.01"
-                        value={item.quantity}
+                        value={item.quantity ?? ''}
+                        onFocus={(event) => event.target.select()}
                         onChange={(event) => updateItem(index, 'quantity', event.target.value)}
                         disabled={isSubmitting}
                         className="h-9 w-24 rounded-md border border-cyan-500/60 bg-[#0b1424] px-2 text-center font-mono text-xs text-slate-100 outline-none focus:border-cyan-300 disabled:opacity-60"
@@ -258,7 +259,8 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                           type="number"
                           min="0"
                           step="0.01"
-                          value={item.unit_price}
+                          value={item.unit_price ?? ''}
+                          onFocus={(event) => event.target.select()}
                           onChange={(event) => updateItem(index, 'unit_price', event.target.value)}
                           disabled={isSubmitting}
                           className="h-9 w-28 rounded-md border border-emerald-500/60 bg-[#0b1424] px-2 text-center font-mono text-xs text-slate-100 outline-none focus:border-emerald-300 disabled:opacity-60"
@@ -305,7 +307,8 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                       type="number"
                       min="0.01"
                       step="0.01"
-                      value={item.quantity}
+                      value={item.quantity ?? ''}
+                      onFocus={(event) => event.target.select()}
                       onChange={(event) => updateItem(index, 'quantity', event.target.value)}
                       disabled={isSubmitting}
                       className="mt-1 min-h-11 w-full rounded-xl border border-cyan-500/60 bg-[#0b1424] px-3 py-2 text-center font-mono text-sm text-slate-100 outline-none focus:border-cyan-300 disabled:opacity-60"
@@ -318,7 +321,8 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                       type="number"
                       min="0"
                       step="0.01"
-                      value={item.unit_price}
+                      value={item.unit_price ?? ''}
+                      onFocus={(event) => event.target.select()}
                       onChange={(event) => updateItem(index, 'unit_price', event.target.value)}
                       disabled={isSubmitting}
                       className="mt-1 min-h-11 w-full rounded-xl border border-emerald-500/60 bg-[#0b1424] px-3 py-2 text-center font-mono text-sm text-slate-100 outline-none focus:border-emerald-300 disabled:opacity-60"

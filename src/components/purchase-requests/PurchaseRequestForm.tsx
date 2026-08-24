@@ -411,7 +411,8 @@ export const PurchaseRequestForm: React.FC<Props> = ({
                     min="0.01"
                     required
                     error={Boolean(fieldErrors[`item_${index}_quantity`])}
-                    value={item.quantity}
+                    value={item.quantity === 0 ? '' : (item.quantity ?? '')}
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                   />
                 </FormField>

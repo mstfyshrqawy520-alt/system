@@ -455,6 +455,7 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
                       min="0.01"
                       disabled={!canEdit}
                       defaultValue={parseFloat(item.quantity)}
+                      onFocus={e => e.target.select()}
                       onBlur={e => {
                         const val = parseFloat(e.target.value);
                         if (!isNaN(val) && val > 0 && val !== parseFloat(item.quantity)) {
@@ -553,6 +554,7 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
                       min="0.01"
                       disabled={!canEdit}
                       defaultValue={parseFloat(item.quantity)}
+                      onFocus={e => e.target.select()}
                       onBlur={e => {
                         const val = parseFloat(e.target.value);
                         if (!isNaN(val) && val > 0 && val !== parseFloat(item.quantity)) {

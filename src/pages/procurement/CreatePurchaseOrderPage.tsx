@@ -26,9 +26,9 @@ interface PoItemInput {
   item_reference: string;
   region: string;
   original_quantity: number;
-  quantity: number;
+  quantity: number | string;
   uom: string;
-  unit_price: number;
+  unit_price: number | string;
   specifications: string;
 }
 
@@ -98,19 +98,17 @@ export const CreatePurchaseOrderPage: React.FC = () => {
   }, [prId]);
 
   const handleItemQuantityChange = (index: number, val: string) => {
-    const qty = parseFloat(val) || 0;
     setPoItems((prev) => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], quantity: qty };
+      updated[index] = { ...updated[index], quantity: val === '' ? '' : (parseFloat(val) || 0) };
       return updated;
     });
   };
 
   const handleItemPriceChange = (index: number, val: string) => {
-    const price = parseFloat(val) || 0;
     setPoItems((prev) => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], unit_price: price };
+      updated[index] = { ...updated[index], unit_price: val === '' ? '' : (parseFloat(val) || 0) };
       return updated;
     });
   };
@@ -124,7 +122,7 @@ export const CreatePurchaseOrderPage: React.FC = () => {
   };
 
   const calculateGrandTotal = () => {
-    return poItems.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+    return poItems.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unit_price) || 0), 0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -165,9 +163,9 @@ export const CreatePurchaseOrderPage: React.FC = () => {
           item_description: item.item_description,
           item_reference: item.item_reference,
           region: item.region,
-          quantity: item.quantity,
+          quantity: Number(item.quantity) || 1,
           uom: item.uom,
-          unit_price: item.unit_price,
+          unit_price: Number(item.unit_price) || 0,
           specifications: item.specifications,
         })),
       });
@@ -392,8 +390,8 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {poItems.map((item, index) => {
-                    const lineTotal = item.quantity * item.unit_price;
-                    const diff = item.quantity - item.original_quantity;
+                    const lineTotal = (Number(item.quantity) || 0) * (Number(item.unit_price) || 0);
+                    const diff = (Number(item.quantity) || 0) - item.original_quantity;
                     const isQtyChanged = diff !== 0;
 
                     return (
@@ -416,8 +414,7 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                             type="text"
                             required
                             value={item.region}
-                            readOnly
-                            aria-readonly="true"
+                            onChange={(e) => handleItemTextChange(index, 'region', e.target.value)}
                             placeholder="المنطقة"
                             className="w-32 bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-100 focus:border-cyan-500 focus:outline-none"
                           />
@@ -440,7 +437,8 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                             step="0.01"
                             min="0.01"
                             required
-                            value={item.quantity}
+                            value={item.quantity ?? ''}
+                            onFocus={(e) => e.target.select()}
                             onChange={(e) => handleItemQuantityChange(index, e.target.value)}
                             className="w-24 bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-100 font-mono focus:border-cyan-500 focus:outline-none"
                           />
@@ -460,7 +458,8 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                             step="0.01"
                             min="0"
                             required
-                            value={item.unit_price}
+                            value={item.unit_price ?? ''}
+                            onFocus={(e) => e.target.select()}
                             readOnly={Boolean(pr?.selected_quote?.id)}
                             onChange={(e) => handleItemPriceChange(index, e.target.value)}
                             placeholder="0.00"
@@ -481,51 +480,41 @@ export const CreatePurchaseOrderPage: React.FC = () => {
             </div>
 
             {/* Mobile Commercial Cards */}
-            <div className="space-y-3 md:hidden">
+            <div className="space-y-4 md:hidden">
               {poItems.map((item, index) => {
-                const lineTotal = item.quantity * item.unit_price;
-                const diff = item.quantity - item.original_quantity;
+                const lineTotal = (Number(item.quantity) || 0) * (Number(item.unit_price) || 0);
+                const diff = (Number(item.quantity) || 0) - item.original_quantity;
                 const isQtyChanged = diff !== 0;
 
                 return (
-                  <article key={`mobile-commercial-item-${index}`} className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 space-y-3 shadow-lg">
-                    <div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-2.5">
-                      <div>
-                        <span className="inline-block rounded bg-cyan-950 border border-cyan-800/60 px-2 py-0.5 text-[10px] font-bold text-cyan-300 font-mono mb-1">
-                          بند {index + 1}
-                        </span>
-                        <h4 className="font-bold text-slate-100 text-xs">{item.item_description}</h4>
-                        {item.specifications && (
-                          <p className="text-[11px] text-slate-400 mt-0.5">المواصفات: {item.specifications}</p>
-                        )}
-                      </div>
-                      <span className="shrink-0 rounded bg-slate-800 px-2 py-0.5 text-[11px] text-slate-300">
-                        {item.uom}
+                  <article key={`mobile-po-item-${item.pr_item_id || index}`} className="rounded-xl border border-slate-800 bg-slate-900/90 p-4 space-y-3 shadow-lg">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <span className="font-bold text-slate-100 text-sm">{item.item_description}</span>
+                      <span className="shrink-0 rounded bg-cyan-950 border border-cyan-800/60 px-2 py-0.5 text-[10px] font-bold text-cyan-300 font-mono">
+                        #{index + 1}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
-                        <label className="block text-[10px] text-slate-400 font-semibold mb-1">رقم قطعة الأرض</label>
+                        <label className="block text-[10px] text-slate-400 font-semibold mb-1">رقم قطعة الأرض *</label>
                         <input
                           type="text"
                           required
                           value={item.item_reference}
-                          readOnly
-                          aria-readonly="true"
-                          placeholder="رقم القطعة"
+                          onChange={(e) => handleItemTextChange(index, 'item_reference', e.target.value)}
+                          placeholder="القطعة"
                           dir="ltr"
                           className="h-10 w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 text-xs text-slate-100 font-mono"
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] text-slate-400 font-semibold mb-1">المنطقة</label>
+                        <label className="block text-[10px] text-slate-400 font-semibold mb-1">المنطقة *</label>
                         <input
                           type="text"
                           required
                           value={item.region}
-                          readOnly
-                          aria-readonly="true"
+                          onChange={(e) => handleItemTextChange(index, 'region', e.target.value)}
                           placeholder="المنطقة"
                           className="h-10 w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 text-xs text-slate-100"
                         />
@@ -535,7 +524,7 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <label className="text-[10px] text-slate-400 font-semibold">كمية أمر الشراء</label>
+                          <label className="text-[10px] text-slate-400 font-semibold">الكمية</label>
                           <span className="text-[10px] text-slate-500 font-mono">PR: {item.original_quantity}</span>
                         </div>
                         <input
@@ -543,14 +532,15 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                           step="0.01"
                           min="0.01"
                           required
-                          value={item.quantity}
+                          value={item.quantity ?? ''}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => handleItemQuantityChange(index, e.target.value)}
                           className="h-10 w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 text-xs text-slate-100 font-mono font-bold"
                         />
                       </div>
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <label className="text-[10px] text-slate-400 font-semibold">سعر الوحدة (ج.م)</label>
+                          <label className="text-[10px] text-slate-400 font-semibold">السعر (ج.م)</label>
                           {isQtyChanged && (
                             <span className={`text-[10px] font-mono font-bold ${diff > 0 ? 'text-amber-400' : 'text-rose-400'}`}>
                               {diff > 0 ? `+${diff.toFixed(2)}` : diff.toFixed(2)}
@@ -562,7 +552,8 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                           step="0.01"
                           min="0"
                           required
-                          value={item.unit_price}
+                          value={item.unit_price ?? ''}
+                          onFocus={(e) => e.target.select()}
                           readOnly={Boolean(pr?.selected_quote?.id)}
                           onChange={(e) => handleItemPriceChange(index, e.target.value)}
                           placeholder="0.00"

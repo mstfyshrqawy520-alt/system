@@ -520,8 +520,9 @@ const CreatePurchaseRequestPage: React.FC = () => {
                         type="number"
                         min="0.01"
                         step="any"
-                        value={item.quantity}
-                        onChange={(e) => updateItem(index, { quantity: Number(e.target.value) || 0 })}
+                        value={item.quantity === 0 ? '' : (item.quantity ?? '')}
+                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => updateItem(index, { quantity: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
                         placeholder="1"
                         error={Boolean(itemErr?.quantity)}
                       />
