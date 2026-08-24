@@ -169,6 +169,10 @@ class PurchaseReceiptService
                 'delivery_status' => 'DELIVERED',
                 'actual_delivery_date' => $receipt->received_at ?: now()->toDateString(),
             ]);
+
+            app(NotificationService::class)->markEntityNotificationsAsRead($receipt);
+            app(NotificationService::class)->markEntityNotificationsAsRead($receipt->purchaseOrder);
+
             ApprovalHistory::create([
                 'target_type' => PurchaseReceipt::class,
                 'target_id' => $receipt->id,

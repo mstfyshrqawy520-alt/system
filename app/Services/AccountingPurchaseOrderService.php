@@ -41,6 +41,8 @@ class AccountingPurchaseOrderService
                 'financial_notes' => $financialNotes ?? $lockedPo->financial_notes,
             ]);
 
+            app(NotificationService::class)->markEntityNotificationsAsRead($lockedPo);
+
             ApprovalHistory::create([
                 'target_type' => PurchaseOrder::class,
                 'target_id' => $lockedPo->id,
@@ -95,6 +97,8 @@ class AccountingPurchaseOrderService
                 'reviewed_at_accounting' => now(),
                 'financial_notes' => $comment,
             ]);
+
+            app(NotificationService::class)->markEntityNotificationsAsRead($lockedPo);
 
             ApprovalHistory::create([
                 'target_type' => PurchaseOrder::class,

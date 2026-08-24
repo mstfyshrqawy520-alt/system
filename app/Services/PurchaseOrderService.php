@@ -217,6 +217,8 @@ class PurchaseOrderService
 
             $this->recalculateTotals($po);
 
+            app(\App\Services\NotificationService::class)->markEntityNotificationsAsRead($pr);
+
             ApprovalHistory::create([
                 'target_type' => PurchaseOrder::class,
                 'target_id' => $po->id,

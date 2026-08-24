@@ -123,6 +123,8 @@ class GeneralManagerPurchaseRequestService
             $updateFields['status'] = 'PENDING_PROCUREMENT_APPROVAL';
             $pr->update($updateFields);
 
+            app(NotificationService::class)->markEntityNotificationsAsRead($pr);
+
             ApprovalHistory::create([
                 'target_type' => PurchaseRequest::class,
                 'target_id' => $pr->id,
@@ -168,6 +170,8 @@ class GeneralManagerPurchaseRequestService
             $pr->update([
                 'status' => 'PENDING_PROCUREMENT_APPROVAL',
             ]);
+
+            app(NotificationService::class)->markEntityNotificationsAsRead($pr);
 
             ApprovalHistory::create([
                 'target_type' => PurchaseRequest::class,
@@ -218,6 +222,8 @@ class GeneralManagerPurchaseRequestService
                 'status' => 'REJECTED',
                 'rejection_reason' => $comment,
             ]);
+
+            app(NotificationService::class)->markEntityNotificationsAsRead($pr);
 
             ApprovalHistory::create([
                 'target_type' => PurchaseRequest::class,

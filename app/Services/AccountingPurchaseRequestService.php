@@ -83,6 +83,7 @@ class AccountingPurchaseRequestService
             );
 
             $notificationService = app(NotificationService::class);
+            $notificationService->markEntityNotificationsAsRead($pr);
             $notificationService->queueUsers(
                 $notificationService->resolveUsersWithPermission('purchase_request.approve_procurement'),
                 'purchase_request_pending_procurement_po',
@@ -115,6 +116,8 @@ class AccountingPurchaseRequestService
                 'status' => 'REJECTED',
                 'rejection_reason' => $comment,
             ]);
+
+            app(NotificationService::class)->markEntityNotificationsAsRead($pr);
 
             ApprovalHistory::create([
                 'target_type' => PurchaseRequest::class,

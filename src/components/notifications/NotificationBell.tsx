@@ -33,11 +33,13 @@ export const NotificationBell: React.FC = () => {
     startNotificationsRealtime();
     window.addEventListener('notification-received', handleReceived as EventListener);
     window.addEventListener('notifications-updated', handleUpdated);
+    window.addEventListener('app-data-updated', handleUpdated);
     return () => {
       mounted = false;
       stopNotificationsRealtime();
       window.removeEventListener('notification-received', handleReceived as EventListener);
       window.removeEventListener('notifications-updated', handleUpdated);
+      window.removeEventListener('app-data-updated', handleUpdated);
     };
   }, []);
 

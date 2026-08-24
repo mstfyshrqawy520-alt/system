@@ -230,6 +230,9 @@ class PurchaseQuoteService
                 $action = 'EXECUTIVE_REJECTED_QUOTES';
                 $message = 'رفض المدير التنفيذي عروض الأسعار والطلب.';
             }
+            $request->save();
+
+            app(NotificationService::class)->markEntityNotificationsAsRead($request);
 
             ApprovalHistory::create([
                 'target_type' => PurchaseRequest::class,

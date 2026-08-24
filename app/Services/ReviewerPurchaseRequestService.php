@@ -440,6 +440,7 @@ class ReviewerPurchaseRequestService
 
             // Notify Requester Employee
             $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService->markEntityNotificationsAsRead($pr);
             $notificationService->queueNotification(
                 $pr->user_id,
                 'purchase_request_approved',
@@ -506,6 +507,7 @@ class ReviewerPurchaseRequestService
 
             // Notify Requester Employee
             $notificationService = app(\App\Services\NotificationService::class);
+            $notificationService->markEntityNotificationsAsRead($pr);
             $rejMsg = "تم إرجاع/رفض طلب الشراء {$pr->request_number}.";
             if (! empty($comment)) {
                 $rejMsg .= "\nالسبب: {$comment}";

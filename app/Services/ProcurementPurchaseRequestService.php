@@ -128,6 +128,8 @@ class ProcurementPurchaseRequestService
                 'procurement_route' => 'QUOTES',
             ]);
 
+            app(NotificationService::class)->markEntityNotificationsAsRead($pr);
+
             ApprovalHistory::create([
                 'target_type' => PurchaseRequest::class,
                 'target_id' => $pr->id,
@@ -236,6 +238,8 @@ class ProcurementPurchaseRequestService
                 'total_estimated_cost' => round($grandTotal, 2),
                 ...($hasNotes ? ['notes' => $notes] : []),
             ]);
+
+            app(NotificationService::class)->markEntityNotificationsAsRead($pr);
 
             ApprovalHistory::create([
                 'target_type' => PurchaseRequest::class,
@@ -399,6 +403,8 @@ class ProcurementPurchaseRequestService
                 'status' => 'REJECTED',
                 'rejection_reason' => $comment,
             ]);
+
+            app(NotificationService::class)->markEntityNotificationsAsRead($pr);
 
             ApprovalHistory::create([
                 'target_type' => PurchaseRequest::class,

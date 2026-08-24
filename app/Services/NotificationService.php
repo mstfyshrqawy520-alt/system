@@ -235,4 +235,26 @@ class NotificationService
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
     }
+
+    /**
+     * Mark notifications for an entity as read for a specific user, or for all users when an action completes.
+     */
+    public function markEntityNotificationsAsRead(Model $notifiable, User|int|null $user = null, ?string $type = null): int
+    {
+        $query = Notification::where('notifiable_type', get_class($notifiable))
+            ->where('notifiable_id', $notifiable->getKey())
+            ->whereNull('read_at');
+
+        if ($user !== null) {
+            $userId = $user instanceof User ? $user->id : (int) $user;
+            $query->where('user_id', $userId);
+        }
+
+        if ($type !== null) {
+            $query->where('type', $type);
+        }
+
+        return $query->update(['read_at' => now()]);
+    }
 }
+
