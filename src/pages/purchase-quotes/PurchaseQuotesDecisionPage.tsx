@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getPendingQuoteRequestsApi, recommendPurchaseQuoteApi, decidePurchaseQuoteApi } from '../../api/purchaseQuotes';
-import { PurchaseRequest, PurchaseRequestQuote } from '../../types/purchaseRequest';
+import { PurchaseRequest, PurchaseRequestQuote, PurchaseRequestQuoteRecommendation } from '../../types/purchaseRequest';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/Table';
@@ -18,6 +18,43 @@ const isGeneralManagerRequest = (request: PurchaseRequest): boolean =>
   request.is_general_manager_requester === true
   || request.requester_role === 'general_manager'
   || request.requester?.role === 'general_manager';
+
+const renderRecommendationBadge = (
+  rec: PurchaseRequestQuoteRecommendation | undefined,
+  fallbackLabel: string = 'لم يرشح بعد'
+) => {
+  if (!rec) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-400">
+        <span>⏳</span>
+        <span>{fallbackLabel}</span>
+      </span>
+    );
+  }
+
+  const isRecommend = rec.decision === 'RECOMMEND';
+
+  return (
+    <div className="inline-flex flex-col gap-1 items-start">
+      <span
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black shadow-sm ${
+          isRecommend
+            ? 'bg-emerald-950/90 border border-emerald-500/60 text-emerald-300'
+            : 'bg-rose-950/90 border border-rose-500/60 text-rose-300'
+        }`}
+      >
+        <span className="text-sm">{isRecommend ? '✅' : '❌'}</span>
+        <span>{isRecommend ? 'مرشح' : 'مرفوض'}</span>
+      </span>
+      {rec.user?.name && (
+        <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1 pr-0.5">
+          <span className="text-slate-500">بواسطة:</span>
+          <span className="text-slate-200">{rec.user.name}</span>
+        </span>
+      )}
+    </div>
+  );
+};
 
 interface PurchaseQuotesDecisionPageProps {
   mode: DecisionMode;
@@ -191,8 +228,19 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
                       <TableCell className="min-w-[190px] border-l border-slate-700/70 align-top text-sm font-black text-slate-100">{quote.supplier?.company_name || '—'}</TableCell>
                       <TableCell className="border-l border-slate-700/70 align-top font-mono text-sm font-black text-amber-300">{quote.unit_price || '—'} ج.م</TableCell><TableCell className="border-l border-slate-700/70 align-top font-mono text-sm font-black text-emerald-300">{quote.total_amount} ج.م</TableCell>
                       <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">{quote.currency}</TableCell>
-                        <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">{accounting ? `${accounting.decision === 'RECOMMEND' ? 'مرشح' : 'مرفوض'}${accounting.user?.name ? ` — ${accounting.user.name}` : ''}` : 'لم يرشح بعد'}</TableCell>
-                        <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">{isGeneralManagerRequest(request) ? 'غير مطلوب — قرار المدير العام' : department ? `${department.decision === 'RECOMMEND' ? 'مرشح' : 'مرفوض'}${department.user?.name ? ` — ${department.user.name}` : ''}` : 'لم يرشح بعد'}</TableCell>
+                        <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">
+                          {renderRecommendationBadge(accounting)}
+                        </TableCell>
+                        <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">
+                          {isGeneralManagerRequest(request) ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-cyan-950/80 border border-cyan-500/50 text-cyan-300">
+                              <span>👑</span>
+                              <span>قرار المدير العام مباشرة</span>
+                            </span>
+                          ) : (
+                            renderRecommendationBadge(department)
+                          )}
+                        </TableCell>
                       <TableCell className="min-w-[250px] border-l border-slate-700/70 align-top text-sm">
                         <input value={comments[quote.id] || ''} onChange={event => setComments(current => ({ ...current, [quote.id]: event.target.value }))} placeholder="تعليق اختياري" className="mb-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100" />
                         <div className="flex justify-center gap-2">
@@ -254,15 +302,22 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-slate-500">ترشيح الحسابات</dt>
-                      <dd className="mt-1 font-semibold text-slate-300">
-                        {accounting ? `${accounting.decision === 'RECOMMEND' ? 'مرشح' : 'مرفوض'}${accounting.user?.name ? ` (${accounting.user.name})` : ''}` : 'لم يرشح بعد'}
+                      <dt className="text-slate-500 mb-1">ترشيح الحسابات</dt>
+                      <dd className="mt-0.5">
+                        {renderRecommendationBadge(accounting)}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-slate-500">ترشيح القسم</dt>
-                      <dd className="mt-1 font-semibold text-slate-300">
-                        {isGeneralManagerRequest(request) ? 'قرار المدير العام' : department ? `${department.decision === 'RECOMMEND' ? 'مرشح' : 'مرفوض'}${department.user?.name ? ` (${department.user.name})` : ''}` : 'لم يرشح بعد'}
+                      <dt className="text-slate-500 mb-1">ترشيح القسم</dt>
+                      <dd className="mt-0.5">
+                        {isGeneralManagerRequest(request) ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-cyan-950/80 border border-cyan-500/50 text-cyan-300">
+                            <span>👑</span>
+                            <span>قرار المدير العام مباشرة</span>
+                          </span>
+                        ) : (
+                          renderRecommendationBadge(department)
+                        )}
                       </dd>
                     </div>
                   </dl>
