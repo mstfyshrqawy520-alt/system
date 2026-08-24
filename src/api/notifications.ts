@@ -25,6 +25,11 @@ export const markAllNotificationsAsReadApi = async (): Promise<void> => {
   await apiClient.post('/notifications/read-all');
 };
 
+export const sendTestPushApi = async (): Promise<{ message: string; device_count: number }> => {
+  const response = await apiClient.post<{ message: string; device_count: number }>('/notifications/test-push');
+  return response.data;
+};
+
 const realtimeBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const realtimeStreamTimeout = Number(
   import.meta.env.VITE_NOTIFICATIONS_STREAM_TIMEOUT || (import.meta.env.DEV ? 0 : 120),

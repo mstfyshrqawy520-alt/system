@@ -59,8 +59,8 @@ export const PushNotificationPrompt: React.FC<PushNotificationPromptProps> = ({
     setTestingPush(true);
     setMessage(null);
     try {
-      const response = await (await import('../../api/client')).apiClient.post('/api/v1/notifications/test-push');
-      const data = response.data;
+      const { sendTestPushApi } = await import('../../api/notifications');
+      const data = await sendTestPushApi();
       setIsSuccess(true);
       setMessage(`تم إرسال الإشعار التجريبي بنجاح! تم استهداف (${data.device_count || 1}) جهاز. تفقد شريط إشعارات هاتفك الآن.`);
     } catch (err: any) {
