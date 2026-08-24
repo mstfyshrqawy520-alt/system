@@ -221,7 +221,7 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                   <th className="border-b border-slate-700 px-3 py-3 text-center">#</th>
                   <th className="border-b border-slate-700 px-3 py-3">رقم قطعة الأرض</th>
                   <th className="border-b border-slate-700 px-3 py-3">المنطقة</th>
-                  <th className="border-b border-slate-700 px-3 py-3">الصنف / الوصف</th>
+                  <th className="border-b border-slate-700 px-3 py-3">اسم الصنف</th>
                   <th className="border-b border-slate-700 px-3 py-3 text-center">الكمية</th>
                   <th className="border-b border-slate-700 px-3 py-3 text-center">سعر الوحدة</th>
                   <th className="border-b border-slate-700 px-3 py-3 text-center">الإجمالي</th>

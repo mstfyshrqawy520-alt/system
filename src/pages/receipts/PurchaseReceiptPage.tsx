@@ -334,7 +334,7 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-slate-950/50">
-                        <TableHead className="whitespace-nowrap">الصنف والكود</TableHead>
+                        <TableHead className="whitespace-nowrap">اسم الصنف والكود</TableHead>
                         <TableHead className="whitespace-nowrap">المواصفات الفنية</TableHead>
                         <TableHead className="whitespace-nowrap">رقم القطعة</TableHead>
                         <TableHead className="whitespace-nowrap">المنطقة</TableHead>
@@ -345,16 +345,13 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                     </TableHeader>
                     <TableBody>
                       {(order.items || []).map((item) => {
-                        const spec =
-                          item.specifications ||
-                          item.pr_item?.specifications ||
-                          item.item_description ||
-                          '—';
+                        const itemName = item.item?.name || (item as any).item_name || item.item_description || item.pr_item?.item_description || '—';
+                        const spec = item.specifications || item.pr_item?.specifications || '—';
                         return (
                           <TableRow key={item.id} className="hover:bg-slate-800/40">
                             <TableCell className="max-w-[240px]">
                               <div className="font-black text-slate-100 text-sm">
-                                {item.item?.name || item.item_description}
+                                {itemName}
                               </div>
                               {item.item?.sku && (
                                 <div className="text-[11px] font-mono text-cyan-400 mt-0.5">
