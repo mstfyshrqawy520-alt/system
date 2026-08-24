@@ -49,8 +49,25 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [directApprovingId, setDirectApprovingId] = useState<number | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  const handleDirectApprove = async (request: PurchaseRequest) => {
+    setDirectApprovingId(request.id);
+    setError(null);
+    setNotice(null);
+    try {
+      await approveGeneralManagerPurchaseRequestApi(request.id, 'تم الاعتماد المباشر من المدير التنفيذي.');
+      setNotice(`تم اعتماد طلب الشراء (${request.request_number}) بنجاح وتحويله للمشتريات لإصدار أمر الشراء.`);
+      await loadRequests(true);
+    } catch (err) {
+      setError(parseApiError(err).message);
+    } finally {
+      setDirectApprovingId(null);
+    }
+  };
 
   const loadRequests = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -253,6 +270,12 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
         </div>
       )}
 
+      {notice && (
+        <div className="rounded-xl border border-emerald-700/60 bg-emerald-950/30 p-3 text-xs font-bold text-emerald-200">
+          {notice}
+        </div>
+      )}
+
       <TableFilterBar
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
@@ -341,21 +364,35 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 font-mono text-emerald-300 whitespace-nowrap">
                         {request.procurement_route === 'DIRECT'
-                          ? `${Number(request.total_estimated_cost || 0).toLocaleString('ar-EG', {
-                              minimumFractionDigits: 2,
-                            })} ج.م`
-                          : '—'}
+                           ? `${Number(request.total_estimated_cost || 0).toLocaleString('ar-EG', {
+                               minimumFractionDigits: 2,
+                             })} ج.م`
+                           : '—'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">{request.assigned_reviewer?.name || '—'}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => openRequest(request)}
-                        >
-                          فتح الطلب ومراجعة البنود
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => openRequest(request)}
+                          >
+                            فتح الطلب ومراجعة البنود
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="success"
+                            className="font-bold flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white"
+                            isLoading={directApprovingId === request.id}
+                            disabled={actionLoading || directApprovingId !== null}
+                            onClick={() => void handleDirectApprove(request)}
+                          >
+                            <span>✓</span>
+                            <span>اعتماد مباشر</span>
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -423,15 +460,29 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                     </div>
                   </dl>
 
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="primary"
-                    className="w-full"
-                    onClick={() => openRequest(request)}
-                  >
-                    فتح الطلب ومراجعة البنود ←
-                  </Button>
+                  <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      className="w-full text-xs font-bold"
+                      onClick={() => openRequest(request)}
+                    >
+                      فتح ومراجعة البنود
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="success"
+                      className="w-full text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+                      isLoading={directApprovingId === request.id}
+                      disabled={actionLoading || directApprovingId !== null}
+                      onClick={() => void handleDirectApprove(request)}
+                    >
+                      <span>✓</span>
+                      <span>اعتماد مباشر</span>
+                    </Button>
+                  </div>
                 </article>
               );
             })}
