@@ -4,6 +4,12 @@ import { getItemsAdminApi } from '../../api/admin/items';
 import { getSuppliersAdminApi } from '../../api/admin/suppliers';
 import { getUsersAdminApi } from '../../api/admin/users';
 import { getDepartmentsAdminApi } from '../../api/admin/departments';
+import {
+  getAdminSystemMonitoringApi,
+  getAdminAuditLogApi,
+  MonitoringSnapshot,
+  AdminAuditEvent,
+} from '../../api/admin/systemMonitoring';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import { parseApiError } from '../../utils/apiError';
@@ -11,13 +17,18 @@ import { useAuth } from '../../context/AuthContext';
 import { KpiCard, Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { DashboardBars } from '../../components/ui/DashboardCharts';
+import { exportToCsv } from '../../utils/exportCsv';
 
 export const AdminDashboardPage: React.FC = () => {
   const [usersCount, setUsersCount] = useState<number | null>(null);
   const [deptsCount, setDeptsCount] = useState<number | null>(null);
   const [itemsCount, setItemsCount] = useState<number | null>(null);
   const [suppliersCount, setSuppliersCount] = useState<number | null>(null);
+  const [snapshot, setSnapshot] = useState<MonitoringSnapshot | null>(null);
+  const [auditEvents, setAuditEvents] = useState<AdminAuditEvent[]>([]);
+  const [auditFilter, setAuditFilter] = useState<'ALL' | 'WORKFLOW' | 'USERS' | 'SUPPLIERS'>('ALL');
   const [loading, setLoading] = useState<boolean>(true);
+  const [exporting, setExporting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const { hasPermission } = useAuth();
@@ -27,6 +38,18 @@ export const AdminDashboardPage: React.FC = () => {
     setError(null);
     try {
       const promises: Promise<any>[] = [];
+
+      promises.push(
+        getAdminSystemMonitoringApi()
+          .then((res) => setSnapshot(res))
+          .catch(() => setSnapshot(null))
+      );
+
+      promises.push(
+        getAdminAuditLogApi()
+          .then((res) => setAuditEvents(res))
+          .catch(() => setAuditEvents([])),
+      );
 
       if (hasPermission('system.users.manage')) {
         promises.push(
@@ -69,6 +92,30 @@ export const AdminDashboardPage: React.FC = () => {
     }
   };
 
+  const handleExportAuditLogs = () => {
+    if (!auditEvents.length) return;
+    setExporting(true);
+    try {
+      const headers = ['معرّف الحدث', 'نوع الحدث', 'الإجراء', 'الكيان', 'رقم الكيان', 'المستخدم المنفّذ', 'تاريخ ووقت الحدث'];
+      const rows = auditEvents.map((evt) => [
+        evt.id,
+        evt.event_type || 'نظام',
+        evt.action,
+        evt.entity_type,
+        evt.entity_id,
+        evt.actor?.name || 'النظام التلقائي',
+        evt.occurred_at ? new Date(evt.occurred_at).toLocaleString('ar-EG') : '—',
+      ]);
+      exportToCsv({
+        filename: `ashbiliya_audit_log_${new Date().toISOString().slice(0, 10)}.csv`,
+        headers,
+        rows,
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -80,12 +127,35 @@ export const AdminDashboardPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in" dir="rtl">
       {/* Header */}
-      <div className="pb-4 border-b border-slate-800 flex items-center justify-between">
+      <div className="pb-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-slate-100">لوحة تحكم الإدارة</h1>
+          <h1 className="text-xl font-black text-slate-100">لوحة تحكم وإدارة النظام</h1>
           <p className="mt-1 text-xs text-slate-400">
-            إدارة النظام، الأقسام، الأصناف، الموردين، والمستخدمين والصلاحيات
+            المراقبة الحية لعمليات الشراء، الهيكل التنظيمي، المستخدمين، الصلاحيات وسجلات التدقيق.
           </p>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExportAuditLogs}
+            disabled={exporting || auditEvents.length === 0}
+            className="border-slate-700 bg-slate-900 text-cyan-300 hover:bg-slate-800 text-xs font-bold flex items-center gap-1.5"
+          >
+            <span>💾</span>
+            <span>{exporting ? 'جاري التصدير...' : 'تصدير سجل العمليات (Excel)'}</span>
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={loadData}
+            className="border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800 text-xs font-bold"
+          >
+            <span>🔄</span>
+            <span>تحديث</span>
+          </Button>
         </div>
       </div>
 
@@ -153,6 +223,58 @@ export const AdminDashboardPage: React.FC = () => {
 
       {error && <ErrorMessage error={error} />}
 
+      {/* ── ملخص سير المعاملات والمراقبة الحية (Operational Workflow Health) ── */}
+      {snapshot && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black text-slate-200 flex items-center gap-2">
+              <span className="text-emerald-400">📊</span> المراقبة التشغيلية لدورة المعاملات الحية
+            </h2>
+            <span className="text-[11px] text-slate-400 font-mono">
+              قاعدة البيانات: {snapshot.database.status === 'connected' ? '🟢 متصلة' : '🔴 عطل'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 space-y-1">
+              <span className="text-[11px] font-bold text-slate-400 block">إجمالي طلبات الشراء</span>
+              <span className="text-lg font-mono font-black text-cyan-400 block">
+                {snapshot.counts.purchase_requests}
+              </span>
+              <span className="text-[10px] text-slate-500">
+                المعلقة: {(snapshot.workflow.purchase_requests_by_status?.SUBMITTED || 0) + (snapshot.workflow.purchase_requests_by_status?.UNDER_REVIEW || 0)}
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 space-y-1">
+              <span className="text-[11px] font-bold text-slate-400 block">بانتظار المدير العام</span>
+              <span className="text-lg font-mono font-black text-amber-400 block">
+                {snapshot.workflow.purchase_requests_by_status?.PENDING_EXECUTIVE_APPROVAL || snapshot.workflow.purchase_requests_by_status?.PENDING_EXECUTIVE_QUOTE_DECISION || 0}
+              </span>
+              <span className="text-[10px] text-slate-500">طلبات عروض وقرارات</span>
+            </div>
+
+            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 space-y-1">
+              <span className="text-[11px] font-bold text-slate-400 block">أوامر الشراء (POs)</span>
+              <span className="text-lg font-mono font-black text-indigo-400 block">
+                {snapshot.counts.purchase_orders}
+              </span>
+              <span className="text-[10px] text-slate-500">
+                الحسابات: {snapshot.workflow.purchase_orders_by_status?.PENDING_ACCOUNTING_REVIEW || 0}
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 space-y-1">
+              <span className="text-[11px] font-bold text-slate-400 block">المستخدمون النشطون</span>
+              <span className="text-lg font-mono font-black text-emerald-400 block">
+                {snapshot.counts.active_users} / {snapshot.counts.users}
+              </span>
+              <span className="text-[10px] text-slate-500">حساب مفعل بالنظام</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Available Management KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {hasPermission('system.users.manage') && (
@@ -191,6 +313,85 @@ export const AdminDashboardPage: React.FC = () => {
           />
         )}
       </div>
+
+      {/* ── سجل الأحداث والنشاط اللحظي (Audit Trail Feed) ── */}
+      <Card className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <h2 className="text-sm font-black text-slate-100 flex items-center gap-2">
+              <span>📜</span> سجل الأحداث والنشاط اللحظي (Audit Trail)
+            </h2>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              تسجيل زمني لجميع عمليات الدخول، الاعتمادات، والتعديلات المنفذة في النظام.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {(['ALL', 'WORKFLOW', 'USERS', 'SUPPLIERS'] as const).map((filterKey) => {
+              const labels = {
+                ALL: 'الكل',
+                WORKFLOW: 'الطلبات والأوامر',
+                USERS: 'المستخدمين',
+                SUPPLIERS: 'الموردين',
+              };
+              return (
+                <button
+                  key={filterKey}
+                  type="button"
+                  onClick={() => setAuditFilter(filterKey)}
+                  className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all ${
+                    auditFilter === filterKey
+                      ? 'bg-cyan-600 text-white shadow'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  }`}
+                >
+                  {labels[filterKey]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {auditEvents.length === 0 ? (
+          <p className="text-xs text-slate-500 py-4 text-center">لا توجد أحداث مسجلة حديثاً في سجل النظام.</p>
+        ) : (
+          <div className="divide-y divide-slate-800/60 max-h-80 overflow-y-auto pr-1">
+            {auditEvents
+              .filter((evt) => {
+                if (auditFilter === 'WORKFLOW') return evt.entity_type?.includes('purchase_request') || evt.entity_type?.includes('purchase_order') || evt.entity_type?.includes('receipt');
+                if (auditFilter === 'USERS') return evt.entity_type?.includes('user') || evt.entity_type?.includes('role') || evt.entity_type?.includes('department');
+                if (auditFilter === 'SUPPLIERS') return evt.entity_type?.includes('supplier');
+                return true;
+              })
+              .slice(0, 15)
+              .map((evt) => (
+                <div key={evt.id} className="py-2.5 flex items-center justify-between gap-3 text-xs hover:bg-slate-900/40 px-2 rounded-lg transition-colors">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-800 border border-slate-700 text-xs text-cyan-300">
+                      ⚡
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-200 truncate">{evt.action}</span>
+                        <span className="rounded bg-slate-800 px-1.5 py-0.2 text-[9px] font-bold text-slate-400 shrink-0">
+                          {evt.entity_type} #{evt.entity_id}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                        المنفّذ: <strong className="text-slate-300">{evt.actor?.name || 'النظام التلقائي'}</strong>
+                        {evt.entity_label && ` — ${evt.entity_label}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="shrink-0 text-[10px] font-mono text-slate-500">
+                    {evt.occurred_at ? new Date(evt.occurred_at).toLocaleString('ar-EG', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' }) : '—'}
+                  </span>
+                </div>
+              ))}
+          </div>
+        )}
+      </Card>
 
       <DashboardBars
         title="حجم وحدات النظام"

@@ -44,6 +44,13 @@ export const UsersPage: React.FC = () => {
   const [userToToggle, setUserToToggle] = useState<AdminUser | null>(null);
   const [togglingUserId, setTogglingUserId] = useState<number | null>(null);
 
+  // Password Reset State
+  const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null);
+  const [tempPassword, setTempPassword] = useState<string>('');
+  const [resettingPassword, setResettingPassword] = useState<boolean>(false);
+  const [copySuccess, setCopySuccess] = useState<boolean>(false);
+  const [resetSuccessMessage, setResetSuccessMessage] = useState<string | null>(null);
+
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
@@ -56,6 +63,44 @@ export const UsersPage: React.FC = () => {
     is_active: true,
   });
   const [submitting, setSubmitting] = useState<boolean>(false);
+
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+    let pass = 'Ash@';
+    for (let i = 0; i < 8; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return pass;
+  };
+
+  const handleOpenResetPassword = (u: AdminUser) => {
+    setResetPasswordUser(u);
+    setTempPassword(generateRandomPassword());
+    setCopySuccess(false);
+    setResetSuccessMessage(null);
+  };
+
+  const handleConfirmPasswordReset = async () => {
+    if (!resetPasswordUser || !tempPassword) return;
+    setResettingPassword(true);
+    try {
+      await updateUserAdminApi(resetPasswordUser.id, {
+        name: resetPasswordUser.name,
+        email: resetPasswordUser.email,
+        password: tempPassword,
+      });
+      setResetSuccessMessage(`تمت إعادة تعيين كلمة المرور للمستخدم ${resetPasswordUser.name} بنجاح!`);
+      setTimeout(() => {
+        setResetPasswordUser(null);
+        setResetSuccessMessage(null);
+      }, 3500);
+    } catch (err: unknown) {
+      const parsed = parseApiError(err);
+      setError(parsed.message);
+    } finally {
+      setResettingPassword(false);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -262,7 +307,16 @@ export const UsersPage: React.FC = () => {
                   )}
                 </TableCell>
                 <TableCell className="text-center">
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleOpenResetPassword(u)}
+                      className="px-2 py-1 text-[11px] text-amber-300 hover:text-amber-200 border-amber-800/60 bg-amber-950/30"
+                      title="إعادة تعيين كلمة المرور"
+                    >
+                      🔑 كلمة المرور
+                    </Button>
                     <Button
                       variant="secondary"
                       size="sm"
@@ -301,7 +355,7 @@ export const UsersPage: React.FC = () => {
           </div>
         ) : (
           filteredUsers.map((u) => (
-            <article key={`mobile-user-${u.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+            <article key={`mobile-user-${u.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
               <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-3">
                 <div className="min-w-0">
                   <h3 className="break-normal font-bold text-sm text-slate-100">{u.name}</h3>
@@ -343,7 +397,15 @@ export const UsersPage: React.FC = () => {
                   </dd>
                 </div>
               </dl>
-              <div className="mt-4 flex items-center gap-2 border-t border-slate-800 pt-3">
+              <div className="flex items-center gap-2 border-t border-slate-800 pt-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleOpenResetPassword(u)}
+                  className="flex-1 min-h-10 text-xs font-bold text-amber-300 border-amber-800/60 bg-amber-950/20"
+                >
+                  🔑 كلمة المرور
+                </Button>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -366,7 +428,85 @@ export const UsersPage: React.FC = () => {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Password Reset Modal */}
+      <Modal
+        isOpen={Boolean(resetPasswordUser)}
+        onClose={() => setResetPasswordUser(null)}
+        title={`🔑 إعادة تعيين كلمة المرور: ${resetPasswordUser?.name || ''}`}
+        footer={
+          <>
+            <Button variant="secondary" size="sm" onClick={() => setResetPasswordUser(null)}>
+              إلغاء
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleConfirmPasswordReset}
+              isLoading={resettingPassword}
+              disabled={!tempPassword || resettingPassword}
+            >
+              تأكيد وتعيين كلمة المرور
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4 text-xs" dir="rtl">
+          {resetSuccessMessage ? (
+            <div className="rounded-xl border border-emerald-800 bg-emerald-950/40 p-4 text-emerald-200 font-bold text-center">
+              🎉 {resetSuccessMessage}
+            </div>
+          ) : (
+            <>
+              <p className="text-slate-300 leading-relaxed">
+                سيتم تعيين كلمة مرور جديدة ومؤقتة للمستخدم: <strong className="text-cyan-300">{resetPasswordUser?.name}</strong> ({resetPasswordUser?.email}).
+              </p>
+
+              <FormField label="كلمة المرور الجديدة المقترحة" required>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="text"
+                    required
+                    value={tempPassword}
+                    onChange={(e) => setTempPassword(e.target.value)}
+                    dir="ltr"
+                    className="font-mono text-center text-sm font-bold text-amber-300"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(tempPassword);
+                      setCopySuccess(true);
+                      setTimeout(() => setCopySuccess(false), 2000);
+                    }}
+                    className="shrink-0 whitespace-nowrap text-xs font-bold"
+                  >
+                    {copySuccess ? '✓ تم النسخ' : '📋 نسخ'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setTempPassword(generateRandomPassword())}
+                    className="shrink-0 whitespace-nowrap text-xs"
+                    title="توليد كلمة مرور أخرى"
+                  >
+                    🔄
+                  </Button>
+                </div>
+              </FormField>
+
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-[11px] text-slate-400 space-y-1">
+                <span className="font-bold text-slate-300 block">📌 نصيحة أمنية:</span>
+                <p>انسخ كلمة المرور وزوّد بها الموظف لتسجيل الدخول، واطلب منه تغييرها عند أول تسجيل دخول.</p>
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
+
+      {/* Main User Edit / Add Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
