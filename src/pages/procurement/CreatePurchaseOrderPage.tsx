@@ -12,6 +12,7 @@ import { parseApiError } from '../../utils/apiError';
 import { Card } from '../../components/ui/Card';
 import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import { getUnitLabel } from '../../utils/units';
+import { tafqeetCurrency } from '../../utils/tafqeet';
 
 const getLocalDateIso = () => {
   const now = new Date();
@@ -574,15 +575,21 @@ export const CreatePurchaseOrderPage: React.FC = () => {
               })}
             </div>
 
-            {/* Grand الإجمالي Summary Box (EGP) */}
-            <div className="flex items-center justify-between p-4 bg-slate-900 border border-slate-800 rounded-xl">
-              <span className="text-xs font-bold text-slate-200">
-                إجمالي أمر الشراء التجاري (بالجنيه المصري EGP / ج.م):
-              </span>
-              <CurrencyDisplay
-                amount={calculateGrandTotal()}
-                amountClassName="text-xl font-mono font-black text-emerald-400"
-              />
+            {/* Grand Total Summary Box (EGP) with Arabic Tafqeet */}
+            <div className="rounded-xl border border-emerald-900/60 bg-emerald-950/20 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-200">
+                  إجمالي أمر الشراء التجاري (بالجنيه المصري EGP / ج.م):
+                </span>
+                <CurrencyDisplay
+                  amount={calculateGrandTotal()}
+                  amountClassName="text-xl font-mono font-black text-emerald-400"
+                />
+              </div>
+              <div className="text-xs font-bold text-emerald-300/90 border-t border-emerald-900/40 pt-2 font-sans flex items-center gap-1.5">
+                <span className="text-slate-400 font-normal">المبلغ بالحروف:</span>
+                <span>{tafqeetCurrency(calculateGrandTotal())}</span>
+              </div>
             </div>
           </div>
 
