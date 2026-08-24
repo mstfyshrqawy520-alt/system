@@ -148,9 +148,23 @@ export const UniversalReportsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in" dir="rtl">
+    <div className="space-y-6 animate-fade-in print-container print-document" dir="rtl">
+      {/* ── OFFICIAL PRINT HEADER ── */}
+      <div className="hidden print:block mb-4 border-b-2 border-slate-900 pb-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-xl font-black text-slate-950">شركة الإشبيليّة للتطوير العقاري والمقاولات</h1>
+            <p className="text-xs text-slate-700">تقرير المشتريات والمصروفات والتحليلات المالية المعتمد</p>
+          </div>
+          <div className="text-left text-xs font-mono text-slate-700">
+            <div>تاريخ التقرير: {new Date().toLocaleDateString('ar-EG')}</div>
+            <div>الفترة: {period === 'all' ? 'جميع الفترات' : `آخر ${period} يوم`}</div>
+          </div>
+        </div>
+      </div>
+
       {/* ── Page Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 print:border-b-0 print:pb-2">
         <div>
           <div className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-full bg-cyan-400 animate-pulse" />

@@ -30,9 +30,23 @@ const SupplierAccountDedicatedPage: React.FC<{
   onRecordPayment: (account: SupplierAccountSummary) => void;
 }> = ({ selected, onBack, onRecordPayment }) => {
   return (
-    <div className="min-w-0 space-y-6 animate-fade-in" dir="rtl">
+    <div className="min-w-0 space-y-6 animate-fade-in print-container print-document" dir="rtl">
+      {/* ── OFFICIAL PRINT HEADER ── */}
+      <div className="hidden print:block mb-4 border-b-2 border-slate-900 pb-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-xl font-black text-slate-950">شركة الإشبيليّة للتطوير العقاري والمقاولات</h1>
+            <p className="text-xs text-slate-700">كشف حساب مالي تفصيلي للمورد — {selected.supplier.company_name}</p>
+          </div>
+          <div className="text-left text-xs font-mono text-slate-700">
+            <div>تاريخ الطباعة: {new Date().toLocaleDateString('ar-EG')}</div>
+            <div>كود المورد: {selected.supplier.code || '—'}</div>
+          </div>
+        </div>
+      </div>
+
       {/* Top Header & Navigation */}
-      <div className="flex flex-col gap-4 border-b border-slate-800 pb-5 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-4 border-b border-slate-800 pb-5 lg:flex-row lg:items-center lg:justify-between print:border-b-0 print:pb-2">
         <div className="min-w-0 space-y-1.5">
           <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
             <button

@@ -167,12 +167,11 @@ input:focus, select:focus, textarea:focus {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 5mm;
+    margin: 6mm;
   }
 
   html,
-  body,
-  #root {
+  body {
     width: 100% !important;
     height: auto !important;
     min-width: 0 !important;
@@ -180,72 +179,119 @@ input:focus, select:focus, textarea:focus {
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
-    color: #0f172a !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
-  /* اطبع المستند المختار فقط، وأزل تخطيط التطبيق من حساب الصفحات. */
-  body * {
-    visibility: hidden !important;
-  }
-
-  body:has(.print-container) > #root {
-    display: contents !important;
-  }
-
-  body:has(.print-container) #root *:has(.print-container) {
-    display: contents !important;
-  }
-
-  body:has(.print-container) #root *:has(.print-container) > *:not(:has(.print-container)) {
+  /* 1. إخفاء عناصر شريط التنقل والأزرار غير المخصصة للطباعة */
+  nav,
+  aside,
+  button:not(.print-visible),
+  .print\:hidden,
+  .print-hidden,
+  input:not([type="checkbox"]),
+  select,
+  textarea {
     display: none !important;
   }
 
-  .print-container,
-  .print-container * {
-    visibility: visible !important;
-    font-family: 'Cairo', var(--font-tajawal), 'Tajawal', 'Noto Sans Arabic', 'Arial', sans-serif !important;
-    font-weight: 800 !important;
-    color: #000000 !important;
-    -webkit-text-fill-color: #000000 !important;
-    text-rendering: optimizeLegibility;
+  /* 2. إذا كانت هناك نافذة منبثقة أو مستند مخصص للطباعة (Print Modal / Container) */
+  body:has(.print-container) > #root:not(:has(.print-container)) {
+    display: none !important;
   }
 
-  .print-container {
-    position: absolute !important;
-    inset: auto !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: auto !important;
-    display: block !important;
-    width: 100% !important;
-    max-width: none !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    height: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-    background: #ffffff !important;
-    page-break-after: auto !important;
-    break-after: auto !important;
-  }
-
-  .print-container > div {
+  body:has(.print-container) .modal-top-viewport,
+  body:has(.print-container) .print-container {
     position: static !important;
     display: block !important;
     width: 100% !important;
-    max-width: none !important;
-    max-height: none !important;
     height: auto !important;
     min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #ffffff !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: visible !important;
-    border: 0 !important;
-    border-radius: 0 !important;
     box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* 3. ضمان ظهور النصوص والأرقام باللون الأسود الواضح لجميع المستندات */
+  body,
+  #root,
+  main,
+  div,
+  section,
+  article,
+  table,
+  thead,
+  tbody,
+  tr,
+  th,
+  td,
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  span,
+  strong,
+  dl,
+  dt,
+  dd,
+  .print-container,
+  .print-container *,
+  .print-document,
+  .print-document * {
+    visibility: visible !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    font-family: 'Cairo', var(--font-tajawal), 'Tajawal', 'Noto Sans Arabic', 'Arial', sans-serif !important;
+    text-shadow: none !important;
+  }
+
+  /* إزالة أي قيود على الارتفاع وسكرول المتصفح */
+  * {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* تحويل الخلفيات الداكنة إلى بيضاء وإطارات رمادية للطباعة الواضحة */
+  .bg-slate-950,
+  .bg-slate-900,
+  .bg-slate-800,
+  .bg-slate-950\/60,
+  .bg-slate-950\/70,
+  .bg-slate-950\/75,
+  .bg-slate-950\/80,
+  .bg-slate-950\/85,
+  .bg-slate-900\/60,
+  .bg-slate-900\/80,
+  .bg-slate-900\/90,
+  .bg-cyan-950,
+  .bg-cyan-950\/20,
+  .bg-cyan-950\/30,
+  .bg-cyan-950\/40,
+  .bg-emerald-950\/20,
+  .bg-amber-950\/20,
+  .bg-rose-950\/20,
+  .bg-slate-900\/40 {
     background: #ffffff !important;
+    background-color: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  .border-slate-800,
+  .border-slate-700,
+  .border-slate-600,
+  .border-cyan-800,
+  .border-cyan-800\/60,
+  .border-cyan-800\/70,
+  .border-emerald-800\/60,
+  .border-amber-800\/60,
+  .border-rose-800\/60 {
+    border-color: #cbd5e1 !important;
   }
 
   .print-document {
@@ -268,64 +314,52 @@ input:focus, select:focus, textarea:focus {
 
   .document-logo {
     display: block !important;
-    height: 52px !important;
+    height: 48px !important;
     width: auto !important;
     object-fit: contain !important;
-    margin: 0 auto 3px !important;
+    margin: 0 auto 4px !important;
   }
 
-  nav,
-  header,
-  aside,
-  button,
-  .print\:hidden {
-    display: none !important;
-  }
-
-  .print\:bg-white {
-    background-color: #ffffff !important;
-  }
-
-  .print\:text-slate-900 {
-    color: #000000 !important;
-  }
-
-  .print\:p-0 {
-    padding: 0 !important;
-  }
-
+  /* تنسيق الجداول للطباعة A4 */
+  table,
   .print-document table {
     width: 100% !important;
     margin-top: 4px !important;
     max-width: 100% !important;
-    table-layout: fixed;
-    page-break-inside: auto;
-    font-size: 9px;
+    table-layout: auto !important;
+    page-break-inside: auto !important;
+    border-collapse: collapse !important;
+    font-size: 10px !important;
   }
 
+  th,
+  td,
   .print-document th,
   .print-document td {
-    padding: 3px !important;
-    line-height: 1.1 !important;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    padding: 4px 6px !important;
+    line-height: 1.2 !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    border: 1px solid #94a3b8 !important;
+    color: #000000 !important;
   }
 
-  .print-document .mt-6 {
-    margin-top: 6px !important;
+  th {
+    background-color: #f1f5f9 !important;
+    font-weight: 900 !important;
   }
 
-  .print-document tr {
-    page-break-inside: avoid;
-    page-break-after: auto;
+  tr {
+    page-break-inside: avoid !important;
+    page-break-after: auto !important;
   }
 
-  .print-document thead {
-    display: table-header-group;
+  thead {
+    display: table-header-group !important;
   }
 
-  .print-document tfoot {
-    display: table-footer-group;
+  tfoot {
+    display: table-footer-group !important;
   }
 }
 

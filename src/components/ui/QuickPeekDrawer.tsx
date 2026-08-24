@@ -74,15 +74,15 @@ export const QuickPeekDrawer: React.FC<QuickPeekDrawerProps> = ({
   const fullPageRoute = type === 'PR' ? `/requests/${id}` : `/procurement/purchase-orders/${id}`;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 overflow-hidden" dir="rtl">
+    <div className="fixed inset-0 z-50 overflow-hidden print-container print:static print:block print:bg-white print:p-0" dir="rtl">
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="absolute inset-0 bg-slate-950/75 backdrop-blur-xs transition-opacity duration-300 animate-fade-in"
+        className="absolute inset-0 bg-slate-950/75 backdrop-blur-xs transition-opacity duration-300 animate-fade-in print:hidden"
       />
 
-      <div className="fixed inset-y-0 left-0 max-w-full flex pl-0 sm:pl-10">
-        <div className="w-screen max-w-xl bg-slate-900 border-r border-slate-800 shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out animate-slide-left">
+      <div className="fixed inset-y-0 left-0 max-w-full flex pl-0 sm:pl-10 print:static print:block print:w-full print:p-0">
+        <div className="w-screen max-w-xl bg-slate-900 border-r border-slate-800 shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out animate-slide-left print-document print:bg-white print:text-black print:max-w-none print:w-full print:border-none print:shadow-none print:p-0">
           {/* Header */}
           <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
             <div className="flex items-center gap-2.5">

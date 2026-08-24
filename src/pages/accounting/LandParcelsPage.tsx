@@ -376,8 +376,8 @@ const LandParcelsPage: React.FC = () => {
 
       {/* ── PARCEL DETAILS & EXECUTION MODAL (With Print Support) ── */}
       {parcelDetails && createPortal(
-        <div className="modal-top-viewport fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/85 p-2 sm:p-4" role="dialog" aria-modal="true">
-          <div className="print-target-document max-h-[calc(100vh-1rem)] w-full max-w-6xl space-y-5 overflow-y-auto rounded-2xl border border-cyan-800/70 bg-slate-900 p-4 shadow-2xl sm:max-h-[calc(100vh-2rem)] sm:p-6">
+        <div className="modal-top-viewport print-container fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/85 p-2 sm:p-4 print:static print:block print:bg-white print:p-0" role="dialog" aria-modal="true">
+          <div className="print-document max-h-[calc(100vh-1rem)] w-full max-w-6xl space-y-5 overflow-y-auto rounded-2xl border border-cyan-800/70 bg-slate-900 p-4 shadow-2xl sm:max-h-[calc(100vh-2rem)] sm:p-6 print:bg-white print:text-black print:p-0 print:border-none print:shadow-none print:max-h-none print:overflow-visible">
             
             {/* Modal Header */}
             <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4 print:border-b-2 print:border-black">
