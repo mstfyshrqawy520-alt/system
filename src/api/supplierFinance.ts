@@ -208,6 +208,22 @@ export interface LandParcelDepartmentSpending {
   invoices_count: number;
 }
 
+export interface LandParcelMaterial {
+  id: number;
+  item_name: string;
+  item_reference?: string | null;
+  region?: string | null;
+  ordered_quantity: number;
+  received_quantity: number;
+  uom?: string | null;
+  unit_price: number;
+  total_price: number;
+  specifications?: string | null;
+  po_number?: string | null;
+  supplier_name?: string | null;
+  date?: string | null;
+}
+
 export interface LandParcelAccountDetails {
   parcel: LandParcel;
   summary: {
@@ -218,6 +234,7 @@ export interface LandParcelAccountDetails {
     is_negative: boolean;
   };
   department_breakdown?: LandParcelDepartmentSpending[];
+  materials?: LandParcelMaterial[];
   transactions: LandParcelTransaction[];
   invoice_allocations: SupplierInvoiceLandAllocation[];
 }

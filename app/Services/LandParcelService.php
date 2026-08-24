@@ -112,6 +112,39 @@ class LandParcelService
             ];
         })->values();
 
+        $orderIds = $allocations->pluck('invoice.purchase_order_id')->filter()->unique();
+
+        $materials = \App\Models\PurchaseOrderItem::query()
+            ->where(function ($q) use ($parcel, $orderIds) {
+                $q->where('item_reference', $parcel->parcel_reference);
+                if ($orderIds->isNotEmpty()) {
+                    $q->orWhereIn('purchase_order_id', $orderIds);
+                }
+            })
+            ->with([
+                'purchaseOrder:id,po_number,supplier_id,created_at',
+                'purchaseOrder.supplier:id,company_name',
+            ])
+            ->get()
+            ->map(function ($poItem) {
+                $receivedQty = (float) \App\Models\PurchaseReceiptItem::where('purchase_order_item_id', $poItem->id)->sum('received_quantity');
+                return [
+                    'id' => $poItem->id,
+                    'item_name' => $poItem->item_description,
+                    'item_reference' => $poItem->item_reference,
+                    'region' => $poItem->region,
+                    'ordered_quantity' => (float) $poItem->quantity,
+                    'received_quantity' => $receivedQty > 0 ? $receivedQty : (float) $poItem->quantity,
+                    'uom' => $poItem->uom,
+                    'unit_price' => (float) $poItem->unit_price,
+                    'total_price' => (float) $poItem->line_total,
+                    'specifications' => $poItem->specifications,
+                    'po_number' => $poItem->purchaseOrder?->po_number,
+                    'supplier_name' => $poItem->purchaseOrder?->supplier?->company_name,
+                    'date' => $poItem->purchaseOrder?->created_at?->format('Y-m-d') ?? $poItem->created_at?->format('Y-m-d'),
+                ];
+            })->values();
+
         return [
             'parcel' => $parcel->load(['transactions.createdBy', 'invoiceAllocations.invoice.supplier', 'invoiceAllocations.department']),
             'summary' => [
@@ -122,6 +155,7 @@ class LandParcelService
                 'is_negative' => (float) $parcel->balance < 0,
             ],
             'department_breakdown' => $departmentBreakdown,
+            'materials' => $materials,
             'transactions' => $parcel->transactions()->with('createdBy')->orderByDesc('transaction_date')->orderByDesc('id')->get(),
             'invoice_allocations' => $allocations,
         ];
