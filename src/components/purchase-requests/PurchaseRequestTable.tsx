@@ -83,6 +83,8 @@ export const PurchaseRequestTable: React.FC<Props> = ({
         <TableRow>
           <TableHead>رقم الطلب#</TableHead>
           <TableHead>الصنف / المواد</TableHead>
+          <TableHead>رقم قطعة الأرض</TableHead>
+          <TableHead>الكمية / العدد</TableHead>
           <TableHead>تاريخ الاحتياج</TableHead>
           <TableHead>تاريخ الطلب</TableHead>
           <TableHead>نوع الطلب</TableHead>
@@ -105,6 +107,8 @@ export const PurchaseRequestTable: React.FC<Props> = ({
             : itemNames.length === 1
               ? itemNames[0]
               : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
+          const parcelsDisplay = pr.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || '—';
+          const quantitiesDisplay = pr.items?.map((item) => `${item.quantity} ${item.uom || ''}`).join('، ') || '—';
 
           return (
             <TableRow key={pr.id}>
@@ -116,6 +120,8 @@ export const PurchaseRequestTable: React.FC<Props> = ({
               <TableCell className="font-semibold text-slate-100 max-w-[180px] truncate text-xs">
                 <span title={itemNames.join('، ')}>{itemsDisplay}</span>
               </TableCell>
+              <TableCell className="font-mono text-cyan-300 text-xs whitespace-nowrap">{parcelsDisplay}</TableCell>
+              <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">{quantitiesDisplay}</TableCell>
               <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">{pr.date_needed || '—'}</TableCell>
               <TableCell className="text-slate-400 text-xs">{formatRequestDate(pr.created_at)}</TableCell>
               <TableCell className="text-slate-300 text-xs">{getRequestType(pr)}</TableCell>
@@ -181,6 +187,8 @@ export const PurchaseRequestTable: React.FC<Props> = ({
           const canSubmit = isDraft && hasPermission('purchase_request.submit');
           const overdue = isOverdueRequest(pr);
           const itemNames = pr.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
+          const parcelsDisplay = pr.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || '—';
+          const quantitiesDisplay = pr.items?.map((item) => `${item.quantity} ${item.uom || ''}`).join('، ') || '—';
 
           return (
             <article key={`mobile-card-${pr.id}`} className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 space-y-3">
@@ -201,6 +209,8 @@ export const PurchaseRequestTable: React.FC<Props> = ({
                 </div>
               )}
               <dl className="mt-4 grid grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
+                <div><dt className="text-slate-500">رقم قطعة الأرض</dt><dd className="mt-1 font-mono font-bold text-slate-200">{parcelsDisplay}</dd></div>
+                <div><dt className="text-slate-500">الكمية / العدد</dt><dd className="mt-1 font-mono font-bold text-amber-300">{quantitiesDisplay}</dd></div>
                 <div><dt className="text-slate-500">تاريخ الاحتياج</dt><dd className="mt-1 font-mono font-bold text-amber-300">{pr.date_needed || 'غير محدد'}</dd></div>
                 <div><dt className="text-slate-500">تاريخ الطلب</dt><dd className="mt-1 text-slate-300">{formatRequestDate(pr.created_at)}</dd></div>
                 <div><dt className="text-slate-500">نوع الطلب</dt><dd className="mt-1 font-bold text-slate-200">{getRequestType(pr)}</dd></div>

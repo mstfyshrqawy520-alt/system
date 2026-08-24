@@ -130,7 +130,103 @@ export const ApprovedPurchaseRequestsPage: React.FC = () => {
         </div>
       ) : (
         <>
-        <div className="hidden min-w-0 md:block"><Table><TableHeader><TableRow><TableHead className="whitespace-nowrap">رقم الطلب</TableHead><TableHead className="whitespace-nowrap">المسار</TableHead><TableHead className="whitespace-nowrap">القسم</TableHead><TableHead className="whitespace-nowrap">المورد</TableHead><TableHead className="whitespace-nowrap">صاحب الطلب</TableHead><TableHead className="whitespace-nowrap">الحالة الحالية</TableHead><TableHead className="whitespace-nowrap">تاريخ الاعتماد</TableHead><TableHead className="whitespace-nowrap text-center">الإجراءات</TableHead></TableRow></TableHeader><TableBody>{filteredRequests.map(r => <TableRow key={r.id}><TableCell className="whitespace-nowrap font-mono font-bold text-cyan-400"><Link to={`/procurement/purchase-requests/${r.id}`} className="hover:underline">{r.request_number}</Link></TableCell><TableCell className="whitespace-nowrap"><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${r.procurement_route === 'DIRECT' ? 'bg-amber-400/15 text-amber-300' : 'bg-cyan-400/15 text-cyan-300'}`}>{r.procurement_route === 'DIRECT' ? 'شراء مباشر' : 'عروض أسعار'}</span></TableCell><TableCell className="max-w-[160px] text-slate-300">{r.department?.name || '—'}</TableCell><TableCell className="max-w-[180px] font-bold text-emerald-300">{r.direct_supplier?.company_name || r.selected_quote?.supplier?.company_name || '—'}</TableCell><TableCell className="max-w-[160px] text-slate-300">{r.requester?.name || '—'}</TableCell><TableCell className="whitespace-nowrap text-cyan-200">{PR_STATUS_LABELS[r.status] || r.status}</TableCell><TableCell className="whitespace-nowrap font-mono text-slate-400">{r.updated_at ? new Date(r.updated_at).toLocaleDateString('ar-SA') : '—'}</TableCell><TableCell className="text-center"><div className="flex items-center justify-center gap-2"><Button variant="secondary" size="sm" className="whitespace-nowrap px-2 py-0.5 text-[10px]" onClick={() => setSelectedPr(r)}>معاينة</Button>{hasPermission('purchase_order.create') && <Link to={`/procurement/purchase-orders/create?pr=${r.id}`}><Button variant="primary" size="sm" className="whitespace-nowrap px-2 py-0.5 text-[10px]">+ إنشاء أمر شراء</Button></Link>}</div></TableCell></TableRow>)}</TableBody></Table></div><div className="space-y-3 md:hidden">{filteredRequests.map(r => <article key={`mobile-approved-${r.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4"><div className="flex min-w-0 items-start justify-between gap-3"><Link to={`/procurement/purchase-requests/${r.id}`} className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300 hover:underline">{r.request_number}</Link><span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold ${r.procurement_route === 'DIRECT' ? 'bg-amber-400/15 text-amber-300' : 'bg-cyan-400/15 text-cyan-300'}`}>{r.procurement_route === 'DIRECT' ? 'شراء مباشر' : 'عروض أسعار'}</span></div><dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2"><div><dt className="text-slate-500">القسم</dt><dd className="mt-1 break-normal text-slate-300">{r.department?.name || 'غير محدد'}</dd></div><div><dt className="text-slate-500">المورد</dt><dd className="mt-1 break-normal font-bold leading-6 text-emerald-300">{r.direct_supplier?.company_name || r.selected_quote?.supplier?.company_name || 'غير محدد'}</dd></div><div><dt className="text-slate-500">صاحب الطلب</dt><dd className="mt-1 break-normal text-slate-300">{r.requester?.name || 'غير محدد'}</dd></div><div><dt className="text-slate-500">الحالة الحالية</dt><dd className="mt-1 break-normal text-cyan-200">{PR_STATUS_LABELS[r.status] || r.status}</dd></div><div><dt className="text-slate-500">تاريخ الاعتماد</dt><dd className="mt-1 whitespace-nowrap font-mono text-slate-400">{r.updated_at ? new Date(r.updated_at).toLocaleDateString('ar-SA') : '—'}</dd></div></dl><div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2"><Button variant="secondary" size="sm" className="w-full whitespace-nowrap" onClick={() => setSelectedPr(r)}>معاينة الطلب</Button>{hasPermission('purchase_order.create') && <Link to={`/procurement/purchase-orders/create?pr=${r.id}`} className="block"><Button variant="primary" size="sm" className="w-full whitespace-nowrap">إنشاء أمر شراء</Button></Link>}</div></article>)}</div>
+        <div className="hidden min-w-0 md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="whitespace-nowrap">رقم الطلب</TableHead>
+                <TableHead className="whitespace-nowrap">المسار</TableHead>
+                <TableHead className="whitespace-nowrap">القسم</TableHead>
+                <TableHead className="whitespace-nowrap">الصنف</TableHead>
+                <TableHead className="whitespace-nowrap">رقم قطعة الأرض</TableHead>
+                <TableHead className="whitespace-nowrap">الكمية / العدد</TableHead>
+                <TableHead className="whitespace-nowrap">تاريخ الاحتياج</TableHead>
+                <TableHead className="whitespace-nowrap">المورد</TableHead>
+                <TableHead className="whitespace-nowrap">صاحب الطلب</TableHead>
+                <TableHead className="whitespace-nowrap">الحالة الحالية</TableHead>
+                <TableHead className="whitespace-nowrap">تاريخ الاعتماد</TableHead>
+                <TableHead className="whitespace-nowrap text-center">الإجراءات</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredRequests.map(r => {
+                const item = r.items?.[0];
+                const itemName = item?.item_description || item?.item?.name || '—';
+                const parcelNumber = item?.item_reference || '—';
+                const quantity = item ? `${item.quantity || '—'} ${item.uom || ''}` : '—';
+
+                return (
+                  <TableRow key={r.id}>
+                    <TableCell className="whitespace-nowrap font-mono font-bold text-cyan-400">
+                      <Link to={`/procurement/purchase-requests/${r.id}`} className="hover:underline">{r.request_number}</Link>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${r.procurement_route === 'DIRECT' ? 'bg-amber-400/15 text-amber-300' : 'bg-cyan-400/15 text-cyan-300'}`}>
+                        {r.procurement_route === 'DIRECT' ? 'شراء مباشر' : 'عروض أسعار'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="max-w-[160px] text-slate-300">{r.department?.name || '—'}</TableCell>
+                    <TableCell className="max-w-[180px] font-semibold text-slate-100 text-xs">{itemName}</TableCell>
+                    <TableCell className="font-mono text-cyan-300 text-xs whitespace-nowrap">{parcelNumber}</TableCell>
+                    <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">{quantity}</TableCell>
+                    <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">{r.date_needed || '—'}</TableCell>
+                    <TableCell className="max-w-[180px] font-bold text-emerald-300">{r.direct_supplier?.company_name || r.selected_quote?.supplier?.company_name || '—'}</TableCell>
+                    <TableCell className="max-w-[160px] text-slate-300">{r.requester?.name || '—'}</TableCell>
+                    <TableCell className="whitespace-nowrap text-cyan-200">{PR_STATUS_LABELS[r.status] || r.status}</TableCell>
+                    <TableCell className="whitespace-nowrap font-mono text-slate-400">{r.updated_at ? new Date(r.updated_at).toLocaleDateString('ar-SA') : '—'}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <Button variant="secondary" size="sm" className="whitespace-nowrap px-2 py-0.5 text-[10px]" onClick={() => setSelectedPr(r)}>معاينة</Button>
+                        {hasPermission('purchase_order.create') && (
+                          <Link to={`/procurement/purchase-orders/create?pr=${r.id}`}>
+                            <Button variant="primary" size="sm" className="whitespace-nowrap px-2 py-0.5 text-[10px]">+ إنشاء أمر شراء</Button>
+                          </Link>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="space-y-3 md:hidden">
+          {filteredRequests.map(r => {
+            const item = r.items?.[0];
+            const itemName = item?.item_description || item?.item?.name || 'غير محدد';
+            const parcelNumber = item?.item_reference || '—';
+            const quantity = item ? `${item.quantity || '—'} ${item.uom || ''}` : '—';
+
+            return (
+              <article key={`mobile-approved-${r.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+                <div className="flex min-w-0 items-start justify-between gap-3">
+                  <Link to={`/procurement/purchase-requests/${r.id}`} className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300 hover:underline">{r.request_number}</Link>
+                  <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold ${r.procurement_route === 'DIRECT' ? 'bg-amber-400/15 text-amber-300' : 'bg-cyan-400/15 text-cyan-300'}`}>
+                    {r.procurement_route === 'DIRECT' ? 'شراء مباشر' : 'عروض أسعار'}
+                  </span>
+                </div>
+                <dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
+                  <div className="min-w-0"><dt className="text-slate-500">القسم</dt><dd className="mt-1 break-normal text-slate-300">{r.department?.name || 'غير محدد'}</dd></div>
+                  <div className="min-w-0"><dt className="text-slate-500">المورد</dt><dd className="mt-1 break-normal font-bold leading-6 text-emerald-300">{r.direct_supplier?.company_name || r.selected_quote?.supplier?.company_name || 'غير محدد'}</dd></div>
+                  <div className="min-w-0 min-[420px]:col-span-2"><dt className="text-slate-500">الصنف وقطعة الأرض</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{itemName} <span className="font-mono text-cyan-300">({parcelNumber})</span></dd></div>
+                  <div className="min-w-0"><dt className="text-slate-500">الكمية / العدد</dt><dd className="mt-1 font-mono font-bold text-amber-300">{quantity}</dd></div>
+                  <div className="min-w-0"><dt className="text-slate-500">تاريخ الاحتياج</dt><dd className="mt-1 font-mono font-bold text-amber-300">{r.date_needed || 'غير محدد'}</dd></div>
+                  <div className="min-w-0"><dt className="text-slate-500">صاحب الطلب</dt><dd className="mt-1 break-normal text-slate-300">{r.requester?.name || 'غير محدد'}</dd></div>
+                  <div className="min-w-0"><dt className="text-slate-500">الحالة الحالية</dt><dd className="mt-1 break-normal text-cyan-200">{PR_STATUS_LABELS[r.status] || r.status}</dd></div>
+                  <div className="min-w-0"><dt className="text-slate-500">تاريخ الاعتماد</dt><dd className="mt-1 whitespace-nowrap font-mono text-slate-400">{r.updated_at ? new Date(r.updated_at).toLocaleDateString('ar-SA') : '—'}</dd></div>
+                </dl>
+                <div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
+                  <Button variant="secondary" size="sm" className="w-full whitespace-nowrap" onClick={() => setSelectedPr(r)}>معاينة الطلب</Button>
+                  {hasPermission('purchase_order.create') && (
+                    <Link to={`/procurement/purchase-orders/create?pr=${r.id}`} className="block">
+                      <Button variant="primary" size="sm" className="w-full whitespace-nowrap">إنشاء أمر شراء</Button>
+                    </Link>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
         </>
       )}
 

@@ -184,66 +184,99 @@ export const ReviewerDashboardPage: React.FC = () => {
                     <TableHead className="whitespace-nowrap">رقم الطلب#</TableHead>
                     <TableHead className="whitespace-nowrap">مقدم الطلب</TableHead>
                     <TableHead className="whitespace-nowrap">القسم</TableHead>
+                    <TableHead className="whitespace-nowrap">الصنف</TableHead>
+                    <TableHead className="whitespace-nowrap">رقم قطعة الأرض</TableHead>
+                    <TableHead className="whitespace-nowrap">الكمية / العدد</TableHead>
+                    <TableHead className="whitespace-nowrap">تاريخ الاحتياج</TableHead>
                     <TableHead className="whitespace-nowrap">الحالة</TableHead>
                     <TableHead className="whitespace-nowrap text-center">الإجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {visibleRequests.map((pr) => (
-                    <TableRow key={pr.id}>
-                      <TableCell className="whitespace-nowrap font-mono font-bold text-cyan-400">
-                        <Link to={`/reviewer/requests/${pr.id}`} className="hover:underline">{pr.request_number}</Link>
-                      </TableCell>
-                      <TableCell className="max-w-[180px] font-bold text-slate-100">{pr.requester?.name || 'غير محدد'}</TableCell>
-                      <TableCell className="max-w-[180px] text-slate-400">{pr.department?.name || 'غير محدد'}</TableCell>
-                      <TableCell className="whitespace-nowrap"><PurchaseRequestStatusBadge status={pr.status} /></TableCell>
-                      <TableCell>
-                        <div className="flex justify-center gap-2">
-                          <Link to={`/reviewer/requests/${pr.id}`}>
-                            <Button variant="secondary" size="sm" className="whitespace-nowrap px-2 py-0.5 text-[10px]">عرض</Button>
-                          </Link>
-                          {pr.status === 'SUBMITTED' && hasPermission('purchase_request.review') && (
-                            <Link to={`/reviewer/requests/${pr.id}/review`}>
-                              <Button variant="primary" size="sm" className="whitespace-nowrap px-2 py-0.5 text-[10px]">بدء المراجعة</Button>
+                  {visibleRequests.map((pr) => {
+                    const item = pr.items?.[0];
+                    const itemName = item?.item_description || item?.item?.name || '—';
+                    const parcelNumber = item?.item_reference || '—';
+                    const quantity = item ? `${item.quantity || '—'} ${item.uom || ''}` : '—';
+
+                    return (
+                      <TableRow key={pr.id}>
+                        <TableCell className="whitespace-nowrap font-mono font-bold text-cyan-400">
+                          <Link to={`/reviewer/requests/${pr.id}`} className="hover:underline">{pr.request_number}</Link>
+                        </TableCell>
+                        <TableCell className="max-w-[180px] font-bold text-slate-100">{pr.requester?.name || 'غير محدد'}</TableCell>
+                        <TableCell className="max-w-[180px] text-slate-400">{pr.department?.name || 'غير محدد'}</TableCell>
+                        <TableCell className="max-w-[180px] font-semibold text-slate-100 text-xs">{itemName}</TableCell>
+                        <TableCell className="font-mono text-cyan-300 text-xs whitespace-nowrap">{parcelNumber}</TableCell>
+                        <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">{quantity}</TableCell>
+                        <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">{pr.date_needed || '—'}</TableCell>
+                        <TableCell className="whitespace-nowrap"><PurchaseRequestStatusBadge status={pr.status} /></TableCell>
+                        <TableCell>
+                          <div className="flex justify-center gap-2">
+                            <Link to={`/reviewer/requests/${pr.id}`}>
+                              <Button variant="secondary" size="sm" className="whitespace-nowrap px-2 py-0.5 text-[10px]">عرض</Button>
                             </Link>
-                          )}
-                          {pr.status === 'UNDER_REVIEW' && hasPermission('purchase_request.review') && (
-                            <Link to={`/reviewer/requests/${pr.id}/review`}>
-                              <Button variant="warning" size="sm" className="whitespace-nowrap bg-amber-950/60 px-2 py-0.5 text-[10px] text-amber-300 hover:bg-amber-900/60">متابعة</Button>
-                            </Link>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                            {pr.status === 'SUBMITTED' && hasPermission('purchase_request.review') && (
+                              <Link to={`/reviewer/requests/${pr.id}/review`}>
+                                <Button variant="primary" size="sm" className="whitespace-nowrap px-2 py-0.5 text-[10px]">بدء المراجعة</Button>
+                              </Link>
+                            )}
+                            {pr.status === 'UNDER_REVIEW' && hasPermission('purchase_request.review') && (
+                              <Link to={`/reviewer/requests/${pr.id}/review`}>
+                                <Button variant="warning" size="sm" className="whitespace-nowrap bg-amber-950/60 px-2 py-0.5 text-[10px] text-amber-300 hover:bg-amber-900/60">متابعة</Button>
+                              </Link>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
 
             <div className="space-y-3 md:hidden">
-              {visibleRequests.map((pr) => (
-                <article key={`mobile-${pr.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
-                  <div className="flex min-w-0 items-start justify-between gap-3">
-                    <Link to={`/reviewer/requests/${pr.id}`} className="min-w-0 break-normal text-sm font-black text-cyan-300 hover:underline">
-                      {pr.request_number}
-                    </Link>
-                    <div className="shrink-0"><PurchaseRequestStatusBadge status={pr.status} /></div>
-                  </div>
+              {visibleRequests.map((pr) => {
+                const item = pr.items?.[0];
+                const itemName = item?.item_description || item?.item?.name || 'غير محدد';
+                const parcelNumber = item?.item_reference || '—';
+                const quantity = item ? `${item.quantity || '—'} ${item.uom || ''}` : '—';
 
-                  <dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
-                    <div className="min-w-0">
-                      <dt className="text-slate-500">مقدم الطلب</dt>
-                      <dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{pr.requester?.name || 'غير محدد'}</dd>
+                return (
+                  <article key={`mobile-${pr.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+                    <div className="flex min-w-0 items-start justify-between gap-3">
+                      <Link to={`/reviewer/requests/${pr.id}`} className="min-w-0 break-normal text-sm font-black text-cyan-300 hover:underline">
+                        {pr.request_number}
+                      </Link>
+                      <div className="shrink-0"><PurchaseRequestStatusBadge status={pr.status} /></div>
                     </div>
-                    <div className="min-w-0">
-                      <dt className="text-slate-500">القسم</dt>
-                      <dd className="mt-1 break-normal font-bold leading-6 text-slate-200">{pr.department?.name || 'غير محدد'}</dd>
-                    </div>
-                    <div className="min-w-0 min-[420px]:col-span-2">
-                      <dt className="text-slate-500">الحالة الحالية</dt>
-                      <dd className="mt-1 break-normal font-bold leading-6 text-slate-200"><PurchaseRequestStatusBadge status={pr.status} /></dd>
-                    </div>
-                  </dl>
+
+                    <dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
+                      <div className="min-w-0">
+                        <dt className="text-slate-500">مقدم الطلب</dt>
+                        <dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{pr.requester?.name || 'غير محدد'}</dd>
+                      </div>
+                      <div className="min-w-0">
+                        <dt className="text-slate-500">القسم</dt>
+                        <dd className="mt-1 break-normal font-bold leading-6 text-slate-200">{pr.department?.name || 'غير محدد'}</dd>
+                      </div>
+                      <div className="min-w-0 min-[420px]:col-span-2">
+                        <dt className="text-slate-500">الصنف وقطعة الأرض</dt>
+                        <dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{itemName} <span className="font-mono text-cyan-300">({parcelNumber})</span></dd>
+                      </div>
+                      <div className="min-w-0">
+                        <dt className="text-slate-500">الكمية / العدد</dt>
+                        <dd className="mt-1 font-mono font-bold text-amber-300">{quantity}</dd>
+                      </div>
+                      <div className="min-w-0">
+                        <dt className="text-slate-500">تاريخ الاحتياج</dt>
+                        <dd className="mt-1 font-mono font-bold text-amber-300">{pr.date_needed || 'غير محدد'}</dd>
+                      </div>
+                      <div className="min-w-0 min-[420px]:col-span-2">
+                        <dt className="text-slate-500">الحالة الحالية</dt>
+                        <dd className="mt-1 break-normal font-bold leading-6 text-slate-200"><PurchaseRequestStatusBadge status={pr.status} /></dd>
+                      </div>
+                    </dl>
 
                   <div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
                     <Link to={`/reviewer/requests/${pr.id}`} className="min-w-0">
@@ -261,8 +294,9 @@ export const ReviewerDashboardPage: React.FC = () => {
                     )}
                   </div>
                 </article>
-              ))}
-            </div>
+              );
+            })}
+          </div>
           </>
         )}
       </section>

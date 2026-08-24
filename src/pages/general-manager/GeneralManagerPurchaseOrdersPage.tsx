@@ -108,6 +108,9 @@ export const GeneralManagerPurchaseOrdersPage: React.FC = () => {
               <TableHead>رقم أمر الشراء#</TableHead>
               <TableHead>المورد</TableHead>
               <TableHead>القسم</TableHead>
+              <TableHead>الصنف</TableHead>
+              <TableHead>رقم قطعة الأرض</TableHead>
+              <TableHead>الكمية / العدد</TableHead>
               <TableHead>الإجمالي النهائي</TableHead>
               <TableHead>الحالة</TableHead>
               <TableHead className="text-center">التفاصيل</TableHead>
@@ -116,31 +119,41 @@ export const GeneralManagerPurchaseOrdersPage: React.FC = () => {
           <TableBody>
             {filteredPos.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-slate-400 text-xs">
+                <TableCell colSpan={9} className="text-center py-8 text-slate-400 text-xs">
                   {pos.length === 0 ? 'لا توجد أوامر شراء صادرة حالياً' : 'لم نجد أوامر شراء مطابقة للفلاتر الحالية.'}
                 </TableCell>
               </TableRow>
             ) : (
-              filteredPos.map((x) => (
-                <TableRow key={x.id}>
-                  <TableCell className="font-mono font-bold text-cyan-400">{x.po_number}</TableCell>
-                  <TableCell className="font-bold text-slate-100">{x.supplier?.company_name || '—'}</TableCell>
-                  <TableCell className="text-slate-300">{x.purchase_request?.department?.name || '—'}</TableCell>
-                  <TableCell>
-                    <CurrencyDisplay amount={x.grand_total} amountClassName="font-mono font-bold text-emerald-400" />
-                  </TableCell>
-                  <TableCell>
-                    <Badge status={x.status} />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Link to={`/general-manager/purchase-orders/${x.id}`}>
-                      <Button variant="secondary" size="sm" className="px-2 py-0.5 text-[10px]">
-                        👁️ عرض التفاصيل
-                      </Button>
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              ))
+              filteredPos.map((x) => {
+                const item = (x.items && x.items.length > 0) ? x.items[0] : (x.purchase_request?.items && x.purchase_request.items.length > 0 ? x.purchase_request.items[0] : undefined);
+                const itemName = item ? ((item as any).item_name || (item as any).item_description || (item as any).item?.name || '—') : '—';
+                const parcelNumber = item ? ((item as any).item_reference || '—') : '—';
+                const quantity = item ? `${(item as any).quantity || '—'} ${(item as any).uom || ''}` : '—';
+
+                return (
+                  <TableRow key={x.id}>
+                    <TableCell className="font-mono font-bold text-cyan-400">{x.po_number}</TableCell>
+                    <TableCell className="font-bold text-slate-100">{x.supplier?.company_name || '—'}</TableCell>
+                    <TableCell className="text-slate-300">{x.purchase_request?.department?.name || '—'}</TableCell>
+                    <TableCell className="max-w-[180px] font-semibold text-slate-100 text-xs">{itemName}</TableCell>
+                    <TableCell className="font-mono text-cyan-300 text-xs whitespace-nowrap">{parcelNumber}</TableCell>
+                    <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">{quantity}</TableCell>
+                    <TableCell>
+                      <CurrencyDisplay amount={x.grand_total} amountClassName="font-mono font-bold text-emerald-400" />
+                    </TableCell>
+                    <TableCell>
+                      <Badge status={x.status} />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Link to={`/general-manager/purchase-orders/${x.id}`}>
+                        <Button variant="secondary" size="sm" className="px-2 py-0.5 text-[10px]">
+                          👁️ عرض التفاصيل
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -152,24 +165,33 @@ export const GeneralManagerPurchaseOrdersPage: React.FC = () => {
             {pos.length === 0 ? 'لا توجد أوامر شراء صادرة حالياً' : 'لم نجد أوامر شراء مطابقة للفلاتر الحالية.'}
           </div>
         ) : (
-          filteredPos.map((x) => (
-            <article key={`mobile-gm-po-${x.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
-              <div className="flex min-w-0 items-start justify-between gap-3">
-                <span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">{x.po_number}</span>
-                <div className="shrink-0"><Badge status={x.status} /></div>
-              </div>
-              <dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
-                <div className="min-w-0"><dt className="text-slate-500">المورد</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{x.supplier?.company_name || 'غير محدد'}</dd></div>
-                <div className="min-w-0"><dt className="text-slate-500">القسم</dt><dd className="mt-1 break-normal text-slate-300">{x.purchase_request?.department?.name || 'غير محدد'}</dd></div>
-                <div className="min-w-0 min-[420px]:col-span-2"><dt className="text-slate-500">الإجمالي النهائي</dt><dd className="mt-1 whitespace-nowrap"><CurrencyDisplay amount={x.grand_total} amountClassName="font-mono font-bold text-emerald-400" /></dd></div>
-              </dl>
-              <Link to={`/general-manager/purchase-orders/${x.id}`} className="mt-4 block">
-                <Button variant="secondary" size="sm" className="w-full whitespace-nowrap min-h-10">
-                  👁️ عرض التفاصيل
-                </Button>
-              </Link>
-            </article>
-          ))
+          filteredPos.map((x) => {
+            const item = (x.items && x.items.length > 0) ? x.items[0] : (x.purchase_request?.items && x.purchase_request.items.length > 0 ? x.purchase_request.items[0] : undefined);
+            const itemName = item ? ((item as any).item_name || (item as any).item_description || (item as any).item?.name || 'غير محدد') : 'غير محدد';
+            const parcelNumber = item ? ((item as any).item_reference || '—') : '—';
+            const quantity = item ? `${(item as any).quantity || '—'} ${(item as any).uom || ''}` : '—';
+
+            return (
+              <article key={`mobile-gm-po-${x.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+                <div className="flex min-w-0 items-start justify-between gap-3">
+                  <span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">{x.po_number}</span>
+                  <div className="shrink-0"><Badge status={x.status} /></div>
+                </div>
+                <dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
+                  <div className="min-w-0"><dt className="text-slate-500">المورد</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{x.supplier?.company_name || 'غير محدد'}</dd></div>
+                  <div className="min-w-0"><dt className="text-slate-500">القسم</dt><dd className="mt-1 break-normal text-slate-300">{x.purchase_request?.department?.name || 'غير محدد'}</dd></div>
+                  <div className="min-w-0 min-[420px]:col-span-2"><dt className="text-slate-500">الصنف وقطعة الأرض</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{itemName} <span className="font-mono text-cyan-300">({parcelNumber})</span></dd></div>
+                  <div className="min-w-0"><dt className="text-slate-500">الكمية / العدد</dt><dd className="mt-1 font-mono font-bold text-amber-300">{quantity}</dd></div>
+                  <div className="min-w-0"><dt className="text-slate-500">الإجمالي النهائي</dt><dd className="mt-1 whitespace-nowrap"><CurrencyDisplay amount={x.grand_total} amountClassName="font-mono font-bold text-emerald-400" /></dd></div>
+                </dl>
+                <Link to={`/general-manager/purchase-orders/${x.id}`} className="mt-4 block">
+                  <Button variant="secondary" size="sm" className="w-full whitespace-nowrap min-h-10">
+                    👁️ عرض التفاصيل
+                  </Button>
+                </Link>
+              </article>
+            );
+          })
         )}
       </div>
     </div>

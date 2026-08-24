@@ -113,6 +113,9 @@ export const AccountingPurchaseOrdersPage: React.FC = () => {
               <TableHead className="whitespace-nowrap">القسم</TableHead>
               <TableHead className="whitespace-nowrap">رئيس القسم المعتمد</TableHead>
               <TableHead className="whitespace-nowrap">المورد</TableHead>
+              <TableHead className="whitespace-nowrap">الصنف</TableHead>
+              <TableHead className="whitespace-nowrap">رقم قطعة الأرض</TableHead>
+              <TableHead className="whitespace-nowrap">الكمية / العدد</TableHead>
               <TableHead className="whitespace-nowrap">الإجمالي الكلي</TableHead>
               <TableHead className="whitespace-nowrap">الحالة</TableHead>
               <TableHead className="whitespace-nowrap text-center">الإجراءات</TableHead>
@@ -120,20 +123,30 @@ export const AccountingPurchaseOrdersPage: React.FC = () => {
           </TableHeader>
           <TableBody>
             {filteredPos.length === 0 ? (
-              <TableRow><TableCell colSpan={9} className="py-8 text-center text-xs text-slate-400">{pos.length === 0 ? 'لا توجد أوامر شراء حالياً للحسابات' : 'لم نجد أوامر شراء مطابقة للفلاتر الحالية.'}</TableCell></TableRow>
-            ) : filteredPos.map((x) => (
-              <TableRow key={x.id}>
-                <TableCell className="whitespace-nowrap font-mono font-bold text-cyan-400">{x.po_number}</TableCell>
-                <TableCell className="whitespace-nowrap font-mono text-slate-400">{x.purchase_request?.request_number || 'شراء مباشر'}</TableCell>
-                <TableCell className="max-w-[160px] font-bold text-slate-200">{x.requested_by?.name || x.purchase_request?.requester?.name || '—'}</TableCell>
-                <TableCell className="max-w-[160px] text-slate-300">{x.department?.name || x.purchase_request?.department?.name || '—'}</TableCell>
-                <TableCell className="max-w-[160px] font-bold text-emerald-300">{x.department_approver?.name || x.purchase_request?.assigned_reviewer?.name || '—'}</TableCell>
-                <TableCell className="max-w-[180px] font-bold text-slate-100">{x.supplier?.company_name || '—'}</TableCell>
-                <TableCell className="whitespace-nowrap"><CurrencyDisplay amount={x.grand_total} amountClassName="font-mono font-bold text-emerald-400" /></TableCell>
-                <TableCell className="whitespace-nowrap"><Badge status={x.status} /></TableCell>
-                <TableCell className="text-center"><Button type="button" variant="secondary" size="sm" className="whitespace-nowrap px-2 py-0.5 text-[10px]" onClick={() => void openPurchaseOrder(x)} disabled={openingPoId === x.id}>{openingPoId === x.id ? 'جاري الفتح...' : '👁️ فتح أمر الشراء'}</Button></TableCell>
-              </TableRow>
-            ))}
+              <TableRow><TableCell colSpan={12} className="py-8 text-center text-xs text-slate-400">{pos.length === 0 ? 'لا توجد أوامر شراء حالياً للحسابات' : 'لم نجد أوامر شراء مطابقة للفلاتر الحالية.'}</TableCell></TableRow>
+            ) : filteredPos.map((x) => {
+              const item = (x.items && x.items.length > 0) ? x.items[0] : (x.purchase_request?.items && x.purchase_request.items.length > 0 ? x.purchase_request.items[0] : undefined);
+              const itemName = item ? ((item as any).item_name || (item as any).item_description || (item as any).item?.name || '—') : '—';
+              const parcelNumber = item ? ((item as any).item_reference || '—') : '—';
+              const quantity = item ? `${(item as any).quantity || '—'} ${(item as any).uom || ''}` : '—';
+
+              return (
+                <TableRow key={x.id}>
+                  <TableCell className="whitespace-nowrap font-mono font-bold text-cyan-400">{x.po_number}</TableCell>
+                  <TableCell className="whitespace-nowrap font-mono text-slate-400">{x.purchase_request?.request_number || 'شراء مباشر'}</TableCell>
+                  <TableCell className="max-w-[160px] font-bold text-slate-200">{x.requested_by?.name || x.purchase_request?.requester?.name || '—'}</TableCell>
+                  <TableCell className="max-w-[160px] text-slate-300">{x.department?.name || x.purchase_request?.department?.name || '—'}</TableCell>
+                  <TableCell className="max-w-[160px] font-bold text-emerald-300">{x.department_approver?.name || x.purchase_request?.assigned_reviewer?.name || '—'}</TableCell>
+                  <TableCell className="max-w-[180px] font-bold text-slate-100">{x.supplier?.company_name || '—'}</TableCell>
+                  <TableCell className="max-w-[180px] font-semibold text-slate-100 text-xs">{itemName}</TableCell>
+                  <TableCell className="font-mono text-cyan-300 text-xs whitespace-nowrap">{parcelNumber}</TableCell>
+                  <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">{quantity}</TableCell>
+                  <TableCell className="whitespace-nowrap"><CurrencyDisplay amount={x.grand_total} amountClassName="font-mono font-bold text-emerald-400" /></TableCell>
+                  <TableCell className="whitespace-nowrap"><Badge status={x.status} /></TableCell>
+                  <TableCell className="text-center"><Button type="button" variant="secondary" size="sm" className="whitespace-nowrap px-2 py-0.5 text-[10px]" onClick={() => void openPurchaseOrder(x)} disabled={openingPoId === x.id}>{openingPoId === x.id ? 'جاري الفتح...' : '👁️ فتح أمر الشراء'}</Button></TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -141,20 +154,29 @@ export const AccountingPurchaseOrdersPage: React.FC = () => {
       <div className="space-y-3 md:hidden">
         {filteredPos.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-800 bg-slate-900/50 p-8 text-center text-xs text-slate-400">{pos.length === 0 ? 'لا توجد أوامر شراء حالياً للحسابات' : 'لم نجد أوامر شراء مطابقة للفلاتر الحالية.'}</div>
-        ) : filteredPos.map((x) => (
-          <article key={`mobile-${x.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
-            <div className="flex min-w-0 items-start justify-between gap-3"><span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">{x.po_number}</span><div className="shrink-0"><Badge status={x.status} /></div></div>
-            <dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
-              <div className="min-w-0"><dt className="text-slate-500">رقم الطلب</dt><dd className="mt-1 break-normal font-mono text-slate-300">{x.purchase_request?.request_number || 'شراء مباشر'}</dd></div>
-              <div className="min-w-0"><dt className="text-slate-500">المورد</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{x.supplier?.company_name || 'غير محدد'}</dd></div>
-              <div className="min-w-0"><dt className="text-slate-500">صاحب الطلب</dt><dd className="mt-1 break-normal leading-6 text-slate-300">{x.requested_by?.name || x.purchase_request?.requester?.name || 'غير محدد'}</dd></div>
-              <div className="min-w-0"><dt className="text-slate-500">القسم</dt><dd className="mt-1 break-normal leading-6 text-slate-300">{x.department?.name || x.purchase_request?.department?.name || 'غير محدد'}</dd></div>
-              <div className="min-w-0"><dt className="text-slate-500">رئيس القسم</dt><dd className="mt-1 break-normal leading-6 text-emerald-300">{x.department_approver?.name || x.purchase_request?.assigned_reviewer?.name || 'غير محدد'}</dd></div>
-              <div className="min-w-0"><dt className="text-slate-500">الإجمالي الكلي</dt><dd className="mt-1 whitespace-nowrap"><CurrencyDisplay amount={x.grand_total} amountClassName="font-mono font-bold text-emerald-400" /></dd></div>
-            </dl>
-            <Button type="button" variant="secondary" size="sm" className="mt-4 w-full whitespace-nowrap" onClick={() => void openPurchaseOrder(x)} disabled={openingPoId === x.id}>{openingPoId === x.id ? 'جاري الفتح...' : '👁️ فتح أمر الشراء'}</Button>
-          </article>
-        ))}
+        ) : filteredPos.map((x) => {
+          const item = (x.items && x.items.length > 0) ? x.items[0] : (x.purchase_request?.items && x.purchase_request.items.length > 0 ? x.purchase_request.items[0] : undefined);
+          const itemName = item ? ((item as any).item_name || (item as any).item_description || (item as any).item?.name || 'غير محدد') : 'غير محدد';
+          const parcelNumber = item ? ((item as any).item_reference || '—') : '—';
+          const quantity = item ? `${(item as any).quantity || '—'} ${(item as any).uom || ''}` : '—';
+
+          return (
+            <article key={`mobile-${x.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+              <div className="flex min-w-0 items-start justify-between gap-3"><span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">{x.po_number}</span><div className="shrink-0"><Badge status={x.status} /></div></div>
+              <dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
+                <div className="min-w-0"><dt className="text-slate-500">رقم الطلب</dt><dd className="mt-1 break-normal font-mono text-slate-300">{x.purchase_request?.request_number || 'شراء مباشر'}</dd></div>
+                <div className="min-w-0"><dt className="text-slate-500">المورد</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{x.supplier?.company_name || 'غير محدد'}</dd></div>
+                <div className="min-w-0"><dt className="text-slate-500">صاحب الطلب</dt><dd className="mt-1 break-normal leading-6 text-slate-300">{x.requested_by?.name || x.purchase_request?.requester?.name || 'غير محدد'}</dd></div>
+                <div className="min-w-0"><dt className="text-slate-500">القسم</dt><dd className="mt-1 break-normal leading-6 text-slate-300">{x.department?.name || x.purchase_request?.department?.name || 'غير محدد'}</dd></div>
+                <div className="min-w-0 min-[420px]:col-span-2"><dt className="text-slate-500">الصنف وقطعة الأرض</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{itemName} <span className="font-mono text-cyan-300">({parcelNumber})</span></dd></div>
+                <div className="min-w-0"><dt className="text-slate-500">الكمية / العدد</dt><dd className="mt-1 font-mono font-bold text-amber-300">{quantity}</dd></div>
+                <div className="min-w-0"><dt className="text-slate-500">رئيس القسم</dt><dd className="mt-1 break-normal leading-6 text-emerald-300">{x.department_approver?.name || x.purchase_request?.assigned_reviewer?.name || 'غير محدد'}</dd></div>
+                <div className="min-w-0 min-[420px]:col-span-2"><dt className="text-slate-500">الإجمالي الكلي</dt><dd className="mt-1 whitespace-nowrap"><CurrencyDisplay amount={x.grand_total} amountClassName="font-mono font-bold text-emerald-400" /></dd></div>
+              </dl>
+              <Button type="button" variant="secondary" size="sm" className="mt-4 w-full whitespace-nowrap" onClick={() => void openPurchaseOrder(x)} disabled={openingPoId === x.id}>{openingPoId === x.id ? 'جاري الفتح...' : '👁️ فتح أمر الشراء'}</Button>
+            </article>
+          );
+        })}
       </div>
 
       {selectedPo && (
