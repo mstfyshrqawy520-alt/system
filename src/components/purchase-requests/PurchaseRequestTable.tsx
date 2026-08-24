@@ -83,6 +83,7 @@ export const PurchaseRequestTable: React.FC<Props> = ({
         <TableRow>
           <TableHead>رقم الطلب#</TableHead>
           <TableHead>الصنف / المواد</TableHead>
+          <TableHead>تاريخ الاحتياج</TableHead>
           <TableHead>تاريخ الطلب</TableHead>
           <TableHead>نوع الطلب</TableHead>
           <TableHead>القسم / المشروع</TableHead>
@@ -115,6 +116,7 @@ export const PurchaseRequestTable: React.FC<Props> = ({
               <TableCell className="font-semibold text-slate-100 max-w-[180px] truncate text-xs">
                 <span title={itemNames.join('، ')}>{itemsDisplay}</span>
               </TableCell>
+              <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">{pr.date_needed || '—'}</TableCell>
               <TableCell className="text-slate-400 text-xs">{formatRequestDate(pr.created_at)}</TableCell>
               <TableCell className="text-slate-300 text-xs">{getRequestType(pr)}</TableCell>
               <TableCell className="text-slate-300 text-xs">{pr.target_department?.name || pr.department?.name || '—'}</TableCell>
@@ -148,7 +150,7 @@ export const PurchaseRequestTable: React.FC<Props> = ({
                       onClick={() => onOpenSubmitModal(pr)}
                       className="px-2 py-0.5 text-[10px]"
                     >
-                      إرسال
+                      تقديم
                     </Button>
                   )}
 
@@ -199,11 +201,12 @@ export const PurchaseRequestTable: React.FC<Props> = ({
                 </div>
               )}
               <dl className="mt-4 grid grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
+                <div><dt className="text-slate-500">تاريخ الاحتياج</dt><dd className="mt-1 font-mono font-bold text-amber-300">{pr.date_needed || 'غير محدد'}</dd></div>
                 <div><dt className="text-slate-500">تاريخ الطلب</dt><dd className="mt-1 text-slate-300">{formatRequestDate(pr.created_at)}</dd></div>
                 <div><dt className="text-slate-500">نوع الطلب</dt><dd className="mt-1 font-bold text-slate-200">{getRequestType(pr)}</dd></div>
                 <div><dt className="text-slate-500">القسم / المشروع</dt><dd className="mt-1 font-bold text-slate-200">{pr.target_department?.name || pr.department?.name || 'غير محدد'}</dd></div>
                 <div><dt className="text-slate-500">آخر إجراء</dt><dd className="mt-1 text-slate-300">{getLastAction(pr)}</dd></div>
-                                <div className="col-span-1 min-[420px]:col-span-2"><dt className="text-slate-500">الحالة</dt>
+                <div className="col-span-1 min-[420px]:col-span-2"><dt className="text-slate-500">الحالة</dt>
 <dd className="mt-1 font-bold text-slate-200">{PR_STATUS_LABELS[pr.status as keyof typeof PR_STATUS_LABELS] || 'حالة غير معروفة'}{canEdit ? ' — قابلة للتعديل' : ''}</dd></div>
               </dl>
               <div className="mt-4 border-t border-slate-800 pt-3">

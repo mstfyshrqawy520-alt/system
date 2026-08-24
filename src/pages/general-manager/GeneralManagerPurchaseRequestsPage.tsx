@@ -291,6 +291,7 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                   <th className="px-4 py-3">رقم الطلب</th>
                   <th className="px-4 py-3">الصنف المطلوب والكمية</th>
                   <th className="px-4 py-3">رقم قطعة الأرض</th>
+                  <th className="px-4 py-3">تاريخ الاحتياج</th>
                   <th className="px-4 py-3">مقدم الطلب</th>
                   <th className="px-4 py-3">القسم</th>
                   <th className="px-4 py-3">المورد</th>
@@ -329,6 +330,9 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 font-mono text-cyan-300 whitespace-nowrap">
                         {firstItem?.item_reference || '—'}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-bold text-amber-300 whitespace-nowrap">
+                        {request.date_needed || '—'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">{request.requester?.name || '—'}</td>
                       <td className="px-4 py-3 whitespace-nowrap">{request.department?.name || '—'}</td>
@@ -400,6 +404,10 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
 
                   <dl className="grid min-w-0 grid-cols-2 gap-2 text-xs">
                     <div>
+                      <dt className="text-slate-500">تاريخ الاحتياج</dt>
+                      <dd className="mt-0.5 font-mono font-bold text-amber-300">{request.date_needed || '—'}</dd>
+                    </div>
+                    <div>
                       <dt className="text-slate-500">مقدم الطلب</dt>
                       <dd className="mt-0.5 font-bold text-slate-200">{request.requester?.name || '—'}</dd>
                     </div>
@@ -413,20 +421,16 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                         {request.direct_supplier?.company_name || 'عروض أسعار'}
                       </dd>
                     </div>
-                    <div>
-                      <dt className="text-slate-500">المراجع</dt>
-                      <dd className="mt-0.5 text-slate-300">{request.assigned_reviewer?.name || '—'}</dd>
-                    </div>
                   </dl>
 
                   <Button
                     type="button"
                     size="sm"
-                    variant="secondary"
+                    variant="primary"
                     className="w-full"
                     onClick={() => openRequest(request)}
                   >
-                    فتح الطلب ومراجعة البنود
+                    فتح الطلب ومراجعة البنود ←
                   </Button>
                 </article>
               );
@@ -473,7 +477,11 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
               </div>
 
               {/* Request Info Cards */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 text-xs">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 text-xs">
+                <div className="rounded-xl border border-amber-800/60 bg-amber-950/20 p-3">
+                  <span className="text-amber-400 font-bold block">تاريخ الاحتياج ⏳</span>
+                  <strong className="mt-1 text-amber-200 block font-mono text-sm">{selected.date_needed || 'غير محدد'}</strong>
+                </div>
                 <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
                   <span className="text-slate-500 block">مقدم الطلب</span>
                   <strong className="mt-1 text-slate-100 block">{selected.requester?.name || '—'}</strong>

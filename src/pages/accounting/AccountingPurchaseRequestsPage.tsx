@@ -154,6 +154,7 @@ const AccountingPurchaseRequestsPage: React.FC = () => {
                   <TableHead className="whitespace-nowrap">رقم الطلب</TableHead>
                   <TableHead className="whitespace-nowrap">القسم</TableHead>
                   <TableHead className="whitespace-nowrap">المورد</TableHead>
+                  <TableHead className="whitespace-nowrap">تاريخ الاحتياج</TableHead>
                   <TableHead className="whitespace-nowrap">مقدم الطلب</TableHead>
                   <TableHead className="whitespace-nowrap">رئيس القسم</TableHead>
                   <TableHead className="whitespace-nowrap">الصنف / رقم قطعة الأرض</TableHead>
@@ -171,6 +172,7 @@ const AccountingPurchaseRequestsPage: React.FC = () => {
                       <TableCell className="whitespace-nowrap font-mono font-bold text-cyan-300">{request.request_number}</TableCell>
                       <TableCell className="max-w-[160px]">{request.department?.name || '—'}</TableCell>
                       <TableCell className="max-w-[180px] font-bold">{request.direct_supplier?.company_name || '—'}</TableCell>
+                      <TableCell className="whitespace-nowrap font-mono font-bold text-amber-300">{request.date_needed || '—'}</TableCell>
                       <TableCell className="max-w-[160px]">{request.requester?.name || '—'}</TableCell>
                       <TableCell className="max-w-[160px]">{request.assigned_reviewer?.name || '—'}</TableCell>
                       <TableCell><div className="font-bold">{firstItem?.item_description || firstItem?.item?.name || '—'}</div><div className="font-mono text-xs text-cyan-300">{firstItem?.item_reference || '—'}</div></TableCell>
@@ -193,6 +195,7 @@ const AccountingPurchaseRequestsPage: React.FC = () => {
                   <div className="flex min-w-0 items-start justify-between gap-3"><span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">{request.request_number}</span><span className="shrink-0 text-[11px] text-amber-300">موافقة مالية</span></div>
                   <dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
                     <div className="min-w-0"><dt className="text-slate-500">القسم</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-200">{request.department?.name || 'غير محدد'}</dd></div>
+                    <div className="min-w-0"><dt className="text-slate-500">تاريخ الاحتياج</dt><dd className="mt-1 break-normal font-mono font-bold text-amber-300">{request.date_needed || 'غير محدد'}</dd></div>
                     <div className="min-w-0"><dt className="text-slate-500">المورد</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{request.direct_supplier?.company_name || 'غير محدد'}</dd></div>
                     <div className="min-w-0"><dt className="text-slate-500">مقدم الطلب</dt><dd className="mt-1 break-normal leading-6 text-slate-300">{request.requester?.name || 'غير محدد'}</dd></div>
                     <div className="min-w-0"><dt className="text-slate-500">رئيس القسم</dt><dd className="mt-1 break-normal leading-6 text-slate-300">{request.assigned_reviewer?.name || 'غير محدد'}</dd></div>

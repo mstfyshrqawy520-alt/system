@@ -138,8 +138,15 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
         <Card key={request.id} className={`space-y-4 ${request.id === openRequestId ? 'border-cyan-400/80 ring-2 ring-cyan-400/20' : ''}`}>
           <div className="flex flex-col gap-2 border-b border-slate-800 pb-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="font-bold text-cyan-300">طلب {request.request_number}</h2>
-              <p className="text-xs text-slate-400">
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="font-bold text-cyan-300 font-mono">طلب {request.request_number}</h2>
+                {request.date_needed && (
+                  <span className="rounded-full border border-amber-700/60 bg-amber-950/30 px-2.5 py-0.5 text-xs font-mono font-bold text-amber-300">
+                    ⏳ تاريخ الاحتياج: {request.date_needed}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
                 {request.requester?.name || '—'} — {request.department?.name || '—'}
                 {isGeneralManagerRequest(request) && <span className="mr-2 font-bold text-amber-300">طلب المدير العام — لا يحتاج ترشيح القسم</span>}
               </p>

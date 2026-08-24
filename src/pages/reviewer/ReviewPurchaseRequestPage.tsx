@@ -290,8 +290,9 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
           </p>
         </div>
 
-        <Card className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs border-cyan-900/50 bg-cyan-950/10">
+        <Card className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs border-cyan-900/50 bg-cyan-950/10">
           <div><div className="text-[10px] text-slate-400 font-semibold">القسم المستهدف</div><div className="mt-1 font-bold text-cyan-300">{requestData.target_department?.name || requestData.department?.name || 'غير محدد'}</div></div>
+          <div><div className="text-[10px] text-amber-400 font-semibold">تاريخ الاحتياج ⏳</div><div className="mt-1 font-mono font-bold text-amber-300">{requestData.date_needed || 'غير محدد'}</div></div>
           <div><div className="text-[10px] text-slate-400 font-semibold">مدير القسم</div><div className="mt-1 font-bold text-slate-200">{requestData.target_department?.manager?.name || 'غير محدد'}</div></div>
           <div><div className="text-[10px] text-slate-400 font-semibold">مهندس الموقع</div><div className="mt-1 font-bold text-slate-200">{requestData.target_department?.site_engineer?.name || 'غير محدد'}</div></div>
           <div><div className="text-[10px] text-slate-400 font-semibold">رقم قطعة الأرض</div><div className="mt-1 font-mono font-bold text-slate-200">{requestData.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || 'غير محدد'}</div></div>

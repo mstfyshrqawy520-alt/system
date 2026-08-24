@@ -80,6 +80,10 @@ export const ProcurementPurchaseRequestDetailsPage: React.FC = () => {
           <div className="text-slate-400">صاحب الطلب:</div>
           <div className="font-semibold text-slate-200 text-sm">{pr.requester?.name || '—'}</div>
         </div>
+        <div className="bg-amber-950/20 p-4 rounded-xl border border-amber-800/60 space-y-1 text-xs">
+          <div className="text-amber-400 font-bold">تاريخ الاحتياج ⏳:</div>
+          <div className="font-mono font-bold text-amber-200 text-sm">{pr.date_needed || 'غير محدد'}</div>
+        </div>
       </div>
 
       {pr.justification && (

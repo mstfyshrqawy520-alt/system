@@ -34,11 +34,12 @@ export const PrDetailsModal: React.FC<PrDetailsModalProps> = ({ pr, isOpen, onCl
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
           <div className="bg-slate-950 p-4 rounded-lg border border-slate-800 space-y-2 text-xs">
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               <div className="flex justify-between gap-3"><span className="text-slate-400">القسم:</span><span className="text-slate-200">{pr.department?.name || '—'}</span></div>
               <div className="flex justify-between gap-3"><span className="text-slate-400">صاحب الطلب:</span><span className="text-slate-200">{pr.requester?.name || '—'}</span></div>
               <div className="flex justify-between gap-3"><span className="text-slate-400">الحالة:</span><span className="font-bold text-cyan-200">{PR_STATUS_LABELS[pr.status] || pr.status}</span></div>
               <div className="flex justify-between gap-3"><span className="text-slate-400">مهندس الموقع:</span><span className="text-slate-200">{pr.site_engineer?.name || '—'}</span></div>
+              <div className="flex justify-between gap-3"><span className="text-amber-400 font-semibold">تاريخ الاحتياج:</span><span className="font-mono font-bold text-amber-300">{pr.date_needed || 'غير محدد'}</span></div>
               {isDirect && <div className="flex justify-between gap-3"><span className="text-slate-400">المورد:</span><span className="font-bold text-emerald-300">{pr.direct_supplier?.company_name || '—'}</span></div>}
               {isDirect && <div className="flex justify-between gap-3"><span className="text-slate-400">الإجمالي المقترح:</span><span className="font-mono font-bold text-emerald-300">{estimatedTotal.toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م</span></div>}
             </div>

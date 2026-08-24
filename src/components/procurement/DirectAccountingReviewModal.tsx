@@ -143,10 +143,14 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
       )}
     >
       <div className="space-y-5">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div className="rounded-lg border border-cyan-500/30 bg-slate-950/70 p-3">
             <p className="text-[11px] text-slate-400">رقم طلب الشراء</p>
             <p className="mt-1 break-all font-mono text-sm font-black text-cyan-200">{request.request_number}</p>
+          </div>
+          <div className="rounded-lg border border-amber-500/40 bg-amber-950/20 p-3">
+            <p className="text-[11px] text-amber-300 font-semibold">تاريخ الاحتياج ⏳</p>
+            <p className="mt-1 font-mono text-sm font-black text-amber-200">{request.date_needed || 'غير محدد'}</p>
           </div>
           <div className="rounded-lg border border-slate-700 bg-slate-950/70 p-3">
             <p className="text-[11px] text-slate-400">القسم المستهدف</p>
