@@ -285,102 +285,152 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
       ) : (
         <>
           <div className="hidden min-w-0 md:block overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/60">
-            <table className="min-w-[850px] w-full text-right text-xs">
+            <table className="min-w-[950px] w-full text-right text-xs">
               <thead className="bg-slate-900 text-slate-300">
                 <tr>
                   <th className="px-4 py-3">رقم الطلب</th>
+                  <th className="px-4 py-3">الصنف المطلوب والكمية</th>
+                  <th className="px-4 py-3">رقم قطعة الأرض</th>
                   <th className="px-4 py-3">مقدم الطلب</th>
                   <th className="px-4 py-3">القسم</th>
                   <th className="px-4 py-3">المورد</th>
-                  <th className="px-4 py-3">عدد البنود</th>
                   <th className="px-4 py-3">الإجمالي التقديري</th>
                   <th className="px-4 py-3">المراجع</th>
                   <th className="px-4 py-3">الإجراء</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredRequests.map((request) => (
-                  <tr key={request.id} className="border-t border-slate-800 text-slate-200">
-                    <td className="px-4 py-3 font-bold text-cyan-300 font-mono">
-                      {request.request_number}
-                    </td>
-                    <td className="px-4 py-3">{request.requester?.name || '—'}</td>
-                    <td className="px-4 py-3">{request.department?.name || '—'}</td>
-                    <td className="px-4 py-3 font-bold text-emerald-300">
-                      {request.direct_supplier?.company_name || '—'}
-                    </td>
-                    <td className="px-4 py-3 font-bold text-amber-300">
-                      {request.items?.length || 0} بنود
-                    </td>
-                    <td className="px-4 py-3 font-mono text-emerald-300">
-                      {request.procurement_route === 'DIRECT'
-                        ? `${Number(request.total_estimated_cost || 0).toLocaleString('ar-EG', {
-                            minimumFractionDigits: 2,
-                          })} ج.م`
-                        : '—'}
-                    </td>
-                    <td className="px-4 py-3">{request.assigned_reviewer?.name || '—'}</td>
-                    <td className="px-4 py-3">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => openRequest(request)}
-                      >
-                        فتح الطلب ومراجعة البنود
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {filteredRequests.map((request) => {
+                  const firstItem = request.items?.[0];
+                  const otherItemsCount = (request.items?.length || 0) - 1;
+                  return (
+                    <tr key={request.id} className="border-t border-slate-800 text-slate-200 hover:bg-slate-900/40">
+                      <td className="px-4 py-3 font-bold text-cyan-300 font-mono whitespace-nowrap">
+                        {request.request_number}
+                      </td>
+                      <td className="px-4 py-3 max-w-[260px]">
+                        {firstItem ? (
+                          <div>
+                            <div className="font-bold text-slate-100 truncate" title={firstItem.item?.name || firstItem.item_description}>
+                              {firstItem.item?.name || firstItem.item_description}
+                            </div>
+                            <div className="text-[11px] text-amber-300 font-mono mt-0.5">
+                              {firstItem.quantity} {getUnitLabel(firstItem.uom)}
+                              {otherItemsCount > 0 && (
+                                <span className="mr-2 rounded bg-slate-800 border border-slate-700 px-1.5 py-0.5 text-[10px] text-cyan-300 font-sans">
+                                  +{otherItemsCount} بنود أخرى
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-slate-500">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-cyan-300 whitespace-nowrap">
+                        {firstItem?.item_reference || '—'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">{request.requester?.name || '—'}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">{request.department?.name || '—'}</td>
+                      <td className="px-4 py-3 font-bold text-emerald-300 whitespace-nowrap">
+                        {request.direct_supplier?.company_name || 'عروض أسعار'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-emerald-300 whitespace-nowrap">
+                        {request.procurement_route === 'DIRECT'
+                          ? `${Number(request.total_estimated_cost || 0).toLocaleString('ar-EG', {
+                              minimumFractionDigits: 2,
+                            })} ج.م`
+                          : '—'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">{request.assigned_reviewer?.name || '—'}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => openRequest(request)}
+                        >
+                          فتح الطلب ومراجعة البنود
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           <div className="space-y-3 md:hidden">
-            {filteredRequests.map((request) => (
-              <article
-                key={`mobile-gm-pr-${request.id}`}
-                className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4"
-              >
-                <div className="flex min-w-0 items-start justify-between gap-3">
-                  <span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">
-                    {request.request_number}
-                  </span>
-                  <span className="shrink-0 rounded-md border border-amber-700/50 bg-amber-950/30 px-2 py-1 text-[11px] font-bold text-amber-200">
-                    {request.items?.length || 0} بنود
-                  </span>
-                </div>
-                <dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
-                  <div className="min-w-0">
-                    <dt className="text-slate-500">مقدم الطلب</dt>
-                    <dd className="mt-1 font-bold text-slate-200">{request.requester?.name || '—'}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-slate-500">القسم</dt>
-                    <dd className="mt-1 text-slate-300">{request.department?.name || '—'}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-slate-500">المورد</dt>
-                    <dd className="mt-1 font-bold text-emerald-300">
-                      {request.direct_supplier?.company_name || 'غير محدد'}
-                    </dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-slate-500">المراجع</dt>
-                    <dd className="mt-1 text-slate-300">{request.assigned_reviewer?.name || '—'}</dd>
-                  </div>
-                </dl>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  className="mt-4 w-full"
-                  onClick={() => openRequest(request)}
+            {filteredRequests.map((request) => {
+              const firstItem = request.items?.[0];
+              const otherItemsCount = (request.items?.length || 0) - 1;
+              return (
+                <article
+                  key={`mobile-gm-pr-${request.id}`}
+                  className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 space-y-3"
                 >
-                  فتح الطلب ومراجعة البنود
-                </Button>
-              </article>
-            ))}
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">
+                      {request.request_number}
+                    </span>
+                    <span className="shrink-0 rounded-md border border-amber-700/50 bg-amber-950/30 px-2 py-1 text-[11px] font-bold text-amber-200">
+                      {request.items?.length || 0} بنود
+                    </span>
+                  </div>
+
+                  {firstItem && (
+                    <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 space-y-1">
+                      <div className="text-xs text-slate-400">الصنف:</div>
+                      <div className="font-bold text-slate-100 text-sm">{firstItem.item?.name || firstItem.item_description}</div>
+                      <div className="flex items-center justify-between text-xs pt-1">
+                        <span className="text-amber-300 font-mono font-bold">
+                          الكمية: {firstItem.quantity} {getUnitLabel(firstItem.uom)}
+                        </span>
+                        <span className="text-cyan-300 font-mono">
+                          قطعة: {firstItem.item_reference || '—'}
+                        </span>
+                      </div>
+                      {otherItemsCount > 0 && (
+                        <div className="text-[11px] text-slate-400 pt-1 border-t border-slate-800">
+                          + يوجد عدد {otherItemsCount} بنود أخرى في هذا الطلب
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <dl className="grid min-w-0 grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <dt className="text-slate-500">مقدم الطلب</dt>
+                      <dd className="mt-0.5 font-bold text-slate-200">{request.requester?.name || '—'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">القسم</dt>
+                      <dd className="mt-0.5 text-slate-300">{request.department?.name || '—'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">المورد</dt>
+                      <dd className="mt-0.5 font-bold text-emerald-300">
+                        {request.direct_supplier?.company_name || 'عروض أسعار'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">المراجع</dt>
+                      <dd className="mt-0.5 text-slate-300">{request.assigned_reviewer?.name || '—'}</dd>
+                    </div>
+                  </dl>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="w-full"
+                    onClick={() => openRequest(request)}
+                  >
+                    فتح الطلب ومراجعة البنود
+                  </Button>
+                </article>
+              );
+            })}
           </div>
         </>
       )}
