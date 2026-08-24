@@ -211,7 +211,7 @@ Route::middleware('auth:sanctum')->prefix('procurement')->group(function () {
         ->middleware('permission:purchase_order.edit');
 
     Route::get('/analytics', [ProcurementAnalyticsController::class, 'index'])
-        ->middleware('permission:purchase_order.view|purchase_order.view_gm');
+        ->middleware('permission:purchase_order.view|purchase_order.view_gm|purchase_order.view_accounting');
 });
 
 // Accounting Financial Review Routes (View Only)

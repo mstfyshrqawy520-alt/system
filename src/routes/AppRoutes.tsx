@@ -21,6 +21,7 @@ const EditPurchaseOrderPage = React.lazy(() => import("../pages/procurement/Edit
 const PurchaseOrderDetailsPage = React.lazy(() => import("../pages/procurement/PurchaseOrderDetailsPage"));
 const ProcurementManagerPage = React.lazy(() => import("../pages/procurement/ProcurementManagerPage"));
 const ProcurementReportsPage = React.lazy(() => import("../pages/procurement/ProcurementReportsPage"));
+const UniversalReportsPage = React.lazy(() => import("../pages/reports/UniversalReportsPage"));
 const AccountingDashboardPage = React.lazy(() => import("../pages/accounting/AccountingDashboardPage"));
 const AccountingPurchaseOrdersPage = React.lazy(() => import("../pages/accounting/AccountingPurchaseOrdersPage"));
 const AccountingPurchaseRequestsPage = React.lazy(() => import("../pages/accounting/AccountingPurchaseRequestsPage"));
@@ -132,6 +133,7 @@ export const AppRoutes: React.FC = () => {
                     <Route path="/procurement/purchase-orders/create" element={<CreatePurchaseOrderPage />} />
                     <Route path="/procurement/purchase-orders/:id/edit" element={<EditPurchaseOrderPage />} />
                     <Route path="/procurement/purchase-orders/:id" element={<PurchaseOrderDetailsPage />} />
+                    <Route path="/procurement/reports" element={<ProcurementReportsPage />} />
                     <Route path="/procurement/*" element={<ProcurementManagerPage />} />
                 </Route>
 
@@ -145,6 +147,7 @@ export const AppRoutes: React.FC = () => {
                     <Route path="/accounting/supplier-payments" element={<SupplierPaymentsPage />} />
                     <Route path="/accounting/supplier-accounts" element={<SupplierAccountsPage />} />
                     <Route path="/accounting/land-parcels" element={<LandParcelsPage />} />
+                    <Route path="/accounting/reports" element={<UniversalReportsPage />} />
                 </Route>
 
                 {/* ── General Manager Routes ────────────────────────────────── */}
@@ -157,7 +160,8 @@ export const AppRoutes: React.FC = () => {
                     <Route path="/general-manager/reports" element={<GeneralManagerReportsPage />} />
                 </Route>
 
-                {/* Direct alias route for quotes decision */}
+                {/* Direct alias routes */}
+                <Route path="/reports" element={<UniversalReportsPage />} />
                 <Route path="/purchase-quotes/decision" element={<PurchaseQuotesDecisionPage mode="executive" />} />
             </Route>
 

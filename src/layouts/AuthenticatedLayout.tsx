@@ -163,6 +163,12 @@ export const AuthenticatedLayout: React.FC = () => {
                         >
                             <span className="ml-2.5 text-sm" aria-hidden="true">🏗️</span> دفتر قطع الأراضي
                         </Link>
+                        <Link
+                            to="/accounting/reports"
+                            className={linkClassName("/accounting/reports")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📈</span> التقارير والتحليلات
+                        </Link>
                     </>
                 );
             case "general_manager":
@@ -193,6 +199,12 @@ export const AuthenticatedLayout: React.FC = () => {
                             className={linkClassName("/general-manager/purchase-orders")}
                         >
                             <span className="ml-2.5 text-sm" aria-hidden="true">📋</span> أوامر الشراء الصادرة — العرض التنفيذي
+                        </Link>
+                        <Link
+                            to="/general-manager/reports"
+                            className={linkClassName("/general-manager/reports")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📈</span> التقارير والتحليلات
                         </Link>
                     </>
                 );
