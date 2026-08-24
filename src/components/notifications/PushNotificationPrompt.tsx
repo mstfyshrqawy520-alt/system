@@ -26,8 +26,14 @@ export const PushNotificationPrompt: React.FC<PushNotificationPromptProps> = ({
 
   useEffect(() => {
     setIsSupported(getPushSupportStatus());
-    setPermission(getPushPermissionState());
+    const perm = getPushPermissionState();
+    setPermission(perm);
     setIsConfigured(isFirebaseConfigured());
+
+    if (perm === 'granted') {
+      // Automatically ensure FCM device token is registered and active in backend
+      void requestAndRegisterPushToken().catch(() => {});
+    }
   }, []);
 
   if (!isSupported) {
@@ -59,10 +65,14 @@ export const PushNotificationPrompt: React.FC<PushNotificationPromptProps> = ({
     setTestingPush(true);
     setMessage(null);
     try {
+      // 1. Ensure this device's token is registered first
+      await requestAndRegisterPushToken();
+
+      // 2. Call test-push API
       const { sendTestPushApi } = await import('../../api/notifications');
       const data = await sendTestPushApi();
       setIsSuccess(true);
-      setMessage(`تم إرسال الإشعار التجريبي بنجاح! تم استهداف (${data.device_count || 1}) جهاز. تفقد شريط إشعارات هاتفك الآن.`);
+      setMessage(`تم إرسال الإشعار التجريبي بنجاح! تم استهداف (${data.device_count || 1}) جهاز. تفقد شريط إشعارات هاتفك/متصفحك الآن.`);
     } catch (err: any) {
       setIsSuccess(false);
       const errMsg = err?.response?.data?.message || err?.message || 'تعذر إرسال الإشعار التجريبي.';
