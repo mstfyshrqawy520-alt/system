@@ -157,6 +157,12 @@ export const AuthenticatedLayout: React.FC = () => {
                         >
                             <span className="ml-2.5 text-sm" aria-hidden="true">🏦</span> حسابات الموردين
                         </Link>
+                        <Link
+                            to="/accounting/land-parcels"
+                            className={linkClassName("/accounting/land-parcels")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">🏗️</span> دفتر قطع الأراضي
+                        </Link>
                     </>
                 );
             case "general_manager":

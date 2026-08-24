@@ -34,6 +34,7 @@ const PurchaseQuotesDecisionPage = React.lazy(() => import("../pages/purchase-qu
 const PurchaseReceiptPage = React.lazy(() => import("../pages/receipts/PurchaseReceiptPage"));
 const SupplierPaymentsPage = React.lazy(() => import("../pages/accounting/SupplierPaymentsPage"));
 const SupplierAccountsPage = React.lazy(() => import("../pages/accounting/SupplierAccountsPage"));
+const LandParcelsPage = React.lazy(() => import("../pages/accounting/LandParcelsPage"));
 const NotificationsPage = React.lazy(() => import("../pages/NotificationsPage"));
 const RoleArchivePage = React.lazy(() => import("../pages/RoleArchivePage"));
 const ProfilePage = React.lazy(() => import("../pages/ProfilePage"));
@@ -143,6 +144,7 @@ export const AppRoutes: React.FC = () => {
                     <Route path="/accounting/purchase-quotes" element={<PurchaseQuotesDecisionPage mode="recommend" />} />
                     <Route path="/accounting/supplier-payments" element={<SupplierPaymentsPage />} />
                     <Route path="/accounting/supplier-accounts" element={<SupplierAccountsPage />} />
+                    <Route path="/accounting/land-parcels" element={<LandParcelsPage />} />
                 </Route>
 
                 {/* ── General Manager Routes ────────────────────────────────── */}
