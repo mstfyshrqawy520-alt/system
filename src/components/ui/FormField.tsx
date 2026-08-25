@@ -18,17 +18,28 @@ export const FormField: React.FC<FormFieldProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={`space-y-1.5 ${className}`}>
       {label && (
-                  <label className="block text-sm font-semibold text-slate-300 sm:text-xs">
-
-          {label}
-          {required && <span className="text-rose-400 mr-1">*</span>}
+        <label className="flex items-center justify-between text-xs font-bold text-slate-300">
+          <span className="flex items-center gap-1">
+            {label}
+            {required && <span className="text-rose-400 font-black text-sm">*</span>}
+          </span>
+          {required && (
+            <span className="text-[10px] text-slate-500 font-medium">(إلزامي)</span>
+          )}
         </label>
       )}
       {children}
-      {error && <p className="text-[11px] font-medium text-rose-400 mt-1">{error}</p>}
-      {helperText && !error && <p className="text-[11px] text-slate-500 mt-1">{helperText}</p>}
+      {error && (
+        <p className="text-[11px] font-bold text-rose-400 flex items-center gap-1 animate-fade-in">
+          <span>⚠️</span>
+          <span>{error}</span>
+        </p>
+      )}
+      {helperText && !error && (
+        <p className="text-[11px] text-slate-400 leading-normal">{helperText}</p>
+      )}
     </div>
   );
 };
@@ -42,8 +53,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <input
         ref={ref}
-        className={`min-h-11 w-full min-w-0 rounded-xl border bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 transition-colors duration-200 focus:outline-none sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs ${
-          error ? 'border-rose-500/80 focus:border-rose-400' : 'border-slate-800 focus:border-cyan-500/80'
+        className={`min-h-11 w-full min-w-0 rounded-xl border bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 shadow-[inset_0_1.5px_3px_rgba(0,0,0,0.35)] transition-all duration-200 focus:outline-none sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs ${
+          error
+            ? 'border-rose-500/80 bg-rose-950/20 text-rose-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-500/25'
+            : 'border-slate-700/70 hover:border-slate-600 focus:border-cyan-400/90 focus:ring-2 focus:ring-cyan-500/25'
         } ${className}`}
         {...props}
       />
@@ -61,8 +74,10 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <select
         ref={ref}
-        className={`min-h-11 w-full min-w-0 rounded-xl border bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-100 transition-colors duration-200 focus:outline-none sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs ${
-          error ? 'border-rose-500/80 focus:border-rose-400' : 'border-slate-800 focus:border-cyan-500/80'
+        className={`min-h-11 w-full min-w-0 rounded-xl border bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-100 shadow-[inset_0_1.5px_3px_rgba(0,0,0,0.35)] transition-all duration-200 focus:outline-none sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs cursor-pointer ${
+          error
+            ? 'border-rose-500/80 bg-rose-950/20 text-rose-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-500/25'
+            : 'border-slate-700/70 hover:border-slate-600 focus:border-cyan-400/90 focus:ring-2 focus:ring-cyan-500/25'
         } ${className}`}
         {...props}
       >
@@ -82,8 +97,10 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <textarea
         ref={ref}
-        className={`min-h-[100px] w-full min-w-0 rounded-xl border bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 transition-colors duration-200 focus:outline-none sm:min-h-[80px] sm:rounded-lg sm:py-2 sm:text-xs ${
-          error ? 'border-rose-500/80 focus:border-rose-400' : 'border-slate-800 focus:border-cyan-500/80'
+        className={`min-h-[100px] w-full min-w-0 rounded-xl border bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 shadow-[inset_0_1.5px_3px_rgba(0,0,0,0.35)] transition-all duration-200 focus:outline-none sm:min-h-[80px] sm:rounded-lg sm:py-2 sm:text-xs ${
+          error
+            ? 'border-rose-500/80 bg-rose-950/20 text-rose-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-500/25'
+            : 'border-slate-700/70 hover:border-slate-600 focus:border-cyan-400/90 focus:ring-2 focus:ring-cyan-500/25'
         } ${className}`}
         {...props}
       />
@@ -91,3 +108,5 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   }
 );
 Textarea.displayName = 'Textarea';
+
+export default FormField;

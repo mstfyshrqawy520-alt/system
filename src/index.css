@@ -51,6 +51,7 @@ select,
 input,
 textarea {
   touch-action: manipulation;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 select,
@@ -75,11 +76,28 @@ textarea {
   text-align: right;
 }
 
-/* Custom Focus States */
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: #0ea5e9 !important;
-  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+/* Custom Eye-Friendly Form Focus States & Input Depth */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  background-color: rgba(10, 15, 29, 0.85);
+  border-color: rgba(51, 65, 85, 0.7);
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.4);
+}
+
+input:not([type="checkbox"]):not([type="radio"]):hover,
+select:hover,
+textarea:hover {
+  border-color: rgba(71, 85, 105, 0.9);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  background-color: #0b1220 !important;
+  border-color: #06b6d4 !important;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.35) !important;
 }
 
 /* Accessibility: higher contrast and reduced motion remain opt-in to the OS preference. */
