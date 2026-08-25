@@ -179,6 +179,11 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
 
                     {/* Meta info tags */}
                     <div className="flex items-center gap-2 flex-wrap text-[11px] text-slate-400">
+                      {item.amount !== undefined && Number(item.amount) > 0 && (
+                        <span className="font-mono font-bold text-emerald-300 bg-emerald-950/70 border border-emerald-800/60 px-2 py-0.5 rounded-lg">
+                          💰 {Number(item.amount).toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م
+                        </span>
+                      )}
                       {item.requester && (
                         <span className="bg-slate-900/80 px-2 py-0.5 rounded-lg border border-slate-800">
                           👤 {item.requester}
@@ -189,7 +194,7 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                           🏢 {item.department}
                         </span>
                       )}
-                      {item.supplier && (
+                      {item.supplier && item.title !== item.supplier && (
                         <span className="bg-slate-900/80 px-2 py-0.5 rounded-lg border border-slate-800">
                           🤝 {item.supplier}
                         </span>

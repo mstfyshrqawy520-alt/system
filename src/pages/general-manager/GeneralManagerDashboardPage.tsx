@@ -145,19 +145,20 @@ export const GeneralManagerDashboardPage: React.FC = () => {
             timeAgo: req.created_at ? req.created_at.slice(0, 10) : undefined,
           })),
           ...pos
-            .filter((p) => (p.status as string) === 'PENDING_EXECUTIVE_APPROVAL' || (p.status as string) === 'APPROVED_BY_ACCOUNTING' || p.status === 'ISSUED')
+            .filter((p) => (p.status as string) === 'PENDING_EXECUTIVE_APPROVAL' || (p.status as string) === 'APPROVED_BY_ACCOUNTING')
             .slice(0, 5)
             .map((po) => ({
               id: `po-${po.id}`,
               rawId: po.id,
               type: 'PO' as const,
               code: po.po_number,
-              title: po.supplier?.company_name || 'أمر شراء معتمد مالياً',
+              title: po.items?.[0]?.item_description || (po.supplier ? `توريد من ${po.supplier.company_name}` : `أمر شراء ${po.po_number}`),
+              subtitle: (po.purchase_request as any)?.justification || (po.items && po.items.length > 1 ? `${po.items.length} بنود توريد مطلوبة` : undefined),
               department: po.department?.name || po.purchase_request?.department?.name,
               supplier: po.supplier?.company_name,
               amount: Number(po.grand_total || 0),
               urgency: 'HIGH' as const,
-              reason: 'أمر شراء بانتظار الاعتماد والتوقيع التنفيذي النهائي',
+              reason: 'أمر شراء معتمد مالياً بانتظار الاعتماد والتوقيع التنفيذي النهائي',
               actionUrl: `/general-manager/purchase-orders/${po.id}`,
               actionLabel: 'اعتماد وتوقيع أمر الشراء',
               timeAgo: po.created_at ? po.created_at.slice(0, 10) : undefined,
