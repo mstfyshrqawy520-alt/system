@@ -24,8 +24,7 @@ export const ROLE_HOME_PRIORITY: AppRoleSlug[] = [
 
 const ROLE_HOME_PATHS: Record<AppRoleSlug, string> = {
     admin: "/admin",
-        general_manager: "/general-manager/purchase-requests",
-
+    general_manager: "/general-manager",
     accountant: "/accounting",
     procurement_manager: "/procurement",
     reviewer: "/reviewer",

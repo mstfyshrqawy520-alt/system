@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getPrimaryRoleSlug } from '../../routes/roleRouting';
+import { hasAnyRole, hasPermission } from '../../utils/permissions';
 import { cachedGetData } from '../../api/client';
 import { PurchaseRequest } from '../../types/purchaseRequest';
 import { PurchaseOrder } from '../../types/purchaseOrder';
@@ -51,6 +52,15 @@ export const GlobalSearchBar: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const primaryRole = getPrimaryRoleSlug(user);
 
+  // Role permissions
+  const isFinancialRole = hasAnyRole(user, ['accountant', 'general_manager', 'admin']);
+  const isProcurementRole = hasAnyRole(user, ['procurement_manager', 'general_manager', 'admin', 'accountant']);
+  const isReviewerRole = hasAnyRole(user, ['reviewer', 'admin']);
+  const isWarehouseRole = hasAnyRole(user, ['warehouse_keeper', 'admin', 'procurement_manager']);
+  const isSiteEngineerRole = hasAnyRole(user, ['site_engineer', 'admin']);
+  const isGmRole = hasAnyRole(user, ['general_manager', 'admin']);
+  const isAdminRole = hasAnyRole(user, ['admin']);
+
   // Global Ctrl+K / Cmd+K listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -65,7 +75,7 @@ export const GlobalSearchBar: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
-  // Focus input on open & load data
+  // Focus input on open & load data according to role
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -81,17 +91,44 @@ export const GlobalSearchBar: React.FC = () => {
   const loadSearchData = async () => {
     setLoading(true);
     try {
-      const [prRes, poRes, suppRes, parcelRes] = await Promise.allSettled([
-        cachedGetData<{ data: PurchaseRequest[] }>('/purchase-requests').then((r) => r.data),
-        getPurchaseOrdersApi({ per_page: 50 }).then((r) => r.data),
-        getSupplierAccountsApi(),
-        getLandParcelsApi(),
-      ]);
+      // 1. Always load PRs (accessible to all roles)
+      const promises: Promise<any>[] = [
+        cachedGetData<{ data: PurchaseRequest[] }>('/purchase-requests')
+          .then((r) => r.data)
+          .catch(() => []),
+      ];
 
-      if (prRes.status === 'fulfilled') setRequests(prRes.value || []);
-      if (poRes.status === 'fulfilled') setOrders(poRes.value || []);
-      if (suppRes.status === 'fulfilled') setSuppliers(suppRes.value || []);
-      if (parcelRes.status === 'fulfilled') setParcels(parcelRes.value || []);
+      // 2. Only load POs if procurement / accountant / GM / admin / has permission
+      if (isProcurementRole || hasPermission(user, 'purchase_orders.view')) {
+        promises.push(
+          getPurchaseOrdersApi({ per_page: 50 })
+            .then((r) => r.data)
+            .catch(() => [])
+        );
+      } else {
+        promises.push(Promise.resolve([]));
+      }
+
+      // 3. Only load Supplier Accounts if Financial role
+      if (isFinancialRole) {
+        promises.push(getSupplierAccountsApi().catch(() => []));
+      } else {
+        promises.push(Promise.resolve([]));
+      }
+
+      // 4. Only load Land Parcels if Financial or GM or Admin
+      if (isFinancialRole || isGmRole) {
+        promises.push(getLandParcelsApi().catch(() => []));
+      } else {
+        promises.push(Promise.resolve([]));
+      }
+
+      const [prList, poList, suppList, parcelList] = await Promise.all(promises);
+
+      setRequests(prList || []);
+      setOrders(poList || []);
+      setSuppliers(suppList || []);
+      setParcels(parcelList || []);
       setHasFetched(true);
     } catch {
       // Non-blocking
@@ -100,17 +137,56 @@ export const GlobalSearchBar: React.FC = () => {
     }
   };
 
-  // Quick navigation pages based on role
-  const quickPages: SearchResultItem[] = useMemo(() => [
-    { id: 'page-create-pr', type: 'PAGE', categoryLabel: 'صفحة', title: 'إنشاء طلب شراء جديد', subtitle: 'تقديم طلب شراء أصناف أو خدمات', url: '/requests/create', badge: 'طلب جديد', badgeColor: 'bg-cyan-950 text-cyan-300' },
-    { id: 'page-my-pr', type: 'PAGE', categoryLabel: 'صفحة', title: 'طلبات الشراء الخاصة بي', subtitle: 'متابعة حالة طلباتي السابقة', url: '/requests', badge: 'طلباتي', badgeColor: 'bg-slate-800 text-slate-300' },
-    { id: 'page-supplier-accounts', type: 'PAGE', categoryLabel: 'صفحة', title: 'حسابات الموردين والمديونية', subtitle: 'كشوف الحسابات والأرصدة والدفعات', url: '/accounting/supplier-accounts', badge: 'حسابات', badgeColor: 'bg-emerald-950 text-emerald-300' },
-    { id: 'page-supplier-payments', type: 'PAGE', categoryLabel: 'صفحة', title: 'فواتير ودفعات الموردين وقطع الأراضي', subtitle: 'تسجيل الفواتير وتوزيع المصروف على الأراضي', url: '/accounting/supplier-payments', badge: 'فواتير', badgeColor: 'bg-amber-950 text-amber-300' },
-    { id: 'page-quotes-proc', type: 'PAGE', categoryLabel: 'صفحة', title: 'إدارة المشتريات وعروض الأسعار', subtitle: 'تجهيز عروض الأسعار ومتابعة أوامر الشراء', url: '/procurement', badge: 'مشتريات', badgeColor: 'bg-indigo-950 text-indigo-300' },
-    { id: 'page-warehouse', type: 'PAGE', categoryLabel: 'صفحة', title: 'استلام المواد وفحص المخزن', subtitle: 'إذونات الاستلام ومطابقة الكميات الموردة', url: '/warehouse', badge: 'مخزن', badgeColor: 'bg-amber-950 text-amber-300' },
-    { id: 'page-site-eng', type: 'PAGE', categoryLabel: 'صفحة', title: 'اعتماد استلام الموقع (مهندس الموقع)', subtitle: 'المطابقة الفنية واعتماد إذونات الاستلام', url: '/site-engineer', badge: 'موقع', badgeColor: 'bg-cyan-950 text-cyan-300' },
-    { id: 'page-gm', type: 'PAGE', categoryLabel: 'صفحة', title: 'لوحة المدير العام والقرارات التنفيذية', subtitle: 'قرارات عروض الأسعار واعتماد أوامر الشراء', url: '/general-manager', badge: 'تنفيذي', badgeColor: 'bg-rose-950 text-rose-300' },
-  ], []);
+  // Quick navigation pages filtered strictly by Role
+  const quickPages: SearchResultItem[] = useMemo(() => {
+    const pages: SearchResultItem[] = [
+      { id: 'page-create-pr', type: 'PAGE', categoryLabel: 'صفحة', title: 'إنشاء طلب شراء جديد', subtitle: 'تقديم طلب شراء أصناف أو خدمات', url: '/requests/create', badge: 'طلب جديد', badgeColor: 'bg-cyan-950 text-cyan-300' },
+      { id: 'page-my-pr', type: 'PAGE', categoryLabel: 'صفحة', title: 'طلبات الشراء الخاصة بي', subtitle: 'متابعة حالة طلباتي السابقة', url: '/requests', badge: 'طلباتي', badgeColor: 'bg-slate-800 text-slate-300' },
+    ];
+
+    if (isReviewerRole) {
+      pages.push({ id: 'page-reviewer', type: 'PAGE', categoryLabel: 'صفحة', title: 'مراجعة وتدقيق طلبات القسم', subtitle: 'الاعتماد الفني ومراجعة الطلبات المعلقة', url: '/reviewer', badge: 'مراجع', badgeColor: 'bg-indigo-950 text-indigo-300' });
+    }
+
+    if (isProcurementRole) {
+      pages.push(
+        { id: 'page-proc-dashboard', type: 'PAGE', categoryLabel: 'صفحة', title: 'لوحة إدارة المشتريات', subtitle: 'عروض الأسعار والترسية وأوامر الشراء', url: '/procurement', badge: 'مشتريات', badgeColor: 'bg-indigo-950 text-indigo-300' },
+        { id: 'page-quotes-proc', type: 'PAGE', categoryLabel: 'صفحة', title: 'عروض أسعار الموردين والترسية', subtitle: 'مقارنة وترشيح عروض الأسعار', url: '/procurement/quotes', badge: 'عروض', badgeColor: 'bg-violet-950 text-violet-300' }
+      );
+    }
+
+    if (isFinancialRole) {
+      pages.push(
+        { id: 'page-acc-dashboard', type: 'PAGE', categoryLabel: 'صفحة', title: 'لوحة الحسابات والماليات', subtitle: 'الاعتمادات المالية ومتابعة الدفعات', url: '/accounting', badge: 'مالية', badgeColor: 'bg-emerald-950 text-emerald-300' },
+        { id: 'page-supplier-accounts', type: 'PAGE', categoryLabel: 'صفحة', title: 'حسابات الموردين والمديونية', subtitle: 'كشوف الحسابات والأرصدة والدفعات', url: '/accounting/supplier-accounts', badge: 'حسابات', badgeColor: 'bg-emerald-950 text-emerald-300' },
+        { id: 'page-supplier-payments', type: 'PAGE', categoryLabel: 'صفحة', title: 'فواتير ودفعات الموردين وقطع الأراضي', subtitle: 'تسجيل الفواتير وتوزيع المصروف على الأراضي', url: '/accounting/supplier-payments', badge: 'فواتير', badgeColor: 'bg-amber-950 text-amber-300' },
+        { id: 'page-land-parcels', type: 'PAGE', categoryLabel: 'صفحة', title: 'كشف حركة ومصروفات قطع الأراضي', subtitle: 'التمويلات والمصروفات والتحصيلات للمواقع', url: '/accounting/land-parcels', badge: 'أراضي', badgeColor: 'bg-sky-950 text-sky-300' }
+      );
+    }
+
+    if (isWarehouseRole) {
+      pages.push({ id: 'page-warehouse', type: 'PAGE', categoryLabel: 'صفحة', title: 'استلام المواد وفحص المخزن', subtitle: 'إذونات الاستلام ومطابقة الكميات الموردة', url: '/warehouse', badge: 'مخزن', badgeColor: 'bg-amber-950 text-amber-300' });
+    }
+
+    if (isSiteEngineerRole) {
+      pages.push({ id: 'page-site-eng', type: 'PAGE', categoryLabel: 'صفحة', title: 'اعتماد استلام الموقع (مهندس الموقع)', subtitle: 'المطابقة الفنية واعتماد إذونات الاستلام', url: '/site-engineer', badge: 'موقع', badgeColor: 'bg-cyan-950 text-cyan-300' });
+    }
+
+    if (isGmRole) {
+      pages.push(
+        { id: 'page-gm', type: 'PAGE', categoryLabel: 'صفحة', title: 'لوحة المدير العام والقرارات التنفيذية', subtitle: 'قرارات عروض الأسعار واعتماد أوامر الشراء اليومية', url: '/general-manager', badge: 'تنفيذي', badgeColor: 'bg-rose-950 text-rose-300' },
+        { id: 'page-gm-reports', type: 'PAGE', categoryLabel: 'صفحة', title: 'تقارير الإدارة والمشتريات والمالية', subtitle: 'مؤشرات الأداء والكشوف الشاملة', url: '/general-manager/reports', badge: 'تقارير', badgeColor: 'bg-purple-950 text-purple-300' }
+      );
+    }
+
+    if (isAdminRole) {
+      pages.push(
+        { id: 'page-admin', type: 'PAGE', categoryLabel: 'صفحة', title: 'لوحة تحكم مدير النظام', subtitle: 'إدارة المستخدمين والأدوار والصلاحيات', url: '/admin', badge: 'إدارة', badgeColor: 'bg-slate-800 text-slate-200' }
+      );
+    }
+
+    return pages;
+  }, [isReviewerRole, isProcurementRole, isFinancialRole, isWarehouseRole, isSiteEngineerRole, isGmRole, isAdminRole]);
 
   // Compute filtered search results
   const searchResults: SearchResultItem[] = useMemo(() => {
@@ -127,10 +203,10 @@ export const GlobalSearchBar: React.FC = () => {
         const itemNames = (pr.items || []).map((i) => `${i.item_description || i.item?.name || ''} ${i.item_reference || ''} ${i.region || ''}`).join(' ');
         const textToSearch = `${pr.request_number} ${pr.requester?.name || ''} ${pr.department?.name || ''} ${pr.justification || ''} ${itemNames}`.toLowerCase();
         if (textToSearch.includes(q)) {
-          const prUrl = primaryRole === 'reviewer' ? '/reviewer/requests'
-            : primaryRole === 'procurement_manager' ? '/procurement/purchase-requests'
-            : primaryRole === 'accountant' ? '/accounting/purchase-requests'
-            : primaryRole === 'general_manager' ? '/general-manager/purchase-requests'
+          const prUrl = primaryRole === 'reviewer' ? `/reviewer/requests/${pr.id}/review`
+            : primaryRole === 'procurement_manager' ? `/procurement/purchase-requests/${pr.id}`
+            : primaryRole === 'accountant' ? `/accounting/purchase-requests/${pr.id}`
+            : primaryRole === 'general_manager' ? `/general-manager/purchase-requests/${pr.id}`
             : `/requests/${pr.id}`;
 
           const firstItem = pr.items?.[0];
@@ -151,21 +227,26 @@ export const GlobalSearchBar: React.FC = () => {
       });
     }
 
-    // 2. Match POs
-    if (activeCategory === 'ALL' || activeCategory === 'PO') {
+    // 2. Match POs (only if authorized)
+    if ((isProcurementRole || hasPermission(user, 'purchase_orders.view')) && (activeCategory === 'ALL' || activeCategory === 'PO')) {
       orders.forEach((po) => {
         const textToSearch = `${po.po_number || ''} PO-${po.id} ${po.supplier?.company_name || ''} ${po.status || ''} ${po.currency || ''}`.toLowerCase();
         if (textToSearch.includes(q)) {
           const poUrl = primaryRole === 'general_manager' ? `/general-manager/purchase-orders/${po.id}`
-            : primaryRole === 'accountant' ? '/accounting/purchase-orders'
+            : primaryRole === 'accountant' ? `/accounting/purchase-orders/${po.id}`
             : `/procurement/purchase-orders/${po.id}`;
+
+          // Only show financial amount to financial / procurement / GM / admin roles
+          const amountText = (isFinancialRole || isProcurementRole)
+            ? `الإجمالي: ${money(po.grand_total || po.subtotal)} | `
+            : '';
 
           results.push({
             id: `po-${po.id}`,
             type: 'PO',
             categoryLabel: 'أمر شراء',
             title: `${po.po_number || `PO #${po.id}`} — ${po.supplier?.company_name || 'مورد غير محدد'}`,
-            subtitle: `الإجمالي: ${money(po.grand_total || po.subtotal)} | الحالة: ${po.status || '—'} | التاريخ: ${po.created_at?.split('T')[0] || ''}`,
+            subtitle: `${amountText}الحالة: ${po.status || '—'} | التاريخ: ${po.created_at?.split('T')[0] || ''}`,
             badge: po.status || 'مفتوح',
             badgeColor: 'bg-amber-950 text-amber-300 border border-amber-800/60',
             url: poUrl,
@@ -174,8 +255,8 @@ export const GlobalSearchBar: React.FC = () => {
       });
     }
 
-    // 3. Match Suppliers
-    if (activeCategory === 'ALL' || activeCategory === 'SUPPLIER') {
+    // 3. Match Suppliers (only if financial role)
+    if (isFinancialRole && (activeCategory === 'ALL' || activeCategory === 'SUPPLIER')) {
       suppliers.forEach((supp) => {
         const textToSearch = `${supp.company_name} ${supp.code || ''} ${supp.email || ''} ${supp.phone || ''}`.toLowerCase();
         if (textToSearch.includes(q)) {
@@ -193,19 +274,21 @@ export const GlobalSearchBar: React.FC = () => {
       });
     }
 
-    // 4. Match Land Parcels
-    if (activeCategory === 'ALL' || activeCategory === 'PARCEL') {
+    // 4. Match Land Parcels (only if financial or GM or Admin)
+    if ((isFinancialRole || isGmRole) && (activeCategory === 'ALL' || activeCategory === 'PARCEL')) {
       parcels.forEach((parcel) => {
         const textToSearch = `${parcel.parcel_reference} ${parcel.region} ${parcel.notes || ''}`.toLowerCase();
         if (textToSearch.includes(q)) {
           const parcelUrl = primaryRole === 'general_manager' ? '/general-manager/land-parcels' : '/accounting/land-parcels';
+          const balanceText = isFinancialRole ? `رصيد العميل المتاح: ${money(parcel.balance)} | ` : '';
+          
           results.push({
             id: `parcel-${parcel.id}`,
             type: 'PARCEL',
             categoryLabel: 'قطعة أرض',
             title: `قطعة أرض رقم ${parcel.parcel_reference} — منطقة ${parcel.region}`,
-            subtitle: `رصيد العميل المتاح: ${money(parcel.balance)} | ملاحظات: ${parcel.notes || 'لا توجد'}`,
-            badge: Number(parcel.balance) < 0 ? 'عجز تمويل' : 'رصيد كافٍ',
+            subtitle: `${balanceText}ملاحظات: ${parcel.notes || 'لا توجد'}`,
+            badge: isFinancialRole ? (Number(parcel.balance) < 0 ? 'عجز تمويل' : 'رصيد كافٍ') : parcel.region,
             badgeColor: Number(parcel.balance) < 0 ? 'bg-rose-950 text-rose-300 border border-rose-800/60' : 'bg-emerald-950 text-emerald-300 border border-emerald-800/60',
             url: parcelUrl,
           });
@@ -222,216 +305,294 @@ export const GlobalSearchBar: React.FC = () => {
       });
     }
 
-    return results;
-  }, [query, activeCategory, requests, orders, suppliers, parcels, quickPages, primaryRole]);
+    return results.slice(0, 15);
+  }, [query, activeCategory, requests, orders, suppliers, parcels, quickPages, primaryRole, isFinancialRole, isProcurementRole, isGmRole, user]);
 
-  // Handle Enter key or click
-  const handleSelect = (item: SearchResultItem) => {
+  const handleSelectResult = (item: SearchResultItem) => {
     setIsOpen(false);
     navigate(item.url);
   };
 
+  const handlePeek = (e: React.MouseEvent, item: SearchResultItem) => {
+    e.stopPropagation();
+    const rawId = parseInt(item.id.split('-')[1], 10);
+    if (!rawId) return;
+
+    if (item.type === 'PR') {
+      setPeekState({ isOpen: true, type: 'PR', id: rawId });
+    } else if (item.type === 'PO') {
+      setPeekState({ isOpen: true, type: 'PO', id: rawId });
+    } else {
+      setIsOpen(false);
+      navigate(item.url);
+    }
+  };
+
+  // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev + 1) % (searchResults.length || 1));
+      setSelectedIndex((prev) => (prev < searchResults.length - 1 ? prev + 1 : 0));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev - 1 + searchResults.length) % (searchResults.length || 1));
-    } else if (e.key === 'Enter' && searchResults[selectedIndex]) {
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : searchResults.length - 1));
+    } else if (e.key === 'Enter') {
       e.preventDefault();
-      handleSelect(searchResults[selectedIndex]);
+      if (searchResults[selectedIndex]) {
+        handleSelectResult(searchResults[selectedIndex]);
+      }
     }
   };
 
   return (
     <>
-      {/* Desktop Search Trigger */}
+      {/* Search Trigger Button in Navbar / Header */}
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="hidden md:flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-950/70 px-3 py-1.5 text-xs text-slate-400 hover:border-cyan-500/70 hover:bg-slate-900 hover:text-slate-200 transition-all shadow-inner w-64 lg:w-80 justify-between focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
-        title="البحث الشامل في النظام (Ctrl + K)"
+        className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs text-slate-400 shadow-sm transition-all hover:border-cyan-500/60 hover:bg-slate-800 hover:text-slate-200 cursor-pointer"
+        title="البحث السريع (Ctrl + K)"
+        aria-label="البحث السريع في النظام"
       >
-        <span className="flex items-center gap-2 truncate">
-          <span className="text-cyan-400 text-sm">🔍</span>
-          <span className="truncate">بحث عن طلب، أمر شراء، مورد...</span>
-        </span>
-        <kbd className="shrink-0 rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] font-bold text-slate-400 border border-slate-700">
+        <svg className="h-4 w-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <span className="hidden sm:inline">ابحث عن طلب، أمر شراء، صفحة...</span>
+        <span className="sm:hidden">بحث...</span>
+        <kbd className="hidden rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 border border-slate-700 sm:inline-block">
           Ctrl K
         </kbd>
       </button>
 
-      {/* Mobile Search Trigger Icon */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        className="md:hidden flex h-10 w-10 items-center justify-center rounded-xl bg-slate-800/80 border border-slate-700 text-cyan-300 hover:text-white"
-        aria-label="البحث الشامل"
-        title="البحث الشامل"
-      >
-        🔍
-      </button>
-
-      {/* Search Modal */}
-      {isOpen && createPortal(
-        <div
-          className="modal-top-viewport fixed inset-0 z-[10000] flex items-start justify-center overflow-y-auto bg-slate-950/85 p-3 sm:p-6 backdrop-blur-md pt-12 sm:pt-16"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setIsOpen(false)}
-        >
+      {/* Search Modal Backdrop & Dialog */}
+      {isOpen &&
+        createPortal(
           <div
-            className="w-full max-w-3xl overflow-hidden rounded-2xl border border-cyan-800/80 bg-slate-900 shadow-2xl animate-fade-in"
+            className="fixed inset-0 z-[99999] flex items-start justify-center bg-slate-950/80 p-3 sm:p-6 backdrop-blur-md animate-fade-in"
             dir="rtl"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={handleKeyDown}
+            onClick={() => setIsOpen(false)}
           >
-            {/* Search Input Bar */}
-            <div className="flex items-center gap-3 border-b border-slate-800 bg-slate-950 px-4 py-3.5">
-              <span className="text-lg text-cyan-400">🔍</span>
-              <input
-                ref={inputRef}
-                type="text"
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setSelectedIndex(0);
-                }}
-                placeholder="ابحث برقم الطلب (PR)، أمر الشراء (PO)، اسم المورد، رقم قطعة الأرض..."
-                className="w-full bg-transparent text-sm font-bold text-slate-100 placeholder-slate-500 focus:outline-none"
-              />
-              {query && (
-                <button
-                  type="button"
-                  onClick={() => setQuery('')}
-                  className="text-xs font-bold text-slate-500 hover:text-slate-300"
-                >
-                  مسح
-                </button>
-              )}
-              <kbd className="hidden sm:inline-block rounded bg-slate-800 px-2 py-1 font-mono text-[10px] text-slate-400 border border-slate-700">
-                ESC للإغلاق
-              </kbd>
-            </div>
-
-            {/* Category Filter Chips */}
-            <div className="flex items-center gap-1.5 overflow-x-auto border-b border-slate-800/80 bg-slate-950/50 px-4 py-2 text-xs">
-              {(
-                [
-                  { key: 'ALL', label: 'الكل' },
-                  { key: 'PR', label: '📋 طلبات الشراء' },
-                  { key: 'PO', label: '📑 أوامر الشراء' },
-                  { key: 'SUPPLIER', label: '🏢 الموردين' },
-                  { key: 'PARCEL', label: '📍 قطع الأراضي' },
-                  { key: 'PAGE', label: '⚡ الصفحات' },
-                ] as { key: SearchCategory; label: string }[]
-              ).map((cat) => (
-                <button
-                  key={cat.key}
-                  type="button"
-                  onClick={() => {
-                    setActiveCategory(cat.key);
+            <div
+              className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl shadow-black/80 mt-6 sm:mt-12 flex flex-col max-h-[85vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Search Input Bar */}
+              <div className="flex items-center gap-3 border-b border-slate-800 bg-slate-950 px-4 py-3.5">
+                <svg className="h-5 w-5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
                     setSelectedIndex(0);
                   }}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-bold whitespace-nowrap transition-all ${
-                    activeCategory === cat.key
-                      ? 'bg-cyan-950 text-cyan-300 border border-cyan-700/80 shadow'
+                  onKeyDown={handleKeyDown}
+                  placeholder="ابحث برقم الطلب، اسم الصنف، المورد، أو اسم الصفحة..."
+                  className="w-full bg-transparent text-sm text-slate-100 placeholder-slate-500 focus:outline-none"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery('')}
+                    className="text-xs text-slate-500 hover:text-slate-300 font-bold px-1"
+                  >
+                    مسح
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-xs font-bold text-slate-300 hover:bg-rose-950/40 hover:text-rose-300 hover:border-rose-500/50 transition-colors cursor-pointer"
+                  title="إغلاق البحث"
+                >
+                  <span>✕</span>
+                  <span className="text-[11px] hidden sm:inline">إغلاق</span>
+                </button>
+              </div>
+
+              {/* Category Filter Pills (Strictly Role-Aware) */}
+              <div className="flex items-center gap-1.5 border-b border-slate-800/80 bg-slate-950/50 px-4 py-2 overflow-x-auto text-xs">
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory('ALL')}
+                  className={`rounded-lg px-2.5 py-1 font-bold transition-colors cursor-pointer ${
+                    activeCategory === 'ALL'
+                      ? 'bg-cyan-600 text-white shadow-sm'
                       : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                   }`}
                 >
-                  {cat.label}
+                  الكل
                 </button>
-              ))}
-            </div>
-
-            {/* Results List */}
-            <div className="max-h-[60vh] overflow-y-auto p-2 space-y-1">
-              {loading && searchResults.length === 0 ? (
-                <div className="py-10 text-center text-xs font-bold text-cyan-300 animate-pulse">
-                  جاري تحميل وفهرسة البيانات...
-                </div>
-              ) : searchResults.length === 0 ? (
-                <div className="py-12 text-center text-xs text-slate-500">
-                  <span className="block text-2xl mb-2">🔎</span>
-                  لا توجد نتائج مطابقة لـ &quot;<strong className="text-slate-300">{query}</strong>&quot;
-                </div>
-              ) : (
-                searchResults.map((item, index) => (
-                  <div
-                    key={item.id}
-                    onClick={() => handleSelect(item)}
-                    onMouseEnter={() => setSelectedIndex(index)}
-                    className={`flex items-center justify-between gap-3 rounded-xl p-3 cursor-pointer transition-all ${
-                      selectedIndex === index
-                        ? 'bg-cyan-950/60 border border-cyan-800/80 shadow-md text-slate-100'
-                        : 'hover:bg-slate-800/60 border border-transparent text-slate-300'
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory('PR')}
+                  className={`rounded-lg px-2.5 py-1 font-bold transition-colors cursor-pointer ${
+                    activeCategory === 'PR'
+                      ? 'bg-cyan-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                  }`}
+                >
+                  طلبات الشراء
+                </button>
+                {(isProcurementRole || hasPermission(user, 'purchase_orders.view')) && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('PO')}
+                    className={`rounded-lg px-2.5 py-1 font-bold transition-colors cursor-pointer ${
+                      activeCategory === 'PO'
+                        ? 'bg-cyan-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                     }`}
                   >
-                    <div className="flex items-start gap-3 min-w-0">
-                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-xs font-bold text-cyan-300 border border-slate-700">
-                        {item.type === 'PR' ? '📋' : item.type === 'PO' ? '📑' : item.type === 'SUPPLIER' ? '🏢' : item.type === 'PARCEL' ? '📍' : '⚡'}
-                      </span>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-black truncate">{item.title}</span>
-                          <span className="rounded bg-slate-800 px-1.5 py-0.2 text-[9px] font-bold text-slate-400 shrink-0">
+                    أوامر الشراء
+                  </button>
+                )}
+                {isFinancialRole && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('SUPPLIER')}
+                    className={`rounded-lg px-2.5 py-1 font-bold transition-colors cursor-pointer ${
+                      activeCategory === 'SUPPLIER'
+                        ? 'bg-cyan-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                    }`}
+                  >
+                    الموردين
+                  </button>
+                )}
+                {(isFinancialRole || isGmRole) && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('PARCEL')}
+                    className={`rounded-lg px-2.5 py-1 font-bold transition-colors cursor-pointer ${
+                      activeCategory === 'PARCEL'
+                        ? 'bg-cyan-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                    }`}
+                  >
+                    قطع الأراضي
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory('PAGE')}
+                  className={`rounded-lg px-2.5 py-1 font-bold transition-colors cursor-pointer ${
+                    activeCategory === 'PAGE'
+                      ? 'bg-cyan-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                  }`}
+                >
+                  الصفحات
+                </button>
+              </div>
+
+              {/* Search Results List */}
+              <div className="flex-1 overflow-y-auto p-2 divide-y divide-slate-800/50">
+                {loading && !hasFetched ? (
+                  <div className="p-8 text-center text-xs text-slate-400 animate-pulse">
+                    جاري تحميل محرك البحث الذكي...
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  searchResults.map((item, index) => {
+                    const isSelected = index === selectedIndex;
+                    const canPeek = item.type === 'PR' || item.type === 'PO';
+
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => handleSelectResult(item)}
+                        onMouseEnter={() => setSelectedIndex(index)}
+                        className={`group flex items-center justify-between gap-3 p-3 rounded-xl transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-cyan-950/40 border border-cyan-500/40 text-cyan-200'
+                            : 'hover:bg-slate-800/60 text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3 min-w-0">
+                          <span
+                            className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              item.type === 'PR'
+                                ? 'bg-cyan-950 text-cyan-300 border border-cyan-800/60'
+                                : item.type === 'PO'
+                                ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/60'
+                                : item.type === 'SUPPLIER'
+                                ? 'bg-amber-950 text-amber-300 border border-amber-800/60'
+                                : item.type === 'PARCEL'
+                                ? 'bg-sky-950 text-sky-300 border border-sky-800/60'
+                                : 'bg-slate-800 text-slate-300 border border-slate-700'
+                            }`}
+                          >
                             {item.categoryLabel}
                           </span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-xs font-bold text-slate-100 truncate">{item.title}</p>
+                              {item.meta && (
+                                <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-mono">
+                                  {item.meta}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-400 truncate mt-0.5">{item.subtitle}</p>
+                          </div>
                         </div>
-                        <p className="mt-0.5 text-[11px] text-slate-400 truncate leading-relaxed">
-                          {item.subtitle}
-                        </p>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          {item.badge && (
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${item.badgeColor || 'bg-slate-800 text-slate-400'}`}>
+                              {item.badge}
+                            </span>
+                          )}
+
+                          {canPeek && (
+                            <button
+                              type="button"
+                              onClick={(e) => handlePeek(e, item)}
+                              className="hidden group-hover:flex items-center gap-1 rounded-lg border border-cyan-800/60 bg-cyan-950/40 px-2 py-1 text-[11px] font-bold text-cyan-300 hover:bg-cyan-900/60 transition-colors"
+                              title="معاينة سريعة دون مغادرة الصفحة"
+                            >
+                              <span>👁️</span>
+                              <span>معاينة</span>
+                            </button>
+                          )}
+
+                          <span className="text-slate-500 group-hover:text-cyan-400 text-xs">←</span>
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      {(item.type === 'PR' || item.type === 'PO') && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const rawId = parseInt(item.id.replace(/^[a-z]+-/, ''), 10);
-                            setPeekState({
-                              isOpen: true,
-                              type: item.type as PeekType,
-                              id: rawId,
-                            });
-                          }}
-                          title="معاينة سريعة"
-                          className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] font-bold text-cyan-300 hover:bg-slate-800 hover:border-cyan-500 transition-colors flex items-center gap-1"
-                        >
-                          <span>👁️</span>
-                          <span className="hidden sm:inline">معاينة</span>
-                        </button>
-                      )}
-                      {item.badge && (
-                        <span className={`rounded-md px-2 py-0.5 text-[10px] font-black ${item.badgeColor || 'bg-slate-800 text-slate-300'}`}>
-                          {item.badge}
-                        </span>
-                      )}
-                      <span className="text-xs text-slate-500 font-bold">↵</span>
-                    </div>
+                    );
+                  })
+                ) : (
+                  <div className="p-8 text-center text-xs text-slate-500">
+                    <span className="text-2xl block mb-2">🔍</span>
+                    لا توجد نتائج مطابقة لبحثك «{query}»
                   </div>
-                ))
-              )}
-            </div>
-
-            {/* Footer Hints */}
-            <div className="flex items-center justify-between border-t border-slate-800 bg-slate-950 px-4 py-2 text-[10px] text-slate-500">
-              <div className="flex items-center gap-3">
-                <span>استخدم <kbd className="rounded bg-slate-800 px-1 font-mono">↑</kbd> <kbd className="rounded bg-slate-800 px-1 font-mono">↓</kbd> للتنقل</span>
-                <span><kbd className="rounded bg-slate-800 px-1 font-mono">Enter</kbd> للاختيار</span>
-                <span><kbd className="rounded bg-slate-800 px-1 font-mono">ESC</kbd> للإغلاق</span>
+                )}
               </div>
-              <span className="text-cyan-400 font-bold">{searchResults.length} نتيجة</span>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
 
-      {/* Quick Peek Slide-over Drawer */}
+              {/* Footer Helper */}
+              <div className="border-t border-slate-800 bg-slate-950/80 px-4 py-2.5 flex items-center justify-between text-[11px] text-slate-500">
+                <div className="flex items-center gap-3">
+                  <span>
+                    <kbd className="font-mono bg-slate-800 px-1 rounded border border-slate-700">↑↓</kbd> للتنقل
+                  </span>
+                  <span>
+                    <kbd className="font-mono bg-slate-800 px-1 rounded border border-slate-700">Enter</kbd> للفتح
+                  </span>
+                  <span>
+                    <kbd className="font-mono bg-slate-800 px-1 rounded border border-slate-700">ESC</kbd> للإغلاق
+                  </span>
+                </div>
+                <span>نظام البحث الذكي المفلتر حسب الدور</span>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* Quick Peek Drawer Integration */}
       <QuickPeekDrawer
         isOpen={peekState.isOpen}
         onClose={() => setPeekState((prev) => ({ ...prev, isOpen: false }))}

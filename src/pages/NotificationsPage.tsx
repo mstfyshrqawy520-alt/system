@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   getNotificationsApi,
@@ -8,7 +8,7 @@ import {
 } from '../api/notifications';
 import { Notification } from '../types/notification';
 import ErrorMessage from '../components/ErrorMessage';
-import { TableSkeleton, EmptyState } from '../components/ui/StateFeedback';
+import { TableSkeleton } from '../components/ui/StateFeedback';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -17,205 +17,78 @@ import { PushNotificationPrompt } from '../components/notifications/PushNotifica
 import { getPrimaryRoleSlug, AppRoleSlug } from '../routes/roleRouting';
 import { resolveNotificationAction } from '../utils/notificationRouting';
 
-interface RoleTabConfig {
-  key: string;
-  label: string;
-  match: (n: Notification) => boolean;
+export type NotificationActionStatus = 'needs_action' | 'opened' | 'resolved' | 'archived';
+
+interface StoredActionState {
+  status: NotificationActionStatus;
+  updatedAt: string;
 }
-
-const getRoleTabs = (role: AppRoleSlug | null): RoleTabConfig[] => {
-  const commonUnread: RoleTabConfig = {
-    key: 'UNREAD',
-    label: '📬 غير المقروءة',
-    match: (n) => !n.read_at,
-  };
-
-  const commonAll: RoleTabConfig = {
-    key: 'ALL',
-    label: '📁 كل الإشعارات',
-    match: () => true,
-  };
-
-  switch (role) {
-    case 'general_manager':
-      return [
-        commonUnread,
-        {
-          key: 'GM_QUOTES',
-          label: '⚖️ قرارات عروض الأسعار',
-          match: (n) => Boolean(n.type?.includes('quote') || n.type?.includes('recommendation')),
-        },
-        {
-          key: 'GM_APPROVALS',
-          label: '✅ طلبات القرار التنفيذي',
-          match: (n) => Boolean(n.type?.includes('purchase_request') || n.type?.includes('executive')),
-        },
-        {
-          key: 'GM_ORDERS',
-          label: '📋 أوامر الشراء الصادرة',
-          match: (n) => Boolean(n.type?.includes('purchase_order') || n.type?.includes('po_')),
-        },
-        {
-          key: 'GM_PARCELS',
-          label: '🏗️ مشاريع وقطع الأراضي',
-          match: (n) => Boolean(n.type?.includes('parcel') || (n.data as any)?.item_reference || (n.data as any)?.region),
-        },
-        commonAll,
-      ];
-
-    case 'accountant':
-      return [
-        commonUnread,
-        {
-          key: 'ACC_INVOICES',
-          label: '💳 فواتير ودفعات الموردين',
-          match: (n) => Boolean(n.type?.includes('invoice') || n.type?.includes('payment') || n.type?.includes('receipt')),
-        },
-        {
-          key: 'ACC_ORDERS',
-          label: '📋 أوامر الشراء للحسابات',
-          match: (n) => Boolean(n.type?.includes('purchase_order') || n.type?.includes('po_')),
-        },
-        {
-          key: 'ACC_PRS',
-          label: '✅ موافقات الطلبات المالية',
-          match: (n) => Boolean(n.type?.includes('purchase_request') || n.type?.includes('accounting')),
-        },
-        {
-          key: 'ACC_PARCELS',
-          label: '🏗️ قطع الأراضي والتمويل',
-          match: (n) => Boolean(n.type?.includes('parcel') || n.type?.includes('fund')),
-        },
-        commonAll,
-      ];
-
-    case 'procurement_manager':
-      return [
-        commonUnread,
-        {
-          key: 'PROC_PRS',
-          label: '📋 طلبات الشراء المعتمدة',
-          match: (n) => Boolean(n.type?.includes('purchase_request') || n.type?.includes('pr_')),
-        },
-        {
-          key: 'PROC_QUOTES',
-          label: '📑 عروض الأسعار',
-          match: (n) => Boolean(n.type?.includes('quote') || n.type?.includes('recommendation')),
-        },
-        {
-          key: 'PROC_ORDERS',
-          label: '📦 أوامر الشراء الصادرة',
-          match: (n) => Boolean(n.type?.includes('purchase_order') || n.type?.includes('po_')),
-        },
-        {
-          key: 'PROC_RECEIPTS',
-          label: '🚚 أذونات الاستلام والتوريد',
-          match: (n) => Boolean(n.type?.includes('receipt') || n.type?.includes('warehouse')),
-        },
-        commonAll,
-      ];
-
-    case 'reviewer':
-      return [
-        commonUnread,
-        {
-          key: 'REV_PENDING',
-          label: '📋 طلبات بانتظار مراجعتي',
-          match: (n) => Boolean(n.type?.includes('purchase_request') || n.type?.includes('submitted')),
-        },
-        {
-          key: 'REV_QUOTES',
-          label: '💰 ترشيح عروض الأسعار',
-          match: (n) => Boolean(n.type?.includes('quote') || n.type?.includes('recommendation')),
-        },
-        {
-          key: 'REV_APPROVED',
-          label: '✅ طلبات قسمي المعتمدة',
-          match: (n) => Boolean(n.type?.includes('approved') || n.type?.includes('reviewer')),
-        },
-        commonAll,
-      ];
-
-    case 'site_engineer':
-      return [
-        commonUnread,
-        {
-          key: 'SITE_RECEIPTS',
-          label: '🧰 اعتمادات استلام الموقع',
-          match: (n) => Boolean(n.type?.includes('receipt') || n.type?.includes('site') || n.type?.includes('warehouse')),
-        },
-        {
-          key: 'SITE_PRS',
-          label: '📋 طلبات مشروعي وموقعي',
-          match: (n) => Boolean(n.type?.includes('purchase_request') || n.type?.includes('pr_')),
-        },
-        {
-          key: 'SITE_MATERIALS',
-          label: '📦 المواد الواردة للموقع',
-          match: (n) => Boolean(n.type?.includes('purchase_order') || n.type?.includes('receipt')),
-        },
-        commonAll,
-      ];
-
-    case 'warehouse_keeper':
-      return [
-        commonUnread,
-        {
-          key: 'WH_RECEIPTS',
-          label: '📦 أذونات فحص واستلام المواد',
-          match: (n) => Boolean(n.type?.includes('receipt') || n.type?.includes('warehouse')),
-        },
-        {
-          key: 'WH_INCOMING',
-          label: '🚚 أوامر الشراء المتوقعة',
-          match: (n) => Boolean(n.type?.includes('purchase_order') || n.type?.includes('po_')),
-        },
-        commonAll,
-      ];
-
-    case 'employee':
-    default:
-      return [
-        commonUnread,
-        {
-          key: 'EMP_UNDER_REVIEW',
-          label: '📋 طلباتي قيد المراجعة',
-          match: (n) => Boolean(n.type?.includes('purchase_request') || n.type?.includes('submitted') || n.type?.includes('review')),
-        },
-        {
-          key: 'EMP_APPROVED',
-          label: '✅ طلباتي المعتمدة',
-          match: (n) => Boolean(n.type?.includes('approved') || n.type?.includes('reviewer')),
-        },
-        {
-          key: 'EMP_ORDERS',
-          label: '📦 أوامر الشراء الصادرة لطلباتي',
-          match: (n) => Boolean(n.type?.includes('purchase_order') || n.type?.includes('po_') || n.type?.includes('receipt')),
-        },
-        commonAll,
-      ];
-  }
-};
 
 export const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const primaryRole = getPrimaryRoleSlug(user);
-  const roleTabs = React.useMemo(() => getRoleTabs(primaryRole), [primaryRole]);
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [activeTab, setActiveTab] = useState<string>('UNREAD');
+  const [activeTab, setActiveTab] = useState<'NEEDS_ACTION' | 'OPENED' | 'RESOLVED' | 'ALL'>('NEEDS_ACTION');
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [markingAll, setMarkingAll] = useState<boolean>(false);
-  const [markingId, setMarkingId] = useState<number | null>(null);
-  const [openingId, setOpeningId] = useState<number | null>(null);
-  const requestVersion = useRef(0);
-  const realtimeNotificationIds = useRef(new Set<number>());
+  const [actionStates, setActionStates] = useState<Record<number, StoredActionState>>({});
+
+  const storageKey = `ashbiliya_notif_states_${user?.id || 'guest'}`;
+
+  // Load action states from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        setActionStates(JSON.parse(saved));
+      }
+    } catch {
+      // ignore
+    }
+  }, [storageKey]);
+
+  const saveActionState = (id: number, status: NotificationActionStatus) => {
+    setActionStates((prev) => {
+      const updated = {
+        ...prev,
+        [id]: { status, updatedAt: new Date().toISOString() },
+      };
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
+  };
+
+  // Helper to determine item action status
+  const getItemStatus = (notification: Notification): NotificationActionStatus => {
+    if (actionStates[notification.id]) {
+      return actionStates[notification.id].status;
+    }
+
+    // Default determination
+    const action = resolveNotificationAction(notification, user);
+    const isActionableType =
+      notification.type?.includes('submitted') ||
+      notification.type?.includes('pending') ||
+      notification.type?.includes('review') ||
+      notification.type?.includes('quote') ||
+      notification.type?.includes('approval');
+
+    if (isActionableType) {
+      return notification.read_at ? 'opened' : 'needs_action';
+    }
+
+    return notification.read_at ? 'archived' : 'opened';
+  };
 
   const loadNotificationsData = async () => {
-    const currentVersion = ++requestVersion.current;
     setLoading(true);
     setError(null);
     try {
@@ -223,104 +96,96 @@ export const NotificationsPage: React.FC = () => {
         getNotificationsApi(),
         getUnreadNotificationCountApi().catch(() => undefined),
       ]);
-      if (currentVersion !== requestVersion.current) return;
-      const nextNotifications = data || [];
-      nextNotifications.forEach((notification) => realtimeNotificationIds.current.add(notification.id));
-      setNotifications(nextNotifications);
-      const calculatedUnread = nextNotifications.filter((n) => !n.read_at).length;
+      const list = data || [];
+      setNotifications(list);
+      const calculatedUnread = list.filter((n) => !n.read_at).length;
       setUnreadCount(count !== undefined ? count : calculatedUnread);
     } catch (err: any) {
-      if (currentVersion !== requestVersion.current) return;
       const parsed = parseApiError(err);
       setError(parsed.message);
     } finally {
-      if (currentVersion === requestVersion.current) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadNotificationsData();
+    void loadNotificationsData();
 
     const handleRealtimeNotification = (event: Event) => {
       const notification = (event as CustomEvent<Notification>).detail;
-      if (!notification || realtimeNotificationIds.current.has(notification.id)) return;
-      realtimeNotificationIds.current.add(notification.id);
-      setNotifications((current) => [notification, ...current]);
+      if (!notification) return;
+      setNotifications((current) => [notification, ...current.filter((n) => n.id !== notification.id)]);
       if (!notification.read_at) setUnreadCount((current) => current + 1);
     };
 
-    const handleNotificationsMarkedAll = () => {
-      const readAt = new Date().toISOString();
-      setNotifications((current) =>
-        current.map((notification) => ({ ...notification, read_at: notification.read_at || readAt })),
-      );
-      setUnreadCount(0);
+    const handleNotificationsUpdated = () => {
+      void loadNotificationsData();
     };
 
     window.addEventListener('notification-received', handleRealtimeNotification as EventListener);
-    window.addEventListener('notifications-marked-all', handleNotificationsMarkedAll);
+    window.addEventListener('notifications-updated', handleNotificationsUpdated);
     return () => {
       window.removeEventListener('notification-received', handleRealtimeNotification as EventListener);
-      window.removeEventListener('notifications-marked-all', handleNotificationsMarkedAll);
+      window.removeEventListener('notifications-updated', handleNotificationsUpdated);
     };
   }, []);
 
-  const getTargetRoute = (notification: Notification & { data?: any; target_url?: string }): string | null => {
-    return resolveNotificationAction(notification, user).url;
+  const handleNotificationClick = async (notification: Notification) => {
+    const { url } = resolveNotificationAction(notification, user);
+
+    // Mark read
+    if (!notification.read_at) {
+      try {
+        await markNotificationAsReadApi(notification.id);
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n))
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+        window.dispatchEvent(new CustomEvent('notifications-updated'));
+      } catch (err) {
+        console.error('Failed to mark notification as read:', err);
+      }
+    }
+
+    // Set opened status if was needs_action
+    if (getItemStatus(notification) === 'needs_action') {
+      saveActionState(notification.id, 'opened');
+    }
+
+    navigate(url);
   };
 
-  const handleNotificationClick = async (notification: Notification) => {
-    const route = getTargetRoute(notification);
-    if (!route || openingId === notification.id) return;
-    setOpeningId(notification.id);
-    try {
-      if (!notification.read_at) {
-        try {
-          await markNotificationAsReadApi(notification.id);
-          // Permanently remove the opened notification from the active list
-          setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
-          setUnreadCount((prev) => Math.max(0, prev - 1));
-          window.dispatchEvent(new CustomEvent('notifications-updated'));
-        } catch (err) {
-          console.error('Failed to mark notification as read:', err);
-        }
-      }
-      navigate(route);
-    } finally {
-      setOpeningId(null);
+  const handleMarkResolved = (e: React.MouseEvent, notification: Notification) => {
+    e.stopPropagation();
+    saveActionState(notification.id, 'resolved');
+    if (!notification.read_at) {
+      void markNotificationAsReadApi(notification.id).catch(() => {});
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     }
   };
 
-  const handleMarkAsRead = async (e: React.MouseEvent, notification: Notification) => {
+  const handleArchive = (e: React.MouseEvent, notification: Notification) => {
     e.stopPropagation();
-    if (notification.read_at) return;
-
-    setMarkingId(notification.id);
-    try {
-      await markNotificationAsReadApi(notification.id);
-      // Remove immediately from active view
-      setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
+    saveActionState(notification.id, 'archived');
+    if (!notification.read_at) {
+      void markNotificationAsReadApi(notification.id).catch(() => {});
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n))
+      );
       setUnreadCount((prev) => Math.max(0, prev - 1));
-      window.dispatchEvent(new CustomEvent('notifications-updated'));
-    } catch (err: any) {
-      const parsed = parseApiError(err);
-      setError(parsed.message);
-    } finally {
-      setMarkingId(null);
     }
   };
 
   const handleMarkAllAsRead = async () => {
     if (unreadCount === 0) return;
     setMarkingAll(true);
-    setError(null);
     try {
       await markAllNotificationsAsReadApi();
-      window.dispatchEvent(new CustomEvent('notifications-marked-all'));
-      // Clear all active notifications immediately
-      setNotifications([]);
+      const readAt = new Date().toISOString();
+      setNotifications((prev) => prev.map((n) => ({ ...n, read_at: n.read_at || readAt })));
       setUnreadCount(0);
       window.dispatchEvent(new CustomEvent('notifications-updated'));
     } catch (err: any) {
@@ -331,42 +196,43 @@ export const NotificationsPage: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString?: string | null) => {
-    if (!dateString) return '-';
-    try {
-      const date = new Date(dateString);
-      return new Intl.DateTimeFormat('ar-EG', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }).format(date);
-    } catch {
-      return dateString;
+  // Group notifications by action status
+  const groupedNotifications = useMemo(() => {
+    const needsAction: Notification[] = [];
+    const opened: Notification[] = [];
+    const resolved: Notification[] = [];
+    const all: Notification[] = notifications;
+
+    notifications.forEach((n) => {
+      const status = getItemStatus(n);
+      if (status === 'needs_action') needsAction.push(n);
+      else if (status === 'opened') opened.push(n);
+      else if (status === 'resolved') resolved.push(n);
+    });
+
+    return { needsAction, opened, resolved, all };
+  }, [notifications, actionStates]);
+
+  const displayedList = useMemo(() => {
+    switch (activeTab) {
+      case 'NEEDS_ACTION':
+        return groupedNotifications.needsAction;
+      case 'OPENED':
+        return groupedNotifications.opened;
+      case 'RESOLVED':
+        return groupedNotifications.resolved;
+      case 'ALL':
+      default:
+        return groupedNotifications.all;
     }
-  };
-
-  const getNotificationActionLabel = (notification: Notification): string | null => {
-    if (!getTargetRoute(notification)) return null;
-    if (notification.data?.purchase_order_id && notification.data?.purchase_receipt_id) return 'فتح أمر الشراء وإذن الاستلام';
-    if (notification.type?.includes('quote') || notification.type?.includes('recommendation')) return 'فتح عروض الأسعار';
-    if (notification.type?.includes('purchase_order')) return 'فتح أمر الشراء';
-    if (notification.type?.includes('purchase_request')) return 'فتح طلب الشراء';
-    return 'فتح الإجراء';
-  };
-
-  const currentTabConfig = roleTabs.find((t) => t.key === activeTab) || roleTabs[0];
-
-  const unreadNotifications = notifications.filter((n) => !n.read_at);
-  const displayedNotifications = notifications.filter((n) => currentTabConfig.match(n));
+  }, [activeTab, groupedNotifications]);
 
   if (loading) {
     return (
       <div className="space-y-6" dir="rtl">
         <div className="border-b border-slate-800 pb-4">
-          <div className="h-7 w-40 animate-pulse rounded bg-slate-800" />
-          <div className="mt-3 h-4 w-72 animate-pulse rounded bg-slate-800/70" />
+          <div className="h-7 w-48 animate-pulse rounded-lg bg-slate-800" />
+          <div className="mt-3 h-4 w-72 animate-pulse rounded-lg bg-slate-800/70" />
         </div>
         <TableSkeleton rows={6} columns={3} />
       </div>
@@ -378,220 +244,235 @@ export const NotificationsPage: React.FC = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
-          <div className="flex items-center space-x-3 space-x-reverse">
-            <h1 className="text-2xl font-black text-slate-100 tracking-tight">الإشعارات والتنبيهات</h1>
-            {unreadCount > 0 && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-950 text-cyan-400 border border-cyan-800/60 shadow-sm">
-                {`${unreadCount} غير مقروء`}
-              </span>
-            )}
-          </div>
-          <p className="mt-1 text-xs text-slate-400 font-medium">
-            تنبيهات وإشعارات دورة المشتريات والاعتمادات المالية والتشغيلية المباشرة المخصصة لدورك.
+          <h1 className="text-xl sm:text-2xl font-black text-slate-100 flex items-center gap-2">
+            <span>🔔</span>
+            <span>مركز الإشعارات والقرارات التنفيذية</span>
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">
+            متابعة حالة الإجراءات والقرارات المطلوبة مع الفصل التام بين الاطلاع وإنجاز الإجراء.
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           {unreadCount > 0 && (
             <Button
-              variant="secondary"
+              variant="outline"
               size="sm"
-              disabled={markingAll}
               onClick={handleMarkAllAsRead}
-              className="bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 text-xs font-bold"
+              isLoading={markingAll}
+              className="text-xs"
             >
-              <span>✓✓</span>
-              <span>{markingAll ? 'جاري التحديد...' : 'تحديد الكل كمقروء'}</span>
+              تحديد الكل كمقروء ({unreadCount})
             </Button>
           )}
-
           <Button
             variant="secondary"
             size="sm"
             onClick={loadNotificationsData}
-            className="bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 text-xs font-bold"
+            className="text-xs"
           >
-            <span>🔄</span>
-            <span>تحديث</span>
+            🔄 تحديث
           </Button>
         </div>
       </div>
 
-      {/* Smart Role-tailored Category Tabs Bar */}
-      <div className="flex items-center gap-1.5 overflow-x-auto rounded-xl bg-slate-950 p-1.5 border border-slate-800/80">
-        {roleTabs.map((tab) => {
-          const tabCount = notifications.filter((n) => tab.match(n)).length;
-          const isActive = activeTab === tab.key;
+      {error && <ErrorMessage error={error} />}
 
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-                isActive
-                  ? 'bg-cyan-600 text-white shadow'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-              }`}
-            >
-              <span>{tab.label}</span>
-              {tab.key === 'UNREAD' ? (
-                unreadNotifications.length > 0 && (
-                  <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                      isActive ? 'bg-white/20 text-white' : 'bg-cyan-950 text-cyan-400 border border-cyan-800/60'
-                    }`}
-                  >
-                    {unreadNotifications.length}
-                  </span>
-                )
-              ) : (
-                <span className="text-[10px] opacity-70 font-mono">({tabCount})</span>
-              )}
-            </button>
-          );
-        })}
+      {/* Push Notification Device Settings Prompt */}
+      <PushNotificationPrompt variant="card" />
+
+      {/* Status Tabs Bar */}
+      <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-800 pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab('NEEDS_ACTION')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition-all cursor-pointer ${
+            activeTab === 'NEEDS_ACTION'
+              ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/40'
+              : 'bg-slate-900/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800'
+          }`}
+        >
+          <span>⚡ مطلوب إجراء منك</span>
+          <span
+            className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+              activeTab === 'NEEDS_ACTION'
+                ? 'bg-slate-950/80 text-cyan-300'
+                : groupedNotifications.needsAction.length > 0
+                ? 'bg-rose-500 text-white animate-pulse'
+                : 'bg-slate-800 text-slate-400'
+            }`}
+          >
+            {groupedNotifications.needsAction.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('OPENED')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+            activeTab === 'OPENED'
+              ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/40'
+              : 'bg-slate-900/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800'
+          }`}
+        >
+          <span>👁️ قيد المتابعة والاطلاع</span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300">
+            {groupedNotifications.opened.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('RESOLVED')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+            activeTab === 'RESOLVED'
+              ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/40'
+              : 'bg-slate-900/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800'
+          }`}
+        >
+          <span>✅ تم اتخاذ الإجراء (منجزة)</span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800/60">
+            {groupedNotifications.resolved.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('ALL')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+            activeTab === 'ALL'
+              ? 'bg-slate-700 text-white shadow-lg'
+              : 'bg-slate-900/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800'
+          }`}
+        >
+          <span>🗄️ الأرشيف والسجل الكامل</span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-400">
+            {groupedNotifications.all.length}
+          </span>
+        </button>
       </div>
-
-      {/* Push Notification PWA Activation Prompt */}
-      <PushNotificationPrompt variant="banner" />
-
-      {/* Error State */}
-      {error && (
-        <div className="space-y-3">
-          <ErrorMessage error={error} onDismiss={() => setError(null)} />
-          <Button variant="primary" size="sm" onClick={loadNotificationsData} className="w-full sm:w-auto min-h-10">
-            إعادة المحاولة
-          </Button>
-        </div>
-      )}
-
-      {/* Empty State when no notifications exist at all */}
-      {!error && notifications.length === 0 && (
-        <EmptyState
-          title="لا توجد إشعارات حالياً"
-          description="ستظهر هنا أي تنبيهات وإشعارات جديدة فور ورودها"
-          icon="🔔"
-        />
-      )}
-
-      {/* Empty State for Unread when there are notifications in archive */}
-      {!error && notifications.length > 0 && activeTab === 'UNREAD' && unreadNotifications.length === 0 && (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-12 text-center space-y-4">
-          <span className="text-4xl block">🎉</span>
-          <h3 className="text-base font-bold text-slate-100">تم الاطلاع على جميع الإشعارات!</h3>
-          <p className="text-xs text-slate-400 max-w-md mx-auto leading-6">
-            لا توجد إشعارات غير مقروءة حالياً. يمكنك التبديل إلى تبويب «كل الإشعارات» لمراجعة السجل السابق في أي وقت.
-          </p>
-          <Button variant="secondary" size="sm" onClick={() => setActiveTab('ALL')}>
-            📁 عرض أرشيف كافة الإشعارات ({notifications.length})
-          </Button>
-        </div>
-      )}
 
       {/* Notifications List */}
-      {!error && displayedNotifications.length > 0 && (
+      {displayedList.length > 0 ? (
         <div className="space-y-3">
-          {displayedNotifications.map((notif) => {
-            const isUnread = !notif.read_at;
-            const route = getTargetRoute(notif);
-            const hasRoute = !!route;
-            const actionLabel = getNotificationActionLabel(notif);
+          {displayedList.map((notification) => {
+            const action = resolveNotificationAction(notification, user);
+            const status = getItemStatus(notification);
+            const isUnread = !notification.read_at;
 
             return (
               <Card
-                key={notif.id}
-                onClick={() => {
-                  if (route) void handleNotificationClick(notif);
-                }}
-                className={`p-4 transition-all duration-200 ${
-                  hasRoute ? 'cursor-pointer hover:border-cyan-700/80 hover:bg-slate-800/80' : 'cursor-default'
-                } ${
-                  isUnread
-                    ? 'bg-slate-800/90 border-slate-700/90 shadow-md shadow-cyan-500/5'
-                    : 'bg-slate-900/50 border-slate-800/80 opacity-80'
+                key={notification.id}
+                onClick={() => handleNotificationClick(notification)}
+                className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all border ${
+                  status === 'needs_action'
+                    ? 'border-cyan-500/70 bg-gradient-to-r from-slate-900 via-slate-900/95 to-cyan-950/20 shadow-lg shadow-cyan-950/30'
+                    : status === 'resolved'
+                    ? 'border-emerald-800/60 bg-slate-900/70'
+                    : 'border-slate-800 bg-slate-900/80'
                 }`}
               >
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                  <div className="flex items-start space-x-3 space-x-reverse min-w-0">
-                    <span
-                      className={`mt-1.5 h-2.5 w-2.5 rounded-full shrink-0 ${
-                        isUnread ? 'bg-cyan-400 shadow-sm shadow-cyan-400/50 animate-pulse' : 'bg-slate-700'
-                      }`}
-                    />
+                <div className="flex items-start gap-3.5 min-w-0">
+                  <div
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl border shadow-inner ${
+                      status === 'needs_action'
+                        ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
+                        : status === 'resolved'
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40'
+                        : 'bg-slate-800 text-slate-400 border-slate-700'
+                    }`}
+                  >
+                    {action.icon}
+                  </div>
 
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4
-                          className={`text-xs ${
-                            isUnread ? 'font-bold text-slate-100' : 'font-medium text-slate-300'
-                          }`}
-                        >
-                          {notif.title}
-                        </h4>
-                        {isUnread ? (
-                          <span className="rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 px-2 py-0.5 text-[10px] font-bold">
-                            جديد
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-slate-800 text-slate-400 px-2 py-0.5 text-[10px]">
-                            تمت القراءة
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-1 text-xs text-slate-400 leading-relaxed break-normal">
-                        {notif.message}
-                      </p>
-                      {notif.data?.purchase_order_id && notif.data?.purchase_receipt_id && (
-                        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-bold">
-                          <span className="rounded-md border border-cyan-800/70 bg-cyan-950/40 px-2 py-1 text-cyan-200">
-                            أمر الشراء رقم {notif.data.purchase_order_id}
-                          </span>
-                          <span className="rounded-md border border-amber-800/70 bg-amber-950/40 px-2 py-1 text-amber-200">
-                            إذن الاستلام رقم {notif.data.purchase_receipt_id}
-                          </span>
-                          <span className="text-slate-500">اضغط لعرض أمر الشراء وإذن الاستلام معًا</span>
-                        </div>
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-bold text-slate-100">{notification.title}</h3>
+                      {status === 'needs_action' && (
+                        <span className="rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 px-2 py-0.5 text-[10px] font-black">
+                          ⚡ يتطلب قرارك
+                        </span>
                       )}
-                      <div className="mt-2 text-[10px] text-slate-500 font-mono">
-                        {formatDate(notif.created_at)}
-                      </div>
+                      {status === 'resolved' && (
+                        <span className="rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 text-[10px] font-bold">
+                          ✅ تم إنجاز الإجراء
+                        </span>
+                      )}
+                      {isUnread && (
+                        <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                      )}
+                    </div>
+
+                    <p className="text-xs text-slate-300 leading-relaxed">{notification.message}</p>
+
+                    <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-400 flex-wrap font-mono">
+                      <span>{notification.created_at ? notification.created_at.slice(0, 16).replace('T', ' ') : ''}</span>
+                      <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400 border border-slate-700 font-sans">
+                        {action.badgeLabel}
+                      </span>
                     </div>
                   </div>
+                </div>
 
-                  <div className="flex flex-wrap items-center justify-stretch sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/60">
-                    {actionLabel && (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void handleNotificationClick(notif);
-                        }}
-                        isLoading={openingId === notif.id}
-                        disabled={openingId !== null && openingId !== notif.id}
-                        className="text-xs min-h-10 flex-1 sm:flex-initial whitespace-nowrap"
-                      >
-                        {actionLabel}
-                      </Button>
-                    )}
-                    {isUnread && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => handleMarkAsRead(e, notif)}
-                        isLoading={markingId === notif.id}
-                        className="text-xs min-h-10 flex-1 sm:flex-initial hover:bg-slate-800 border border-slate-700/60 whitespace-nowrap"
-                      >
-                        تحديد كمقروء
-                      </Button>
-                    )}
-                  </div>
+                {/* Direct Action Buttons */}
+                <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
+                  <Button
+                    variant={status === 'needs_action' ? 'primary' : 'secondary'}
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleNotificationClick(notification);
+                    }}
+                    className="text-xs font-bold"
+                  >
+                    <span>{action.actionLabel}</span>
+                    <span className="mr-1">←</span>
+                  </Button>
+
+                  {status !== 'resolved' && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleMarkResolved(e, notification)}
+                      className="rounded-xl border border-emerald-800/60 bg-emerald-950/40 px-2.5 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-900/60 transition-colors cursor-pointer"
+                      title="تعليم هذا الإشعار كمنجز ومكتمل"
+                    >
+                      ✓ تم البت
+                    </button>
+                  )}
+
+                  {status !== 'archived' && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleArchive(e, notification)}
+                      className="rounded-xl border border-slate-700 bg-slate-800/80 p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer"
+                      title="أرشفة الإشعار"
+                    >
+                      🗄️
+                    </button>
+                  )}
                 </div>
               </Card>
             );
           })}
         </div>
+      ) : (
+        <Card className="p-12 text-center text-slate-400 space-y-3 border border-slate-800 bg-slate-900/60">
+          <span className="text-4xl block">
+            {activeTab === 'NEEDS_ACTION' ? '🎉' : activeTab === 'RESOLVED' ? '📋' : '📭'}
+          </span>
+          <p className="text-base font-bold text-slate-200">
+            {activeTab === 'NEEDS_ACTION'
+              ? 'لا توجد إشعارات تتطلب إجراءً منك حالياً!'
+              : activeTab === 'RESOLVED'
+              ? 'لا توجد إشعارات منجزة في هذا التبويب'
+              : 'لا توجد إشعارات في هذا السجل'}
+          </p>
+          <p className="text-xs text-slate-500">
+            {activeTab === 'NEEDS_ACTION'
+              ? 'كافة المعاملات والموافقات السابقة تم البت فيها بنجاح.'
+              : 'يمكنك التبديل بين التبويبات أعلاه للاطلاع على الأرشيف أو الإجراءات السابقة.'}
+          </p>
+        </Card>
       )}
     </div>
   );
