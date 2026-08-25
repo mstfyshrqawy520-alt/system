@@ -225,7 +225,29 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
                         <div className="font-mono text-xs text-cyan-300">رقم قطعة الأرض: {primaryItem?.item_reference || '—'}</div>
                         <div className="text-xs text-slate-400">المنطقة: {primaryItem?.region || '—'} — الوحدة: {getUnitLabel(primaryItem?.uom)} — الكمية: {primaryItem?.quantity || '—'}</div>
                       </TableCell>
-                      <TableCell className="min-w-[190px] border-l border-slate-700/70 align-top text-sm font-black text-slate-100">{quote.supplier?.company_name || '—'}</TableCell>
+                      <TableCell className="min-w-[190px] border-l border-slate-700/70 align-top text-sm">
+                        <div className="font-black text-slate-100">{quote.supplier?.company_name || '—'}</div>
+                        {quote.file_url ? (
+                          <a
+                            href={quote.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-600/70 text-cyan-300 transition-all shadow-sm"
+                            title="فتح وتحميل ملف عرض السعر PDF"
+                          >
+                            <span>📄</span>
+                            <span>معاينة عرض السعر PDF</span>
+                            <span className="text-[10px]">↗</span>
+                          </a>
+                        ) : (
+                          <div className="text-[10px] text-slate-500 mt-1">لم يُرفق ملف</div>
+                        )}
+                        {quote.notes && (
+                          <div className="text-[11px] text-slate-400 mt-1 bg-slate-950/60 p-1.5 rounded-lg border border-slate-800">
+                            {quote.notes}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="border-l border-slate-700/70 align-top font-mono text-sm font-black text-amber-300">{quote.unit_price || '—'} ج.م</TableCell><TableCell className="border-l border-slate-700/70 align-top font-mono text-sm font-black text-emerald-300">{quote.total_amount} ج.م</TableCell>
                       <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">{quote.currency}</TableCell>
                         <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">
@@ -270,6 +292,29 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
                       {quote.total_amount} {quote.currency || 'ج.م'}
                     </span>
                   </div>
+
+                  {quote.file_url && (
+                    <div className="mt-2.5">
+                      <a
+                        href={quote.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-600/70 text-cyan-200 text-xs font-bold transition-all shadow-sm"
+                      >
+                        <span>📄</span>
+                        <span>فتح ومعاينة عرض السعر PDF من المورد</span>
+                        <span>↗</span>
+                      </a>
+                    </div>
+                  )}
+
+                  {quote.notes && (
+                    <div className="mt-2 text-xs text-slate-300 bg-slate-950/70 p-2 rounded-xl border border-slate-800">
+                      <span className="text-slate-500 font-bold">شروط المورد: </span>
+                      {quote.notes}
+                    </div>
+                  )}
+
                   <dl className="mt-3 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
                     <div className="min-w-0 min-[420px]:col-span-2">
                       <dt className="text-slate-500">الصنف / الوصف</dt>

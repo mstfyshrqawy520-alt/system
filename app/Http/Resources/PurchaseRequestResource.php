@@ -100,6 +100,11 @@ class PurchaseRequestResource extends JsonResource
                     'total_amount' => number_format((float) $quote->total_amount, 2, '.', ''),
                     'currency' => $quote->currency,
                     'notes' => $quote->notes,
+                    'file_path' => $quote->file_path,
+                    'file_name' => $quote->file_name,
+                    'file_size' => $quote->file_size,
+                    'file_url' => $quote->file_url,
+                    'mime_type' => $quote->mime_type,
                     'status' => $quote->status,
                     'recommendations' => $quote->relationLoaded('recommendations')
                         ? $quote->recommendations->map(fn ($recommendation) => [
@@ -125,6 +130,11 @@ class PurchaseRequestResource extends JsonResource
                     'unit_price' => number_format((float) $this->selectedQuote->unit_price, 2, '.', ''),
                     'total_amount' => number_format((float) $this->selectedQuote->total_amount, 2, '.', ''),
                     'currency' => $this->selectedQuote->currency,
+                    'file_path' => $this->selectedQuote->file_path,
+                    'file_name' => $this->selectedQuote->file_name,
+                    'file_size' => $this->selectedQuote->file_size,
+                    'file_url' => $this->selectedQuote->file_url,
+                    'mime_type' => $this->selectedQuote->mime_type,
                     'status' => $this->selectedQuote->status,
                 ] : null;
             }),

@@ -117,14 +117,25 @@ export interface PurchaseRequestQuoteRecommendation {
 
 export interface PurchaseRequestQuote {
   id: number;
+  purchase_request_id?: number | null;
   supplier_id: number;
-  supplier?: { id: number; company_name: string } | null;
+  supplier?: { id: number; company_name: string; code?: string } | null;
   unit_price: string;
   total_amount: string;
   currency: string;
   notes?: string | null;
+  file_path?: string | null;
+  file_name?: string | null;
+  file_size?: number | null;
+  file_url?: string | null;
+  mime_type?: string | null;
   status: string;
   recommendations?: PurchaseRequestQuoteRecommendation[];
+  selected_at?: string | null;
+  created_at?: string | null;
+  request_number?: string | null;
+  department_name?: string | null;
+  po_number?: string | null;
 }
 
 export interface DepartmentOption {

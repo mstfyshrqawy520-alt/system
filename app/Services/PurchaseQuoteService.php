@@ -79,6 +79,24 @@ class PurchaseQuoteService
             $pr->quotes()->delete();
 
             foreach ($quotes as $index => $quote) {
+                $filePath = null;
+                $fileName = null;
+                $fileSize = null;
+                $mimeType = null;
+
+                if (isset($quote['file']) && $quote['file'] instanceof \Illuminate\Http\UploadedFile) {
+                    $uploaded = $quote['file'];
+                    $fileName = $uploaded->getClientOriginalName();
+                    $fileSize = $uploaded->getSize();
+                    $mimeType = $uploaded->getClientMimeType() ?: $uploaded->getMimeType();
+                    $filePath = $uploaded->store('quotes', 'public');
+                } elseif (!empty($quote['file_path'])) {
+                    $filePath = $quote['file_path'];
+                    $fileName = $quote['file_name'] ?? basename($filePath);
+                    $fileSize = $quote['file_size'] ?? null;
+                    $mimeType = $quote['mime_type'] ?? null;
+                }
+
                 $pr->quotes()->create([
                     'supplier_id' => (int) $quote['supplier_id'],
                     'created_by_user_id' => $procurementManager->id,
@@ -86,6 +104,10 @@ class PurchaseQuoteService
                     'unit_price' => (float) $quote['unit_price'],
                     'currency' => 'EGP',
                     'notes' => $quote['notes'] ?? null,
+                    'file_path' => $filePath,
+                    'file_name' => $fileName,
+                    'file_size' => $fileSize,
+                    'mime_type' => $mimeType,
                     'status' => 'SUBMITTED',
                 ]);
             }

@@ -190,9 +190,24 @@ export const getPurchaseRequestQuotesApi = async (id: number): Promise<PurchaseR
 
 export const createPurchaseQuotesApi = async (
   id: number,
-  quotes: Array<{ supplier_id: number; unit_price: number; total_amount: number; notes?: string }>,
-): Promise<PurchaseRequest> =>
-  (await apiClient.post<{ data: PurchaseRequest }>(`/procurement/purchase-requests/${id}/quotes`, { quotes })).data.data;
+  quotes: Array<{ supplier_id: number; unit_price: number; total_amount: number; notes?: string; file?: File | null }>,
+): Promise<PurchaseRequest> => {
+  const hasFiles = quotes.some(q => q.file instanceof File);
+  if (hasFiles) {
+    const formData = new FormData();
+    quotes.forEach((quote, index) => {
+      formData.append(`quotes[${index}][supplier_id]`, String(quote.supplier_id));
+      formData.append(`quotes[${index}][unit_price]`, String(quote.unit_price));
+      formData.append(`quotes[${index}][total_amount]`, String(quote.total_amount));
+      if (quote.notes) formData.append(`quotes[${index}][notes]`, quote.notes);
+      if (quote.file instanceof File) formData.append(`quotes[${index}][file]`, quote.file);
+    });
+    return (await apiClient.post<{ data: PurchaseRequest }>(`/procurement/purchase-requests/${id}/quotes`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })).data.data;
+  }
+  return (await apiClient.post<{ data: PurchaseRequest }>(`/procurement/purchase-requests/${id}/quotes`, { quotes })).data.data;
+};
 
 export const getProcurementAnalyticsApi = async (period: string = '90', status?: string) => {
   const params: Record<string, string> = { period };

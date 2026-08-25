@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class PurchaseRequestQuote extends Model
 {
@@ -19,8 +21,16 @@ class PurchaseRequestQuote extends Model
         'unit_price',
         'currency',
         'notes',
+        'file_path',
+        'file_name',
+        'file_size',
+        'mime_type',
         'status',
         'selected_at',
+    ];
+
+    protected $appends = [
+        'file_url',
     ];
 
     protected function casts(): array
@@ -28,8 +38,26 @@ class PurchaseRequestQuote extends Model
         return [
             'total_amount' => 'decimal:2',
             'unit_price' => 'decimal:2',
+            'file_size' => 'integer',
             'selected_at' => 'datetime',
         ];
+    }
+
+    protected function fileUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function (): ?string {
+                if (! $this->file_path) {
+                    return null;
+                }
+
+                if (filter_var($this->file_path, FILTER_VALIDATE_URL)) {
+                    return $this->file_path;
+                }
+
+                return Storage::disk('public')->url($this->file_path);
+            }
+        );
     }
 
     public function purchaseRequest(): BelongsTo

@@ -21,4 +21,7 @@ export const decidePurchaseQuoteApi = async (
 export const getPurchaseRequestQuotesApi = async (requestId: number): Promise<PurchaseRequest> =>
   (await apiClient.get<{ data: PurchaseRequest }>(`/procurement/purchase-requests/${requestId}/quotes`)).data.data;
 
+export const getSupplierQuoteArchiveApi = async (supplierId: number): Promise<PurchaseRequestQuote[]> =>
+  (await apiClient.get<{ data: PurchaseRequestQuote[] }>(`/purchase-quotes/suppliers/${supplierId}/archive`)).data.data;
+
 export type { PurchaseRequestQuote };

@@ -327,6 +327,8 @@ Route::middleware('auth:sanctum')->prefix('purchase-receipts')->group(function (
 
 // Quote recommendation routes for Accounting and Department Reviewer
 Route::middleware('auth:sanctum')->prefix('purchase-quotes')->group(function () {
+    Route::get('/suppliers/{id}/archive', [PurchaseQuoteController::class, 'supplierQuotes']);
+
     Route::post('/{id}/recommend', [PurchaseQuoteController::class, 'recommend'])
         ->middleware('permission:purchase_quote.recommend');
 

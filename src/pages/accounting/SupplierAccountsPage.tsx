@@ -16,6 +16,8 @@ import TableColumnFilters from '../../components/ui/TableColumnFilters';
 import { parseApiError } from '../../utils/apiError';
 import { getTodayInputDate } from '../../utils/dateFilters';
 import { createPortal } from 'react-dom';
+import { getSupplierQuoteArchiveApi } from '../../api/purchaseQuotes';
+import { PurchaseRequestQuote } from '../../types/purchaseRequest';
 
 const today = getTodayInputDate;
 const money = (value: string | number | null | undefined) => `${Number(value || 0).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م`;
@@ -29,6 +31,16 @@ const SupplierAccountDedicatedPage: React.FC<{
   onBack: () => void;
   onRecordPayment: (account: SupplierAccountSummary) => void;
 }> = ({ selected, onBack, onRecordPayment }) => {
+  const [quotes, setQuotes] = useState<PurchaseRequestQuote[]>([]);
+  const [quotesLoading, setQuotesLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    setQuotesLoading(true);
+    getSupplierQuoteArchiveApi(selected.supplier.id)
+      .then((data) => setQuotes(data || []))
+      .catch(() => setQuotes([]))
+      .finally(() => setQuotesLoading(false));
+  }, [selected.supplier.id]);
   return (
     <div className="min-w-0 space-y-6 animate-fade-in print-container print-document" dir="rtl">
       {/* ── OFFICIAL PRINT HEADER ── */}
@@ -441,6 +453,142 @@ const SupplierAccountDedicatedPage: React.FC<{
         ) : (
           <div className="py-8 text-center text-sm text-slate-500 bg-slate-950/40 rounded-xl border border-slate-800/60">
             لا توجد دفعات مسجلة لهذا المورد حتى الآن.
+          </div>
+        )}
+      </Card>
+
+      {/* Section 3: Approved Price Quotes Archive */}
+      <Card className="space-y-4 border-slate-800 bg-slate-900/90">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div>
+            <h3 className="text-base font-black text-slate-100 flex items-center gap-2">
+              <span>📑</span>
+              <span>أرشيف عروض الأسعار المعتمدة للمورد ({quotes.length})</span>
+            </h3>
+            <p className="mt-0.5 text-xs text-slate-400">
+              جميع عروض الأسعار المقدمة من هذا المورد والتي تم اعتمادها من الإدارة مع ملفات الـ PDF الأصلية
+            </p>
+          </div>
+        </div>
+
+        {quotesLoading ? (
+          <div className="py-8 text-center text-xs text-cyan-400 animate-pulse">
+            جاري تحميل أرشيف عروض الأسعار...
+          </div>
+        ) : quotes.length > 0 ? (
+          <>
+            <div className="hidden min-w-0 md:block overflow-x-auto">
+              <Table className="min-w-[750px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="whitespace-nowrap">طلب الشراء</TableHead>
+                    <TableHead className="whitespace-nowrap">أمر الشراء</TableHead>
+                    <TableHead className="whitespace-nowrap">القسم</TableHead>
+                    <TableHead className="whitespace-nowrap">تاريخ الاعتماد</TableHead>
+                    <TableHead className="whitespace-nowrap">سعر الوحدة</TableHead>
+                    <TableHead className="whitespace-nowrap">إجمالي العرض</TableHead>
+                    <TableHead className="whitespace-nowrap">شروط وملاحظات المورد</TableHead>
+                    <TableHead className="whitespace-nowrap text-center">مستند العرض الرسمي</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {quotes.map((quote) => (
+                    <TableRow key={quote.id}>
+                      <TableCell className="whitespace-nowrap font-mono font-bold text-cyan-300">
+                        {quote.request_number || `#PR-${quote.purchase_request_id}`}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap font-mono text-slate-300">
+                        {quote.po_number || '—'}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-slate-300">
+                        {quote.department_name || '—'}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap font-mono text-slate-400">
+                        {quote.selected_at ? String(quote.selected_at).slice(0, 10) : '—'}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap font-mono font-bold text-amber-300">
+                        {quote.unit_price} ج.م
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap font-mono font-black text-emerald-300">
+                        {money(quote.total_amount)}
+                      </TableCell>
+                      <TableCell className="max-w-[200px] text-xs text-slate-400 truncate">
+                        {quote.notes || '—'}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-center">
+                        {quote.file_url ? (
+                          <a
+                            href={quote.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-600/70 text-cyan-300 text-xs font-bold transition-all shadow-sm"
+                          >
+                            <span>📄</span>
+                            <span>معاينة PDF</span>
+                            <span className="text-[10px]">↗</span>
+                          </a>
+                        ) : (
+                          <span className="text-[11px] text-slate-500">لا يوجد ملف</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="space-y-3 md:hidden">
+              {quotes.map((quote) => (
+                <article
+                  key={`mobile-quote-${quote.id}`}
+                  className="min-w-0 rounded-2xl border border-slate-800 bg-slate-950/60 p-4 shadow-sm space-y-3"
+                >
+                  <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-2.5">
+                    <div>
+                      <span className="font-mono text-sm font-black text-cyan-300 block">
+                        طلب {quote.request_number || `#PR-${quote.purchase_request_id}`}
+                      </span>
+                      {quote.po_number && (
+                        <span className="text-[11px] font-mono text-slate-400">أمر شراء: {quote.po_number}</span>
+                      )}
+                    </div>
+                    <span className="font-mono font-black text-emerald-300 text-sm">
+                      {money(quote.total_amount)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
+                    <div>القسم: <strong className="text-slate-200">{quote.department_name || '—'}</strong></div>
+                    <div>سعر الوحدة: <strong className="text-amber-300 font-mono">{quote.unit_price} ج.م</strong></div>
+                  </div>
+
+                  {quote.notes && (
+                    <div className="text-xs text-slate-400 bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+                      {quote.notes}
+                    </div>
+                  )}
+
+                  {quote.file_url ? (
+                    <a
+                      href={quote.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-600/70 text-cyan-200 text-xs font-bold transition-all shadow-sm"
+                    >
+                      <span>📄</span>
+                      <span>فتح ومعاينة عرض السعر PDF</span>
+                      <span>↗</span>
+                    </a>
+                  ) : (
+                    <div className="text-center text-xs text-slate-500">لا يوجد ملف مرفق</div>
+                  )}
+                </article>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="py-8 text-center text-sm text-slate-500 bg-slate-950/40 rounded-xl border border-slate-800/60">
+            لا توجد عروض أسعار معتمدة مسجلة لهذا المورد حتى الآن.
           </div>
         )}
       </Card>

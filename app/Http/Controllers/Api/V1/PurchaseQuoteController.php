@@ -7,6 +7,7 @@ use App\Http\Resources\PurchaseRequestResource;
 use App\Models\PurchaseRequest;
 use App\Models\PurchaseRequestQuote;
 use App\Services\PurchaseQuoteService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PurchaseQuoteController extends Controller
@@ -39,6 +40,9 @@ class PurchaseQuoteController extends Controller
             'quotes.*.unit_price' => ['nullable', 'numeric', 'gt:0'],
             'quotes.*.total_amount' => ['required', 'numeric', 'gt:0'],
             'quotes.*.notes' => ['nullable', 'string', 'max:2000'],
+            'quotes.*.file' => ['nullable', 'file', 'max:25600'],
+            'quotes.*.file_path' => ['nullable', 'string', 'max:500'],
+            'quotes.*.file_name' => ['nullable', 'string', 'max:255'],
         ]);
 
         $purchaseRequest = PurchaseRequest::findOrFail($purchaseRequestId);
@@ -81,5 +85,43 @@ class PurchaseQuoteController extends Controller
                 $validated['comment'] ?? null
             )
         );
+    }
+
+    public function supplierQuotes(int $supplierId): JsonResponse
+    {
+        $quotes = PurchaseRequestQuote::with([
+            'purchaseRequest.department',
+            'purchaseRequest.requester',
+            'purchaseRequest.issuedPurchaseOrders',
+        ])
+            ->where('supplier_id', $supplierId)
+            ->where('status', 'SELECTED')
+            ->orderByDesc('selected_at')
+            ->orderByDesc('id')
+            ->get()
+            ->map(function ($quote) {
+                return [
+                    'id' => $quote->id,
+                    'purchase_request_id' => $quote->purchase_request_id,
+                    'request_number' => $quote->purchaseRequest?->request_number,
+                    'department_name' => $quote->purchaseRequest?->department?->name,
+                    'requester_name' => $quote->purchaseRequest?->requester?->name,
+                    'unit_price' => $quote->unit_price,
+                    'total_amount' => $quote->total_amount,
+                    'currency' => $quote->currency,
+                    'notes' => $quote->notes,
+                    'file_path' => $quote->file_path,
+                    'file_name' => $quote->file_name,
+                    'file_size' => $quote->file_size,
+                    'file_url' => $quote->file_url,
+                    'mime_type' => $quote->mime_type,
+                    'status' => $quote->status,
+                    'selected_at' => $quote->selected_at ? $quote->selected_at->toIso8601String() : null,
+                    'created_at' => $quote->created_at ? $quote->created_at->toIso8601String() : null,
+                    'po_number' => $quote->purchaseRequest?->issuedPurchaseOrders?->first()?->po_number,
+                ];
+            });
+
+        return response()->json(['data' => $quotes]);
     }
 }

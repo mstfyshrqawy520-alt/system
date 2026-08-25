@@ -53,4 +53,14 @@ class Supplier extends Model
     {
         return $this->hasOne(SupplierBalance::class, 'supplier_id');
     }
+
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(PurchaseRequestQuote::class, 'supplier_id');
+    }
+
+    public function approvedQuotes(): HasMany
+    {
+        return $this->hasMany(PurchaseRequestQuote::class, 'supplier_id')->where('status', 'SELECTED');
+    }
 }
