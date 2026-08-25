@@ -123,7 +123,7 @@ export const NotificationBell: React.FC = () => {
       <button
         type="button"
         onClick={() => setDropdownOpen((prev) => !prev)}
-        className="relative flex min-h-11 min-w-11 items-center justify-center rounded-xl p-2 text-slate-400 hover:bg-slate-800/80 hover:text-cyan-300 transition-colors"
+        className="relative flex min-h-11 min-w-11 items-center justify-center rounded-xl p-2 text-slate-400 hover:bg-slate-800/80 hover:text-cyan-300 transition-colors cursor-pointer"
         aria-label="الإشعارات والتنبيهات"
         title="الإشعارات والتنبيهات"
       >
@@ -145,7 +145,7 @@ export const NotificationBell: React.FC = () => {
       {/* Realtime Toast Popover */}
       {latestToast && !dropdownOpen && (
         <div
-          className="absolute left-0 top-12 z-50 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border-2 border-cyan-500/80 bg-slate-950 p-4 text-right shadow-2xl animate-fade-in backdrop-blur-md"
+          className="fixed inset-x-3 top-14 sm:inset-auto sm:left-0 sm:top-12 z-50 sm:w-80 rounded-2xl border-2 border-cyan-500/80 bg-slate-950 p-4 text-right shadow-2xl animate-fade-in backdrop-blur-md"
           dir="rtl"
         >
           <div className="flex items-center justify-between border-b border-cyan-900/50 pb-2">
@@ -155,7 +155,7 @@ export const NotificationBell: React.FC = () => {
             <button
               type="button"
               onClick={() => setLatestToast(null)}
-              className="text-slate-400 hover:text-white text-xs font-bold"
+              className="text-slate-400 hover:text-white text-xs font-bold p-1 cursor-pointer"
             >
               ×
             </button>
@@ -166,7 +166,7 @@ export const NotificationBell: React.FC = () => {
             <button
               type="button"
               onClick={() => handleNotificationClick(latestToast)}
-              className="flex-1 rounded-lg bg-cyan-600 px-3 py-1.5 text-xs font-black text-white hover:bg-cyan-500 transition-colors shadow-md shadow-cyan-900/30 text-center"
+              className="flex-1 rounded-xl bg-cyan-600 px-3 py-2 text-xs font-black text-white hover:bg-cyan-500 transition-colors shadow-md shadow-cyan-900/30 text-center cursor-pointer"
             >
               {resolveNotificationAction(latestToast, user).actionLabel} ←
             </button>
@@ -174,10 +174,18 @@ export const NotificationBell: React.FC = () => {
         </div>
       )}
 
+      {/* Mobile Backdrop */}
+      {dropdownOpen && (
+        <div
+          onClick={() => setDropdownOpen(false)}
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 sm:hidden animate-fade-in"
+        />
+      )}
+
       {/* Interactive Notifications Dropdown */}
       {dropdownOpen && (
         <div
-          className="absolute left-0 top-12 z-50 w-[min(24rem,calc(100vw-1.5rem))] rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl overflow-hidden animate-fade-in text-right"
+          className="fixed inset-x-3 top-14 sm:inset-auto sm:left-0 sm:top-12 z-50 sm:w-96 rounded-2xl border border-slate-700/80 bg-slate-900 shadow-2xl shadow-black/80 overflow-hidden animate-fade-in text-right"
           dir="rtl"
         >
           {/* Header */}
@@ -195,7 +203,7 @@ export const NotificationBell: React.FC = () => {
                 type="button"
                 onClick={handleMarkAllRead}
                 disabled={loading}
-                className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 disabled:opacity-50"
+                className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 disabled:opacity-50 cursor-pointer"
               >
                 تحديد الكل كمقروء
               </button>
@@ -203,7 +211,7 @@ export const NotificationBell: React.FC = () => {
           </div>
 
           {/* List */}
-          <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-800/60">
+          <div className="max-h-[min(65vh,420px)] overflow-y-auto divide-y divide-slate-800/60">
             {recentNotifications.length > 0 ? (
               recentNotifications.map((n) => {
                 const action = resolveNotificationAction(n, user);
@@ -230,7 +238,7 @@ export const NotificationBell: React.FC = () => {
                     <p className="text-xs text-slate-300 leading-5 line-clamp-2">{n.message}</p>
 
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700">
                         {action.badgeLabel}
                       </span>
                       <span className="text-xs font-bold text-cyan-400 flex items-center gap-1 group-hover:underline">
@@ -257,7 +265,7 @@ export const NotificationBell: React.FC = () => {
                 setDropdownOpen(false);
                 navigate('/notifications');
               }}
-              className="w-full text-xs font-bold text-slate-300 hover:text-cyan-400 transition-colors py-1"
+              className="w-full text-xs font-bold text-slate-300 hover:text-cyan-400 transition-colors py-1 cursor-pointer"
             >
               عرض مركز الإشعارات الكامل ←
             </button>
