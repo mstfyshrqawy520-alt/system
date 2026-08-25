@@ -129,23 +129,6 @@ export const EmployeeDashboardPage: React.FC = () => {
       {(() => {
         const employeeActionItems: ActionInboxItem[] = [
           ...requests
-            .filter((r) => r.status === 'REJECTED')
-            .map((r) => ({
-              id: `req-rej-${r.id}`,
-              rawId: r.id,
-              type: 'PR' as const,
-              code: r.request_number,
-              title: r.items?.[0]?.item_description || r.justification || 'طلب شراء مرفوض',
-              subtitle: r.rejection_reason ? `سبب الرفض: ${r.rejection_reason}` : undefined,
-              department: r.department?.name,
-              amount: r.total_estimated_cost ? Number(r.total_estimated_cost) : undefined,
-              urgency: 'CRITICAL' as const,
-              reason: r.rejection_reason ? `مرفوض: ${r.rejection_reason} (يتطلب التعديل وإعادة التقديم)` : 'تم رفض الطلب ويتطلب تعديله أو إعادة رفعه',
-              actionUrl: `/employee/requests/${r.id}/edit`,
-              actionLabel: 'تعديل وإعادة التقديم',
-              timeAgo: r.created_at ? r.created_at.slice(0, 10) : undefined,
-            })),
-          ...requests
             .filter((r) => r.status === 'DRAFT')
             .map((r) => ({
               id: `req-draft-${r.id}`,
@@ -164,10 +147,12 @@ export const EmployeeDashboardPage: React.FC = () => {
             })),
         ];
 
+        if (employeeActionItems.length === 0) return null;
+
         return (
           <ActionRequiredInbox
             title="المهام والإجراءات العاجلة المطلوبة لطلباتك"
-            description="الطلبات المسودة المطلوب إرسالها والطلبات المعادة أو المرفوضة التي تتطلب تعديلك."
+            description="الطلبات المسودة المطلوب إرسالها للمراجعة والاعتماد."
             roleName="لوحة الموظف"
             items={employeeActionItems}
           />

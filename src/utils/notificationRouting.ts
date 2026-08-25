@@ -102,8 +102,8 @@ export const isActionRequiredForUser = (notification: Notification, user: User |
     if (type.includes('po_issued') || type.includes('delivery') || title.includes('توريد') || message.includes('توريد') || title.includes('استلام')) return true;
   }
 
-  // Requester action if returned for amendment
-  if (type.includes('returned') || type.includes('rejected') || title.includes('إرجاع') || message.includes('إعادة للتعديل') || title.includes('مرفوض')) {
+  // Requester action if explicitly returned for amendment (Rejected is final and cannot be edited)
+  if (type.includes('returned') || title.includes('إعادة للتعديل') || message.includes('إعادة للتعديل')) {
     return true;
   }
 
@@ -128,6 +128,8 @@ export const resolveNotificationAction = (
   const roleSlugs = (user?.roles || []).map((role) => (typeof role === 'string' ? role : role.slug));
   const data = notification.data || {};
   const type = (notification.type || '').toLowerCase();
+  const title = (notification.title || '').toLowerCase();
+  const message = (notification.message || '').toLowerCase();
   const info = extractDocumentInfo(notification);
   const isActionable = isActionRequiredForUser(notification, user);
 
@@ -375,7 +377,7 @@ export const resolveNotificationAction = (
       };
     }
     if (info.prId) {
-      const isReturned = type.includes('returned') || type.includes('rejected');
+      const isReturned = type.includes('returned') || title.includes('إعادة للتعديل');
       return {
         url: isReturned ? `/employee/requests/${info.prId}/edit` : `/requests/${info.prId}`,
         actionLabel: isReturned ? 'تعديل الطلب المعاد' : 'تفاصيل طلب الموقع',
@@ -383,7 +385,7 @@ export const resolveNotificationAction = (
         badgeLabel: 'طلب موقع',
         docType: 'PR',
         docNumber: info.docNumber,
-        isActionable,
+        isActionable: isReturned,
         priority,
       };
     }
@@ -425,12 +427,13 @@ export const resolveNotificationAction = (
 
   // 7. Employee / Requester (الموظف / صاحب الطلب)
   if (info.prId) {
-    const isReturned = type.includes('returned') || type.includes('rejected');
+    const isReturned = type.includes('returned') || title.includes('إعادة للتعديل');
+    const isRejected = type.includes('rejected') || title.includes('مرفوض');
     return {
       url: isReturned ? `/employee/requests/${info.prId}/edit` : `/requests/${info.prId}`,
-      actionLabel: isReturned ? 'تعديل الطلب المعاد للتعديل' : 'عرض ومتابعة الطلب',
-      icon: isReturned ? '✏️' : '📋',
-      badgeLabel: isReturned ? 'معاد للتعديل' : 'طلبي',
+      actionLabel: isReturned ? 'تعديل الطلب المعاد للتعديل' : (isRejected ? 'معاينة الطلب المرفوض' : 'عرض ومتابعة الطلب'),
+      icon: isReturned ? '✏️' : (isRejected ? '🚫' : '📋'),
+      badgeLabel: isReturned ? 'معاد للتعديل' : (isRejected ? 'طلب مرفوض' : 'طلبي'),
       docType: 'PR',
       docNumber: info.docNumber,
       isActionable: isReturned,
