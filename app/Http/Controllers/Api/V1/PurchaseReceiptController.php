@@ -19,6 +19,11 @@ class PurchaseReceiptController extends Controller
         return response()->json($this->service->warehouseQueue(min((int) $request->query('per_page', 15), 100)));
     }
 
+    public function archive(Request $request)
+    {
+        return response()->json($this->service->receiptArchive($request->user(), min((int) $request->query('per_page', 25), 100)));
+    }
+
     public function store(Request $request, int $purchaseOrderId)
     {
         $validated = $request->validate([

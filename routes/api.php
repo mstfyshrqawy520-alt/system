@@ -313,6 +313,8 @@ Route::middleware('auth:sanctum')->prefix('purchase-receipts')->group(function (
         ->middleware('permission:purchase_receipt.view_assigned');
     Route::get('/assigned', [PurchaseReceiptController::class, 'indexAssigned'])
         ->middleware('permission:purchase_receipt.view_assigned');
+    Route::get('/archive', [PurchaseReceiptController::class, 'archive'])
+        ->middleware('permission:purchase_receipt.view_assigned');
     Route::get('/{id}', [PurchaseReceiptController::class, 'show'])
         ->middleware('permission:accounting.invoice.view');
     Route::post('/purchase-orders/{purchaseOrderId}', [PurchaseReceiptController::class, 'store'])

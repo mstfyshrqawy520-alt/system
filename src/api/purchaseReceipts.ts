@@ -60,6 +60,9 @@ export const getWarehouseReceiptQueueApi = async (): Promise<ReceiptPurchaseOrde
 export const getAssignedReceiptsApi = async (): Promise<ReceiptRecord[]> =>
   (await apiClient.get<{ data: ReceiptRecord[] }>('/purchase-receipts/assigned')).data.data;
 
+export const getPurchaseReceiptArchiveApi = async (): Promise<ReceiptRecord[]> =>
+  (await apiClient.get<{ data: ReceiptRecord[] }>('/purchase-receipts/archive')).data.data;
+
 export const getPurchaseReceiptByIdApi = async (receiptId: number): Promise<ReceiptRecord> =>
   (await apiClient.get<{ data: ReceiptRecord }>(`/purchase-receipts/${receiptId}`)).data.data;
 

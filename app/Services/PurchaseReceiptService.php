@@ -27,6 +27,33 @@ class PurchaseReceiptService
             ->paginate($perPage);
     }
 
+    public function receiptArchive(User $user, int $perPage = 25)
+    {
+        $query = PurchaseReceipt::with([
+            'purchaseOrder.supplier',
+            'purchaseOrder.purchaseRequest.department',
+            'purchaseOrder.purchaseRequest.requester',
+            'purchaseOrder.purchaseRequest.siteEngineer',
+            'purchaseOrder.items.item',
+            'purchaseOrder.items.prItem',
+            'purchaseRequest.department',
+            'purchaseRequest.requester',
+            'purchaseRequest.siteEngineer',
+            'warehouseKeeper',
+            'siteEngineer',
+            'items.purchaseOrderItem.item',
+            'items.purchaseOrderItem.prItem',
+        ])->orderByDesc('created_at');
+
+        if ($user->hasRole('warehouse_keeper') && ! $user->hasAnyRole(['admin', 'general_manager', 'accountant', 'procurement_manager'])) {
+            $query->where('warehouse_keeper_user_id', $user->id);
+        } elseif ($user->hasRole('site_engineer') && ! $user->hasAnyRole(['admin', 'general_manager', 'accountant', 'procurement_manager'])) {
+            $query->where('site_engineer_user_id', $user->id);
+        }
+
+        return $query->paginate($perPage);
+    }
+
     public function createByWarehouse(User $warehouseKeeper, PurchaseOrder $purchaseOrder, array $items, ?string $receivedAt = null, ?string $notes = null): PurchaseReceipt
     {
         $purchaseOrder->loadMissing(['purchaseRequest', 'items']);
