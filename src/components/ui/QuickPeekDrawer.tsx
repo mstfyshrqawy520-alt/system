@@ -107,12 +107,12 @@ export const QuickPeekDrawer: React.FC<QuickPeekDrawerProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
+              className="flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-bold text-slate-300 hover:border-rose-500/60 hover:bg-rose-950/40 hover:text-rose-300 transition-colors cursor-pointer"
               aria-label="إغلاق المعاينة"
+              title="إغلاق نافذة المعاينة"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <span className="text-sm font-bold">✕</span>
+              <span>إغلاق</span>
             </button>
           </div>
 
@@ -265,9 +265,9 @@ export const QuickPeekDrawer: React.FC<QuickPeekDrawerProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800 transition-colors"
+              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-bold text-slate-300 hover:border-rose-500/60 hover:bg-rose-950/30 hover:text-rose-300 transition-colors cursor-pointer"
             >
-              إغلاق
+              ✕ إغلاق المعاينة
             </button>
 
             <div className="flex items-center gap-2">

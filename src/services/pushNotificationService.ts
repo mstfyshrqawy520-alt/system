@@ -145,3 +145,62 @@ export const onForegroundMessage = (callback: (payload: MessagePayload) => void)
     if (unsubscribe) unsubscribe();
   };
 };
+
+/**
+ * Show a native system notification (browser/OS notification tray) with mobile vibration
+ */
+export const showNativeSystemNotification = (
+  title: string,
+  options?: NotificationOptions & { data?: any }
+) => {
+  if (typeof window === 'undefined' || !('Notification' in window) || Notification.permission !== 'granted') {
+    return;
+  }
+
+  // Vibrate mobile device if supported
+  if ('vibrate' in navigator) {
+    try {
+      navigator.vibrate([200, 100, 200]);
+    } catch {
+      // ignore
+    }
+  }
+
+  // Try service worker notification first (most reliable on Android/PWA/mobile)
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.ready
+      .then((registration) => {
+        return registration.showNotification(title, {
+          icon: '/eshbelia-logo.png',
+          badge: '/eshbelia-logo.png',
+          dir: 'rtl',
+          lang: 'ar',
+          ...options,
+        });
+      })
+      .catch(() => {
+        // Fallback to Window Notification constructor
+        try {
+          new Notification(title, {
+            icon: '/eshbelia-logo.png',
+            dir: 'rtl',
+            lang: 'ar',
+            ...options,
+          });
+        } catch {
+          // ignore
+        }
+      });
+  } else {
+    try {
+      new Notification(title, {
+        icon: '/eshbelia-logo.png',
+        dir: 'rtl',
+        lang: 'ar',
+        ...options,
+      });
+    } catch {
+      // ignore
+    }
+  }
+};

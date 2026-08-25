@@ -8,9 +8,14 @@ import {
   startNotificationsRealtime,
   stopNotificationsRealtime,
 } from '../../api/notifications';
-import { Notification } from '../../types/notification';
+import type { Notification } from '../../types/notification';
 import { useAuth } from '../../context/AuthContext';
 import { resolveNotificationAction } from '../../utils/notificationRouting';
+import {
+  onForegroundMessage,
+  showNativeSystemNotification,
+  requestAndRegisterPushToken,
+} from '../../services/pushNotificationService';
 
 export const NotificationBell: React.FC = () => {
   const { user } = useAuth();
@@ -39,6 +44,11 @@ export const NotificationBell: React.FC = () => {
     let mounted = true;
     void fetchUnreadData();
 
+    // Ensure push token is synced on mobile if permission was granted
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      void requestAndRegisterPushToken().catch(() => {});
+    }
+
     const handleReceived = (event: Event) => {
       const notification = (event as CustomEvent<Notification>).detail;
       if (!notification || !mounted) return;
@@ -47,19 +57,52 @@ export const NotificationBell: React.FC = () => {
       setRecentNotifications((prev) => [notification, ...prev.filter((n) => n.id !== notification.id)].slice(0, 6));
       setCount((current) => current + (notification.read_at ? 0 : 1));
 
+      // Trigger native mobile/browser system tray notification and vibration
+      const action = resolveNotificationAction(notification, user);
+      showNativeSystemNotification(notification.title || 'إشعار جديد', {
+        body: notification.message || 'لديك معاملة جديدة تتطلب الإجراء.',
+        tag: `notif-${notification.id}`,
+        data: { url: action.url },
+      });
+
       window.setTimeout(() => {
         if (mounted) setLatestToast(null);
-      }, 7000);
+      }, 8000);
     };
 
     const handleUpdated = () => {
       void fetchUnreadData();
     };
 
+    // Foreground FCM listener
+    const unsubscribeFcm = onForegroundMessage((payload) => {
+      if (!mounted) return;
+      void fetchUnreadData();
+      const title = payload.notification?.title || payload.data?.title || 'إشعار فوري جديد';
+      const body = payload.notification?.body || payload.data?.body || 'لديك تحديث جديد بالنظام.';
+      showNativeSystemNotification(title, { body, tag: `fcm-${Date.now()}` });
+    });
+
+    // Mobile visibility and focus listeners (instant sync when phone is unlocked or tab is opened)
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        void fetchUnreadData();
+      }
+    };
+
     startNotificationsRealtime();
     window.addEventListener('notification-received', handleReceived as EventListener);
     window.addEventListener('notifications-updated', handleUpdated);
     window.addEventListener('app-data-updated', handleUpdated);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    window.addEventListener('focus', handleVisibilityOrFocus);
+
+    // Periodic heartbeat poll for mobile background throttling protection (every 25 seconds)
+    const pollInterval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void fetchUnreadData();
+      }
+    }, 25000);
 
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -71,12 +114,16 @@ export const NotificationBell: React.FC = () => {
     return () => {
       mounted = false;
       stopNotificationsRealtime();
+      unsubscribeFcm();
+      window.clearInterval(pollInterval);
       window.removeEventListener('notification-received', handleReceived as EventListener);
       window.removeEventListener('notifications-updated', handleUpdated);
       window.removeEventListener('app-data-updated', handleUpdated);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [user]);
 
   const handleNotificationClick = async (notification: Notification) => {
     setLatestToast(null);
@@ -155,9 +202,11 @@ export const NotificationBell: React.FC = () => {
             <button
               type="button"
               onClick={() => setLatestToast(null)}
-              className="text-slate-400 hover:text-white text-xs font-bold p-1 cursor-pointer"
+              className="flex items-center gap-1 text-slate-400 hover:text-rose-400 text-xs font-bold px-2 py-0.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-rose-950/40 transition-colors cursor-pointer"
+              title="إغلاق الإشعار"
             >
-              ×
+              <span>✕</span>
+              <span>إغلاق</span>
             </button>
           </div>
           <p className="mt-2 text-sm font-bold text-slate-100">{latestToast.title}</p>
@@ -178,17 +227,17 @@ export const NotificationBell: React.FC = () => {
       {dropdownOpen && (
         <div
           onClick={() => setDropdownOpen(false)}
-          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 sm:hidden animate-fade-in"
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-40 sm:hidden animate-fade-in"
         />
       )}
 
       {/* Interactive Notifications Dropdown */}
       {dropdownOpen && (
         <div
-          className="fixed inset-x-3 top-14 sm:inset-auto sm:left-0 sm:top-12 z-50 sm:w-96 rounded-2xl border border-slate-700/80 bg-slate-900 shadow-2xl shadow-black/80 overflow-hidden animate-fade-in text-right"
+          className="fixed inset-x-3 top-14 sm:inset-auto sm:left-0 sm:top-12 z-50 sm:w-96 rounded-2xl border border-slate-700/80 bg-slate-900 shadow-2xl shadow-black/90 overflow-hidden animate-fade-in text-right"
           dir="rtl"
         >
-          {/* Header */}
+          {/* Header with Close and Mark All buttons */}
           <div className="flex items-center justify-between border-b border-slate-800 bg-slate-950/90 px-4 py-3">
             <div className="flex items-center gap-2">
               <span className="text-sm font-black text-slate-100">الإشعارات والتنبيهات</span>
@@ -198,20 +247,35 @@ export const NotificationBell: React.FC = () => {
                 </span>
               )}
             </div>
-            {count > 0 && (
+
+            <div className="flex items-center gap-2">
+              {count > 0 && (
+                <button
+                  type="button"
+                  onClick={handleMarkAllRead}
+                  disabled={loading}
+                  className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 disabled:opacity-50 cursor-pointer"
+                >
+                  تحديد الكل كمقروء
+                </button>
+              )}
+
+              {/* Explicit Close Button */}
               <button
                 type="button"
-                onClick={handleMarkAllRead}
-                disabled={loading}
-                className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 disabled:opacity-50 cursor-pointer"
+                onClick={() => setDropdownOpen(false)}
+                className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-xs font-bold text-slate-300 hover:border-rose-500/60 hover:bg-rose-950/40 hover:text-rose-300 transition-colors cursor-pointer"
+                aria-label="إغلاق نافذة الإشعارات"
+                title="إغلاق نافذة الإشعارات"
               >
-                تحديد الكل كمقروء
+                <span>✕</span>
+                <span className="text-[11px]">إغلاق</span>
               </button>
-            )}
+            </div>
           </div>
 
           {/* List */}
-          <div className="max-h-[min(65vh,420px)] overflow-y-auto divide-y divide-slate-800/60">
+          <div className="max-h-[min(60vh,380px)] overflow-y-auto divide-y divide-slate-800/60">
             {recentNotifications.length > 0 ? (
               recentNotifications.map((n) => {
                 const action = resolveNotificationAction(n, user);
@@ -257,17 +321,25 @@ export const NotificationBell: React.FC = () => {
             )}
           </div>
 
-          {/* Footer Link */}
-          <div className="border-t border-slate-800 bg-slate-950/80 p-2.5 text-center">
+          {/* Footer Actions with Full Center link and Close Button */}
+          <div className="border-t border-slate-800 bg-slate-950/90 p-2.5 flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={() => {
                 setDropdownOpen(false);
                 navigate('/notifications');
               }}
-              className="w-full text-xs font-bold text-slate-300 hover:text-cyan-400 transition-colors py-1 cursor-pointer"
+              className="flex-1 text-xs font-bold text-slate-300 hover:text-cyan-400 transition-colors py-1 text-right"
             >
               عرض مركز الإشعارات الكامل ←
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setDropdownOpen(false)}
+              className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+            >
+              إغلاق النافذة
             </button>
           </div>
         </div>
