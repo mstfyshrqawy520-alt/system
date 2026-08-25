@@ -13,6 +13,7 @@ import { Button } from '../../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import ProcurementCharts from '../../components/procurement/ProcurementCharts';
+import ActionRequiredInbox, { ActionInboxItem } from '../../components/dashboard/ActionRequiredInbox';
 
 export const ProcurementDashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -88,6 +89,54 @@ export const ProcurementDashboardPage: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      {/* ── صندوق المهام والإجراءات المطلوبة منك الآن (Action Inbox) ── */}
+      {(() => {
+        const procurementActionItems: ActionInboxItem[] = [
+          ...prs.map((pr) => ({
+            id: `pr-${pr.id}`,
+            rawId: pr.id,
+            type: 'PR' as const,
+            code: pr.request_number,
+            title: pr.items?.[0]?.item_description || pr.justification || 'طلب شراء معتمد',
+            subtitle: pr.justification || undefined,
+            department: pr.department?.name,
+            requester: pr.requester?.name,
+            amount: pr.total_estimated_cost ? Number(pr.total_estimated_cost) : undefined,
+            urgency: pr.priority === 'HIGH' ? ('CRITICAL' as const) : ('NORMAL' as const),
+            reason: 'طلب معتمد جاهز للتسعير أو إصدار أمر الشراء فوراً',
+            actionUrl: `/procurement/purchase-orders/create?pr=${pr.id}`,
+            actionLabel: 'إصدار أمر الشراء',
+            timeAgo: pr.created_at ? pr.created_at.slice(0, 10) : undefined,
+          })),
+          ...pos
+            .filter((p) => p.status === 'RETURNED_TO_PROCUREMENT')
+            .map((po) => ({
+              id: `po-ret-${po.id}`,
+              rawId: po.id,
+              type: 'PO' as const,
+              code: po.po_number,
+              title: po.supplier?.company_name || 'أمر شراء معاد',
+              department: po.department?.name || po.purchase_request?.department?.name,
+              supplier: po.supplier?.company_name,
+              amount: Number(po.grand_total || 0),
+              urgency: 'CRITICAL' as const,
+              reason: 'أمر شراء معاد من الحسابات/الإدارة يتطلب التعديل والمراجعة',
+              actionUrl: `/procurement/purchase-orders/${po.id}/edit`,
+              actionLabel: 'تعديل أمر الشراء',
+              timeAgo: po.created_at ? po.created_at.slice(0, 10) : undefined,
+            })),
+        ];
+
+        return (
+          <ActionRequiredInbox
+            title="المهام والإجراءات المطلوبة من إدارة المشتريات الآن"
+            description="الطلبات المعتمدة الجاهزة للتعميد وأوامر الشراء التي تحتاج تدخلك الفوري."
+            roleName="إدارة المشتريات والتعاقدات"
+            items={procurementActionItems}
+          />
+        );
+      })()}
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">

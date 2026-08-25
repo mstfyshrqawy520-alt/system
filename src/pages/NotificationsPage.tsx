@@ -15,6 +15,7 @@ import { Card } from '../components/ui/Card';
 import { parseApiError } from '../utils/apiError';
 import { PushNotificationPrompt } from '../components/notifications/PushNotificationPrompt';
 import { getPrimaryRoleSlug, AppRoleSlug } from '../routes/roleRouting';
+import { resolveNotificationAction } from '../utils/notificationRouting';
 
 interface RoleTabConfig {
   key: string;
@@ -267,71 +268,7 @@ export const NotificationsPage: React.FC = () => {
   }, []);
 
   const getTargetRoute = (notification: Notification & { data?: any; target_url?: string }): string | null => {
-    const roleSlugs = (user?.roles || []).map((role) => (typeof role === 'string' ? role : role.slug));
-    const notifiableId =
-      notification.notifiable_id ||
-      notification.data?.purchase_request_id ||
-      notification.data?.purchase_order_id ||
-      notification.data?.id;
-    const type = notification.type || '';
-    const notifiableType = notification.notifiable_type || '';
-    const isPurchaseRequest = type.includes('purchase_request') || notifiableType.includes('PurchaseRequest');
-    const isPurchaseOrder = type.includes('purchase_order') || notifiableType.includes('PurchaseOrder');
-    const isPurchaseReceipt = type.includes('purchase_receipt') || notifiableType.includes('PurchaseReceipt');
-    const isCombinedAccountingDocuments =
-      type === 'purchase_order_and_receipt_ready_accounting' ||
-      Boolean(notification.data?.purchase_order_id && notification.data?.purchase_receipt_id);
-
-    if (type.includes('purchase_quote') || type.includes('quote_recommendation')) {
-      if (roleSlugs.includes('general_manager')) return notifiableId ? `/general-manager/purchase-quotes?open=${notifiableId}` : '/general-manager/purchase-quotes';
-      if (roleSlugs.includes('procurement_manager')) return notifiableId ? `/procurement?open=${notifiableId}` : '/procurement';
-      if (roleSlugs.includes('accountant')) return notifiableId ? `/accounting/purchase-quotes?open=${notifiableId}` : '/accounting/purchase-quotes';
-      if (roleSlugs.includes('reviewer')) return notifiableId ? `/reviewer/purchase-quotes?open=${notifiableId}` : '/reviewer/purchase-quotes';
-    }
-
-    if (isCombinedAccountingDocuments && roleSlugs.includes('accountant')) {
-      return `/accounting/supplier-payments?purchase_receipt_id=${notification.data?.purchase_receipt_id}&purchase_order_id=${notification.data?.purchase_order_id}`;
-    }
-
-    if (isPurchaseReceipt) {
-      if (roleSlugs.includes('accountant')) return notifiableId ? `/accounting/supplier-payments?purchase_receipt_id=${notifiableId}` : '/accounting/supplier-payments';
-      if (roleSlugs.includes('warehouse_keeper')) return notifiableId ? `/warehouse?receipt_id=${notifiableId}` : '/warehouse';
-      if (roleSlugs.includes('site_engineer')) return notifiableId ? `/site-engineer?receipt_id=${notifiableId}` : '/site-engineer';
-    }
-
-    if (isPurchaseRequest) {
-      if (roleSlugs.includes('reviewer')) return notifiableId ? `/reviewer/requests/${notifiableId}` : '/reviewer/requests';
-      if (roleSlugs.includes('general_manager')) return notifiableId ? `/general-manager/purchase-requests?open=${notifiableId}` : '/general-manager/purchase-requests';
-      if (roleSlugs.includes('procurement_manager')) return notifiableId ? `/procurement/purchase-requests?open=${notifiableId}` : '/procurement/purchase-requests';
-      if (roleSlugs.includes('accountant')) return notifiableId ? `/accounting/purchase-requests?open=${notifiableId}` : '/accounting/purchase-requests';
-      if (roleSlugs.includes('employee')) return notifiableId ? `/employee/requests/${notifiableId}` : '/employee/requests';
-      return notifiableId ? `/requests/${notifiableId}` : '/requests';
-    }
-
-    if (isPurchaseOrder) {
-      if (roleSlugs.includes('procurement_manager')) return notifiableId ? `/procurement/purchase-orders/${notifiableId}` : '/procurement/purchase-orders';
-      if (roleSlugs.includes('accountant')) return notifiableId ? `/accounting/purchase-orders/${notifiableId}` : '/accounting/purchase-orders';
-      if (roleSlugs.includes('general_manager')) return notifiableId ? `/general-manager/purchase-orders/${notifiableId}` : '/general-manager/purchase-orders';
-    }
-
-    if (notification.target_url) {
-      const allowedPrefixes = roleSlugs.includes('reviewer')
-        ? ['/reviewer/']
-        : roleSlugs.includes('procurement_manager')
-          ? ['/procurement/']
-          : roleSlugs.includes('accountant')
-            ? ['/accounting/']
-            : roleSlugs.includes('general_manager')
-              ? ['/general-manager/']
-              : roleSlugs.includes('employee')
-                ? ['/employee/']
-                : [];
-      if (allowedPrefixes.some((prefix) => notification.target_url!.startsWith(prefix))) {
-        return notification.target_url;
-      }
-    }
-
-    return null;
+    return resolveNotificationAction(notification, user).url;
   };
 
   const handleNotificationClick = async (notification: Notification) => {
