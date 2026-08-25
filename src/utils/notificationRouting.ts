@@ -139,20 +139,22 @@ export const resolveNotificationAction = (
 
   // 4. Accountant (المحاسب المالي)
   if (roleSlugs.includes('accountant')) {
+    // If notification relates to goods receipt or approved receipt from engineer/warehouse
+    if (receiptId || (poId && receiptId) || type.includes('receipt') || type.includes('grn') || type.includes('goods_received')) {
+      const targetParam = receiptId ? `purchase_receipt_id=${receiptId}` : `purchase_order_id=${poId}`;
+      return {
+        url: `/accounting/supplier-payments?${targetParam}`,
+        actionLabel: 'تسجيل الفاتورة وسداد المستحقات',
+        icon: '🧾',
+        badgeLabel: 'إذن استلام جاهز',
+      };
+    }
     if (poId) {
       return {
         url: `/accounting/purchase-orders/${poId}`,
-        actionLabel: 'المراجعة والاعتماد المالي',
+        actionLabel: 'الاطلاع المالي على أمر الشراء',
         icon: '💳',
-        badgeLabel: 'اعتماد مالي',
-      };
-    }
-    if (receiptId) {
-      return {
-        url: `/accounting/supplier-payments?purchase_receipt_id=${receiptId}`,
-        actionLabel: 'سداد فواتير المورد',
-        icon: '🧾',
-        badgeLabel: 'صرف دفعة',
+        badgeLabel: 'أمر شراء',
       };
     }
     if (type.includes('quote') || type.includes('recommendation')) {

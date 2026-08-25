@@ -52,15 +52,21 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
           </span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <Link to={`/accounting/supplier-payments?po=${po.po_number || po.id}`}>
+            <Button variant="primary" size="sm" className="font-bold shadow-md shadow-cyan-900/40">
+              <span>🧾 تسجيل فاتورة وسداد مستحقات</span>
+              <span className="mr-1">←</span>
+            </Button>
+          </Link>
           <button
             onClick={() => setPrintPo(po)}
-            className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded text-xs font-bold transition-colors flex items-center gap-1"
+            className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
           >
             🖨️ طباعة PO
           </button>
           <button
             onClick={handleExportJson}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded text-xs font-semibold transition-colors flex items-center gap-1"
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer"
           >
             📥 تصدير البيانات
           </button>
@@ -70,6 +76,24 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
             </Button>
           </Link>
         </div>
+      </div>
+
+      {/* Operational Invoice & Payment Banner */}
+      <div className="rounded-2xl border border-cyan-500/60 bg-gradient-to-r from-slate-900 via-cyan-950/20 to-slate-900 p-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">💳</span>
+          <div>
+            <h4 className="text-sm font-bold text-cyan-300">أمر الشراء جاهز للمطابقة وتسجيل الفواتير</h4>
+            <p className="text-xs text-slate-400 mt-0.5">
+              يمكنك الانتقال فوراً لشاشة فواتير ودفعات الموردين لتسجيل فاتورة المورد وتوزيع المصروف على قطع الأراضي.
+            </p>
+          </div>
+        </div>
+        <Link to={`/accounting/supplier-payments?po=${po.po_number || po.id}`}>
+          <Button variant="primary" size="sm" className="whitespace-nowrap font-black">
+            تسجيل الفاتورة والدفعات ←
+          </Button>
+        </Link>
       </div>
 
       {/* المورد & PR Metadata Card */}
@@ -100,43 +124,77 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Line البنود Table */}
-      <div className="space-y-3">
+      {/* Items Table */}
+      <Card className="space-y-4">
         <h3 className="text-sm font-bold text-slate-200">📦 بنود أمر الشراء</h3>
-        <div className="hidden min-w-0 md:block">
-          <Table>
-            <TableHeader>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>#</TableHead>
+              <TableHead>اسم الصنف</TableHead>
+              <TableHead>المنطقة</TableHead>
+              <TableHead>الكمية والوحدة</TableHead>
+              <TableHead>سعر الوحدة</TableHead>
+              <TableHead>إجمالي البند</TableHead>
+              <TableHead>الوصف والمواصفات</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {po.items && po.items.length > 0 ? (
+              po.items.map((item, index) => (
+                <TableRow key={item.id || index}>
+                  <TableCell className="font-mono text-cyan-400">{index + 1}</TableCell>
+                  <TableCell className="font-bold text-slate-100">{item.item_name || item.item?.name || '—'}</TableCell>
+                  <TableCell className="font-mono text-slate-300">{item.region || '—'}</TableCell>
+                  <TableCell className="text-slate-300">
+                    {item.quantity} {getUnitLabel(item.uom || '')}
+                  </TableCell>
+                  <TableCell className="font-mono text-cyan-400">
+                    <CurrencyDisplay amount={item.unit_price || 0} currency={po.currency || 'ج.م'} />
+                  </TableCell>
+                  <TableCell className="font-mono text-emerald-400 font-bold">
+                    <CurrencyDisplay amount={item.line_total || (Number(item.quantity || 0) * Number(item.unit_price || 0))} currency={po.currency || 'ج.م'} />
+                  </TableCell>
+                  <TableCell className="text-slate-400 text-[11px] max-w-xs truncate">
+                    {item.item_description || item.specifications || 'لا توجد مواصفات إضافية'}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
               <TableRow>
-                <TableHead className="whitespace-nowrap">#</TableHead><TableHead className="whitespace-nowrap">رقم قطعة الأرض</TableHead><TableHead className="whitespace-nowrap">المنطقة</TableHead><TableHead className="whitespace-nowrap">اسم الصنف</TableHead><TableHead className="whitespace-nowrap">الوصف</TableHead><TableHead className="whitespace-nowrap">المواصفات</TableHead><TableHead className="whitespace-nowrap">الكمية</TableHead><TableHead className="whitespace-nowrap">الوحدة</TableHead><TableHead className="whitespace-nowrap">سعر الوحدة (ج.م)</TableHead><TableHead className="whitespace-nowrap">الإجمالي (ج.م)</TableHead>
+                <TableCell colSpan={7} className="text-center py-4 text-slate-500">
+                  لا توجد بنود مضافة لهذا الأمر
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>{po.items?.map((item, index) => <TableRow key={item.id || index}><TableCell className="whitespace-nowrap font-bold text-slate-400">{index + 1}</TableCell><TableCell className="whitespace-nowrap font-mono text-slate-300">{item.item_reference || '—'}</TableCell><TableCell className="max-w-[150px]">{item.region || '—'}</TableCell><TableCell className="max-w-[180px] font-bold text-slate-100">{item.item_name || item.item_description}</TableCell><TableCell className="max-w-[220px] text-slate-300">{item.item_description || '—'}</TableCell><TableCell className="max-w-[180px] text-[11px] text-slate-400">{item.specifications || '-'}</TableCell><TableCell className="whitespace-nowrap font-mono">{parseFloat(item.quantity as any || 0).toLocaleString()}</TableCell><TableCell className="whitespace-nowrap text-slate-300">{getUnitLabel(item.uom)}</TableCell><TableCell className="whitespace-nowrap"><CurrencyDisplay amount={item.unit_price} amountClassName="font-mono text-slate-200" /></TableCell><TableCell className="whitespace-nowrap"><CurrencyDisplay amount={item.line_total} amountClassName="font-mono font-bold text-emerald-400" /></TableCell></TableRow>)}</TableBody>
-          </Table>
-        </div>
-        <div className="space-y-3 md:hidden">{po.items?.map((item, index) => <article key={`mobile-item-${item.id || index}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4"><div className="flex min-w-0 items-start justify-between gap-3"><span className="shrink-0 rounded-md bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-300">بند {index + 1}</span><span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">{item.item_reference || 'بدون رقم قطعة'}</span></div><dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2"><div className="min-w-0 min-[420px]:col-span-2"><dt className="text-slate-500">اسم الصنف</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{item.item_name || item.item_description || 'غير محدد'}</dd></div><div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 break-normal text-slate-300">{item.region || 'غير محددة'}</dd></div><div><dt className="text-slate-500">الكمية والوحدة</dt><dd className="mt-1 whitespace-nowrap font-mono text-slate-200">{parseFloat(item.quantity as any || 0).toLocaleString()} {getUnitLabel(item.uom)}</dd></div><div><dt className="text-slate-500">سعر الوحدة</dt><dd className="mt-1 whitespace-nowrap"><CurrencyDisplay amount={item.unit_price} amountClassName="font-mono text-slate-200" /></dd></div><div><dt className="text-slate-500">إجمالي البند</dt><dd className="mt-1 whitespace-nowrap"><CurrencyDisplay amount={item.line_total} amountClassName="font-mono font-bold text-emerald-400" /></dd></div><div className="min-[420px]:col-span-2"><dt className="text-slate-500">الوصف والمواصفات</dt><dd className="mt-1 break-normal text-xs leading-6 text-slate-300"><div>{item.item_description || '—'}</div><div className="mt-1 text-slate-400">{item.specifications || 'لا توجد مواصفات إضافية'}</div></dd></div></dl></article>)}</div>
-      </div>
+            )}
+          </TableBody>
+        </Table>
 
-      {/* Financial Totals Display (EGP) */}
-      <div className="flex justify-end">
-        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 w-full max-w-xs text-xs">
-          <div className="flex justify-between items-center text-slate-400">
-            <span>إجمالي البنود:</span>
-            <span className="font-mono font-bold text-slate-200">{Number(po.grand_total || 0).toFixed(2)} ج.م</span>
-          </div>
-          <div className="flex justify-between items-center text-slate-400">
-            
-            <span className="font-mono text-slate-500"></span>
-          </div>
-          <div className="border-t border-slate-800 pt-2 flex justify-between items-center font-bold text-sm">
-            <span className="text-cyan-400">المبلغ الإجمالي الكلي:</span>
-            <span className="font-mono text-emerald-400">{Number(po.grand_total || 0).toFixed(2)} ج.م</span>
+        {/* Totals Box */}
+        <div className="flex justify-end pt-2">
+          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-1.5 w-full sm:w-80 text-xs">
+            <div className="flex justify-between text-slate-400">
+              <span>إجمالي البنود:</span>
+              <span className="font-mono font-bold text-slate-200">
+                <CurrencyDisplay amount={po.subtotal || po.grand_total || 0} currency={po.currency || 'ج.م'} />
+              </span>
+            </div>
+            <div className="flex justify-between border-t border-slate-800 pt-1.5 text-sm font-bold text-cyan-300">
+              <span>المبلغ الإجمالي الكلي:</span>
+              <span className="font-mono font-black text-cyan-400">
+                <CurrencyDisplay amount={po.grand_total || po.subtotal || 0} currency={po.currency || 'ج.م'} />
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Printable PO Modal */}
       {printPo && (
-        <PrintablePO po={printPo} onClose={() => setPrintPo(null)} />
+        <PrintablePO
+          po={printPo}
+          onClose={() => setPrintPo(null)}
+        />
       )}
     </div>
   );
