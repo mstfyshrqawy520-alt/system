@@ -1,0 +1,1 @@
+import{UniversalReportsPage as o}from"./UniversalReportsPage-C38MObXB.js";import"./index-C4vfv9Ci.js";import"./react-vendor-DVOsVMS1.js";import"./http-vendor-CzApALvg.js";import"./procurement-Qfgc3Wki.js";import"./Card-CvgxwBDE.js";import"./DashboardCharts-DR03zgGW.js";export{o as ProcurementReportsPage,o as default};
