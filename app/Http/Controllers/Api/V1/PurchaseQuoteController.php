@@ -181,6 +181,36 @@ class PurchaseQuoteController extends Controller
         );
     }
 
+    public function viewFileByName(string $filename)
+    {
+        $realPath = null;
+        $relativePath = 'quotes/' . $filename;
+
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($relativePath)) {
+            $realPath = \Illuminate\Support\Facades\Storage::disk('public')->path($relativePath);
+        } elseif (\Illuminate\Support\Facades\Storage::disk('local')->exists($relativePath)) {
+            $realPath = \Illuminate\Support\Facades\Storage::disk('local')->path($relativePath);
+        } elseif (file_exists(storage_path('app/public/' . $relativePath))) {
+            $realPath = storage_path('app/public/' . $relativePath);
+        } elseif (file_exists(storage_path('app/' . $relativePath))) {
+            $realPath = storage_path('app/' . $relativePath);
+        } elseif (file_exists(public_path($relativePath))) {
+            $realPath = public_path($relativePath);
+        } elseif (file_exists(public_path('storage/' . $relativePath))) {
+            $realPath = public_path('storage/' . $relativePath);
+        }
+
+        if ($realPath && file_exists($realPath)) {
+            $mime = @mime_content_type($realPath) ?: 'application/pdf';
+            return response()->file($realPath, [
+                'Content-Type' => $mime,
+                'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            ]);
+        }
+
+        abort(404, 'ملف عرض السعر غير موجود على الخادم.');
+    }
+
     protected function renderMissingFileHtml(PurchaseRequestQuote $quote, string $reason): string
     {
         $fileName = htmlspecialchars($quote->file_name ?: 'عرض سعر غير مسمى');

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\PurchaseQuoteController;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
@@ -13,6 +14,9 @@ use Illuminate\Support\Facades\Route;
 | SPA index.html so direct URL reloads and client routes work on Hostinger.
 |
 */
+
+Route::get('/storage/quotes/{filename}', [PurchaseQuoteController::class, 'viewFileByName']);
+Route::get('/purchase-quotes/{id}/file', [PurchaseQuoteController::class, 'viewFile']);
 
 Route::get('/{any}', function () {
     // Check if dist/index.html or public/index.html exists
