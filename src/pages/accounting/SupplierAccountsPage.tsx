@@ -23,6 +23,14 @@ const today = getTodayInputDate;
 const money = (value: string | number | null | undefined) => `${Number(value || 0).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م`;
 const paymentMethods: Record<string, string> = { BANK_TRANSFER: 'تحويل بنكي', CASH: 'نقدي', CHEQUE: 'شيك' };
 
+const getQuoteFileUrl = (quote: { id: number; file_url?: string | null; file_path?: string | null; file_name?: string | null }) => {
+  if (!quote.file_url && !quote.file_path && !quote.file_name) return null;
+  if (quote.file_url && !quote.file_url.includes('/storage/quotes/')) {
+    return quote.file_url;
+  }
+  return `/api/v1/purchase-quotes/${quote.id}/file`;
+};
+
 /**
  * Dedicated Full-Page Supplier Account Statement View
  */
@@ -516,9 +524,9 @@ const SupplierAccountDedicatedPage: React.FC<{
                         {quote.notes || '—'}
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-center">
-                        {quote.file_url ? (
+                        {getQuoteFileUrl(quote) ? (
                           <a
-                            href={quote.file_url}
+                            href={getQuoteFileUrl(quote)!}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-600/70 text-cyan-300 text-xs font-bold transition-all shadow-sm"
@@ -568,9 +576,9 @@ const SupplierAccountDedicatedPage: React.FC<{
                     </div>
                   )}
 
-                  {quote.file_url ? (
+                  {getQuoteFileUrl(quote) ? (
                     <a
-                      href={quote.file_url}
+                      href={getQuoteFileUrl(quote)!}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-600/70 text-cyan-200 text-xs font-bold transition-all shadow-sm"

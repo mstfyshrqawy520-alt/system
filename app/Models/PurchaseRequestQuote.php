@@ -55,7 +55,7 @@ class PurchaseRequestQuote extends Model
                     return $this->file_path;
                 }
 
-                return Storage::disk('public')->url($this->file_path);
+                return url("/api/v1/purchase-quotes/{$this->id}/file");
             }
         );
     }

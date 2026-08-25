@@ -14,6 +14,14 @@ import { getDefaultDateFrom, getTodayInputDate } from '../../utils/dateFilters';
 
 type DecisionMode = 'recommend' | 'executive';
 
+const getQuoteFileUrl = (quote: { id: number; file_url?: string | null; file_path?: string | null; file_name?: string | null }) => {
+  if (!quote.file_url && !quote.file_path && !quote.file_name) return null;
+  if (quote.file_url && !quote.file_url.includes('/storage/quotes/')) {
+    return quote.file_url;
+  }
+  return `/api/v1/purchase-quotes/${quote.id}/file`;
+};
+
 const isGeneralManagerRequest = (request: PurchaseRequest): boolean =>
   request.is_general_manager_requester === true
   || request.requester_role === 'general_manager'
@@ -219,6 +227,7 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
                     const primaryItem = request.items?.[0];
                     const accounting = quote.recommendations?.find(item => item.role_type === 'ACCOUNTING');
                     const department = quote.recommendations?.find(item => item.role_type === 'DEPARTMENT');
+                    const pdfUrl = getQuoteFileUrl(quote);
                     return <TableRow key={quote.id} className="border-b border-slate-700/80 even:bg-slate-800/25">
                       <TableCell className="min-w-[240px] border-l border-slate-700/70 align-top text-sm">
                         <div className="font-bold text-slate-100">{primaryItem?.item_description || primaryItem?.item?.name || '—'}</div>
@@ -227,9 +236,9 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
                       </TableCell>
                       <TableCell className="min-w-[190px] border-l border-slate-700/70 align-top text-sm">
                         <div className="font-black text-slate-100">{quote.supplier?.company_name || '—'}</div>
-                        {quote.file_url ? (
+                        {pdfUrl ? (
                           <a
-                            href={quote.file_url}
+                            href={pdfUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-600/70 text-cyan-300 transition-all shadow-sm"
@@ -282,6 +291,7 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
               const primaryItem = request.items?.[0];
               const accounting = quote.recommendations?.find(item => item.role_type === 'ACCOUNTING');
               const department = quote.recommendations?.find(item => item.role_type === 'DEPARTMENT');
+              const pdfUrl = getQuoteFileUrl(quote);
               return (
                 <article key={`mobile-quote-${quote.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
                   <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-3">
@@ -293,10 +303,10 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
                     </span>
                   </div>
 
-                  {quote.file_url && (
+                  {pdfUrl && (
                     <div className="mt-2.5">
                       <a
-                        href={quote.file_url}
+                        href={pdfUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-600/70 text-cyan-200 text-xs font-bold transition-all shadow-sm"

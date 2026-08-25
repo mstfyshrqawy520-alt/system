@@ -124,4 +124,37 @@ class PurchaseQuoteController extends Controller
 
         return response()->json(['data' => $quotes]);
     }
+
+    public function viewFile(int $id)
+    {
+        $quote = PurchaseRequestQuote::findOrFail($id);
+
+        if (! $quote->file_path) {
+            abort(404, 'لا يوجد ملف مرفق لعرض السعر هذا.');
+        }
+
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($quote->file_path)) {
+            $path = \Illuminate\Support\Facades\Storage::disk('public')->path($quote->file_path);
+            $mime = $quote->mime_type ?: (\Illuminate\Support\Facades\Storage::disk('public')->mimeType($quote->file_path) ?: 'application/pdf');
+            return response()->file($path, [
+                'Content-Type' => $mime,
+                'Content-Disposition' => 'inline; filename="' . ($quote->file_name ?: basename($quote->file_path)) . '"',
+            ]);
+        }
+
+        if (\Illuminate\Support\Facades\Storage::disk('local')->exists($quote->file_path)) {
+            $path = \Illuminate\Support\Facades\Storage::disk('local')->path($quote->file_path);
+            $mime = $quote->mime_type ?: (\Illuminate\Support\Facades\Storage::disk('local')->mimeType($quote->file_path) ?: 'application/pdf');
+            return response()->file($path, [
+                'Content-Type' => $mime,
+                'Content-Disposition' => 'inline; filename="' . ($quote->file_name ?: basename($quote->file_path)) . '"',
+            ]);
+        }
+
+        if (filter_var($quote->file_path, FILTER_VALIDATE_URL)) {
+            return redirect()->away($quote->file_path);
+        }
+
+        abort(404, 'ملف عرض السعر غير موجود على الخادم.');
+    }
 }
