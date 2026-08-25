@@ -46,8 +46,16 @@ class PurchaseQuoteController extends Controller
         ]);
 
         $purchaseRequest = PurchaseRequest::findOrFail($purchaseRequestId);
+        $quotesData = $validated['quotes'];
+        foreach ($quotesData as $index => &$quote) {
+            if ($request->hasFile("quotes.{$index}.file")) {
+                $quote['file'] = $request->file("quotes.{$index}.file");
+            }
+        }
+        unset($quote);
+
         return new PurchaseRequestResource(
-            $this->service->createQuotes($request->user(), $purchaseRequest, $validated['quotes'])
+            $this->service->createQuotes($request->user(), $purchaseRequest, $quotesData)
         );
     }
 
@@ -130,24 +138,35 @@ class PurchaseQuoteController extends Controller
         $quote = PurchaseRequestQuote::findOrFail($id);
 
         if (! $quote->file_path) {
-            abort(404, 'لا يوجد ملف مرفق لعرض السعر هذا.');
+            return response(
+                $this->renderMissingFileHtml($quote, 'لم يتم إرفاق ملف PDF لعرض السعر هذا.'),
+                404,
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
         }
+
+        $realPath = null;
+        $mime = $quote->mime_type ?: 'application/pdf';
 
         if (\Illuminate\Support\Facades\Storage::disk('public')->exists($quote->file_path)) {
-            $path = \Illuminate\Support\Facades\Storage::disk('public')->path($quote->file_path);
-            $mime = $quote->mime_type ?: (\Illuminate\Support\Facades\Storage::disk('public')->mimeType($quote->file_path) ?: 'application/pdf');
-            return response()->file($path, [
-                'Content-Type' => $mime,
-                'Content-Disposition' => 'inline; filename="' . ($quote->file_name ?: basename($quote->file_path)) . '"',
-            ]);
+            $realPath = \Illuminate\Support\Facades\Storage::disk('public')->path($quote->file_path);
+        } elseif (\Illuminate\Support\Facades\Storage::disk('local')->exists($quote->file_path)) {
+            $realPath = \Illuminate\Support\Facades\Storage::disk('local')->path($quote->file_path);
+        } elseif (file_exists(storage_path('app/public/' . $quote->file_path))) {
+            $realPath = storage_path('app/public/' . $quote->file_path);
+        } elseif (file_exists(storage_path('app/' . $quote->file_path))) {
+            $realPath = storage_path('app/' . $quote->file_path);
+        } elseif (file_exists(public_path($quote->file_path))) {
+            $realPath = public_path($quote->file_path);
+        } elseif (file_exists(public_path('storage/' . $quote->file_path))) {
+            $realPath = public_path('storage/' . $quote->file_path);
         }
 
-        if (\Illuminate\Support\Facades\Storage::disk('local')->exists($quote->file_path)) {
-            $path = \Illuminate\Support\Facades\Storage::disk('local')->path($quote->file_path);
-            $mime = $quote->mime_type ?: (\Illuminate\Support\Facades\Storage::disk('local')->mimeType($quote->file_path) ?: 'application/pdf');
-            return response()->file($path, [
+        if ($realPath && file_exists($realPath)) {
+            $fileName = $quote->file_name ?: basename($realPath);
+            return response()->file($realPath, [
                 'Content-Type' => $mime,
-                'Content-Disposition' => 'inline; filename="' . ($quote->file_name ?: basename($quote->file_path)) . '"',
+                'Content-Disposition' => 'inline; filename="' . $fileName . '"',
             ]);
         }
 
@@ -155,6 +174,51 @@ class PurchaseQuoteController extends Controller
             return redirect()->away($quote->file_path);
         }
 
-        abort(404, 'ملف عرض السعر غير موجود على الخادم.');
+        return response(
+            $this->renderMissingFileHtml($quote, 'تم تسجيل بيانات العرض بنجاح، لكن ملف الـ PDF الأصلي لم يتم العثور عليه على الخادم (ربما تم رفعه قبل تحديث الخادم أو تم حذفه أثناء إعادة النشر).'),
+            404,
+            ['Content-Type' => 'text/html; charset=UTF-8']
+        );
+    }
+
+    protected function renderMissingFileHtml(PurchaseRequestQuote $quote, string $reason): string
+    {
+        $fileName = htmlspecialchars($quote->file_name ?: 'عرض سعر غير مسمى');
+        $supplierName = htmlspecialchars($quote->supplier?->company_name ?: 'المورد');
+        $amount = number_format((float) $quote->total_amount, 2);
+
+        return <<<HTML
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="utf-8">
+  <title>ملف عرض السعر - {$fileName}</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #020617; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 1rem; }
+    .card { background: #0f172a; border: 1px solid #334155; border-radius: 1.25rem; padding: 2.5rem; max-width: 480px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+    .icon { font-size: 3rem; margin-bottom: 1rem; }
+    h2 { color: #38bdf8; margin: 0 0 1rem 0; font-size: 1.25rem; }
+    p { color: #94a3b8; font-size: 0.875rem; line-height: 1.6; margin: 0.5rem 0; }
+    .details { background: #1e293b; border-radius: 0.75rem; padding: 1rem; margin: 1.5rem 0; text-align: right; font-size: 0.8125rem; }
+    .details div { margin: 0.35rem 0; }
+    .btn { display: inline-block; background: #0284c7; color: #ffffff; padding: 0.625rem 1.5rem; border-radius: 0.75rem; font-weight: bold; text-decoration: none; transition: background 0.2s; font-size: 0.875rem; }
+    .btn:hover { background: #0369a1; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">📄⚠️</div>
+    <h2>تعذر فتح ملف عرض السعر</h2>
+    <p>{$reason}</p>
+    <div class="details">
+      <div><strong>المورد:</strong> {$supplierName}</div>
+      <div><strong>قيمة العرض:</strong> {$amount} ج.م</div>
+      <div><strong>اسم الملف المسجل:</strong> {$fileName}</div>
+    </div>
+    <a class="btn" href="javascript:window.close()">إغلاق هذه النافذة</a>
+  </div>
+</body>
+</html>
+HTML;
     }
 }
