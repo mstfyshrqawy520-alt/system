@@ -55,13 +55,6 @@ class PurchaseQuoteService
             ]);
         })->values()->all();
 
-        $amounts = collect($quotes)->pluck('total_amount')->map(fn ($amount) => number_format((float) $amount, 2, '.', ''));
-        if ($amounts->unique()->count() !== count($quotes)) {
-            throw ValidationException::withMessages([
-                'quotes' => ['يجب أن تكون قيمة كل عرض مختلفة عن العروض الأخرى.'],
-            ]);
-        }
-
         $activeSuppliers = Supplier::query()
             ->whereIn('id', $supplierIds->all())
             ->where('is_active', true)

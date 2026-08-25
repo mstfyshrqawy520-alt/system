@@ -90,10 +90,17 @@ export const PurchaseQuotesModal: React.FC<PurchaseQuotesModalProps> = ({
     [drafts]
   );
 
-  const rankByIndex = useMemo(
-    () => new Map(rankedQuotes.map((quote, rank) => [quote.index, rank + 1])),
-    [rankedQuotes]
-  );
+  const rankByIndex = useMemo(() => {
+    const map = new Map<number, number>();
+    let currentRank = 1;
+    for (let i = 0; i < rankedQuotes.length; i++) {
+      if (i > 0 && rankedQuotes[i].amount > rankedQuotes[i - 1].amount) {
+        currentRank = i + 1;
+      }
+      map.set(rankedQuotes[i].index, currentRank);
+    }
+    return map;
+  }, [rankedQuotes]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -197,10 +204,6 @@ export const PurchaseQuotesModal: React.FC<PurchaseQuotesModalProps> = ({
       )
     ) {
       setError(`أدخل إجمالي قيمة موجبًا وصحيحًا لكل عرض من ${quoteCountLabel(drafts.length)}.`);
-      return;
-    }
-    if (new Set(drafts.map((draft) => Number(draft.total_amount).toFixed(2))).size !== drafts.length) {
-      setError('يجب أن تكون إجماليات العروض مختلفة عن بعضها.');
       return;
     }
     if ((request.items || []).some((item) => !item.item_reference?.trim() || !item.region?.trim())) {
