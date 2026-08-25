@@ -49,25 +49,52 @@ export const NotificationBell: React.FC = () => {
       void requestAndRegisterPushToken().catch(() => {});
     }
 
+    // Deduplication tracking: keep set of recently handled notification IDs
+    const seenNotificationIds = new Set<number>();
+
     const handleReceived = (event: Event) => {
       const notification = (event as CustomEvent<Notification>).detail;
       if (!notification || !mounted) return;
 
-      setLatestToast(notification);
+      // Deduplication: ignore if recently handled to prevent duplicate SSE + API events
+      if (seenNotificationIds.has(notification.id)) {
+        return;
+      }
+      seenNotificationIds.add(notification.id);
+      if (seenNotificationIds.size > 200) {
+        // Prevent memory leak
+        const first = seenNotificationIds.values().next().value;
+        if (first !== undefined) seenNotificationIds.delete(first);
+      }
+
       setRecentNotifications((prev) => [notification, ...prev.filter((n) => n.id !== notification.id)].slice(0, 6));
       setCount((current) => current + (notification.read_at ? 0 : 1));
 
-      // Trigger native mobile/browser system tray notification and vibration
       const action = resolveNotificationAction(notification, user);
-      showNativeSystemNotification(notification.title || 'إشعار جديد', {
-        body: notification.message || 'لديك معاملة جديدة تتطلب الإجراء.',
-        tag: `notif-${notification.id}`,
-        data: { url: action.url },
-      });
 
-      window.setTimeout(() => {
-        if (mounted) setLatestToast(null);
-      }, 8000);
+      // Smart Selective Toast: Only trigger intrusive Toast for actionable / critical / returned events
+      const shouldShowToast =
+        action.isActionable ||
+        action.priority === 'URGENT' ||
+        action.priority === 'HIGH' ||
+        (notification.type || '').includes('returned') ||
+        (notification.type || '').includes('rejected') ||
+        (notification.type || '').includes('failed');
+
+      if (shouldShowToast) {
+        setLatestToast(notification);
+
+        // Trigger native mobile/browser system tray notification and vibration
+        showNativeSystemNotification(notification.title || 'إشعار جديد يتطلب الإجراء', {
+          body: notification.message || 'لديك معاملة جديدة تتطلب اتخاذ قرارك.',
+          tag: `notif-${notification.id}`,
+          data: { url: action.url },
+        });
+
+        window.setTimeout(() => {
+          if (mounted) setLatestToast(null);
+        }, 7000);
+      }
     };
 
     const handleUpdated = () => {
