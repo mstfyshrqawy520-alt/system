@@ -15,7 +15,6 @@ import { parseApiError } from '../../utils/apiError';
 import { KpiCard } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
-import { DashboardDonut } from '../../components/ui/DashboardCharts';
 import ActionRequiredInbox from '../../components/dashboard/ActionRequiredInbox';
 
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
@@ -49,12 +48,6 @@ export const ReviewerDashboardPage: React.FC = () => {
   const underReviewCount = requests.filter((r) => r.status === 'UNDER_REVIEW').length;
   const approvedCount = requests.filter((r) => r.status === 'APPROVED_BY_REVIEWER' || r.status === 'PENDING_PROCUREMENT_APPROVAL').length;
   const rejectedCount = requests.filter((r) => r.status === 'REJECTED').length;
-  const statusSegments = [
-    { label: 'في انتظار المراجعة', value: submittedCount, color: '#6366f1' },
-    { label: 'قيد المراجعة', value: underReviewCount, color: '#06b6d4' },
-    { label: 'معتمدة', value: approvedCount, color: '#22c55e' },
-    { label: 'مرفوضة', value: rejectedCount, color: '#f43f5e' },
-  ];
   const visibleRequests = requests.slice(0, 5);
 
   if (isLoading) {
@@ -143,8 +136,6 @@ export const ReviewerDashboardPage: React.FC = () => {
         <KpiCard title="معتمدة" value={approvedCount} accentColor="emerald" icon={<span className="text-sm">✅</span>} />
         <KpiCard title="مرفوضة" value={rejectedCount} accentColor="rose" icon={<span className="text-sm">❌</span>} />
       </div>
-
-      <DashboardDonut title="توزيع حالات المراجعة" subtitle="الطلبات الواقعة ضمن نطاق قسمك" segments={statusSegments} centerLabel="إجمالي الطلبات" centerValue={requests.length} />
 
       <section className="min-w-0 space-y-4">
         <h2 className="text-sm font-bold text-slate-200">📋 طلبات تنتظر المراجعة والاعتماد</h2>
