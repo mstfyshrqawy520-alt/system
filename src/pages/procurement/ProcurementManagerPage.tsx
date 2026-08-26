@@ -441,6 +441,17 @@ export const ProcurementManagerPage: React.FC = () => {
   const supplierOptions = suppliers.map(s => ({ value: String(s.id), label: s.company_name }));
   const poStatuses = Array.from(new Set(pos.map(po => po.status)));
 
+  const handleScrollToQueue = (stage: ProcurementQueueStage | 'ALL') => {
+    setActiveTab(0);
+    setQueueStage(stage);
+    setTimeout(() => {
+      const el = document.getElementById('procurement-queue-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
+  };
+
   const selectedQuotePrs = approvedPrs.filter(
     (pr) => Boolean(getSelectedQuote(pr)) && !(pr.issued_purchase_orders_count && pr.issued_purchase_orders_count > 0)
   );
@@ -508,10 +519,7 @@ export const ProcurementManagerPage: React.FC = () => {
               variant="secondary"
               size="sm"
               className="w-full text-xs font-bold border-amber-800/60 text-amber-200 hover:bg-amber-950"
-              onClick={() => {
-                setActiveTab(0);
-                setQueueStage('PENDING_ROUTE');
-              }}
+              onClick={() => handleScrollToQueue('PENDING_ROUTE')}
             >
               عرض طلبات تحديد المسار ({pendingPrs.length}) ←
             </Button>
@@ -536,10 +544,7 @@ export const ProcurementManagerPage: React.FC = () => {
               variant="secondary"
               size="sm"
               className="w-full text-xs font-bold border-indigo-800/60 text-indigo-200 hover:bg-indigo-950"
-              onClick={() => {
-                setActiveTab(0);
-                setQueueStage('QUOTE_SETUP');
-              }}
+              onClick={() => handleScrollToQueue('QUOTE_SETUP')}
             >
               تجهيز عروض الأسعار ({quotePrs.length}) ←
             </Button>
@@ -564,10 +569,7 @@ export const ProcurementManagerPage: React.FC = () => {
               variant="primary"
               size="sm"
               className="w-full text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-slate-950"
-              onClick={() => {
-                setActiveTab(0);
-                setQueueStage('READY_FOR_PO');
-              }}
+              onClick={() => handleScrollToQueue('READY_FOR_PO')}
             >
               إنشاء أوامر الشراء ({approvedPrs.length}) ←
             </Button>
@@ -576,7 +578,7 @@ export const ProcurementManagerPage: React.FC = () => {
       </div>
 
       {activeTab === 0 && (
-        <section className="space-y-4">
+        <section id="procurement-queue-section" className="space-y-4 scroll-mt-6">
           <div className="flex flex-col gap-3 border-b border-slate-800 pb-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h2 className="text-base font-bold text-cyan-300">طابور طلبات المشتريات الموحد ({filteredQueueRows.length} من {queueRows.length})</h2>
