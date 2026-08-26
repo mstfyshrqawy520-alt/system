@@ -649,8 +649,8 @@ export const ProcurementManagerPage: React.FC = () => {
                       <TableCell className="font-mono font-bold text-cyan-300">{request.request_number}</TableCell>
                       <TableCell><span className={`whitespace-nowrap rounded-full px-2 py-1 text-[10px] font-bold ${stageClass}`}>{QUEUE_STAGE_LABELS[stage]}</span></TableCell>
                       <TableCell><span className="whitespace-nowrap font-bold text-slate-200">{route}</span></TableCell>
-                      <TableCell>{request.department?.name || '—'}</TableCell>
-                      <TableCell className="font-bold text-cyan-300">{request.target_department?.name || '—'}</TableCell>
+                      <TableCell>{request.department?.name || (request.requester as any)?.department?.name || request.target_department?.name || 'غير محدد'}</TableCell>
+                      <TableCell className="font-bold text-cyan-300">{request.target_department?.name || request.department?.name || 'غير محدد'}</TableCell>
                       <TableCell><div className="max-w-[230px] font-bold text-slate-100">{itemNames}</div><div className="mt-1 text-xs text-slate-400">{quantities}{request.items && request.items.length > 1 ? ` — ${request.items.length} بنود` : ''}</div></TableCell>
                       <TableCell className="font-mono text-cyan-300">{parcelReferences}</TableCell>
                       <TableCell>{regions}</TableCell>
@@ -702,8 +702,8 @@ export const ProcurementManagerPage: React.FC = () => {
                     <div><dt className="text-slate-500">مسار الشراء</dt><dd className="mt-1 font-bold text-slate-200">{route}</dd></div>
                     <div><dt className="text-slate-500">تاريخ الاحتياج</dt><dd className="mt-1 font-mono font-bold text-amber-300">{request.date_needed || '—'}</dd></div>
                     <div><dt className="text-slate-500">تاريخ الطلب</dt><dd className="mt-1 font-mono text-slate-300">{fmtDate(request.created_at)}</dd></div>
-                    <div><dt className="text-slate-500">القسم المصدر</dt><dd className="mt-1 break-words text-slate-200">{request.department?.name || '—'}</dd></div>
-                    <div><dt className="text-slate-500">القسم المستهدف</dt><dd className="mt-1 break-words font-bold text-cyan-300">{request.target_department?.name || '—'}</dd></div>
+                    <div><dt className="text-slate-500">القسم المصدر</dt><dd className="mt-1 break-words text-slate-200">{request.department?.name || (request.requester as any)?.department?.name || request.target_department?.name || 'غير محدد'}</dd></div>
+                    <div><dt className="text-slate-500">القسم المستهدف</dt><dd className="mt-1 break-words font-bold text-cyan-300">{request.target_department?.name || request.department?.name || 'غير محدد'}</dd></div>
                     <div><dt className="text-slate-500">مقدم الطلب</dt><dd className="mt-1 break-words text-slate-200">{request.requester?.name || '—'}</dd></div>
                     <div><dt className="text-slate-500">رئيس القسم</dt><dd className="mt-1 break-words text-slate-200">{reviewerName(request, departments)}</dd></div>
                     <div className="col-span-1 min-[420px]:col-span-2"><dt className="text-slate-500">الصنف والكمية</dt><dd className="mt-1 break-words font-bold text-slate-100">{itemNames}<span className="font-normal text-slate-400"> — {quantities}</span></dd></div>

@@ -44,27 +44,35 @@ class PurchaseRequestResource extends JsonResource
                 $this->relationLoaded('requester') && $this->requester->relationLoaded('roles'),
                 fn () => $this->requester->roles->contains(fn ($role) => $role->slug === 'general_manager'),
             ),
-            'department' => $this->whenLoaded('department', function () {
-                return [
-                    'id' => $this->department->id,
-                    'name' => $this->department->name,
-                    'code' => $this->department->code,
-                ];
-            }),
-            'target_department_id' => $this->target_department_id,
-            'target_department' => $this->whenLoaded('targetDepartment', function () {
-                return $this->targetDepartment ? [
-                    'id' => $this->targetDepartment->id,
-                    'name' => $this->targetDepartment->name,
-                    'code' => $this->targetDepartment->code,
-                    'manager' => $this->targetDepartment->relationLoaded('manager') && $this->targetDepartment->manager
-                        ? ['id' => $this->targetDepartment->manager->id, 'name' => $this->targetDepartment->manager->name]
-                        : null,
-                    'site_engineer' => $this->targetDepartment->relationLoaded('siteEngineer') && $this->targetDepartment->siteEngineer
-                        ? ['id' => $this->targetDepartment->siteEngineer->id, 'name' => $this->targetDepartment->siteEngineer->name]
-                        : null,
-                ] : null;
-            }),
+            'department' => $this->department ? [
+                'id' => $this->department->id,
+                'name' => $this->department->name,
+                'code' => $this->department->code,
+            ] : ($this->relationLoaded('requester') && $this->requester?->department ? [
+                'id' => $this->requester->department->id,
+                'name' => $this->requester->department->name,
+                'code' => $this->requester->department->code,
+            ] : ($this->targetDepartment ? [
+                'id' => $this->targetDepartment->id,
+                'name' => $this->targetDepartment->name,
+                'code' => $this->targetDepartment->code,
+            ] : null)),
+            'target_department_id' => $this->target_department_id ?? $this->department_id,
+            'target_department' => $this->targetDepartment ? [
+                'id' => $this->targetDepartment->id,
+                'name' => $this->targetDepartment->name,
+                'code' => $this->targetDepartment->code,
+                'manager' => $this->targetDepartment->relationLoaded('manager') && $this->targetDepartment->manager
+                    ? ['id' => $this->targetDepartment->manager->id, 'name' => $this->targetDepartment->manager->name]
+                    : null,
+                'site_engineer' => $this->targetDepartment->relationLoaded('siteEngineer') && $this->targetDepartment->siteEngineer
+                    ? ['id' => $this->targetDepartment->siteEngineer->id, 'name' => $this->targetDepartment->siteEngineer->name]
+                    : null,
+            ] : ($this->department ? [
+                'id' => $this->department->id,
+                'name' => $this->department->name,
+                'code' => $this->department->code,
+            ] : null),
             'direct_supplier' => $this->whenLoaded('directSupplier', function () {
                 return $this->directSupplier ? [
                     'id' => $this->directSupplier->id,

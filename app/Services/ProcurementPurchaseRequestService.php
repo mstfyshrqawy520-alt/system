@@ -18,16 +18,26 @@ class ProcurementPurchaseRequestService
      */
     public function getPendingProcurementApprovalRequests(int $perPage = 15)
     {
-                return PurchaseRequest::with(['requester.roles', 'department', 'targetDepartment', 'assignedReviewer', 'siteEngineer', 'directSupplier', 'items.item', 'approvalHistory.actor'])->withCount(['purchaseOrders as issued_purchase_orders_count' => function ($query) {
-
-                $query->whereNotIn('status', ['REJECTED']);
-            }])
-            ->where('status', 'PENDING_PROCUREMENT_APPROVAL')
-            ->where(function ($route): void {
-                $route->whereNull('procurement_route')->orWhere('procurement_route', '!=', 'DIRECT');
-            })
-            ->orderBy('updated_at', 'desc')
-            ->paginate($perPage);
+        return PurchaseRequest::with([
+            'requester.roles',
+            'requester.department',
+            'department',
+            'targetDepartment.manager',
+            'targetDepartment.siteEngineer',
+            'assignedReviewer',
+            'siteEngineer',
+            'directSupplier',
+            'items.item',
+            'approvalHistory.actor',
+        ])->withCount(['purchaseOrders as issued_purchase_orders_count' => function ($query) {
+            $query->whereNotIn('status', ['REJECTED']);
+        }])
+        ->where('status', 'PENDING_PROCUREMENT_APPROVAL')
+        ->where(function ($route): void {
+            $route->whereNull('procurement_route')->orWhere('procurement_route', '!=', 'DIRECT');
+        })
+        ->orderBy('updated_at', 'desc')
+        ->paginate($perPage);
     }
 
     /**
@@ -35,7 +45,18 @@ class ProcurementPurchaseRequestService
      */
     public function getPendingQuoteRequests(int $perPage = 15, ?User $actor = null)
     {
-        $query = PurchaseRequest::with(['requester.roles', 'department', 'targetDepartment.manager', 'targetDepartment.siteEngineer', 'assignedReviewer', 'siteEngineer', 'items.item', 'quotes.supplier', 'quotes.recommendations.user']);
+        $query = PurchaseRequest::with([
+            'requester.roles',
+            'requester.department',
+            'department',
+            'targetDepartment.manager',
+            'targetDepartment.siteEngineer',
+            'assignedReviewer',
+            'siteEngineer',
+            'items.item',
+            'quotes.supplier',
+            'quotes.recommendations.user',
+        ]);
 
         if ($actor?->hasRole('procurement_manager')) {
             $query->where('status', 'PENDING_QUOTE_RECOMMENDATIONS')
@@ -80,7 +101,20 @@ class ProcurementPurchaseRequestService
      */
     public function getApprovedByProcurementRequests(int $perPage = 15)
     {
-        return PurchaseRequest::with(['requester.roles', 'department', 'assignedReviewer', 'siteEngineer', 'directSupplier', 'items.item', 'selectedQuote.supplier', 'quotes.supplier', 'approvalHistory.actor'])
+        return PurchaseRequest::with([
+            'requester.roles',
+            'requester.department',
+            'department',
+            'targetDepartment.manager',
+            'targetDepartment.siteEngineer',
+            'assignedReviewer',
+            'siteEngineer',
+            'directSupplier',
+            'items.item',
+            'selectedQuote.supplier',
+            'quotes.supplier',
+            'approvalHistory.actor',
+        ])
             ->withCount(['purchaseOrders as issued_purchase_orders_count' => function ($query) {
                 $query->whereNotIn('status', ['REJECTED']);
             }])
