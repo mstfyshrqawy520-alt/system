@@ -49,7 +49,7 @@ const emptyItem = (): PurchaseRequestItemFormInput => ({
 });
 
 const getInitialData = (): CreatePurchaseRequestPayload => ({
-  request_type: 'OFFICE_SUPPLIES',
+  request_type: 'PROJECT',
   target_department_id: undefined,
   priority: 'NORMAL',
   reviewer_user_id: undefined,

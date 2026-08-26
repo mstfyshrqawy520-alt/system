@@ -289,11 +289,11 @@ export const SearchableSelect = <T extends string | number = string | number>({
       {/* Dropdown Menu */}
       {isOpen && (
         <div
-          className="absolute right-0 top-full z-[100] mt-1.5 w-full min-w-[240px] rounded-xl border border-slate-700 bg-slate-900 p-2 shadow-2xl backdrop-blur-xl animate-fade-in"
-          style={{ maxHeight: '340px' }}
+          className="absolute right-0 top-full z-[100] mt-1.5 w-full min-w-[260px] flex flex-col rounded-xl border border-slate-700 bg-slate-900/95 p-2.5 shadow-2xl backdrop-blur-2xl animate-fade-in"
+          style={{ maxHeight: '380px' }}
         >
           {/* Search Box */}
-          <div className="relative mb-2">
+          <div className="relative mb-2 shrink-0">
             <input
               ref={searchInputRef}
               type="text"
@@ -328,18 +328,18 @@ export const SearchableSelect = <T extends string | number = string | number>({
 
           {/* Results Summary if searching */}
           {searchQuery && (
-            <div className="mb-1.5 px-2 flex justify-between items-center text-[10px] text-slate-400">
+            <div className="mb-1.5 px-2 shrink-0 flex justify-between items-center text-[10px] text-slate-400">
               <span>نتائج البحث عن «{searchQuery}»:</span>
               <span className="font-mono text-cyan-400 font-bold">{filteredOptions.length} عنصر</span>
             </div>
           )}
 
-          {/* Options List */}
+          {/* Options List with visible styled scrollbar */}
           <ul
             ref={listRef}
             role="listbox"
             tabIndex={-1}
-            className="max-h-[220px] overflow-y-auto space-y-1 overscroll-contain pr-0.5"
+            className="max-h-[240px] overflow-y-auto overflow-x-hidden space-y-1 overscroll-contain pr-1 pl-1 custom-select-scrollbar"
           >
             {filteredOptions.length === 0 ? (
               <li className="py-4 text-center text-xs text-slate-400 space-y-2">
@@ -406,6 +406,14 @@ export const SearchableSelect = <T extends string | number = string | number>({
               })
             )}
           </ul>
+
+          {/* Bottom count & scroll hint footer */}
+          {filteredOptions.length > 3 && (
+            <div className="mt-2 pt-1.5 border-t border-slate-800/80 text-[10px] text-slate-400 flex justify-between items-center px-2 shrink-0">
+              <span>{filteredOptions.length} عنصر متاح</span>
+              <span className="text-[9px] text-cyan-400/80 font-medium">مرر للأسفل للمزيد ↕</span>
+            </div>
+          )}
         </div>
       )}
     </div>
