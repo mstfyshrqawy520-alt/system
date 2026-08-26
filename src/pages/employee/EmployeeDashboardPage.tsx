@@ -16,7 +16,6 @@ import { PurchaseRequest } from '../../types/purchaseRequest';
 import { parseApiError } from '../../utils/apiError';
 import { KpiCard } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { DashboardDonut } from '../../components/ui/DashboardCharts';
 import ActionRequiredInbox, { ActionInboxItem } from '../../components/dashboard/ActionRequiredInbox';
 
 import { useRealtimeRefresh, emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
@@ -61,13 +60,6 @@ export const EmployeeDashboardPage: React.FC = () => {
     r.status === 'APPROVED_BY_REVIEWER' || r.status === 'PENDING_PROCUREMENT_APPROVAL' || r.status === 'APPROVED_BY_PROCUREMENT'
   ).length;
   const rejectedCount = requests.filter((r) => r.status === 'REJECTED').length;
-  const statusSegments = [
-    { label: 'مسودات', value: draftCount, color: '#64748b' },
-    { label: 'قيد المراجعة', value: pendingCount, color: '#f59e0b' },
-    { label: 'معتمدة', value: approvedCount, color: '#10b981' },
-    { label: 'مرفوضة', value: rejectedCount, color: '#f43f5e' },
-  ];
-
 
   const handleConfirmSubmit = async () => {
     if (!selectedSubmitPr) return;
@@ -210,8 +202,6 @@ export const EmployeeDashboardPage: React.FC = () => {
           icon={<span className="text-sm">❌</span>}
         />
       </div>
-
-      <DashboardDonut title="توزيع حالات طلباتك" subtitle="ملخص بصري لحالة الطلبات الحالية" segments={statusSegments} centerLabel="إجمالي الطلبات" centerValue={totalCount} />
 
       {/* Recent Requests Section */}
       <div className="space-y-4">
