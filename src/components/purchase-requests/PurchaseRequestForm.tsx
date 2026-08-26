@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { useNavigate } from 'react-router-dom';
 import ErrorMessage from '../ErrorMessage';
@@ -17,8 +17,8 @@ import {
 import { parseApiError } from '../../utils/apiError';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import { FormField, Input, Select, Textarea } from '../ui/FormField';
-import { getUnitOptions } from '../../utils/units';
+import { FormField, Input, Select, Textarea, SearchableSelect } from '../ui/FormField';
+import { getUnitLabel, getUnitOptions } from '../../utils/units';
 import { useAuth } from '../../context/AuthContext';
 
 const UNIT_OPTIONS = getUnitOptions(['PCS', 'KG', 'TON', 'M', 'M2', 'M3', 'L', 'BAG', 'BOX', 'CARTON', 'SET', 'PAIR', 'UNIT', 'HOUR', 'DAY']);
@@ -254,33 +254,48 @@ export const PurchaseRequestForm: React.FC<Props> = ({
     }
   };
 
+  const departmentSelectOptions = useMemo(() => {
+    return departmentOptions.map((d) => ({
+      value: d.id,
+      label: d.name,
+      subLabel: d.manager?.name ? `المدير: ${d.manager.name}` : undefined,
+      badge: d.code || undefined,
+      searchTerms: [d.code || '', d.manager?.name || '', d.site_engineer?.name || ''].filter(Boolean),
+    }));
+  }, [departmentOptions]);
+
+  const catalogOptions = useMemo(() => {
+    return catalogItems.map((c) => ({
+      value: c.id,
+      label: c.name,
+      subLabel: c.code ? `كود: ${c.code}` : c.category?.name,
+      badge: getUnitLabel(c.uom),
+      searchTerms: [c.description || '', c.code || '', c.category?.name || ''].filter(Boolean),
+    }));
+  }, [catalogItems]);
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in" dir="rtl">
       <ErrorMessage error={error} onDismiss={() => setError(null)} />
 
       {/* Header Fields */}
-            <Card className="space-y-4">
-          <h3 className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3 text-sm font-bold text-slate-100">
-
+      <Card className="space-y-4">
+        <h3 className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3 text-sm font-bold text-slate-100">
           <span>📝</span> نموذج طلب شراء احترافي (غير مالي)
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="القسم المطلوب منه الشراء" required error={fieldErrors.targetDepartment} helperText="سيتم توجيه الطلب تلقائيًا إلى مدير القسم ثم مهندس الموقع التابع له.">
-            <Select
-              required
-              value={targetDepartmentId}
+            <SearchableSelect
+              options={departmentSelectOptions}
+              value={targetDepartmentId || ''}
+              onChange={(val) => setTargetDepartmentId(val ? Number(val) : '')}
               disabled={isLoadingDepartments}
-              onChange={(e) => setTargetDepartmentId(e.target.value ? Number(e.target.value) : '')}
-              className="text-ellipsis"
-            >
-              <option value="">{isLoadingDepartments ? 'جاري تحميل الأقسام...' : 'اختر القسم'}</option>
-              {departmentOptions.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name} — مدير القسم: {department.manager?.name || 'غير معين'} — مهندس الموقع: {department.site_engineer?.name || 'غير معين'}
-                </option>
-              ))}
-            </Select>
+              placeholder={isLoadingDepartments ? 'جاري تحميل الأقسام...' : 'اختر أو ابحث عن القسم'}
+              searchPlaceholder="ابحث باسم القسم أو الكود أو المدير..."
+              emptyMessage="لا يوجد قسم بهذا الاسم"
+              error={Boolean(fieldErrors.targetDepartment)}
+            />
             {targetDepartmentId && (() => {
               const selectedDepartment = departmentOptions.find((department) => department.id === Number(targetDepartmentId));
               return selectedDepartment ? (
@@ -363,19 +378,18 @@ export const PurchaseRequestForm: React.FC<Props> = ({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <FormField label="اختر من الكتالوج">
-                  <Select
+                <FormField label="اختيار سريع من الكتالوج">
+                  <SearchableSelect
+                    options={catalogOptions}
                     value={item.item_id || ''}
-                    onChange={(e) => handleItemChange(index, 'item_id', e.target.value)}
+                    onChange={(val) => handleItemChange(index, 'item_id', val ? String(val) : '')}
                     disabled={isLoadingCatalog}
-                  >
-                    <option value="">-- صنف مخصص</option>
-                    {catalogItems.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </Select>
+                    clearable
+                    onClear={() => handleItemChange(index, 'item_id', '')}
+                    placeholder="-- ابحث في كتالوج الأصناف... --"
+                    searchPlaceholder="ابحث باسم الصنف أو الكود..."
+                    emptyMessage="لا يوجد صنف بهذا الاسم في الكتالوج"
+                  />
                 </FormField>
 
                 <div className="md:col-span-2">

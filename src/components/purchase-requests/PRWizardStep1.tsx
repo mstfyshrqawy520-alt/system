@@ -1,5 +1,5 @@
-import React from 'react';
-import { FormField, Input, Select, Textarea } from '../ui/FormField';
+import React, { useMemo } from 'react';
+import { FormField, Input, Select, Textarea, SearchableSelect } from '../ui/FormField';
 import { CreatePurchaseRequestPayload, DepartmentOption, PurchaseRequestPriority } from '../../types/purchaseRequest';
 
 interface Props {
@@ -35,28 +35,35 @@ export const PRWizardStep1: React.FC<Props> = ({
   const targetDepartment = departmentOptions.find((department) => department.id === data.target_department_id);
   const todayStr = getTodayDateInputValue();
 
+  const departmentSelectOptions = useMemo(() => {
+    return departmentOptions.map((d) => ({
+      value: d.id,
+      label: d.name,
+      subLabel: d.code || undefined,
+      searchTerms: [d.code || '', d.manager?.name || '', d.site_engineer?.name || ''].filter(Boolean),
+    }));
+  }, [departmentOptions]);
+
   return (
     <div className="space-y-5" aria-label="القسم المستهدف وبيانات الطلب">
       <FormField label="القسم المستهدف" required error={errors.targetDepartment}>
-        <Select
-          id="pr-target-department"
-          value={data.target_department_id ? String(data.target_department_id) : ''}
-          onChange={event => onChange({
-            ...data,
-            target_department_id: event.target.value ? Number(event.target.value) : undefined,
-            reviewer_user_id: undefined,
-            site_engineer_user_id: undefined,
-          })}
+        <SearchableSelect
+          options={departmentSelectOptions}
+          value={data.target_department_id || ''}
+          onChange={(val) =>
+            onChange({
+              ...data,
+              target_department_id: val ? Number(val) : undefined,
+              reviewer_user_id: undefined,
+              site_engineer_user_id: undefined,
+            })
+          }
           disabled={departmentLoading || departmentOptions.length === 0}
+          placeholder={departmentLoading ? 'جاري تحميل الأقسام...' : 'اختر القسم الذي سيعالج الطلب'}
+          searchPlaceholder="ابحث باسم القسم أو الكود..."
+          emptyMessage="لا يوجد قسم بهذا الاسم"
           error={Boolean(errors.targetDepartment)}
-        >
-          <option value="">{departmentLoading ? 'جاري تحميل الأقسام...' : 'اختر القسم الذي سيعالج الطلب'}</option>
-          {departmentOptions.map((department) => (
-            <option key={department.id} value={department.id}>
-              {department.name}{department.code ? ` — ${department.code}` : ''}
-            </option>
-          ))}
-        </Select>
+        />
         <p className="mt-1 text-[11px] text-slate-500">يمكنك اختيار قسمك أو قسمًا آخر حسب الجهة التي ستعالج الطلب.</p>
       </FormField>
 

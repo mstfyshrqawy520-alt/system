@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Input, Select, Textarea } from '../ui/FormField';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Input, Select, Textarea, SearchableSelect } from '../ui/FormField';
 import { Button } from '../ui/Button';
 import { getCatalogItemsApi } from '../../api/catalog';
 import { CatalogItem, CreatePurchaseRequestPayload, PurchaseRequestItemFormInput } from '../../types/purchaseRequest';
@@ -25,6 +25,16 @@ export const PRWizardStep2: React.FC<Props> = ({ data, onChange, errors = {} }) 
     getCatalogItemsApi().then(setCatalogItems).catch(() => {});
   }, []);
 
+  const catalogOptions = useMemo(() => {
+    return catalogItems.map((cat) => ({
+      value: String(cat.id),
+      label: cat.name,
+      subLabel: cat.code ? `كود: ${cat.code}` : cat.category?.name,
+      badge: getUnitLabel(cat.uom),
+      searchTerms: [cat.description || '', cat.code || '', cat.category?.name || ''].filter(Boolean),
+    }));
+  }, [catalogItems]);
+
   const items: PurchaseRequestItemFormInput[] = data.items && data.items.length > 0 ? data.items : [emptyItem()];
 
   const updateItem = (idx: number, partial: Partial<PurchaseRequestItemFormInput>) => {
@@ -48,7 +58,7 @@ export const PRWizardStep2: React.FC<Props> = ({ data, onChange, errors = {} }) 
       updateItem(idx, { item_id: null });
       return;
     }
-    const cat = catalogItems.find(c => c.id === parseInt(catalogId));
+    const cat = catalogItems.find(c => String(c.id) === String(catalogId));
     if (cat) {
       updateItem(idx, {
         item_id: cat.id,
@@ -117,18 +127,19 @@ export const PRWizardStep2: React.FC<Props> = ({ data, onChange, errors = {} }) 
               {/* Catalog select */}
               {catalogItems.length > 0 && (
                 <div>
-                  <label className="text-[10px] font-semibold text-slate-400 block mb-1">اختيار سريع من كتالوج الأصناف</label>
-                  <Select
+                  <label className="text-[10px] font-semibold text-slate-400 block mb-1">
+                    🔍 بحث واختيار سريع من كتالوج الأصناف
+                  </label>
+                  <SearchableSelect
+                    options={catalogOptions}
                     value={item.item_id ? String(item.item_id) : ''}
-                    onChange={e => handleCatalogSelect(idx, e.target.value)}
-                  >
-                    <option value="">-- اختر من الكتالوج</option>
-                    {catalogItems.map(cat => (
-                      <option key={cat.id} value={String(cat.id)}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </Select>
+                    onChange={(val) => handleCatalogSelect(idx, String(val))}
+                    clearable
+                    onClear={() => handleCatalogSelect(idx, '')}
+                    placeholder="-- ابحث في كتالوج الأصناف بالاسم أو الكود... --"
+                    searchPlaceholder="اكتب اسم الصنف للبحث الفوري..."
+                    emptyMessage="لا يوجد صنف بهذا الاسم في الكتالوج"
+                  />
                 </div>
               )}
 

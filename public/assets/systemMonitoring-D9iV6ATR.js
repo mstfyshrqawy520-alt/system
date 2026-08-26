@@ -1,0 +1,1 @@
+import{c as t}from"./index-BCUx7U0j.js";const e=async()=>(await t.get("/admin/system/monitoring")).data.data,n=async()=>(await t.get("/admin/system/audit-log")).data.data,i=async()=>(await t.get("/admin/system/data-quality")).data.data,o=async()=>(await t.get("/admin/system/security-events")).data.data;export{n as a,i as b,o as c,e as g};

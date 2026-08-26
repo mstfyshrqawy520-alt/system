@@ -68,7 +68,8 @@ export const PR_PRIORITY_LABELS: Record<PurchaseRequestPriority, string> = {
 
 export interface CatalogItem {
   id: number;
-  sku: string;
+  sku?: string;
+  code?: string | null;
   name: string;
   uom: string;
   description?: string | null;

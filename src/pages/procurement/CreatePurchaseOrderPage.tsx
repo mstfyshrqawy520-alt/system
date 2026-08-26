@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getApprovedPurchaseRequestApi } from '../../api/procurement';
 import { getSuppliersApi } from '../../api/suppliers';
@@ -12,6 +12,7 @@ import { parseApiError } from '../../utils/apiError';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
+import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { getUnitLabel } from '../../utils/units';
 import { tafqeetCurrency } from '../../utils/tafqeet';
 
@@ -184,6 +185,16 @@ export const CreatePurchaseOrderPage: React.FC = () => {
     }
   };
 
+  const supplierOptions = useMemo(() => {
+    return suppliers.map((s) => ({
+      value: s.id,
+      label: s.company_name,
+      subLabel: s.phone ? `هاتف: ${s.phone}` : undefined,
+      badge: s.code || `SUP-${s.id}`,
+      searchTerms: [s.contact_person || '', s.email || '', s.tax_number || '', s.commercial_register || ''].filter(Boolean),
+    }));
+  }, [suppliers]);
+
   if (fetching) {
     return <LoadingSpinner message="جاري تجهيز بيانيات إنشاء أمر الشراء..." />;
   }
@@ -198,17 +209,22 @@ export const CreatePurchaseOrderPage: React.FC = () => {
             <h1 className="text-xl font-bold text-slate-100">إصدار أمر شراء رسمي</h1>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            تحويل طلب الشراء المعتمد إلى أمر شراء مالي ملزم للمورد وتحديد الشروط التجاريّة
+            تحويل طلب الشراء المعتمد إلى أمر شراء مالي ملزم للمورد وتحديد الشروط التجارية
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsDirectPoModalOpen(true)}
-          className="bg-slate-800 hover:bg-slate-700 text-cyan-400 font-bold text-xs px-4 py-2.5 rounded-lg border border-slate-700 transition-colors"
-        >
-          + إصدار أمر شراء مباشر
-        </button>
+        <div className="flex items-center space-x-2 space-x-reverse">
+          <Button variant="secondary" size="sm" onClick={() => navigate(-1)}>
+            &rarr; رجوع
+          </Button>
+          <button
+            type="button"
+            onClick={() => setIsDirectPoModalOpen(true)}
+            className="bg-slate-800 hover:bg-slate-700 text-cyan-400 font-bold text-xs px-4 py-2.5 rounded-lg border border-slate-700 transition-colors"
+          >
+            + إصدار أمر شراء مباشر
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -261,19 +277,17 @@ export const CreatePurchaseOrderPage: React.FC = () => {
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px]">تاريخ الحاجة:</span>
-                <span className="font-mono text-slate-300">{pr.date_needed || '-'}</span>
+                <span className="font-mono text-slate-200">{pr.date_needed || '-'}</span>
               </div>
             </div>
 
-            {/* Read-Only PR Items List */}
-            <div className="space-y-2 pt-2">
-              <h3 className="text-xs font-bold text-slate-300">عناصر الطلب المعتمدة بالمواصفات الفنية:</h3>
-              {/* Desktop Table */}
-              <div className="hidden min-w-0 md:block overflow-x-auto rounded-lg border border-slate-800">
-                <table className="w-full text-right text-xs text-slate-300">
-                  <thead className="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+            <div className="pt-2">
+              <h3 className="text-xs font-semibold text-slate-300 mb-2">عناصر الطلب المعتمدة بالمواصفات الفنية:</h3>
+              <div className="overflow-x-auto hidden md:block">
+                <table className="w-full text-right text-xs">
+                  <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-800">
                     <tr>
-                      <th className="p-2.5">م</th>
+                      <th className="p-2.5">#</th>
                       <th className="p-2.5">رقم قطعة الأرض</th>
                       <th className="p-2.5">المنطقة</th>
                       <th className="p-2.5">الصنف</th>
@@ -285,38 +299,53 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                   <tbody className="divide-y divide-slate-800/60">
                     {pr.items?.map((item, idx) => (
                       <tr key={item.id} className="hover:bg-slate-800/30">
-                        <td className="p-2.5 font-mono text-slate-400">{idx + 1}</td>
-                        <td className="p-2.5 font-mono text-slate-300">{item.item_reference || '-'}</td>
+                        <td className="p-2.5 text-slate-500 font-mono">{idx + 1}</td>
+                        <td className="p-2.5 font-mono text-cyan-300 font-bold">{item.item_reference || '-'}</td>
                         <td className="p-2.5 text-slate-300">{item.region || '-'}</td>
-                        <td className="p-2.5 font-bold text-slate-100">{item.item?.name || item.item_description}</td>
+                        <td className="p-2.5 font-bold text-slate-100">{item.item_description || '-'}</td>
                         <td className="p-2.5 text-slate-400">{getUnitLabel(item.uom)}</td>
-                        <td className="p-2.5 font-mono font-bold text-cyan-300">{parseFloat(item.quantity).toLocaleString()}</td>
-                        <td className="p-2.5 text-slate-300 text-xs">{item.specifications || '-'}</td>
+                        <td className="p-2.5 font-mono text-cyan-400 font-bold">{item.quantity}</td>
+                        <td className="p-2.5 text-slate-400 max-w-xs truncate">{item.specifications || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              {/* Mobile Cards */}
+              {/* Mobile items preview */}
               <div className="space-y-3 md:hidden">
                 {pr.items?.map((item, idx) => (
-                  <article key={`mobile-pr-item-${item.id}`} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs">
+                  <article
+                    key={`mobile-pr-item-${item.id}`}
+                    className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs space-y-2"
+                  >
                     <div className="flex items-start justify-between gap-2 border-b border-slate-800/80 pb-2">
-                      <span className="font-bold text-slate-100">{item.item?.name || item.item_description}</span>
-                      <span className="shrink-0 rounded bg-slate-800 px-2 py-0.5 font-mono text-[11px] font-bold text-cyan-300">
-                        #{idx + 1}
+                      <div>
+                        <span className="text-[10px] font-mono text-cyan-300">بند {idx + 1}</span>
+                        <h4 className="font-bold text-slate-100 mt-0.5">{item.item_description || '-'}</h4>
+                      </div>
+                      <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-300">
+                        {getUnitLabel(item.uom)}
                       </span>
                     </div>
-                    <dl className="mt-2.5 grid grid-cols-2 gap-2 text-[11px]">
-                      <div><dt className="text-slate-400">رقم قطعة الأرض</dt><dd className="mt-0.5 font-mono font-bold text-slate-200">{item.item_reference || '-'}</dd></div>
-                      <div><dt className="text-slate-400">المنطقة</dt><dd className="mt-0.5 text-slate-200">{item.region || '-'}</dd></div>
-                      <div><dt className="text-slate-400">الوحدة</dt><dd className="mt-0.5 text-slate-300">{getUnitLabel(item.uom)}</dd></div>
-                      <div><dt className="text-slate-400">الكمية المطلوبة</dt><dd className="mt-0.5 font-mono font-bold text-cyan-300">{parseFloat(item.quantity).toLocaleString()}</dd></div>
-                      {item.specifications && (
-                        <div className="col-span-2"><dt className="text-slate-400">المواصفات الفنية</dt><dd className="mt-0.5 text-slate-300">{item.specifications}</dd></div>
-                      )}
-                    </dl>
+                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">القطعة:</span>
+                        <strong className="font-mono text-cyan-300">{item.item_reference || '-'}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">المنطقة:</span>
+                        <strong className="text-slate-200">{item.region || '-'}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">الكمية:</span>
+                        <strong className="font-mono text-cyan-300">{item.quantity}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">المواصفات:</span>
+                        <span className="text-slate-300 truncate block">{item.specifications || '-'}</span>
+                      </div>
+                    </div>
                   </article>
                 ))}
               </div>
@@ -336,20 +365,15 @@ export const CreatePurchaseOrderPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-300 mb-1.5">اختر المورد المعتمد *</label>
-              <select
-                required
-                value={supplierId}
+              <SearchableSelect
+                options={supplierOptions}
+                value={supplierId ? Number(supplierId) : ''}
+                onChange={(val) => setSupplierId(val ? String(val) : '')}
+                placeholder="-- ابحث عن المورد بالاسم أو الكود أو الهاتف --"
+                searchPlaceholder="اكتب اسم المورد أو الكود للبحث الفوري..."
                 disabled={Boolean(pr?.selected_quote?.id || pr?.procurement_route === 'DIRECT')}
-                onChange={(e) => setSupplierId(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-bold min-h-10"
-              >
-                <option value="">-- اختر المورد النشط من القائمة --</option>
-                {suppliers.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.company_name} ({s.code || `SUP-${s.id}`})
-                  </option>
-                ))}
-              </select>
+                emptyMessage="لا يوجد مورد بهذا الاسم"
+              />
               {suppliers.length === 0 && (
                 <p className="text-[11px] text-rose-400 mt-1">لا يوجد موردون نشطون متاحون حالياً بالنظام.</p>
               )}

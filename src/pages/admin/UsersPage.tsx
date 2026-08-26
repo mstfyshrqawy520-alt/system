@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import ErrorMessage from '../../components/ErrorMessage';
 import { TableSkeleton } from '../../components/ui/StateFeedback';
@@ -19,7 +19,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import TableFilterBar from '../../components/ui/TableFilterBar';
 import TableColumnFilters from '../../components/ui/TableColumnFilters';
 import { Modal } from '../../components/ui/Modal';
-import { FormField, Input, Select } from '../../components/ui/FormField';
+import { FormField, Input, Select, SearchableSelect } from '../../components/ui/FormField';
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'مدير النظام',
@@ -554,22 +554,25 @@ export const UsersPage: React.FC = () => {
           </FormField>
 
           <FormField label="القسم الأساسي للحساب" helperText="بالنسبة لمهندس الموقع، هذا القسم الأساسي اختياري فقط. تعيينه كمهندس موقع لقسم أو أكثر يتم من شاشة «الأقسام».">
-            <Select
+            <SearchableSelect
+              options={departments.map((d) => ({
+                value: d.id,
+                label: d.name,
+                subLabel: d.code || undefined,
+              }))}
               value={formData.department_id || ''}
-              onChange={(e) =>
+              onChange={(val) =>
                 setFormData({
                   ...formData,
-                  department_id: e.target.value ? Number(e.target.value) : null,
+                  department_id: val ? Number(val) : null,
                 })
               }
-            >
-              <option value="">بدون قسم</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name} ({d.code})
-                </option>
-              ))}
-            </Select>
+              clearable
+              onClear={() => setFormData({ ...formData, department_id: null })}
+              placeholder="-- بدون قسم (أو ابحث عن القسم) --"
+              searchPlaceholder="ابحث باسم القسم أو الكود..."
+              emptyMessage="لا يوجد قسم بهذا الاسم"
+            />
           </FormField>
 
           <FormField label="الأدوار والصلاحيات">

@@ -20,6 +20,8 @@ export interface المورد {
   opening_balance_notes?: string | null;
   is_active: boolean;
   notes?: string | null;
+  tax_number?: string | null;
+  commercial_register?: string | null;
   purchase_orders?: Array<{
     id: number;
     po_number: string;
@@ -28,6 +30,8 @@ export interface المورد {
     created_at: string;
   }>;
 }
+
+export type Supplier = المورد;
 
 export interface PurchaseOrderItem {
   id: number;

@@ -109,4 +109,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 );
 Textarea.displayName = 'Textarea';
 
+export { SearchableSelect } from './SearchableSelect';
+export type { SearchableOption, SearchableSelectProps } from './SearchableSelect';
+
 export default FormField;

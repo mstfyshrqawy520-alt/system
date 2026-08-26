@@ -2,9 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { getSuppliersApi } from '../../api/suppliers';
 import { createDirectPoApi, getProcurementDepartmentsApi, getProcurementSiteEngineersApi, ProcurementDepartmentOption, ProcurementSiteEngineerOption } from '../../api/procurement';
-import { المورد } from '../../types/purchaseOrder';
+import { Supplier } from '../../types/purchaseOrder';
 import { parseApiError } from '../../utils/apiError';
 import { getUnitOptions } from '../../utils/units';
+import { SearchableSelect } from '../ui/FormField';
 
 interface ItemRow {
   item_id?: number | null;
@@ -36,7 +37,7 @@ const emptyItem = (): ItemRow => ({
 });
 
 export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const [suppliers, setSuppliers] = useState<المورد[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [departments, setDepartments] = useState<ProcurementDepartmentOption[]>([]);
   const [siteEngineers, setSiteEngineers] = useState<ProcurementSiteEngineerOption[]>([]);
   const [supplierId, setSupplierId] = useState<string>('');
@@ -70,6 +71,31 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
     [items],
   );
 
+  const supplierOptions = useMemo(() => {
+    return suppliers.map((s) => ({
+      value: String(s.id),
+      label: s.company_name,
+      subLabel: s.code || undefined,
+      searchTerms: [s.phone || '', s.tax_number || '', s.commercial_register || ''].filter(Boolean),
+    }));
+  }, [suppliers]);
+
+  const departmentOptions = useMemo(() => {
+    return departments.map((d) => ({
+      value: String(d.id),
+      label: d.name,
+      subLabel: d.code || undefined,
+    }));
+  }, [departments]);
+
+  const engineerOptions = useMemo(() => {
+    return siteEngineers.map((e) => ({
+      value: String(e.id),
+      label: e.name,
+      subLabel: e.department_name || undefined,
+    }));
+  }, [siteEngineers]);
+
   if (!isOpen) return null;
 
   const updateItem = (index: number, field: keyof ItemRow, value: string | number) => {
@@ -81,39 +107,43 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
   const addItem = () => setItems(current => [...current, emptyItem()]);
 
   const removeItem = (index: number) => {
-    setItems(current => current.length > 1 ? current.filter((_, itemIndex) => itemIndex !== index) : current);
+    if (items.length <= 1) return;
+    setItems(current => current.filter((_, itemIndex) => itemIndex !== index));
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!supplierId) return setError('يرجى اختيار المورد.');
-    if (!departmentId) return setError('يرجى اختيار القسم الموجه له طلب الشراء.');
-    if (!siteEngineerId) return setError('يرجى اختيار مهندس الموقع المسؤول عن الاستلام.');
-    if (items.some(item => !item.item_description.trim() || !item.item_reference.trim() || !item.region.trim() || !item.uom || item.quantity <= 0 || item.unit_price < 0)) {
-      return setError('يرجى استكمال اسم الصنف ورقم قطعة الأرض والمنطقة والوحدة والكمية والسعر لكل بند.');
+    if (!supplierId || !departmentId || !siteEngineerId) {
+      setError('يرجى ملء كافة الحقول الإلزامية واختيار المورد والقسم ومهندس الموقع.');
+      return;
+    }
+    const invalidItems = items.some(item => !item.item_description.trim() || Number(item.quantity) <= 0 || Number(item.unit_price) <= 0);
+    if (invalidItems) {
+      setError('يرجى التأكد من كتابة الصنف وتحديد الكمية وسعر الوحدة لجميع البنود.');
+      return;
     }
 
     setLoading(true);
     setError(null);
     try {
-      const request = await createDirectPoApi({
+      const result = await createDirectPoApi({
         supplier_id: Number(supplierId),
         department_id: Number(departmentId),
         site_engineer_user_id: Number(siteEngineerId),
         priority,
         delivery_date: deliveryDate || undefined,
         items: items.map(item => ({
-          item_id: item.item_id ?? null,
+          item_id: item.item_id || null,
           item_description: item.item_description.trim(),
-          item_reference: item.item_reference.trim(),
-          region: item.region.trim(),
+          item_reference: item.item_reference.trim() || '',
+          region: item.region.trim() || '',
           quantity: Number(item.quantity),
           uom: item.uom,
           unit_price: Number(item.unit_price),
           specifications: item.specifications.trim() || undefined,
         })),
       });
-      onSuccess(request.id);
+      onSuccess(result.id);
       onClose();
     } catch (err) {
       setError(parseApiError(err).message);
@@ -123,9 +153,9 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
   };
 
   return createPortal((
-    <div className="po-modal-viewport fixed inset-0 z-[9999] flex min-h-screen items-center justify-center overflow-y-auto bg-slate-950/85 p-4 sm:p-6" dir="rtl">
-      <div className="flex min-h-0 max-h-[calc(100dvh-2rem)] w-full max-w-[1400px] flex-col overflow-hidden rounded-lg border border-slate-600 bg-[#1c2a3e] shadow-2xl shadow-black/60 sm:max-h-[calc(100dvh-3rem)] sm:rounded-xl">
-        <div className="flex shrink-0 items-start justify-between gap-2 border-b border-slate-600 bg-[#1b283b] px-3 py-3 sm:px-5">
+    <div className="modal-top-viewport fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/80 p-2 sm:p-4 backdrop-blur-sm" dir="rtl" role="dialog" aria-modal="true">
+      <div className="flex max-h-[calc(100vh-1rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-cyan-800/70 bg-[#0f172a] shadow-2xl sm:max-h-[calc(100vh-2rem)]">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-800 px-3 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-2">
             <span className="text-xl text-emerald-400">▣</span>
             <div className="min-w-0">
@@ -140,34 +170,52 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
           {error && <div className="mx-3 mt-3 sm:mx-5 sm:mt-4 rounded border border-rose-500/50 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-300">{error}</div>}
 
           <div className="grid grid-cols-1 gap-3 sm:gap-4 px-3 pt-4 sm:px-5 sm:pt-5 md:grid-cols-2 lg:grid-cols-3">
-            <label className="block text-xs font-bold text-slate-200">
-              اختر المورد <span className="text-rose-400">*</span>
-              <select required value={supplierId} onChange={event => setSupplierId(event.target.value)} className="mt-2 h-10 w-full rounded-md border border-cyan-500/80 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-cyan-300">
-                <option value="">اختر المورد...</option>
-                {suppliers.map(supplier => <option key={supplier.id} value={supplier.id}>{supplier.company_name}{supplier.code ? ` — ${supplier.code}` : ''}</option>)}
-              </select>
-            </label>
-            <label className="block text-xs font-bold text-slate-200">
-              القسم الموجه له <span className="text-rose-400">*</span>
-              <select required value={departmentId} onChange={event => setDepartmentId(event.target.value)} className="mt-2 h-10 w-full rounded-md border border-cyan-500/80 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-cyan-300">
-                <option value="">اختر القسم...</option>
-                {departments.map(department => <option key={department.id} value={department.id}>{department.name}{department.code ? ` — ${department.code}` : ''}</option>)}
-              </select>
-            </label>
-            <label className="block text-xs font-bold text-slate-200">
-              مهندس الموقع المسؤول <span className="text-rose-400">*</span>
-              <select required value={siteEngineerId} onChange={event => setSiteEngineerId(event.target.value)} className="mt-2 h-10 w-full rounded-md border border-cyan-500/80 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-cyan-300">
-                <option value="">اختر مهندس الموقع...</option>
-                {siteEngineers.map(engineer => <option key={engineer.id} value={engineer.id}>{engineer.name}{engineer.department_name ? ` — ${engineer.department_name}` : ''}</option>)}
-              </select>
-            </label>
+            <div>
+              <label className="block text-xs font-bold text-slate-200 mb-1">
+                اختر المورد <span className="text-rose-400">*</span>
+              </label>
+              <SearchableSelect
+                options={supplierOptions}
+                value={supplierId}
+                onChange={(val) => setSupplierId(String(val))}
+                placeholder="اختر أو ابحث عن المورد..."
+                searchPlaceholder="ابحث باسم المورد أو الكود..."
+                emptyMessage="لا يوجد مورد بهذا الاسم"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-200 mb-1">
+                القسم الموجه له <span className="text-rose-400">*</span>
+              </label>
+              <SearchableSelect
+                options={departmentOptions}
+                value={departmentId}
+                onChange={(val) => setDepartmentId(String(val))}
+                placeholder="اختر أو ابحث عن القسم..."
+                searchPlaceholder="ابحث باسم القسم..."
+                emptyMessage="لا يوجد قسم بهذا الاسم"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-200 mb-1">
+                مهندس الموقع المسؤول <span className="text-rose-400">*</span>
+              </label>
+              <SearchableSelect
+                options={engineerOptions}
+                value={siteEngineerId}
+                onChange={(val) => setSiteEngineerId(String(val))}
+                placeholder="اختر أو ابحث عن المهندس..."
+                searchPlaceholder="ابحث باسم مهندس الموقع..."
+                emptyMessage="لا يوجد مهندس بهذا الاسم"
+              />
+            </div>
             <label className="block text-xs font-bold text-slate-200">
               تاريخ الحاجة
-              <input type="date" value={deliveryDate} onChange={event => setDeliveryDate(event.target.value)} className="mt-2 h-10 w-full rounded-md border border-cyan-500/80 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-cyan-300" />
+              <input type="date" value={deliveryDate} onChange={event => setDeliveryDate(event.target.value)} className="mt-1 h-10 w-full rounded-md border border-cyan-500/80 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-cyan-300" />
             </label>
             <label className="block text-xs font-bold text-slate-200">
               الأولوية
-              <select value={priority} onChange={event => setPriority(event.target.value as typeof priority)} className="mt-2 h-10 w-full rounded-md border border-cyan-500/80 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-cyan-300">
+              <select value={priority} onChange={event => setPriority(event.target.value as typeof priority)} className="mt-1 h-10 w-full rounded-md border border-cyan-500/80 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-cyan-300">
                 <option value="NORMAL">عادي</option><option value="LOW">منخفض</option><option value="HIGH">عالي</option><option value="URGENT">عاجل</option>
               </select>
             </label>
