@@ -45,7 +45,7 @@ const emptyItem = (): PurchaseRequestItemFormInput => ({
   notes: '',
 });
 
-const INITIAL_DATA: CreatePurchaseRequestPayload = {
+const getInitialData = (): CreatePurchaseRequestPayload => ({
   target_department_id: undefined,
   priority: 'NORMAL',
   reviewer_user_id: undefined,
@@ -53,7 +53,7 @@ const INITIAL_DATA: CreatePurchaseRequestPayload = {
   date_needed: getTodayDateInputValue(),
   notes: '',
   items: [emptyItem()],
-};
+});
 
 type ItemErrors = Record<number, {
   description?: string;
@@ -87,6 +87,7 @@ const validateRequest = (
   });
 
   const targetDepartment = departmentOptions.find((department) => department.id === data.target_department_id);
+  const today = getTodayDateInputValue();
   return {
     targetDepartment: data.target_department_id ? undefined : 'اختر القسم الذي سيعالج الطلب.',
     targetManager: !isGeneralManager && data.target_department_id && targetDepartment && !targetDepartment.manager
@@ -97,7 +98,7 @@ const validateRequest = (
       : undefined,
     dateNeeded: !data.date_needed
       ? 'حدد تاريخ الاحتياج.'
-      : data.date_needed < getTodayDateInputValue()
+      : data.date_needed < today
         ? 'تاريخ الاحتياج لا يمكن أن يكون في الماضي. اختر اليوم أو تاريخًا قادمًا.'
         : undefined,
     items: itemErrors,
@@ -123,7 +124,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
   const navigate = useNavigate();
   const { hasRole } = useAuth();
   const isGeneralManager = hasRole('general_manager');
-  const [data, setData] = useState<CreatePurchaseRequestPayload>(INITIAL_DATA);
+  const [data, setData] = useState<CreatePurchaseRequestPayload>(() => getInitialData());
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<DepartmentOption[]>([]);
   const [departmentLoading, setDepartmentLoading] = useState(true);
@@ -134,17 +135,26 @@ const CreatePurchaseRequestPage: React.FC = () => {
   const [draftReady, setDraftReady] = useState(false);
   const [draftMessage, setDraftMessage] = useState<string | null>(null);
   const [serverDraftId, setServerDraftId] = useState<number | null>(null);
-  const isDirty = useMemo(() => JSON.stringify(data) !== JSON.stringify(INITIAL_DATA), [data]);
+  const initialDataSnapshot = useMemo(() => getInitialData(), []);
+  const isDirty = useMemo(() => JSON.stringify(data) !== JSON.stringify(initialDataSnapshot), [data, initialDataSnapshot]);
   useUnsavedChangesWarning(isDirty && !isSubmitting);
 
   // Restore local draft
   useEffect(() => {
     try {
+      const todayStr = getTodayDateInputValue();
       const savedDraft = window.localStorage.getItem(DRAFT_STORAGE_KEY);
       if (savedDraft) {
         const parsed = JSON.parse(savedDraft) as Partial<CreatePurchaseRequestPayload>;
         if (Array.isArray(parsed.items) && parsed.items.length > 0) {
-          setData({ ...INITIAL_DATA, ...parsed, items: parsed.items });
+          // If stored date_needed is in the past or missing, dynamically update to today's date
+          const validDateNeeded = !parsed.date_needed || parsed.date_needed < todayStr ? todayStr : parsed.date_needed;
+          setData({
+            ...getInitialData(),
+            ...parsed,
+            date_needed: validDateNeeded,
+            items: parsed.items,
+          });
           setDraftMessage('تم استعادة المسودة المحفوظة على هذا الجهاز.');
         }
       }
@@ -291,7 +301,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
 
   const handleClearDraft = () => {
     window.localStorage.removeItem(DRAFT_STORAGE_KEY);
-    setData(INITIAL_DATA);
+    setData(getInitialData());
     setServerDraftId(null);
     setDraftMessage('تم مسح المسودة والبدء من جديد.');
     setTimeout(() => setDraftMessage(null), 3000);

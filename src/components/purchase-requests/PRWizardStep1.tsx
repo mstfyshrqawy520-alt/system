@@ -16,6 +16,14 @@ interface Props {
   };
 }
 
+const getTodayDateInputValue = (): string => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const PRWizardStep1: React.FC<Props> = ({
   data,
   onChange,
@@ -25,6 +33,7 @@ export const PRWizardStep1: React.FC<Props> = ({
   errors = {},
 }) => {
   const targetDepartment = departmentOptions.find((department) => department.id === data.target_department_id);
+  const todayStr = getTodayDateInputValue();
 
   return (
     <div className="space-y-5" aria-label="القسم المستهدف وبيانات الطلب">
@@ -92,8 +101,8 @@ export const PRWizardStep1: React.FC<Props> = ({
           <Input
             id="pr-date-needed"
             type="date"
-            min={new Date().toISOString().slice(0, 10)}
-            value={data.date_needed || ''}
+            min={todayStr}
+            value={data.date_needed || todayStr}
             onChange={event => onChange({ ...data, date_needed: event.target.value })}
             error={Boolean(errors.dateNeeded)}
           />

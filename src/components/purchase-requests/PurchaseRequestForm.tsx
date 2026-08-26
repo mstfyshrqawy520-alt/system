@@ -53,7 +53,11 @@ export const PurchaseRequestForm: React.FC<Props> = ({
 
   const [targetDepartmentId, setTargetDepartmentId] = useState<number | ''>(initialData?.target_department_id || initialData?.department?.id || '');
   const [priority, setPriority] = useState<PurchaseRequestPriority>(initialData?.priority || 'NORMAL');
-  const [dateNeeded, setDateNeeded] = useState<string>(initialData?.date_needed || getTodayDateInputValue());
+  const [dateNeeded, setDateNeeded] = useState<string>(() => {
+    const today = getTodayDateInputValue();
+    if (!initialData?.date_needed) return today;
+    return initialData.date_needed < today ? today : initialData.date_needed;
+  });
   const [notes, setNotes] = useState<string>(initialData?.notes || '');
   const [items, setItems] = useState<PurchaseRequestItemFormInput[]>([]);
   const [error, setError] = useState<ApiError | null>(null);
@@ -91,6 +95,12 @@ export const PurchaseRequestForm: React.FC<Props> = ({
 
   useEffect(() => {
     setTargetDepartmentId(initialData?.target_department_id || initialData?.department?.id || '');
+    const today = getTodayDateInputValue();
+    if (initialData?.date_needed) {
+      setDateNeeded(initialData.date_needed < today ? today : initialData.date_needed);
+    } else {
+      setDateNeeded(today);
+    }
   }, [initialData]);
 
   useEffect(() => {
