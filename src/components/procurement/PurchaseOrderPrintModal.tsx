@@ -71,9 +71,9 @@ export const PurchaseOrderPrintModal: React.FC<PurchaseOrderPrintModalProps> = (
                 <div>اعتماد المدير التنفيذي: <span className="font-normal">{po.executive_approver?.name || 'المهندس محمد عبدالكريم'}</span></div>
               </div>
               <div className="text-center">
-                <img src="/eshbelia-logo.png" alt="شعار شركة الإشبيليّة" className="document-logo mx-auto h-16 w-auto object-contain" />
+                <img src="/eshbelia-logo.png" alt="شعار شركة اشبيلية" className="document-logo mx-auto h-16 w-auto object-contain" />
                 <div className="text-2xl font-black">أمر شراء</div>
-                <div className="mt-1 text-xs font-bold">شركة الإشبيليّة</div>
+                <div className="mt-1 text-xs font-bold">شركة اشبيلية</div>
               </div>
               <div className="text-left text-sm font-bold">
                 <div>رقم أمر الشراء: <span className="font-mono font-normal">{po.po_number}</span></div>

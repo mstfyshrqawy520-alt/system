@@ -153,7 +153,7 @@ export const UniversalReportsPage: React.FC = () => {
       <div className="hidden print:block mb-4 border-b-2 border-slate-900 pb-3">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-xl font-black text-slate-950">شركة الإشبيليّة للتطوير العقاري والمقاولات</h1>
+            <h1 className="text-xl font-black text-slate-950">شركة اشبيلية للتطوير العقاري والمقاولات</h1>
             <p className="text-xs text-slate-700">تقرير المشتريات والمصروفات والتحليلات المالية المعتمد</p>
           </div>
           <div className="text-left text-xs font-mono text-slate-700">

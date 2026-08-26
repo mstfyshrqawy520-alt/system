@@ -25,11 +25,11 @@ export const OfficialPrintHeader: React.FC<OfficialPrintHeaderProps> = ({
         {/* Company Identity */}
         <div className="flex items-center gap-3">
           <div className="w-14 h-14 border border-slate-400 rounded-lg p-1 flex items-center justify-center">
-            <img src="/eshbelia-logo.png" alt="شعار شركة الإشبيليّة" className="h-full w-full object-contain" />
+            <img src="/eshbelia-logo.png" alt="شعار شركة اشبيلية" className="h-full w-full object-contain" />
           </div>
           <div>
             <h1 className="text-base font-black tracking-tight text-black">
-              شركة الإشبيليّة للتطوير العقاري والمقاولات
+              شركة اشبيلية للتطوير العقاري والمقاولات
             </h1>
             <p className="text-[11px] text-slate-700 font-bold">
               إدارة المشروعات والعمليات والمشتريات التشغيلية
@@ -88,7 +88,7 @@ export const OfficialPrintFooter: React.FC<{
         </div>
       </div>
       <div className="mt-6 text-[9px] text-center text-slate-500 font-mono">
-        تم استخراج هذا المستند إلكترونياً من نظام الإشبيليّة للمشتريات بتاريخ {new Date().toLocaleString('ar-EG')}
+        تم استخراج هذا المستند إلكترونياً من نظام شركة اشبيلية للمشتريات بتاريخ {new Date().toLocaleString('ar-EG')}
       </div>
     </div>
   );

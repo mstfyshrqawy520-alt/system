@@ -67,9 +67,9 @@ export const PurchaseRequestPrintModal: React.FC<PurchaseRequestPrintModalProps>
                 <div>صاحب الطلب: <span className="font-normal">{pr.requester?.name || '—'}</span></div>
               </div>
               <div className="text-center">
-                <img src="/eshbelia-logo.png" alt="شعار شركة الإشبيليّة" className="document-logo mx-auto h-16 w-auto object-contain" />
+                <img src="/eshbelia-logo.png" alt="شعار شركة اشبيلية" className="document-logo mx-auto h-16 w-auto object-contain" />
                 <div className="text-2xl font-black">طلب شراء</div>
-                <div className="mt-1 text-xs font-bold">شركة الإشبيليّة</div>
+                <div className="mt-1 text-xs font-bold">شركة اشبيلية</div>
               </div>
               <div className="text-left text-sm font-bold">
                 <div>رقم الطلب: <span className="font-mono font-normal">{pr.request_number}</span></div>

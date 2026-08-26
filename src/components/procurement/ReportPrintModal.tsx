@@ -22,7 +22,7 @@ export const ReportPrintModal: React.FC<ReportPrintModalProps> = ({ data, isOpen
 
   const handleWhatsAppShare = () => {
     const text = encodeURIComponent(
-      `*تقرير المشتريات والتحليلات - الإشبيلية*\n*إجمالي المشتريات:* ${data.metrics.total_value} ج.م\n*أوامر الشراء:* ${data.metrics.purchase_orders_count}\n*الطلبات المعتمدة:* ${data.metrics.approved_requests_count}`
+      `*تقرير المشتريات والتحليلات - شركة اشبيلية*\n*إجمالي المشتريات:* ${data.metrics.total_value} ج.م\n*أوامر الشراء:* ${data.metrics.purchase_orders_count}\n*الطلبات المعتمدة:* ${data.metrics.approved_requests_count}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
@@ -83,9 +83,9 @@ export const ReportPrintModal: React.FC<ReportPrintModalProps> = ({ data, isOpen
             {/* Report Header */}
             <div className="flex items-center justify-between pb-4 border-b-2 border-slate-700 print:border-slate-300">
               <div>
-                <img src="/eshbelia-logo.png" alt="شعار شركة الإشبيليّة" className="document-logo h-16 w-auto object-contain mb-2" />
+                <img src="/eshbelia-logo.png" alt="شعار شركة اشبيلية" className="document-logo h-16 w-auto object-contain mb-2" />
                 <h1 className="text-xl font-extrabold text-cyan-400 print:text-slate-900">أحدث المشتريات</h1>
-                <p className="text-xs text-slate-400 print:text-slate-600 mt-1">شركة الإشبيلية للتطوير والاستثمار العقاري</p>
+                <p className="text-xs text-slate-400 print:text-slate-600 mt-1">شركة اشبيلية للتطوير والاستثمار العقاري</p>
               </div>
               <div className="text-left font-mono text-xs text-slate-400 print:text-slate-600">
                 <div>التاريخ: {new Date().toLocaleDateString('ar-EG')}</div>

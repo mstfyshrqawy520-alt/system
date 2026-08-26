@@ -27,7 +27,7 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({
           <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-2xl border border-cyan-800/70 bg-cyan-950/40 text-3xl font-black tracking-tight text-cyan-300">
             {code}
           </div>
-          <p className="mt-7 text-xs font-black tracking-[0.25em] text-cyan-400">نظام مشتريات الإشبيليّة</p>
+          <p className="mt-7 text-xs font-black tracking-[0.25em] text-cyan-400">نظام مشتريات شركة اشبيلية</p>
           <h1 className="mt-3 text-2xl font-black text-slate-100 sm:text-3xl">{title}</h1>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-400">{description}</p>
 

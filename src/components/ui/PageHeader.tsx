@@ -41,7 +41,7 @@ export const getPageTitle = (pathname: string): string => {
 };
 
 const getPageHint = (title: string): string => {
-  if (title === 'نظام المشتريات') return 'شركة الإشبيليّة للتطوير العقاري والمقاولات';
+  if (title === 'نظام المشتريات') return 'شركة اشبيلية للتطوير العقاري والمقاولات';
   return 'راجع البيانات المتاحة للدور الحالي، ونفّذ الإجراء المسموح به فقط.';
 };
 

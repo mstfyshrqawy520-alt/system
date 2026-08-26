@@ -167,7 +167,7 @@ class NotificationController extends Controller
         $fcmService = app(\App\Services\FcmService::class);
         $result = $fcmService->sendToUser(
             $user,
-            '🔔 إشعار تجريبي من نظام الإشبيليّة',
+            '🔔 إشعار تجريبي من نظام شركة اشبيلية',
             'تم إرسال هذا الإشعار بنجاح إلى شريط إشعارات جهازك!',
             ['url' => '/notifications']
         );

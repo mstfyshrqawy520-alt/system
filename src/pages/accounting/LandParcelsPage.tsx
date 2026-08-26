@@ -464,10 +464,10 @@ const LandParcelsPage: React.FC = () => {
                   <div className="hidden print:block text-center mb-3">
                     <img
                       src="/eshbelia-logo.png"
-                      alt="شعار شركة الإشبيليّة"
+                      alt="شعار شركة اشبيلية"
                       className="document-logo mx-auto h-16 w-auto object-contain"
                     />
-                    <h1 className="text-xl font-black text-slate-900">شركة الإشبيليّة للتطوير العقاري والمقاولات</h1>
+                    <h1 className="text-xl font-black text-slate-900">شركة اشبيلية للتطوير العقاري والمقاولات</h1>
                     <p className="text-xs text-slate-600">نظام إدارة ومتابعة المشروعات والرقابة المالية للمواقع</p>
                     <div className="mt-2 text-base font-black text-black bg-slate-100 py-1 px-4 border border-slate-300 rounded inline-block">
                       كشف حساب العميل — حركة المصروفات والتحصيلات والتوريدات للموقع

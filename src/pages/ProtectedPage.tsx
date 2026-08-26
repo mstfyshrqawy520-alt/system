@@ -16,7 +16,7 @@ export const ProtectedPage: React.FC = () => {
       <div>
         <h1 className="text-xl font-bold text-slate-100">المنطقة المحمية / المنطقة المحمية</h1>
         <p className="text-xs text-slate-400 mt-1">
-          مرحباً بك في نظام مشتريات الإشبيليّة. تم تسجيل دخولك بنجاح.
+          مرحباً بك في نظام مشتريات شركة اشبيلية. تم تسجيل دخولك بنجاح.
         </p>
       </div>
 

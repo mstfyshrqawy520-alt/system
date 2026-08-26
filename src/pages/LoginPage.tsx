@@ -98,11 +98,11 @@ export const LoginPage: React.FC = () => {
           {/* Brand Presentation Section */}
           <section className="flex flex-col items-center text-center lg:items-start lg:text-right">
             <div className="flex h-20 w-20 items-center justify-center rounded-[1.35rem] border border-[#b89552]/70 bg-[#12110f] p-3 shadow-[0_18px_50px_rgba(0,0,0,0.35)] sm:h-24 sm:w-24 sm:p-3.5">
-              <img src="/eshbelia-logo.png" alt="شعار شركة الإشبيليّة" className="h-full w-full object-contain" />
+              <img src="/eshbelia-logo.png" alt="شعار شركة اشبيلية" className="h-full w-full object-contain" />
             </div>
             <p className="mt-4 text-[10px] font-black tracking-[0.34em] text-[#d4b36a] sm:text-xs">ISHBILIA</p>
             <h1 className="mt-3 text-2xl font-black leading-[1.4] tracking-tight text-white sm:text-3xl lg:text-4xl">
-              شركة الإشبيليّة للمقاولات والتطوير العقاري
+              شركة اشبيلية للمقاولات والتطوير العقاري
             </h1>
             <p className="mt-3 text-sm font-black text-[#d4b36a] sm:text-base">منظومة المشتريات التشغيلية</p>
             <p className="mt-5 max-w-md text-sm leading-7 text-slate-300 sm:text-base">
@@ -195,7 +195,7 @@ export const LoginPage: React.FC = () => {
                 </button>
               </form>
 
-              <p className="mt-6 text-center text-[11px] leading-5 text-slate-500">نظام مشتريات شركة الإشبيليّة — محمي ومشفر</p>
+              <p className="mt-6 text-center text-[11px] leading-5 text-slate-500">نظام مشتريات شركة اشبيلية — محمي ومشفر</p>
             </div>
           </section>
         </div>

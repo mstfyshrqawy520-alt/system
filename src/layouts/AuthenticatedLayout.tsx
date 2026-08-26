@@ -278,11 +278,11 @@ export const AuthenticatedLayout: React.FC = () => {
                             </button>
                             <div className="flex items-center space-x-3 space-x-reverse">
                             <div className="w-10 h-10 rounded-xl bg-[#11100e] border border-[#b89552]/60 p-1.5 flex items-center justify-center shadow-inner shadow-black/30">
-                                <img src="/eshbelia-logo.png" alt="شعار شركة الإشبيليّة" className="h-full w-full object-contain" />
+                                <img src="/eshbelia-logo.png" alt="شعار شركة اشبيلية" className="h-full w-full object-contain" />
                             </div>
                             <div className="hidden sm:flex flex-col min-w-0">
                                 <span className="text-base font-black tracking-tight text-slate-100">
-                                    <span className="truncate">شركة الإشبيليّة</span>
+                                    <span className="truncate">شركة اشبيلية</span>
                                 </span>
                                 <span className="text-[10px] font-bold tracking-wide text-[#d4b36a]">
                                     <span className="truncate">للتطوير العقاري والمقاولات</span>
@@ -460,7 +460,7 @@ export const AuthenticatedLayout: React.FC = () => {
             )}
 
             <footer className="mx-auto w-full max-w-[1800px] px-2 pb-3 text-center text-[10px] text-slate-500 sm:px-3 lg:px-4">
-                شركة الإشبيليّة للتطوير العقاري والمقاولات · منظومة المشتريات التشغيلية · <a href="https://ishbilia.dev" target="_blank" rel="noreferrer" className="text-[#d4b36a] hover:text-[#f0d695]">الموقع الرسمي</a> · <a href="https://web.facebook.com/Ishbilia.realestate?locale=ar_AR" target="_blank" rel="noreferrer" className="text-[#d4b36a] hover:text-[#f0d695]">صفحة Facebook</a>
+                شركة اشبيلية للتطوير العقاري والمقاولات · منظومة المشتريات التشغيلية · <a href="https://ishbilia.dev" target="_blank" rel="noreferrer" className="text-[#d4b36a] hover:text-[#f0d695]">الموقع الرسمي</a> · <a href="https://web.facebook.com/Ishbilia.realestate?locale=ar_AR" target="_blank" rel="noreferrer" className="text-[#d4b36a] hover:text-[#f0d695]">صفحة Facebook</a>
             </footer>
         </div>
     );
