@@ -27,14 +27,47 @@ export const Modal: React.FC<ModalProps> = ({
   const titleId = useId();
   const descriptionId = useId();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const closeOnEscapeRef = useRef(closeOnEscape);
+  closeOnEscapeRef.current = closeOnEscape;
+  const prevIsOpenRef = useRef(false);
 
+  // Initial focus on open only
+  useEffect(() => {
+    if (!isOpen) {
+      prevIsOpenRef.current = false;
+      return undefined;
+    }
+
+    const wasOpen = prevIsOpenRef.current;
+    prevIsOpenRef.current = true;
+
+    // Only set initial focus once when the modal transitions from closed to open
+    if (!wasOpen) {
+      const timer = window.setTimeout(() => {
+        const dialog = closeButtonRef.current?.closest('[role="dialog"]');
+        const firstInput = dialog?.querySelector<HTMLElement>(
+          'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
+        );
+        if (firstInput) {
+          firstInput.focus();
+        } else {
+          closeButtonRef.current?.focus();
+        }
+      }, 50);
+      return () => window.clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  // Handle escape key and body overflow
   useEffect(() => {
     if (!isOpen) return undefined;
 
-    closeButtonRef.current?.focus();
-
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (closeOnEscape && event.key === 'Escape') onClose();
+      if (closeOnEscapeRef.current && event.key === 'Escape') {
+        onCloseRef.current();
+      }
     };
 
     const previousOverflow = document.body.style.overflow;
@@ -45,7 +78,7 @@ export const Modal: React.FC<ModalProps> = ({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose, closeOnEscape]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
