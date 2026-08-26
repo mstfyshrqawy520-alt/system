@@ -57,7 +57,7 @@ export const TableHead: React.FC<{ children?: React.ReactNode; className?: strin
     <th
       scope="col"
       colSpan={colSpan}
-      className={`max-w-0 whitespace-normal break-words px-3 py-3 text-xs font-bold text-slate-300 sm:px-4 sm:py-3.5 sm:whitespace-nowrap ${className}`}
+      className={`whitespace-nowrap px-3.5 py-3 text-xs font-bold text-slate-300 sm:px-4 sm:py-3.5 ${className}`}
     >
       {children}
     </th>
@@ -70,7 +70,7 @@ export const TableCell: React.FC<{ children?: React.ReactNode; className?: strin
   colSpan,
 }) => {
   return (
-    <td colSpan={colSpan} className={`px-3 py-3 sm:px-4 sm:py-3.5 text-xs text-slate-200 ${className}`}>
+    <td colSpan={colSpan} className={`whitespace-nowrap px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs text-slate-200 ${className}`}>
       {children}
     </td>
   );

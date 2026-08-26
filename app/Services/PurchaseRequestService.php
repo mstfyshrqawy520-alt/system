@@ -399,7 +399,17 @@ class PurchaseRequestService
     public function getOwnRequests(User $user, int $perPage = 15)
     {
         return PurchaseRequest::where('user_id', $user->id)
-            ->with(['requester.roles', 'requester:id,name,email,department_id', 'department:id,name,code', 'targetDepartment.manager:id,name,email,department_id', 'targetDepartment.siteEngineer:id,name,email,department_id', 'assignedReviewer:id,name,email,department_id', 'siteEngineer:id,name,email,department_id'])
+            ->with([
+                'requester.roles',
+                'requester:id,name,email,department_id',
+                'department:id,name,code',
+                'targetDepartment.manager:id,name,email,department_id',
+                'targetDepartment.siteEngineer:id,name,email,department_id',
+                'assignedReviewer:id,name,email,department_id',
+                'siteEngineer:id,name,email,department_id',
+                'items.item',
+                'approvalHistory.actor',
+            ])
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
     }
