@@ -115,6 +115,8 @@ export interface ProcurementDepartmentOption {
   name: string;
   code?: string | null;
   manager?: { id: number; name: string } | null;
+  site_engineer?: { id: number; name: string } | null;
+  site_engineer_user_id?: number | null;
 }
 
 export const getProcurementDepartmentsApi = async (): Promise<ProcurementDepartmentOption[]> =>

@@ -98,6 +98,50 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
 
   if (!isOpen) return null;
 
+  const selectedDepartment = useMemo(() => {
+    return departments.find((d) => String(d.id) === departmentId);
+  }, [departments, departmentId]);
+
+  const selectedDepartmentEngineer = useMemo(() => {
+    if (!departmentId) return null;
+    if (selectedDepartment?.site_engineer?.id) {
+      return {
+        id: selectedDepartment.site_engineer.id,
+        name: selectedDepartment.site_engineer.name,
+      };
+    }
+    const matching = siteEngineers.find((e) => String(e.department_id) === departmentId);
+    if (matching) {
+      return {
+        id: matching.id,
+        name: matching.name,
+      };
+    }
+    return null;
+  }, [departmentId, selectedDepartment, siteEngineers]);
+
+  const handleDepartmentChange = (val: string | number) => {
+    const newDeptId = String(val);
+    setDepartmentId(newDeptId);
+
+    if (!newDeptId) {
+      setSiteEngineerId('');
+      return;
+    }
+
+    const dept = departments.find((d) => String(d.id) === newDeptId);
+    if (dept?.site_engineer?.id) {
+      setSiteEngineerId(String(dept.site_engineer.id));
+    } else {
+      const matching = siteEngineers.find((e) => String(e.department_id) === newDeptId);
+      if (matching) {
+        setSiteEngineerId(String(matching.id));
+      } else {
+        setSiteEngineerId('');
+      }
+    }
+  };
+
   const updateItem = (index: number, field: keyof ItemRow, value: string | number) => {
     setItems(current => current.map((item, itemIndex) => (
       itemIndex === index ? { ...item, [field]: value } : item
@@ -190,21 +234,28 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
               <SearchableSelect
                 options={departmentOptions}
                 value={departmentId}
-                onChange={(val) => setDepartmentId(String(val))}
+                onChange={handleDepartmentChange}
                 placeholder="اختر أو ابحث عن القسم..."
                 searchPlaceholder="ابحث باسم القسم..."
                 emptyMessage="لا يوجد قسم بهذا الاسم"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-200 mb-1">
-                مهندس الموقع المسؤول <span className="text-rose-400">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-slate-200">
+                  مهندس الموقع المسؤول <span className="text-rose-400">*</span>
+                </label>
+                {selectedDepartmentEngineer && (
+                  <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded">
+                    ✓ تم التحديد تلقائياً
+                  </span>
+                )}
+              </div>
               <SearchableSelect
                 options={engineerOptions}
                 value={siteEngineerId}
                 onChange={(val) => setSiteEngineerId(String(val))}
-                placeholder="اختر أو ابحث عن المهندس..."
+                placeholder={departmentId ? 'اختر مهندس الموقع...' : 'اختر القسم أولاً ليتم التحديد تلقائياً'}
                 searchPlaceholder="ابحث باسم مهندس الموقع..."
                 emptyMessage="لا يوجد مهندس بهذا الاسم"
               />
