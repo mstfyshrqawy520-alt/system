@@ -289,57 +289,65 @@ export const SearchableSelect = <T extends string | number = string | number>({
       {/* Dropdown Menu */}
       {isOpen && (
         <div
-          className="absolute right-0 top-full z-[100] mt-1.5 w-full min-w-[260px] flex flex-col rounded-xl border border-slate-700 bg-slate-900/95 p-2.5 shadow-2xl backdrop-blur-2xl animate-fade-in"
-          style={{ maxHeight: '380px' }}
+          className="absolute right-0 top-full z-[100] mt-1.5 w-full min-w-[260px] flex flex-col rounded-xl border border-slate-700 bg-slate-900 shadow-2xl backdrop-blur-2xl overflow-hidden animate-fade-in"
+          style={{ maxHeight: '320px' }}
+          onWheel={(e) => {
+            if (listRef.current) {
+              listRef.current.scrollTop += e.deltaY;
+            }
+          }}
         >
-          {/* Search Box */}
-          <div className="relative mb-2 shrink-0">
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setHighlightedIndex(0);
-              }}
-              placeholder={searchPlaceholder}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-8 py-2 text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
-            />
-            <span className="absolute right-2.5 top-2.5 text-slate-500 pointer-events-none">
-              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </span>
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery('');
-                  searchInputRef.current?.focus();
+          {/* Sticky Search Header */}
+          <div className="p-2.5 pb-2 border-b border-slate-800 bg-slate-900/95 shrink-0">
+            <div className="relative">
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setHighlightedIndex(0);
                 }}
-                className="absolute left-2.5 top-2.5 text-slate-500 hover:text-slate-200"
-              >
+                placeholder={searchPlaceholder}
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-8 py-2 text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
+              />
+              <span className="absolute right-2.5 top-2.5 text-slate-500 pointer-events-none">
                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-              </button>
+              </span>
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    searchInputRef.current?.focus();
+                  }}
+                  className="absolute left-2.5 top-2.5 text-slate-500 hover:text-slate-200"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Results Summary if searching */}
+            {searchQuery && (
+              <div className="mt-1.5 px-1 flex justify-between items-center text-[10px] text-slate-400">
+                <span>نتائج البحث:</span>
+                <span className="font-mono text-cyan-400 font-bold">{filteredOptions.length} عنصر</span>
+              </div>
             )}
           </div>
 
-          {/* Results Summary if searching */}
-          {searchQuery && (
-            <div className="mb-1.5 px-2 shrink-0 flex justify-between items-center text-[10px] text-slate-400">
-              <span>نتائج البحث عن «{searchQuery}»:</span>
-              <span className="font-mono text-cyan-400 font-bold">{filteredOptions.length} عنصر</span>
-            </div>
-          )}
-
-          {/* Options List with visible styled scrollbar */}
+          {/* Options List with guaranteed scrollbar */}
           <ul
             ref={listRef}
             role="listbox"
             tabIndex={-1}
-            className="max-h-[240px] overflow-y-auto overflow-x-hidden space-y-1 overscroll-contain pr-1 pl-1 custom-select-scrollbar"
+            className="flex-1 overflow-y-scroll p-2 space-y-1 custom-select-scrollbar"
+            style={{ maxHeight: '180px', minHeight: '80px' }}
           >
             {filteredOptions.length === 0 ? (
               <li className="py-4 text-center text-xs text-slate-400 space-y-2">
@@ -408,12 +416,12 @@ export const SearchableSelect = <T extends string | number = string | number>({
           </ul>
 
           {/* Bottom count & scroll hint footer */}
-          {filteredOptions.length > 3 && (
-            <div className="mt-2 pt-1.5 border-t border-slate-800/80 text-[10px] text-slate-400 flex justify-between items-center px-2 shrink-0">
-              <span>{filteredOptions.length} عنصر متاح</span>
-              <span className="text-[9px] text-cyan-400/80 font-medium">مرر للأسفل للمزيد ↕</span>
-            </div>
-          )}
+          <div className="p-1.5 px-3 border-t border-slate-800 bg-slate-950/90 text-[10px] text-slate-400 flex justify-between items-center shrink-0">
+            <span>{filteredOptions.length} عنصر متاح</span>
+            {filteredOptions.length > 3 && (
+              <span className="text-[9px] text-cyan-400 font-medium animate-pulse">مرر للأسفل للمزيد ↕</span>
+            )}
+          </div>
         </div>
       )}
     </div>
