@@ -17,6 +17,7 @@ import { PushNotificationPrompt } from '../components/notifications/PushNotifica
 import {
   resolveNotificationAction,
   isActionRequiredForUser,
+  isAllowedNotificationForUser,
   extractDocumentInfo,
   NotificationActionRoute,
 } from '../utils/notificationRouting';
@@ -140,10 +141,10 @@ export const NotificationsPage: React.FC = () => {
         getNotificationsApi(),
         getUnreadNotificationCountApi().catch(() => undefined),
       ]);
-      const list = data || [];
+      const list = (data || []).filter((n) => isAllowedNotificationForUser(n, user));
       setNotifications(list);
       const calculatedUnread = list.filter((n) => !n.read_at).length;
-      setUnreadCount(count !== undefined ? count : calculatedUnread);
+      setUnreadCount(count !== undefined ? Math.min(count, calculatedUnread) : calculatedUnread);
     } catch (err: any) {
       const parsed = parseApiError(err);
       setError(parsed.message);
@@ -158,6 +159,7 @@ export const NotificationsPage: React.FC = () => {
     const handleRealtimeNotification = (event: Event) => {
       const notification = (event as CustomEvent<Notification>).detail;
       if (!notification) return;
+      if (!isAllowedNotificationForUser(notification, user)) return;
       setNotifications((current) => [notification, ...current.filter((n) => n.id !== notification.id)]);
       if (!notification.read_at) setUnreadCount((current) => current + 1);
     };

@@ -57,10 +57,19 @@ class NotificationController extends Controller
             flush();
 
             while (! connection_aborted() && (microtime(true) - $startedAt) < $maxSeconds) {
-                $notifications = Notification::query()
+                $query = Notification::query()
                     ->where('user_id', $user->id)
-                    ->where('id', '>', $cursor)
-                    ->orderBy('id')
+                    ->where('id', '>', $cursor);
+
+                if ($user->hasRole('admin')) {
+                    $query->where(function ($q) {
+                        $q->where('type', 'like', 'system_error%')
+                          ->orWhere('type', 'like', 'system_issue%')
+                          ->orWhere('type', 'like', 'system_alert%');
+                    });
+                }
+
+                $notifications = $query->orderBy('id')
                     ->limit(20)
                     ->get();
 

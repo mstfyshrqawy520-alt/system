@@ -62,9 +62,50 @@ export const extractDocumentInfo = (notification: Notification & { data?: any })
 };
 
 /**
- * Checks whether an event requires immediate action from the current user.
+ * Determines if a notification should be visible to a user.
+ * Specifically, the Admin role must NOT receive ANY operational messages unless a system error or alert occurs.
  */
-export const isActionRequiredForUser = (notification: Notification, user: User | null): boolean => {
+export const isAllowedNotificationForUser = (
+  notification: Notification & { data?: any; target_url?: string },
+  user: User | null
+): boolean => {
+  const roleSlugs = (user?.roles || []).map((r) => (typeof r === 'string' ? r : r.slug));
+  const isAdmin = roleSlugs.includes('admin') && !roleSlugs.some((r) => ['employee', 'reviewer', 'procurement_manager', 'accountant', 'general_manager', 'site_engineer', 'warehouse_keeper'].includes(r));
+
+  if (isAdmin) {
+    const type = (notification.type || '').toLowerCase();
+    const title = (notification.title || '').toLowerCase();
+    const message = (notification.message || '').toLowerCase();
+    return (
+      type.startsWith('system_error') ||
+      type.startsWith('system_alert') ||
+      type.startsWith('system_issue') ||
+      type.includes('error') ||
+      type.includes('exception') ||
+      title.includes('خطأ') ||
+      title.includes('عطل') ||
+      title.includes('مشكلة') ||
+      title.includes('تنبيه النظام') ||
+      message.includes('خادم') ||
+      message.includes('استثناء')
+    );
+  }
+
+  return true;
+};
+
+/**
+ * Determines whether a notification strictly requires action from the current user
+ * based on role and workflow status.
+ */
+export const isActionRequiredForUser = (
+  notification: Notification & { data?: any; target_url?: string },
+  user: User | null
+): boolean => {
+  if (!isAllowedNotificationForUser(notification, user)) {
+    return false;
+  }
+
   const roleSlugs = (user?.roles || []).map((r) => (typeof r === 'string' ? r : r.slug));
   const type = (notification.type || '').toLowerCase();
   const title = (notification.title || '').toLowerCase();

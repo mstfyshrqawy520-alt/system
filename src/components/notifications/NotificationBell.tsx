@@ -10,7 +10,7 @@ import {
 } from '../../api/notifications';
 import type { Notification } from '../../types/notification';
 import { useAuth } from '../../context/AuthContext';
-import { resolveNotificationAction } from '../../utils/notificationRouting';
+import { resolveNotificationAction, isAllowedNotificationForUser } from '../../utils/notificationRouting';
 import {
   onForegroundMessage,
   showNativeSystemNotification,
@@ -33,8 +33,10 @@ export const NotificationBell: React.FC = () => {
         getUnreadNotificationCountApi().catch(() => 0),
         getNotificationsApi().catch(() => []),
       ]);
-      setCount(unreadCount);
-      setRecentNotifications((list || []).slice(0, 6));
+      const filtered = (list || []).filter((n) => isAllowedNotificationForUser(n, user));
+      const filteredUnread = filtered.filter((n) => !n.read_at).length;
+      setCount(unreadCount !== undefined ? Math.min(unreadCount, filteredUnread) : filteredUnread);
+      setRecentNotifications(filtered.slice(0, 6));
     } catch {
       // Keep silent on transient connection issues
     }
@@ -55,6 +57,7 @@ export const NotificationBell: React.FC = () => {
     const handleReceived = (event: Event) => {
       const notification = (event as CustomEvent<Notification>).detail;
       if (!notification || !mounted) return;
+      if (!isAllowedNotificationForUser(notification, user)) return;
 
       // Deduplication: ignore if recently handled to prevent duplicate SSE + API events
       if (seenNotificationIds.has(notification.id)) {

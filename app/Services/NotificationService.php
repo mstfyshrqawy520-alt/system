@@ -21,7 +21,11 @@ class NotificationService
      */
     public function resolveUsersWithPermission(string $permissionSlug, ?int $departmentId = null): Collection
     {
-        $query = User::where('is_active', true);
+        // The Admin role must never receive standard business/procurement workflow notifications
+        $query = User::where('is_active', true)
+            ->whereDoesntHave('roles', function ($q) {
+                $q->where('slug', 'admin');
+            });
 
         if ($departmentId !== null) {
             // First check departmental scope
@@ -64,11 +68,22 @@ class NotificationService
 
     public function createNotification(User|int $recipient, string $type, string $title, string $message, Model $notifiable): ?Notification
     {
-        if (! $this->isProcurementNotifiable($notifiable)) {
+        $userId = $recipient instanceof User ? $recipient->id : (int) $recipient;
+        $user = $recipient instanceof User ? $recipient : User::find($userId);
+
+        if (! $user) {
             return null;
         }
 
-        $userId = $recipient instanceof User ? $recipient->id : $recipient;
+        // The Admin role must never receive standard procurement/workflow notifications.
+        // Admin ONLY receives system errors/health/monitoring alerts.
+        if ($user->hasRole('admin') && !str_starts_with($type, 'system_error') && !str_starts_with($type, 'system_issue') && !str_starts_with($type, 'system_alert')) {
+            return null;
+        }
+
+        if (! $this->isProcurementNotifiable($notifiable)) {
+            return null;
+        }
 
         return Notification::firstOrCreate(
             [
@@ -166,6 +181,12 @@ class NotificationService
     {
         foreach ($recipients as $recipient) {
             $userId = $recipient instanceof User ? $recipient->id : (int) $recipient;
+            $user = $recipient instanceof User ? $recipient : User::find($userId);
+
+            if (! $user || $user->hasRole('admin')) {
+                continue;
+            }
+
             Notification::firstOrCreate(
                 [
                     'user_id' => $userId,
@@ -191,8 +212,20 @@ class NotificationService
      */
     public function getUserNotifications(User $user, int $perPage = 15): LengthAwarePaginator
     {
-        return Notification::where('user_id', $user->id)
-            ->whereIn('notifiable_type', $this->procurementNotifiableTypes())
+        $query = Notification::where('user_id', $user->id);
+
+        if ($user->hasRole('admin')) {
+            return $query->where(function ($q) {
+                $q->where('type', 'like', 'system_error%')
+                  ->orWhere('type', 'like', 'system_issue%')
+                  ->orWhere('type', 'like', 'system_alert%');
+            })
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate($perPage);
+        }
+
+        return $query->whereIn('notifiable_type', $this->procurementNotifiableTypes())
             ->orderBy('created_at', 'desc')
             ->orderBy('id', 'desc')
             ->paginate($perPage);
@@ -203,9 +236,17 @@ class NotificationService
      */
     public function getUnreadCount(User $user): int
     {
-        return Notification::where('user_id', $user->id)
-            ->whereIn('notifiable_type', $this->procurementNotifiableTypes())
-            ->whereNull('read_at')
+        $query = Notification::where('user_id', $user->id)->whereNull('read_at');
+
+        if ($user->hasRole('admin')) {
+            return $query->where(function ($q) {
+                $q->where('type', 'like', 'system_error%')
+                  ->orWhere('type', 'like', 'system_issue%')
+                  ->orWhere('type', 'like', 'system_alert%');
+            })->count();
+        }
+
+        return $query->whereIn('notifiable_type', $this->procurementNotifiableTypes())
             ->count();
     }
 
@@ -230,9 +271,17 @@ class NotificationService
      */
     public function markAllAsRead(User $user): int
     {
-        return Notification::where('user_id', $user->id)
-            ->whereIn('notifiable_type', $this->procurementNotifiableTypes())
-            ->whereNull('read_at')
+        $query = Notification::where('user_id', $user->id)->whereNull('read_at');
+
+        if ($user->hasRole('admin')) {
+            return $query->where(function ($q) {
+                $q->where('type', 'like', 'system_error%')
+                  ->orWhere('type', 'like', 'system_issue%')
+                  ->orWhere('type', 'like', 'system_alert%');
+            })->update(['read_at' => now()]);
+        }
+
+        return $query->whereIn('notifiable_type', $this->procurementNotifiableTypes())
             ->update(['read_at' => now()]);
     }
 
