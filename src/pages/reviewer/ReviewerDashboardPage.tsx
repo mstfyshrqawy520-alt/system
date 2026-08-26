@@ -87,7 +87,7 @@ export const ReviewerDashboardPage: React.FC = () => {
       {/* ── صندوق المهام والإجراءات المطلوبة منك الآن (Action Inbox) ── */}
       <ActionRequiredInbox
         title="المهام والإجراءات المطلوبة منك الآن"
-        description="هذه الطلبات مقدمة من موظفي قسمك وتتطلب مراجعتك واعتمادك الفني للانتقال إلى قسم المشتريات."
+        description="هذه الطلبات مقدمة من موظفي قسمك وتتطلب مراجعتك واعتمادك الفني للانتقال إلى المدير التنفيذي للاعتماد."
         roleName={`رئيس قسم (${user?.department?.name || 'عام'})`}
         onItemActionComplete={() => fetchRequests(true)}
         items={requests
@@ -132,7 +132,7 @@ export const ReviewerDashboardPage: React.FC = () => {
                   await fetchRequests(true);
                 }
               : undefined,
-            directApproveLabel: 'اعتماد ونقل للمشتريات',
+            directApproveLabel: 'اعتماد ونقل للمدير التنفيذي',
             directRejectLabel: 'رفض الطلب',
           }))}
       />
