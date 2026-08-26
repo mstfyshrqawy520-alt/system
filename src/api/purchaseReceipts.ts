@@ -11,7 +11,7 @@ export interface ReceiptOrderItem {
   specifications?: string | null;
   notes?: string | null;
   item?: { id: number; name: string; sku?: string; category?: { name: string } } | null;
-  pr_item?: { id: number; specifications?: string | null; notes?: string | null; item_description?: string | null } | null;
+  pr_item?: { id: number; specifications?: string | null; notes?: string | null; item_description?: string | null; item_reference?: string | null; region?: string | null } | null;
 }
 
 export interface ReceiptPurchaseOrder {

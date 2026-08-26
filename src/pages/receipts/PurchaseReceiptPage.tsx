@@ -434,9 +434,18 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                                       {item.specifications && (
                                         <div className="text-[11px] text-slate-400 mt-0.5">{item.specifications}</div>
                                       )}
-                                      {item.item_reference && (
-                                        <div className="text-[11px] font-mono text-cyan-300 mt-0.5">قطعة الأرض: {item.item_reference}</div>
-                                      )}
+                                      <div className="flex items-center gap-2 flex-wrap text-[11px] mt-1.5">
+                                        {(item.item_reference || item.pr_item?.item_reference) && (
+                                          <span className="font-mono text-cyan-300 bg-cyan-950/70 border border-cyan-800/60 px-2 py-0.5 rounded font-bold">
+                                            قطعة الأرض: {item.item_reference || item.pr_item?.item_reference}
+                                          </span>
+                                        )}
+                                        {(item.region || item.pr_item?.region) && (
+                                          <span className="text-amber-300 bg-amber-950/70 border border-amber-800/60 px-2 py-0.5 rounded font-bold">
+                                            المنطقة: {item.region || item.pr_item?.region}
+                                          </span>
+                                        )}
+                                      </div>
                                     </TableCell>
                                     <TableCell className="font-mono font-bold text-slate-200">
                                       <span className="text-sm">{item.quantity}</span> {getUnitLabel(item.uom || '')}
@@ -565,7 +574,19 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                             <TableRow key={item.id}>
                               <TableCell className="font-mono text-cyan-400">{idx + 1}</TableCell>
                               <TableCell className="font-bold text-slate-100">
-                                {item.purchase_order_item?.item_description || item.purchase_order_item?.item?.name}
+                                <div>{item.purchase_order_item?.item_description || item.purchase_order_item?.item?.name}</div>
+                                <div className="flex items-center gap-2 flex-wrap text-[11px] mt-1 font-normal">
+                                  {(item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference) && (
+                                    <span className="font-mono text-cyan-300 bg-cyan-950/70 border border-cyan-800/60 px-2 py-0.5 rounded font-bold">
+                                      قطعة الأرض: {item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference}
+                                    </span>
+                                  )}
+                                  {(item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region) && (
+                                    <span className="text-amber-300 bg-amber-950/70 border border-amber-800/60 px-2 py-0.5 rounded font-bold">
+                                      المنطقة: {item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region}
+                                    </span>
+                                  )}
+                                </div>
                               </TableCell>
                               <TableCell className="font-mono text-slate-300">
                                 {item.ordered_quantity} {getUnitLabel(item.purchase_order_item?.uom || '')}
@@ -731,7 +752,19 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                             <TableRow key={item.id}>
                               <TableCell className="font-mono text-cyan-400">{idx + 1}</TableCell>
                               <TableCell className="font-bold text-slate-100">
-                                {item.purchase_order_item?.item_description || item.purchase_order_item?.item?.name}
+                                <div>{item.purchase_order_item?.item_description || item.purchase_order_item?.item?.name}</div>
+                                <div className="flex items-center gap-2 flex-wrap text-[11px] mt-1 font-normal">
+                                  {(item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference) && (
+                                    <span className="font-mono text-cyan-300 bg-cyan-950/70 border border-cyan-800/60 px-2 py-0.5 rounded font-bold">
+                                      قطعة الأرض: {item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference}
+                                    </span>
+                                  )}
+                                  {(item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region) && (
+                                    <span className="text-amber-300 bg-amber-950/70 border border-amber-800/60 px-2 py-0.5 rounded font-bold">
+                                      المنطقة: {item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region}
+                                    </span>
+                                  )}
+                                </div>
                               </TableCell>
                               <TableCell className="font-mono text-slate-300">
                                 {item.ordered_quantity} {getUnitLabel(item.purchase_order_item?.uom || '')}
