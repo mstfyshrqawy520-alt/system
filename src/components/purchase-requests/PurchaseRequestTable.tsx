@@ -29,11 +29,6 @@ const getRequestType = (pr: PurchaseRequest): React.ReactNode => {
   return 'طلب شراء موقع';
 };
 
-const isOverdueRequest = (pr: PurchaseRequest): boolean => {
-  if (!pr.date_needed || ['DRAFT', 'REJECTED', 'CANCELLED', 'COMPLETED'].includes(pr.status)) return false;
-  return new Date(`${pr.date_needed}T23:59:59`).getTime() < Date.now();
-};
-
 const getLastAction = (pr: PurchaseRequest): string => {
   const latestAction = pr.approval_history?.[pr.approval_history.length - 1]?.action;
   if (latestAction && PR_ACTION_LABELS[latestAction]) return PR_ACTION_LABELS[latestAction];
@@ -108,7 +103,6 @@ export const PurchaseRequestTable: React.FC<Props> = ({
           const canEdit = REQUESTER_EDITABLE_STATUSES.includes(pr.status) && hasPermission('purchase_request.edit_own');
           const canDelete = REQUESTER_DELETABLE_STATUSES.includes(pr.status) && hasPermission('purchase_request.edit_own');
           const canSubmit = isDraft && hasPermission('purchase_request.submit');
-          const overdue = isOverdueRequest(pr);
           const itemNames = pr.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
           const itemsDisplay = itemNames.length === 0
             ? '—'
@@ -137,10 +131,7 @@ export const PurchaseRequestTable: React.FC<Props> = ({
               <TableCell className="text-slate-300 text-xs">{getRequestType(pr)}</TableCell>
               <TableCell className="text-slate-300 text-xs">{pr.target_department?.name || pr.department?.name || '—'}</TableCell>
               <TableCell>
-                <div className="flex flex-wrap items-center gap-2">
-                  <PurchaseRequestStatusBadge status={pr.status} />
-                  {overdue && <span className="rounded-full border border-rose-800/70 bg-rose-950/40 px-2 py-1 text-[10px] font-bold text-rose-300">متأخر</span>}
-                </div>
+                <PurchaseRequestStatusBadge status={pr.status} />
               </TableCell>
               <TableCell className="max-w-[210px] text-xs text-slate-400">{getLastAction(pr)}</TableCell>
               <TableCell>
@@ -195,7 +186,6 @@ export const PurchaseRequestTable: React.FC<Props> = ({
           const canEdit = REQUESTER_EDITABLE_STATUSES.includes(pr.status) && hasPermission('purchase_request.edit_own');
           const canDelete = REQUESTER_DELETABLE_STATUSES.includes(pr.status) && hasPermission('purchase_request.edit_own');
           const canSubmit = isDraft && hasPermission('purchase_request.submit');
-          const overdue = isOverdueRequest(pr);
           const itemNames = pr.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
           const parcelsDisplay = pr.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || '—';
           const regionsDisplay = pr.items?.map((item) => item.region).filter(Boolean).join('، ') || (pr.request_type === 'OFFICE_SUPPLIES' ? 'مقر الشركة' : 'غير محددة');
@@ -209,7 +199,6 @@ export const PurchaseRequestTable: React.FC<Props> = ({
                 </Link>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <PurchaseRequestStatusBadge status={pr.status} />
-                  {overdue && <span className="rounded-full border border-rose-800/70 bg-rose-950/40 px-2 py-0.5 text-[10px] font-bold text-rose-300">متأخر</span>}
                 </div>
               </div>
 

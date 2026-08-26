@@ -66,14 +66,12 @@ describe('Reviewer purchase request frontend', () => {
     expect(screen.queryByRole('button', { name: /إضافة Item/i })).not.toBeInTheDocument();
   });
 
-  it('shows and filters overdue requests for the department reviewer', async () => {
-    const overdueRequest = { ...submitted, date_needed: new Date(Date.now() - 86400000).toISOString().slice(0, 10) };
-    vi.spyOn(reviewerApi, 'getReviewableRequestsApi').mockResolvedValue([overdueRequest]);
+  it('shows and filters reviewable requests for the department reviewer', async () => {
+    vi.spyOn(reviewerApi, 'getReviewableRequestsApi').mockResolvedValue([submitted]);
     renderPage('/reviewer/requests', <ReviewerRequestsPage />);
-    const overdueFilter = await screen.findByRole('button', { name: /متأخرة\(1\)/i });
-    fireEvent.click(overdueFilter);
+    const pendingFilter = await screen.findByRole('button', { name: /في انتظار بدء المراجعة\(1\)/i });
+    fireEvent.click(pendingFilter);
     expect(screen.getAllByText('PR-10').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('متأخر').length).toBeGreaterThan(0);
   });
 
   it('shows all requested reviewer search filters', async () => {

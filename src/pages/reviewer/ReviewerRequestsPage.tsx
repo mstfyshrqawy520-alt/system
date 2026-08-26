@@ -38,10 +38,6 @@ const priorityLabels: Record<string, string> = {
 };
 
 const REVIEWER_EDITABLE_STATUSES = ['UNDER_REVIEW', 'PENDING_PROCUREMENT_APPROVAL', 'APPROVED_BY_REVIEWER'];
-const isOverdueRequest = (request: PurchaseRequest): boolean => {
-  if (!request.date_needed || ['DRAFT', 'REJECTED', 'CANCELLED', 'COMPLETED'].includes(request.status)) return false;
-  return new Date(`${request.date_needed}T23:59:59`).getTime() < Date.now();
-};
 
 import { useRealtimeRefresh, emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
 
@@ -92,7 +88,7 @@ export const ReviewerRequestsPage: React.FC = () => {
 
   const filteredRequests = requests.filter((request) => {
     const matchesActive = activeFilter === 'ALL'
-      || (activeFilter === 'PENDING' ? request.status === 'SUBMITTED' : activeFilter === 'OVERDUE' ? isOverdueRequest(request) : request.status === activeFilter);
+      || (activeFilter === 'PENDING' ? request.status === 'SUBMITTED' : request.status === activeFilter);
     return matchesActive;
   });
 
@@ -122,7 +118,6 @@ export const ReviewerRequestsPage: React.FC = () => {
 
   const btnFilterVariant = (filter: string) => (activeFilter === filter ? 'primary' : 'outline');
   const countFor = (status: string) => requests.filter((request) => request.status === status).length;
-  const overdueCount = requests.filter(isOverdueRequest).length;
 
   return (
     <div className="space-y-6 animate-fade-in" dir="rtl">
@@ -195,7 +190,6 @@ export const ReviewerRequestsPage: React.FC = () => {
         <Button variant={btnFilterVariant('APPROVED_BY_REVIEWER')} size="sm" onClick={() => setActiveFilter('APPROVED_BY_REVIEWER')}>معتمدة من المراجع({countFor('APPROVED_BY_REVIEWER')})</Button>
         <Button variant={btnFilterVariant('APPROVED_BY_PROCUREMENT')} size="sm" onClick={() => setActiveFilter('APPROVED_BY_PROCUREMENT')}>اعتمدتها المشتريات({countFor('APPROVED_BY_PROCUREMENT')})</Button>
         <Button variant={btnFilterVariant('REJECTED')} size="sm" onClick={() => setActiveFilter('REJECTED')}>مرفوضة({countFor('REJECTED')})</Button>
-        <Button variant={btnFilterVariant('OVERDUE')} size="sm" onClick={() => setActiveFilter('OVERDUE')}>متأخرة({overdueCount})</Button>
       </div>
 
 
@@ -257,7 +251,7 @@ export const ReviewerRequestsPage: React.FC = () => {
                   <TableCell className="font-mono font-bold text-amber-300 whitespace-nowrap">{request.date_needed || '—'}</TableCell>
                   <TableCell>{priorityLabels[request.priority || 'NORMAL'] || request.priority || 'عادية'}</TableCell>
                   <TableCell className="whitespace-nowrap">{formatDate(request.created_at)}</TableCell>
-                  <TableCell><div className="flex flex-wrap items-center gap-2"><PurchaseRequestStatusBadge status={request.status} />{isOverdueRequest(request) && <span className="rounded-full border border-rose-800/70 bg-rose-950/40 px-2 py-1 text-[10px] font-bold text-rose-300">متأخر</span>}</div></TableCell>
+                  <TableCell><PurchaseRequestStatusBadge status={request.status} /></TableCell>
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1.5 flex-wrap">
                       {canQuickApprove && (
@@ -298,7 +292,7 @@ export const ReviewerRequestsPage: React.FC = () => {
               <article key={`mobile-${request.id}`} className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <Link to={`/reviewer/requests/${request.id}`} className="font-mono text-sm font-black text-cyan-300 hover:underline">{request.request_number}</Link>
-                  <div className="flex flex-wrap items-center justify-end gap-2"><PurchaseRequestStatusBadge status={request.status} />{isOverdueRequest(request) && <span className="rounded-full border border-rose-800/70 bg-rose-950/40 px-2 py-1 text-[10px] font-bold text-rose-300">متأخر</span>}</div>
+                  <div className="flex flex-wrap items-center justify-end gap-2"><PurchaseRequestStatusBadge status={request.status} /></div>
                 </div>
                 <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
                   <div className="col-span-2"><dt className="text-slate-500">الصنف / المواد المطلوبة</dt><dd className="mt-1 font-bold text-cyan-200">{itemNames.join('، ') || 'غير محدد'}</dd></div>
