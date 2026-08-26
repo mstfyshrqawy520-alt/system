@@ -78,8 +78,13 @@ export const updatePurchaseReceiptApi = async (
 ): Promise<ReceiptRecord> =>
   (await apiClient.put<{ data: ReceiptRecord }>(`/purchase-receipts/${receiptId}`, payload)).data.data;
 
-export const approvePurchaseReceiptApi = async (receiptId: number, site_engineer_notes?: string): Promise<ReceiptRecord> =>
-  (await apiClient.post<{ data: ReceiptRecord }>(`/purchase-receipts/${receiptId}/approve`, { site_engineer_notes })).data.data;
+export const approvePurchaseReceiptApi = async (
+  receiptId: number,
+  payload?: { site_engineer_notes?: string; items?: Array<{ id: number; received_quantity: number; notes?: string }> } | string,
+): Promise<ReceiptRecord> => {
+  const body = typeof payload === 'string' ? { site_engineer_notes: payload } : (payload || {});
+  return (await apiClient.post<{ data: ReceiptRecord }>(`/purchase-receipts/${receiptId}/approve`, body)).data.data;
+};
 
 export const confirmOfficeReceiptApi = async (
   purchaseOrderId: number,

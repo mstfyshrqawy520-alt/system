@@ -132,10 +132,23 @@ class PurchaseReceiptController extends Controller
     {
         $validated = $request->validate([
             'site_engineer_notes' => ['nullable', 'string', 'max:3000'],
+            'items' => ['nullable', 'array'],
+            'items.*.id' => ['required_with:items', 'integer', 'exists:purchase_receipt_items,id'],
+            'items.*.received_quantity' => ['required_with:items', 'numeric', 'gte:0'],
+            'items.*.notes' => ['nullable', 'string', 'max:1000'],
         ]);
         $receipt = PurchaseReceipt::findOrFail($id);
 
         try {
+            if (! empty($validated['items'])) {
+                $receipt = $this->service->updateBySiteEngineer(
+                    $request->user(),
+                    $receipt,
+                    $validated['items'],
+                    $validated['site_engineer_notes'] ?? null,
+                );
+            }
+
             $approved = $this->service->approveBySiteEngineer(
                 $request->user(),
                 $receipt,

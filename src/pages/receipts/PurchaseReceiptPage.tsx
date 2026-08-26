@@ -194,10 +194,24 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
   };
 
   const approveReceipt = async (receipt: ReceiptRecord) => {
+    const items = (receipt.items || []).map((item) => ({
+      id: item.id,
+      received_quantity: Number(quantities[`receipt-${receipt.id}-${item.id}`] ?? item.received_quantity),
+      notes: itemNotes[`receipt-${receipt.id}-${item.id}`] || undefined,
+    }));
+
+    if (items.some((item) => Number.isNaN(item.received_quantity) || item.received_quantity < 0)) {
+      setError('يرجى إدخال كميات مستلمة صحيحة قبل الاعتماد.');
+      return;
+    }
+
     setSaving(receipt.id);
     setError(null);
     try {
-      await approvePurchaseReceiptApi(receipt.id, notes[receipt.id]);
+      await approvePurchaseReceiptApi(receipt.id, {
+        site_engineer_notes: notes[receipt.id],
+        items,
+      });
       setSuccessMessage(`تم اعتماد إذن الاستلام ${receipt.receipt_number} وإرساله للحسابات لصرف الدفعات.`);
       await load();
       setActiveTab('ARCHIVE');
@@ -561,42 +575,65 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                       {/* Items List */}
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>#</TableHead>
+                          <TableRow className="bg-slate-950/80">
+                            <TableHead className="w-12 text-center">#</TableHead>
                             <TableHead>الصنف</TableHead>
                             <TableHead>الكمية المطلوبة بأمر الشراء</TableHead>
-                            <TableHead>الكمية المستلمة بالمخزن</TableHead>
-                            <TableHead>ملاحظات</TableHead>
+                            <TableHead className="w-48 bg-emerald-950/30 text-emerald-300 font-black">الكمية المستلمة المعتمدة (جاهزة للتعديل)</TableHead>
+                            <TableHead>ملاحظات فنية للموقع</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {(receipt.items || []).map((item, idx) => (
-                            <TableRow key={item.id}>
-                              <TableCell className="font-mono text-cyan-400">{idx + 1}</TableCell>
-                              <TableCell className="font-bold text-slate-100">
-                                <div>{item.purchase_order_item?.item_description || item.purchase_order_item?.item?.name}</div>
-                                <div className="flex items-center gap-2 flex-wrap text-[11px] mt-1 font-normal">
-                                  {(item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference) && (
-                                    <span className="font-mono text-cyan-300 bg-cyan-950/70 border border-cyan-800/60 px-2 py-0.5 rounded font-bold">
-                                      قطعة الأرض: {item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference}
-                                    </span>
-                                  )}
-                                  {(item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region) && (
-                                    <span className="text-amber-300 bg-amber-950/70 border border-amber-800/60 px-2 py-0.5 rounded font-bold">
-                                      المنطقة: {item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region}
-                                    </span>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="font-mono text-slate-300">
-                                {item.ordered_quantity} {getUnitLabel(item.purchase_order_item?.uom || '')}
-                              </TableCell>
-                              <TableCell className="font-mono font-bold text-emerald-400">
-                                {item.received_quantity} {getUnitLabel(item.purchase_order_item?.uom || '')}
-                              </TableCell>
-                              <TableCell className="text-slate-400 text-xs">{item.notes || '—'}</TableCell>
-                            </TableRow>
-                          ))}
+                          {(receipt.items || []).map((item, idx) => {
+                            const key = `receipt-${receipt.id}-${item.id}`;
+                            const val = quantities[key] ?? String(item.received_quantity);
+
+                            return (
+                              <TableRow key={item.id} className="hover:bg-slate-800/50 transition-colors">
+                                <TableCell className="font-mono text-center text-cyan-400 font-bold">{idx + 1}</TableCell>
+                                <TableCell className="font-bold text-slate-100">
+                                  <div>{item.purchase_order_item?.item_description || item.purchase_order_item?.item?.name}</div>
+                                  <div className="flex items-center gap-2 flex-wrap text-[11px] mt-1 font-normal">
+                                    {(item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference) && (
+                                      <span className="font-mono text-cyan-300 bg-cyan-950/70 border border-cyan-800/60 px-2 py-0.5 rounded font-bold">
+                                        قطعة الأرض: {item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference}
+                                      </span>
+                                    )}
+                                    {(item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region) && (
+                                      <span className="text-amber-300 bg-amber-950/70 border border-amber-800/60 px-2 py-0.5 rounded font-bold">
+                                        المنطقة: {item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region}
+                                      </span>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="font-mono text-slate-300">
+                                  {item.ordered_quantity} {getUnitLabel(item.purchase_order_item?.uom || '')}
+                                </TableCell>
+                                <TableCell className="bg-emerald-950/20">
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="any"
+                                      value={val}
+                                      onChange={(e) => setQuantities({ ...quantities, [key]: e.target.value })}
+                                      className="w-32 rounded-xl border-2 border-emerald-500/70 bg-slate-950 px-3 py-1.5 text-sm text-emerald-300 font-black focus:border-emerald-400 focus:outline-none shadow-inner"
+                                    />
+                                    <span className="text-xs text-slate-400 font-bold">{getUnitLabel(item.purchase_order_item?.uom || '')}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <input
+                                    type="text"
+                                    placeholder="ملاحظات مهندس الموقع..."
+                                    value={itemNotes[key] ?? (item.notes || '')}
+                                    onChange={(e) => setItemNotes({ ...itemNotes, [key]: e.target.value })}
+                                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-200 focus:border-cyan-400"
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
 
