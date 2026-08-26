@@ -287,10 +287,47 @@ export const PurchaseRequestForm: React.FC<Props> = ({
 
       {/* Request Type Selector */}
       <Card className="space-y-3">
-        <label className="block text-xs font-bold text-slate-300">
-          نوع الطلب والغرض منه <span className="text-rose-400">*</span>
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="block text-xs font-bold text-slate-300">
+            نوع الطلب والغرض منه <span className="text-rose-400">*</span>
+          </label>
+          <span className="text-[11px] text-slate-400">
+            الافتراضي: <strong className="text-amber-300">مشتريات مشروعات ومواقع</strong>
+          </span>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Option 1: Projects (Default) */}
+          <button
+            type="button"
+            onClick={() => setRequestType('PROJECT')}
+            className={`flex flex-col text-right p-3.5 rounded-xl border transition-all ${
+              requestType === 'PROJECT'
+                ? 'bg-amber-950/60 border-amber-500 ring-2 ring-amber-500/30 text-slate-100 shadow-lg shadow-amber-950/40'
+                : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+            }`}
+          >
+            <div className="flex items-center justify-between w-full mb-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-base font-bold text-amber-300 flex items-center gap-1.5">
+                  <span>🏗️</span> مشتريات مشروعات ومواقع
+                </span>
+                <span className="text-[10px] bg-amber-950 px-1.5 py-0.5 rounded text-amber-400 border border-amber-800/60 font-semibold">
+                  (الافتراضي)
+                </span>
+              </div>
+              {requestType === 'PROJECT' && (
+                <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full">
+                  ✓ محدد
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] leading-relaxed text-slate-400">
+              خاصة بقطع الأراضي والمواقع الإنشائية. تتطلب تحديد رقم القطعة والمنطقة وتمر على مهندس الموقع وأمين المخزن للاستلام.
+            </p>
+          </button>
+
+          {/* Option 2: Office Supplies */}
           <button
             type="button"
             onClick={() => setRequestType('OFFICE_SUPPLIES')}
@@ -312,30 +349,6 @@ export const PurchaseRequestForm: React.FC<Props> = ({
             </div>
             <p className="text-[11px] leading-relaxed text-slate-400">
               طابعات، أقلام، أحبار، أجهزة، أو أدوات للمقر. <strong className="text-indigo-200">مقدم الطلب يستلم مباشرة</strong> دون حاجة لمخازن أو موقع.
-            </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setRequestType('PROJECT')}
-            className={`flex flex-col text-right p-3.5 rounded-xl border transition-all ${
-              requestType === 'PROJECT'
-                ? 'bg-amber-950/60 border-amber-500 ring-2 ring-amber-500/30 text-slate-100 shadow-lg shadow-amber-950/40'
-                : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
-            }`}
-          >
-            <div className="flex items-center justify-between w-full mb-1.5">
-              <span className="text-base flex items-center gap-2 font-bold text-amber-300">
-                <span>🏗️</span> مشتريات مشروعات ومواقع
-              </span>
-              {requestType === 'PROJECT' && (
-                <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full">
-                  ✓ محدد
-                </span>
-              )}
-            </div>
-            <p className="text-[11px] leading-relaxed text-slate-400">
-              خاصة بقطع الأراضي والمواقع الإنشائية. تتطلب تحديد رقم القطعة والمنطقة وتمر على مهندس الموقع وأمين المخزن للاستلام.
             </p>
           </button>
         </div>
