@@ -350,66 +350,75 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
           {mode === 'warehouse' ? (
             /* Warehouse Keeper Pending Orders Queue */
             visibleOrders.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {visibleOrders.map((order) => {
-                  const isExpanded = expandedOrderId === order.id;
                   const isSavingThis = saving === order.id;
 
                   return (
-                    <Card key={order.id} className="p-4 sm:p-5 space-y-4 border border-slate-800 bg-slate-900/80">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <span className="font-mono text-sm font-black text-cyan-300 bg-cyan-950/80 border border-cyan-800/60 px-2.5 py-1 rounded-lg">
-                            {order.po_number}
-                          </span>
-                          {order.purchase_request && (
-                            <span className="text-xs font-bold text-slate-300 bg-slate-800 px-2 py-0.5 rounded">
-                              طلب #{order.purchase_request.request_number}
+                    <Card key={order.id} className="p-4 sm:p-6 space-y-5 border-2 border-amber-500/40 bg-slate-900/90 shadow-xl">
+                      {/* Header with quick info & 1-click action */}
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            <span className="font-mono text-base font-black text-cyan-300 bg-cyan-950/90 border border-cyan-700/80 px-3 py-1 rounded-xl shadow-inner">
+                              {order.po_number}
                             </span>
-                          )}
-                          <span className="text-xs font-bold text-slate-300">
-                            🏢 {order.supplier?.company_name || 'مورد غير محدد'}
-                          </span>
-                          {order.purchase_request?.site_engineer && (
-                            <span className="text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded">
-                              👷 مهندس الموقع: {order.purchase_request.site_engineer.name}
+                            {order.purchase_request && (
+                              <span className="text-xs font-bold text-slate-200 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg">
+                                طلب #{order.purchase_request.request_number}
+                              </span>
+                            )}
+                            <span className="text-xs font-bold text-slate-200 bg-slate-800/80 border border-slate-700/80 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                              <span>🏢</span> {order.supplier?.company_name || 'مورد غير محدد'}
                             </span>
-                          )}
+                            {order.purchase_request?.site_engineer && (
+                              <span className="text-xs font-bold text-emerald-300 bg-emerald-950/60 border border-emerald-700/60 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                                <span>👷</span> مهندس الموقع: {order.purchase_request.site_engineer.name}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-400">
+                            راجع الكميات بالأسفل ثم اضغط زر الاعتماد. الكميات مسجلة كاملة وجاهزة، يمكنك تعديل أي كمية مباشرة إذا كانت البضاعة ناقصة.
+                          </p>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 shrink-0">
                           <Button
-                            variant={isExpanded ? 'secondary' : 'primary'}
-                            size="sm"
-                            onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
-                            className="text-xs font-bold"
+                            variant="success"
+                            size="md"
+                            isLoading={isSavingThis}
+                            onClick={() => submitWarehouseReceipt(order)}
+                            className="font-black text-xs sm:text-sm bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-950/50 px-5 py-2.5"
                           >
-                            {isExpanded ? 'إخفاء البنود' : 'فحص وتسجيل الاستلام ←'}
+                            ✓ اعتماد واستلام المواد فوراً
                           </Button>
                         </div>
                       </div>
 
-                      {isExpanded && (
-                        <div className="space-y-4 pt-2 animate-fade-in">
-                          <div className="flex items-center justify-between gap-2 flex-wrap">
-                            <h4 className="text-xs font-bold text-slate-300">مطابقة بنود أمر الشراء والكميات:</h4>
-                            <button
-                              type="button"
-                              onClick={() => setAllReceivedFull(order)}
-                              className="text-xs font-bold text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
-                            >
-                              استلام كامل الكميات تلقائياً
-                            </button>
-                          </div>
+                      {/* Items Table - Always Open and Interactive */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between gap-2 flex-wrap bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                          <h4 className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                            <span>📦</span> بنود أمر الشراء والكميات المستلمة:
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => setAllReceivedFull(order)}
+                            className="text-xs font-bold text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+                          >
+                            إعادة ضبط كافة الكميات للمطلوب بالكامل
+                          </button>
+                        </div>
 
+                        <div className="overflow-x-auto rounded-xl border border-slate-800">
                           <Table>
                             <TableHeader>
-                              <TableRow>
-                                <TableHead>#</TableHead>
+                              <TableRow className="bg-slate-950/80">
+                                <TableHead className="w-12 text-center">#</TableHead>
                                 <TableHead>اسم الصنف والمواصفات</TableHead>
-                                <TableHead>الكمية المطلوبة</TableHead>
-                                <TableHead>الكمية المستلمة فعلياً</TableHead>
-                                <TableHead>ملاحظات الاستلام</TableHead>
+                                <TableHead>الكمية المطلوبة بأمر الشراء</TableHead>
+                                <TableHead className="w-48 bg-emerald-950/30 text-emerald-300 font-black">الكمية المستلمة فعلياً (جاهزة للتعديل)</TableHead>
+                                <TableHead>ملاحظات البند (اختياري)</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -418,26 +427,32 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                                 const val = quantities[key] ?? String(item.quantity);
 
                                 return (
-                                  <TableRow key={item.id}>
-                                    <TableCell className="font-mono text-cyan-400">{idx + 1}</TableCell>
+                                  <TableRow key={item.id} className="hover:bg-slate-800/50 transition-colors">
+                                    <TableCell className="font-mono text-center text-cyan-400 font-bold">{idx + 1}</TableCell>
                                     <TableCell>
-                                      <div className="font-bold text-slate-100">{item.item_description || item.item?.name}</div>
+                                      <div className="font-black text-sm text-slate-100">{item.item_description || item.item?.name}</div>
                                       {item.specifications && (
                                         <div className="text-[11px] text-slate-400 mt-0.5">{item.specifications}</div>
                                       )}
+                                      {item.item_reference && (
+                                        <div className="text-[11px] font-mono text-cyan-300 mt-0.5">قطعة الأرض: {item.item_reference}</div>
+                                      )}
                                     </TableCell>
                                     <TableCell className="font-mono font-bold text-slate-200">
-                                      {item.quantity} {getUnitLabel(item.uom || '')}
+                                      <span className="text-sm">{item.quantity}</span> {getUnitLabel(item.uom || '')}
                                     </TableCell>
-                                    <TableCell>
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        step="any"
-                                        value={val}
-                                        onChange={(e) => setQuantities({ ...quantities, [key]: e.target.value })}
-                                        className="w-28 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1 text-xs text-slate-100 font-bold focus:border-cyan-400"
-                                      />
+                                    <TableCell className="bg-emerald-950/20">
+                                      <div className="flex items-center gap-2">
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          step="any"
+                                          value={val}
+                                          onChange={(e) => setQuantities({ ...quantities, [key]: e.target.value })}
+                                          className="w-32 rounded-xl border-2 border-emerald-500/70 bg-slate-950 px-3 py-1.5 text-sm text-emerald-300 font-black focus:border-emerald-400 focus:outline-none shadow-inner"
+                                        />
+                                        <span className="text-xs text-slate-400 font-bold">{getUnitLabel(item.uom || '')}</span>
+                                      </div>
                                     </TableCell>
                                     <TableCell>
                                       <input
@@ -445,7 +460,7 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                                         placeholder="ملاحظات حالة البند إن وجدت..."
                                         value={itemNotes[key] || ''}
                                         onChange={(e) => setItemNotes({ ...itemNotes, [key]: e.target.value })}
-                                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1 text-xs text-slate-200"
+                                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-200 focus:border-cyan-400"
                                       />
                                     </TableCell>
                                   </TableRow>
@@ -453,31 +468,34 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                               })}
                             </TableBody>
                           </Table>
-
-                          <div className="space-y-1">
-                            <label className="text-xs font-bold text-slate-300">ملاحظات أمين المخزن العامة على الإرسالية:</label>
-                            <textarea
-                              rows={2}
-                              value={notes[order.id] || ''}
-                              onChange={(e) => setNotes({ ...notes, [order.id]: e.target.value })}
-                              placeholder="مثال: تم فحص البضاعة ومطابقة الأختام، البضاعة سليمة وبحالة جيدة..."
-                              className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-slate-100 focus:border-cyan-400"
-                            />
-                          </div>
-
-                          <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-                            <Button
-                              variant="success"
-                              size="sm"
-                              isLoading={isSavingThis}
-                              onClick={() => submitWarehouseReceipt(order)}
-                              className="font-bold px-5"
-                            >
-                              ✓ تسجيل الاستلام وإرسال إذن الاستلام لمهندس الموقع
-                            </Button>
-                          </div>
                         </div>
-                      )}
+
+                        <div className="space-y-1 pt-1">
+                          <label className="text-xs font-bold text-slate-300">ملاحظات عامة على الاستلام (اختياري):</label>
+                          <textarea
+                            rows={2}
+                            value={notes[order.id] || ''}
+                            onChange={(e) => setNotes({ ...notes, [order.id]: e.target.value })}
+                            placeholder="مثال: تم فحص البضاعة ومطابقة الأختام، البضاعة سليمة وبحالة جيدة..."
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-slate-100 focus:border-cyan-400"
+                          />
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-800">
+                          <span className="text-xs text-slate-400">
+                            💡 بالضغط على الزر الأخضر، سيتم حفظ الاستلام فوراً وتحويل الإذن لمهندس الموقع للاعتماد.
+                          </span>
+                          <Button
+                            variant="success"
+                            size="md"
+                            isLoading={isSavingThis}
+                            onClick={() => submitWarehouseReceipt(order)}
+                            className="w-full sm:w-auto font-black text-sm bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-6 py-2.5 shadow-lg shadow-emerald-950/50"
+                          >
+                            ✓ اعتماد واستلام المواد وإرسالها لمهندس الموقع
+                          </Button>
+                        </div>
+                      </div>
                     </Card>
                   );
                 })}
