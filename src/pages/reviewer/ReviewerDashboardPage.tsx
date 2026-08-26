@@ -164,6 +164,7 @@ export const ReviewerDashboardPage: React.FC = () => {
                     <TableHead className="whitespace-nowrap">القسم</TableHead>
                     <TableHead className="whitespace-nowrap">الصنف</TableHead>
                     <TableHead className="whitespace-nowrap">رقم قطعة الأرض</TableHead>
+                    <TableHead className="whitespace-nowrap">المنطقة</TableHead>
                     <TableHead className="whitespace-nowrap">الكمية / العدد</TableHead>
                     <TableHead className="whitespace-nowrap">تاريخ الاحتياج</TableHead>
                     <TableHead className="whitespace-nowrap">الحالة</TableHead>
@@ -175,6 +176,7 @@ export const ReviewerDashboardPage: React.FC = () => {
                     const item = pr.items?.[0];
                     const itemName = item?.item_description || item?.item?.name || '—';
                     const parcelNumber = item?.item_reference || '—';
+                    const regionName = item?.region || (pr.request_type === 'OFFICE_SUPPLIES' ? 'مقر الشركة' : '—');
                     const quantity = item ? `${item.quantity || '—'} ${item.uom || ''}` : '—';
 
                     return (
@@ -186,6 +188,7 @@ export const ReviewerDashboardPage: React.FC = () => {
                         <TableCell className="max-w-[180px] text-slate-400">{pr.department?.name || 'غير محدد'}</TableCell>
                         <TableCell className="max-w-[180px] font-semibold text-slate-100 text-xs">{itemName}</TableCell>
                         <TableCell className="font-mono text-cyan-300 text-xs whitespace-nowrap">{parcelNumber}</TableCell>
+                        <TableCell className="text-slate-300 text-xs whitespace-nowrap">{regionName}</TableCell>
                         <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">{quantity}</TableCell>
                         <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">{pr.date_needed || '—'}</TableCell>
                         <TableCell className="whitespace-nowrap"><PurchaseRequestStatusBadge status={pr.status} /></TableCell>
@@ -218,6 +221,7 @@ export const ReviewerDashboardPage: React.FC = () => {
                 const item = pr.items?.[0];
                 const itemName = item?.item_description || item?.item?.name || 'غير محدد';
                 const parcelNumber = item?.item_reference || '—';
+                const regionName = item?.region || (pr.request_type === 'OFFICE_SUPPLIES' ? 'مقر الشركة' : 'غير محددة');
                 const quantity = item ? `${item.quantity || '—'} ${item.uom || ''}` : '—';
 
                 return (
@@ -239,8 +243,8 @@ export const ReviewerDashboardPage: React.FC = () => {
                         <dd className="mt-1 break-normal font-bold leading-6 text-slate-200">{pr.department?.name || 'غير محدد'}</dd>
                       </div>
                       <div className="min-w-0 min-[420px]:col-span-2">
-                        <dt className="text-slate-500">الصنف وقطعة الأرض</dt>
-                        <dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{itemName} <span className="font-mono text-cyan-300">({parcelNumber})</span></dd>
+                        <dt className="text-slate-500">الصنف وقطعة الأرض والمنطقة</dt>
+                        <dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{itemName} <span className="font-mono text-cyan-300">({parcelNumber} - {regionName})</span></dd>
                       </div>
                       <div className="min-w-0">
                         <dt className="text-slate-500">الكمية / العدد</dt>
