@@ -46,6 +46,7 @@ class PurchaseRequest extends Model
 
     protected $fillable = [
         'request_number',
+        'request_type',
         'user_id',
         'department_id',
         'target_department_id',
@@ -58,12 +59,21 @@ class PurchaseRequest extends Model
         'direct_supplier_id',
         'total_estimated_cost',
         'date_needed',
-
         'notes',
         'rejection_reason',
         'return_reason',
         'submitted_at',
     ];
+
+    public function isOfficeRequest(): bool
+    {
+        return $this->request_type === 'OFFICE_SUPPLIES';
+    }
+
+    public function isProjectRequest(): bool
+    {
+        return ! $this->isOfficeRequest();
+    }
 
     protected function casts(): array
     {

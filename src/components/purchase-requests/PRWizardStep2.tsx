@@ -143,7 +143,7 @@ export const PRWizardStep2: React.FC<Props> = ({ data, onChange, errors = {} }) 
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className={`grid grid-cols-1 ${data.request_type === 'OFFICE_SUPPLIES' ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-4`}>
                 <div>
                   <label className="text-[10px] font-semibold text-slate-400 block mb-1">وصف الصنف*</label>
                   <Input
@@ -151,37 +151,51 @@ export const PRWizardStep2: React.FC<Props> = ({ data, onChange, errors = {} }) 
                     required
                     value={item.item_description}
                     onChange={e => updateItem(idx, { item_description: e.target.value })}
-                    placeholder="وصف دقيق للصنف المطلوب"
+                    placeholder={data.request_type === 'OFFICE_SUPPLIES' ? 'مثال: طابعة ليزر ملونة / كرتونة ورق A4' : 'وصف دقيق للصنف المطلوب'}
                     dir="rtl"
                     error={Boolean(errors[idx]?.description)}
                   />
                   {errors[idx]?.description && <p className="text-[11px] font-medium text-rose-400 mt-1">{errors[idx]?.description}</p>}
                 </div>
 
-                <div>
-                  <label className="text-[10px] font-semibold text-slate-400 block mb-1">رقم قطعة الأرض*</label>
-                  <Input
-                    required
-                    value={item.item_reference || ''}
-                    onChange={e => updateItem(idx, { item_reference: e.target.value })}
-                    placeholder="أدخل رقم قطعة الأرض"
-                    dir="ltr"
-                    error={Boolean(errors[idx]?.reference)}
-                  />
-                  {errors[idx]?.reference && <p className="text-[11px] font-medium text-rose-400 mt-1">{errors[idx]?.reference}</p>}
-                </div>
+                {data.request_type === 'OFFICE_SUPPLIES' ? (
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-400 block mb-1">مكتب / مكان الاستلام الداخلي (اختياري)</label>
+                    <Input
+                      value={item.item_reference || ''}
+                      onChange={e => updateItem(idx, { item_reference: e.target.value, region: e.target.value || 'مقر الشركة' })}
+                      placeholder="افتراضي: مقر الشركة / مكتب مقدم الطلب"
+                      dir="rtl"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="text-[10px] font-semibold text-slate-400 block mb-1">رقم قطعة الأرض*</label>
+                      <Input
+                        required
+                        value={item.item_reference || ''}
+                        onChange={e => updateItem(idx, { item_reference: e.target.value })}
+                        placeholder="أدخل رقم قطعة الأرض"
+                        dir="ltr"
+                        error={Boolean(errors[idx]?.reference)}
+                      />
+                      {errors[idx]?.reference && <p className="text-[11px] font-medium text-rose-400 mt-1">{errors[idx]?.reference}</p>}
+                    </div>
 
-                <div>
-                  <label className="text-[10px] font-semibold text-slate-400 block mb-1">المنطقة*</label>
-                  <Input
-                    required
-                    value={item.region || ''}
-                    onChange={e => updateItem(idx, { region: e.target.value })}
-                    placeholder="مثال: المنطقة السابعة والعشرين"
-                    error={Boolean(errors[idx]?.region)}
-                  />
-                  {errors[idx]?.region && <p className="text-[11px] font-medium text-rose-400 mt-1">{errors[idx]?.region}</p>}
-                </div>
+                    <div>
+                      <label className="text-[10px] font-semibold text-slate-400 block mb-1">المنطقة*</label>
+                      <Input
+                        required
+                        value={item.region || ''}
+                        onChange={e => updateItem(idx, { region: e.target.value })}
+                        placeholder="مثال: المنطقة السابعة والعشرين"
+                        error={Boolean(errors[idx]?.region)}
+                      />
+                      {errors[idx]?.region && <p className="text-[11px] font-medium text-rose-400 mt-1">{errors[idx]?.region}</p>}
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

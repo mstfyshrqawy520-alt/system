@@ -121,6 +121,8 @@ class PurchaseRequestController extends Controller
             'items.item',
             'approvalHistory.actor',
             'attachments.uploadedBy',
+            'purchaseOrders.supplier',
+            'purchaseOrders.receipts',
         ])->findOrFail($id);
 
         if ($pr->user_id !== $request->user()->id) {

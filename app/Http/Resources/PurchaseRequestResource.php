@@ -12,7 +12,8 @@ class PurchaseRequestResource extends JsonResource
         return [
             'id' => $this->id,
             'request_number' => $this->request_number,
-                        'status' => $this->status,
+            'request_type' => $this->request_type ?? 'PROJECT',
+            'status' => $this->status,
             'procurement_route' => $this->procurement_route,
             'direct_supplier_id' => $this->direct_supplier_id,
             'total_estimated_cost' => number_format((float) $this->total_estimated_cost, 2, '.', ''),
@@ -158,6 +159,31 @@ class PurchaseRequestResource extends JsonResource
                         ? $att->uploadedBy->name
                         : null,
                     'created_at' => $att->created_at?->toIso8601String(),
+                ])->values();
+            }),
+            'purchase_orders' => $this->whenLoaded('purchaseOrders', function () {
+                return $this->purchaseOrders->map(fn ($po) => [
+                    'id' => $po->id,
+                    'po_number' => $po->po_number,
+                    'status' => $po->status,
+                    'delivery_status' => $po->delivery_status,
+                    'total_amount' => $po->total_amount,
+                    'supplier' => $po->relationLoaded('supplier') && $po->supplier
+                        ? ['id' => $po->supplier->id, 'company_name' => $po->supplier->company_name]
+                        : null,
+                    'has_approved_receipt' => $po->relationLoaded('receipts')
+                        ? $po->receipts->contains(fn ($r) => $r->status === 'APPROVED')
+                        : false,
+                    'receipts' => $po->relationLoaded('receipts')
+                        ? $po->receipts->map(fn ($r) => [
+                            'id' => $r->id,
+                            'receipt_number' => $r->receipt_number,
+                            'receipt_type' => $r->receipt_type,
+                            'status' => $r->status,
+                            'received_at' => $r->received_at ? $r->received_at->format('Y-m-d') : null,
+                            'receiver_notes' => $r->receiver_notes,
+                        ])
+                        : [],
                 ])->values();
             }),
         ];

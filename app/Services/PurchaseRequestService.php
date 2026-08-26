@@ -31,22 +31,32 @@ class PurchaseRequestService
      * Normalize request line items without calculating any estimated price.
      * Supplier prices are entered later in the official quote stage.
      */
-    public function normalizeItems(array $items): array
+    public function normalizeItems(array $items, bool $isOffice = false): array
     {
         $normalizedItems = [];
 
         foreach ($items as $index => $item) {
             $itemReference = trim((string) ($item['item_reference'] ?? ''));
             $region = trim((string) ($item['region'] ?? ''));
-            if ($itemReference === '' || $region === '') {
-                $errors = [];
+
+            if ($isOffice) {
                 if ($itemReference === '') {
-                    $errors["items.{$index}.item_reference"] = ['رقم قطعة الأرض مطلوب ولا يمكن أن يكون فارغًا.'];
+                    $itemReference = 'مقر الشركة';
                 }
                 if ($region === '') {
-                    $errors["items.{$index}.region"] = ['المنطقة مطلوبة ولا يمكن أن تكون فارغة.'];
+                    $region = 'إداري / المقر الرئيسي';
                 }
-                throw ValidationException::withMessages($errors);
+            } else {
+                if ($itemReference === '' || $region === '') {
+                    $errors = [];
+                    if ($itemReference === '') {
+                        $errors["items.{$index}.item_reference"] = ['رقم قطعة الأرض مطلوب ولا يمكن أن يكون فارغًا.'];
+                    }
+                    if ($region === '') {
+                        $errors["items.{$index}.region"] = ['المنطقة مطلوبة ولا يمكن أن تكون فارغة.'];
+                    }
+                    throw ValidationException::withMessages($errors);
+                }
             }
 
             $quantity = (float) ($item['quantity'] ?? 0);
@@ -85,7 +95,9 @@ class PurchaseRequestService
     public function createRequest(User $user, array $data): PurchaseRequest
     {
         return DB::transaction(function () use ($user, $data) {
-            $normalizedItems = $this->normalizeItems($data['items'] ?? []);
+            $requestType = ($data['request_type'] ?? 'PROJECT') === 'OFFICE_SUPPLIES' ? 'OFFICE_SUPPLIES' : 'PROJECT';
+            $isOffice = $requestType === 'OFFICE_SUPPLIES';
+            $normalizedItems = $this->normalizeItems($data['items'] ?? [], $isOffice);
             $requestNumber = $this->generateRequestNumber();
             $targetDepartmentId = (int) ($data['target_department_id'] ?? $user->department_id);
             $targetDepartment = Department::with(['manager', 'siteEngineer'])->find($targetDepartmentId);
@@ -114,7 +126,7 @@ class PurchaseRequestService
                 ]);
             }
 
-            if (!$siteEngineer) {
+            if (!$isOffice && !$siteEngineer) {
                 throw ValidationException::withMessages([
                     'target_department_id' => ['لا يمكن إرسال الطلب قبل تعيين مهندس موقع للقسم المستهدف.'],
                 ]);
@@ -122,6 +134,7 @@ class PurchaseRequestService
 
             $pr = PurchaseRequest::create([
                 'request_number' => $requestNumber,
+                'request_type' => $requestType,
                 'user_id' => $user->id,
                 'department_id' => $user->department_id,
                 'target_department_id' => $targetDepartment->id,
@@ -129,7 +142,7 @@ class PurchaseRequestService
                 // The general manager is the final business approver for their own request;
                 // never route their request to the target department manager.
                 'reviewer_user_id' => $isExecutiveRequester ? null : $assignedManager?->id,
-                'site_engineer_user_id' => $siteEngineer->id,
+                'site_engineer_user_id' => $isOffice ? null : $siteEngineer?->id,
                 'priority' => $data['priority'] ?? 'NORMAL',
                 'status' => 'DRAFT',
                 'date_needed' => $this->normalizeNeededDate($data['date_needed'] ?? null),
@@ -156,6 +169,7 @@ class PurchaseRequestService
                 'entity_id' => $pr->id,
                 'new_value' => json_encode([
                     'request_number' => $pr->request_number,
+                    'request_type' => $pr->request_type,
                     'status' => 'DRAFT',
                 ], JSON_UNESCAPED_UNICODE),
             ]);
@@ -179,7 +193,13 @@ class PurchaseRequestService
                 throw new \RuntimeException('لا يمكن تعديل طلب الشراء بعد اعتماد المراجع.');
             }
 
+            $requestType = $data['request_type'] ?? $lockedRequest->request_type ?? 'PROJECT';
+            $isOffice = $requestType === 'OFFICE_SUPPLIES';
+
             $updateFields = [];
+            if (array_key_exists('request_type', $data)) {
+                $updateFields['request_type'] = $requestType;
+            }
             if (array_key_exists('target_department_id', $data)) {
                 $targetDepartment = Department::with(['manager', 'siteEngineer'])->find((int) $data['target_department_id']);
                 if (!$targetDepartment) {
@@ -188,13 +208,13 @@ class PurchaseRequestService
                 if (!$targetDepartment->manager && !$user->hasRole('general_manager')) {
                     throw ValidationException::withMessages(['target_department_id' => ['القسم المستهدف لا يحتوي على مدير قسم معين بعد.']]);
                 }
-                if (!$targetDepartment->siteEngineer) {
+                if (!$isOffice && !$targetDepartment->siteEngineer) {
                     throw ValidationException::withMessages(['target_department_id' => ['القسم المستهدف لا يحتوي على مهندس موقع معين بعد.']]);
                 }
                 $isExecutiveRequester = $user->hasRole('general_manager');
                 $updateFields['target_department_id'] = $targetDepartment->id;
                 $updateFields['reviewer_user_id'] = $isExecutiveRequester ? null : $targetDepartment->manager?->id;
-                $updateFields['site_engineer_user_id'] = $targetDepartment->siteEngineer->id;
+                $updateFields['site_engineer_user_id'] = $isOffice ? null : $targetDepartment->siteEngineer?->id;
             }
             $simpleFields = ['priority', 'notes'];
             foreach ($simpleFields as $field) {
@@ -207,7 +227,7 @@ class PurchaseRequestService
             }
 
             if (array_key_exists('items', $data)) {
-                $normalizedItems = $this->normalizeItems($data['items']);
+                $normalizedItems = $this->normalizeItems($data['items'], $isOffice);
 
                 // Re-create items
                 $request->items()->delete();
@@ -215,11 +235,11 @@ class PurchaseRequestService
                     $request->items()->create([
                         'item_id' => $itemData['item_id'] ?? null,
                         'item_description' => $itemData['item_description'],
-'item_reference' => $itemData['item_reference'],
-                    'region' => $itemData['region'],
+                        'item_reference' => $itemData['item_reference'],
+                        'region' => $itemData['region'],
                         'quantity' => $itemData['quantity'],
                         'uom' => $itemData['uom'],
-                                                                        'specifications' => $itemData['specifications'] ?? null,
+                        'specifications' => $itemData['specifications'] ?? null,
                         'notes' => $itemData['notes'] ?? null,
                     ]);
                 }

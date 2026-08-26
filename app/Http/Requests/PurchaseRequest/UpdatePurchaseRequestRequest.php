@@ -15,6 +15,7 @@ class UpdatePurchaseRequestRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'request_type' => ['nullable', 'string', 'in:PROJECT,OFFICE_SUPPLIES'],
             'target_department_id' => ['sometimes', 'integer', 'exists:departments,id'],
             'priority' => ['nullable', 'string', 'in:LOW,NORMAL,HIGH,URGENT'],
             'date_needed' => ['nullable', 'date'],
@@ -24,8 +25,8 @@ class UpdatePurchaseRequestRequest extends FormRequest
             'items.*.id' => ['nullable', 'integer'],
             'items.*.item_id' => ['nullable', 'integer', 'exists:items,id'],
             'items.*.item_description' => ['required', 'string', 'max:255'],
-            'items.*.item_reference' => ['required', 'string', 'max:100'],
-            'items.*.region' => ['required', 'string', 'max:150'],
+            'items.*.item_reference' => ['nullable', 'string', 'max:100'],
+            'items.*.region' => ['nullable', 'string', 'max:150'],
             'items.*.quantity' => ['required', 'numeric', 'gt:0'],
             'items.*.uom' => ['nullable', 'string', 'max:20'],
             'items.*.specifications' => ['nullable', 'string'],

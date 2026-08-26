@@ -12,6 +12,7 @@ import {
   PurchaseRequest,
   PurchaseRequestItemFormInput,
   PurchaseRequestPriority,
+  PurchaseRequestType,
   DepartmentOption,
 } from '../../types/purchaseRequest';
 import { parseApiError } from '../../utils/apiError';
@@ -46,6 +47,7 @@ export const PurchaseRequestForm: React.FC<Props> = ({
   const navigate = useNavigate();
   const { hasRole } = useAuth();
   const isGeneralManager = hasRole('general_manager');
+  const [requestType, setRequestType] = useState<PurchaseRequestType>(initialData?.request_type || 'PROJECT');
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState<boolean>(true);
   const [departmentOptions, setDepartmentOptions] = useState<DepartmentOption[]>([]);
@@ -189,15 +191,17 @@ export const PurchaseRequestForm: React.FC<Props> = ({
     setFieldErrors({});
     const nextFieldErrors: Record<string, string> = {};
 
+    const isOffice = requestType === 'OFFICE_SUPPLIES';
+
     if (!targetDepartmentId) {
       nextFieldErrors.targetDepartment = 'اختر القسم المطلوب منه الشراء قبل حفظ الطلب.';
     }
 
     const selectedDepartment = departmentOptions.find((department) => department.id === Number(targetDepartmentId));
-    if (targetDepartmentId && ((!isGeneralManager && !selectedDepartment?.manager) || !selectedDepartment?.site_engineer)) {
-      nextFieldErrors.targetDepartment = !isGeneralManager && !selectedDepartment?.manager
-        ? 'القسم المختار غير مكتمل الإعداد؛ يجب تعيين مدير قسم ومهندس موقع من الإدارة.'
-        : 'القسم المختار لا يحتوي على مهندس موقع معين من الإدارة.';
+    if (targetDepartmentId && !isGeneralManager && !selectedDepartment?.manager) {
+      nextFieldErrors.targetDepartment = 'القسم المختار لا يحتوي على مدير قسم معين من الإدارة.';
+    } else if (targetDepartmentId && !isOffice && !selectedDepartment?.site_engineer) {
+      nextFieldErrors.targetDepartment = 'القسم المختار لا يحتوي على مهندس موقع معين من الإدارة لمشتريات المشروعات.';
     }
 
     if (!dateNeeded) {
@@ -214,8 +218,10 @@ export const PurchaseRequestForm: React.FC<Props> = ({
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       if (!item.item_description.trim()) nextFieldErrors[`item_${i}_description`] = 'اكتب وصف الصنف المطلوب.';
-      if (!item.item_reference?.trim()) nextFieldErrors[`item_${i}_reference`] = 'رقم قطعة الأرض مطلوب.';
-      if (!item.region?.trim()) nextFieldErrors[`item_${i}_region`] = 'المنطقة مطلوبة.';
+      if (!isOffice) {
+        if (!item.item_reference?.trim()) nextFieldErrors[`item_${i}_reference`] = 'رقم قطعة الأرض مطلوب.';
+        if (!item.region?.trim()) nextFieldErrors[`item_${i}_region`] = 'المنطقة مطلوبة.';
+      }
       const qty = typeof item.quantity === 'number' ? item.quantity : parseFloat(String(item.quantity));
       if (!Number.isFinite(qty) || qty <= 0) nextFieldErrors[`item_${i}_quantity`] = 'أدخل كمية أكبر من صفر.';
     }
@@ -235,6 +241,7 @@ export const PurchaseRequestForm: React.FC<Props> = ({
 
     try {
       await onSubmit({
+        request_type: requestType,
         target_department_id: Number(targetDepartmentId),
         priority,
         date_needed: dateNeeded || undefined,
@@ -242,8 +249,8 @@ export const PurchaseRequestForm: React.FC<Props> = ({
         items: items.map((item) => ({
           ...item,
           item_description: item.item_description.trim(),
-          item_reference: item.item_reference?.trim(),
-          region: item.region?.trim(),
+          item_reference: item.item_reference?.trim() || (isOffice ? 'مقر الشركة' : undefined),
+          region: item.region?.trim() || (isOffice ? 'إداري / المقر الرئيسي' : undefined),
           specifications: item.specifications?.trim(),
           notes: item.notes?.trim(),
           quantity: typeof item.quantity === 'string' ? Number(item.quantity) : item.quantity,
@@ -278,14 +285,70 @@ export const PurchaseRequestForm: React.FC<Props> = ({
     <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in" dir="rtl">
       <ErrorMessage error={error} onDismiss={() => setError(null)} />
 
+      {/* Request Type Selector */}
+      <Card className="space-y-3">
+        <label className="block text-xs font-bold text-slate-300">
+          نوع الطلب والغرض منه <span className="text-rose-400">*</span>
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setRequestType('OFFICE_SUPPLIES')}
+            className={`flex flex-col text-right p-3.5 rounded-xl border transition-all ${
+              requestType === 'OFFICE_SUPPLIES'
+                ? 'bg-indigo-950/60 border-indigo-500 ring-2 ring-indigo-500/30 text-slate-100 shadow-lg shadow-indigo-950/40'
+                : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+            }`}
+          >
+            <div className="flex items-center justify-between w-full mb-1.5">
+              <span className="text-base flex items-center gap-2 font-bold text-indigo-300">
+                <span>🏢</span> مستلزمات مكتبية وإدارية
+              </span>
+              {requestType === 'OFFICE_SUPPLIES' && (
+                <span className="text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 px-2 py-0.5 rounded-full">
+                  ✓ محدد
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] leading-relaxed text-slate-400">
+              طابعات، أقلام، أحبار، أجهزة، أو أدوات للمقر. <strong className="text-indigo-200">مقدم الطلب يستلم مباشرة</strong> دون حاجة لمخازن أو موقع.
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setRequestType('PROJECT')}
+            className={`flex flex-col text-right p-3.5 rounded-xl border transition-all ${
+              requestType === 'PROJECT'
+                ? 'bg-amber-950/60 border-amber-500 ring-2 ring-amber-500/30 text-slate-100 shadow-lg shadow-amber-950/40'
+                : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+            }`}
+          >
+            <div className="flex items-center justify-between w-full mb-1.5">
+              <span className="text-base flex items-center gap-2 font-bold text-amber-300">
+                <span>🏗️</span> مشتريات مشروعات ومواقع
+              </span>
+              {requestType === 'PROJECT' && (
+                <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full">
+                  ✓ محدد
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] leading-relaxed text-slate-400">
+              خاصة بقطع الأراضي والمواقع الإنشائية. تتطلب تحديد رقم القطعة والمنطقة وتمر على مهندس الموقع وأمين المخزن للاستلام.
+            </p>
+          </button>
+        </div>
+      </Card>
+
       {/* Header Fields */}
       <Card className="space-y-4">
         <h3 className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3 text-sm font-bold text-slate-100">
-          <span>📝</span> نموذج طلب شراء احترافي (غير مالي)
+          <span>📝</span> بيانات الطلب والقسم المعالج
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="القسم المطلوب منه الشراء" required error={fieldErrors.targetDepartment} helperText="سيتم توجيه الطلب تلقائيًا إلى مدير القسم ثم مهندس الموقع التابع له.">
+          <FormField label="القسم المطلوب منه الشراء" required error={fieldErrors.targetDepartment} helperText={requestType === 'OFFICE_SUPPLIES' ? 'سيتم توجيه الطلب إلى مدير القسم للمراجعة، والاستلام يتم من قبلك مباشرة.' : 'سيتم توجيه الطلب تلقائيًا إلى مدير القسم ثم مهندس الموقع التابع له.'}>
             <SearchableSelect
               options={departmentSelectOptions}
               value={targetDepartmentId || ''}
@@ -299,7 +362,9 @@ export const PurchaseRequestForm: React.FC<Props> = ({
             {targetDepartmentId && (() => {
               const selectedDepartment = departmentOptions.find((department) => department.id === Number(targetDepartmentId));
               return selectedDepartment ? (
-                <p className="mt-1 text-[11px] text-slate-400">المسؤولون: {selectedDepartment.manager?.name || 'مدير غير معين'} / {selectedDepartment.site_engineer?.name || 'مهندس موقع غير معين'}</p>
+                <p className="mt-1 text-[11px] text-slate-400">
+                  مدير القسم: {selectedDepartment.manager?.name || 'غير معين'} {requestType === 'PROJECT' ? `| مهندس الموقع: ${selectedDepartment.site_engineer?.name || 'غير معين'}` : ''}
+                </p>
               ) : null;
             })()}
           </FormField>
@@ -330,18 +395,23 @@ export const PurchaseRequestForm: React.FC<Props> = ({
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="ملاحظات تشغيلية للمراجع أو قسم المشتريات..."
+              placeholder="أي اشتراطات خاصة بالطلب"
             />
           </FormField>
         </div>
       </Card>
 
-      {/* Line البنود Table */}
+      {/* Items List */}
       <Card className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
-          <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-            <span>📦</span> عناصر ومواصفات الطلب({items.length})
-          </h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <span>📦</span> بنود وأصناف الطلب
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {requestType === 'OFFICE_SUPPLIES' ? 'حدد المواد المكتبية المطلوبة والمواصفات والكميات.' : 'حدد المواد المطلوبة والمواصفات الفنية مع رقم قطعة الأرض والمنطقة.'}
+            </p>
+          </div>
           <Button
             type="button"
             variant="secondary"
@@ -359,8 +429,7 @@ export const PurchaseRequestForm: React.FC<Props> = ({
               key={index}
               className="relative space-y-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3 transition-all sm:p-4"
             >
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800/60 font-mono">
                   بند #{index + 1}
                 </span>
@@ -400,33 +469,49 @@ export const PurchaseRequestForm: React.FC<Props> = ({
                       error={Boolean(fieldErrors[`item_${index}_description`])}
                       value={item.item_description}
                       onChange={(e) => handleItemChange(index, 'item_description', e.target.value)}
-                      placeholder="اسم الصنف أو المادة المطلوبة بالتفصيل"
+                      placeholder={requestType === 'OFFICE_SUPPLIES' ? 'مثال: طابعة ليزر / كرتونة ورق تصوير A4 / أقلام' : 'اسم الصنف أو المادة المطلوبة بالتفصيل'}
                     />
                   </FormField>
                 </div>
 
-                <FormField label="رقم قطعة الأرض" required error={fieldErrors[`item_${index}_reference`]} >
-                  <Input
-                    type="text"
-                    required
-                    error={Boolean(fieldErrors[`item_${index}_reference`])}
-                    value={item.item_reference || ''}
-                    onChange={(e) => handleItemChange(index, 'item_reference', e.target.value)}
-                    placeholder="أدخل رقم قطعة الأرض"
-                    dir="ltr"
-                  />
-                </FormField>
+                {requestType === 'OFFICE_SUPPLIES' ? (
+                  <FormField label="مكتب / مكان الاستلام الداخلي (اختياري)">
+                    <Input
+                      type="text"
+                      value={item.item_reference || ''}
+                      onChange={(e) => {
+                        handleItemChange(index, 'item_reference', e.target.value);
+                        handleItemChange(index, 'region', e.target.value || 'مقر الشركة');
+                      }}
+                      placeholder="افتراضي: مقر الشركة / مكتب مقدم الطلب"
+                    />
+                  </FormField>
+                ) : (
+                  <>
+                    <FormField label="رقم قطعة الأرض" required error={fieldErrors[`item_${index}_reference`]} >
+                      <Input
+                        type="text"
+                        required
+                        error={Boolean(fieldErrors[`item_${index}_reference`])}
+                        value={item.item_reference || ''}
+                        onChange={(e) => handleItemChange(index, 'item_reference', e.target.value)}
+                        placeholder="أدخل رقم قطعة الأرض"
+                        dir="ltr"
+                      />
+                    </FormField>
 
-                <FormField label="المنطقة" required error={fieldErrors[`item_${index}_region`]} >
-                  <Input
-                    type="text"
-                    required
-                    error={Boolean(fieldErrors[`item_${index}_region`])}
-                    value={item.region || ''}
-                    onChange={(e) => handleItemChange(index, 'region', e.target.value)}
-                    placeholder="أدخل اسم المنطقة"
-                  />
-                </FormField>
+                    <FormField label="المنطقة" required error={fieldErrors[`item_${index}_region`]} >
+                      <Input
+                        type="text"
+                        required
+                        error={Boolean(fieldErrors[`item_${index}_region`])}
+                        value={item.region || ''}
+                        onChange={(e) => handleItemChange(index, 'region', e.target.value)}
+                        placeholder="أدخل اسم المنطقة"
+                      />
+                    </FormField>
+                  </>
+                )}
 
                 <FormField label="الكمية المطلوبة" required error={fieldErrors[`item_${index}_quantity`]} >
                   <Input

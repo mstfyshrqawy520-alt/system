@@ -16,13 +16,17 @@ class PurchaseReceipt extends Model
         'purchase_request_id',
         'warehouse_keeper_user_id',
         'site_engineer_user_id',
+        'receiver_user_id',
         'receipt_number',
+        'receipt_type',
         'status',
         'received_at',
         'warehouse_submitted_at',
         'site_engineer_approved_at',
+        'receiver_approved_at',
         'warehouse_notes',
         'site_engineer_notes',
+        'receiver_notes',
         'rejection_reason',
     ];
 
@@ -32,6 +36,7 @@ class PurchaseReceipt extends Model
             'received_at' => 'date',
             'warehouse_submitted_at' => 'datetime',
             'site_engineer_approved_at' => 'datetime',
+            'receiver_approved_at' => 'datetime',
         ];
     }
 
@@ -53,6 +58,16 @@ class PurchaseReceipt extends Model
     public function siteEngineer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'site_engineer_user_id');
+    }
+
+    public function receiver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'receiver_user_id');
+    }
+
+    public function isOfficeReceipt(): bool
+    {
+        return $this->receipt_type === 'REQUESTER_OFFICE';
     }
 
     public function items(): HasMany

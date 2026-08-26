@@ -16,10 +16,17 @@ const formatRequestDate = (value?: string | null): string => {
   return new Intl.DateTimeFormat('ar-EG', { dateStyle: 'medium' }).format(date);
 };
 
-const getRequestType = (pr: PurchaseRequest): string => {
+const getRequestType = (pr: PurchaseRequest): React.ReactNode => {
+  if (pr.request_type === 'OFFICE_SUPPLIES') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-800/60">
+        <span>🏢</span> مستلزمات مكتبية
+      </span>
+    );
+  }
   if (pr.procurement_route === 'DIRECT') return 'شراء مباشر';
   if (pr.procurement_route === 'QUOTES') return 'عروض أسعار';
-  return 'طلب شراء';
+  return 'طلب شراء موقع';
 };
 
 const isOverdueRequest = (pr: PurchaseRequest): boolean => {

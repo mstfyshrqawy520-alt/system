@@ -80,3 +80,9 @@ export const updatePurchaseReceiptApi = async (
 
 export const approvePurchaseReceiptApi = async (receiptId: number, site_engineer_notes?: string): Promise<ReceiptRecord> =>
   (await apiClient.post<{ data: ReceiptRecord }>(`/purchase-receipts/${receiptId}/approve`, { site_engineer_notes })).data.data;
+
+export const confirmOfficeReceiptApi = async (
+  purchaseOrderId: number,
+  payload?: { notes?: string; items?: Array<{ purchase_order_item_id: number; received_quantity: number; notes?: string }> },
+): Promise<{ message: string; data: ReceiptRecord }> =>
+  (await apiClient.post<{ message: string; data: ReceiptRecord }>(`/purchase-receipts/purchase-orders/${purchaseOrderId}/confirm-office`, payload || {})).data;

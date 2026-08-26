@@ -319,6 +319,7 @@ Route::middleware('auth:sanctum')->prefix('purchase-receipts')->group(function (
         ->middleware('permission:accounting.invoice.view');
     Route::post('/purchase-orders/{purchaseOrderId}', [PurchaseReceiptController::class, 'store'])
         ->middleware('permission:purchase_receipt.edit');
+    Route::post('/purchase-orders/{purchaseOrderId}/confirm-office', [PurchaseReceiptController::class, 'confirmOfficeReceipt']);
     Route::put('/{id}', [PurchaseReceiptController::class, 'update'])
         ->middleware('permission:purchase_receipt.edit');
     Route::post('/{id}/approve', [PurchaseReceiptController::class, 'approve'])

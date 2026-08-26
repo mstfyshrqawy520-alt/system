@@ -221,4 +221,94 @@ class PurchaseReceiptService
             return $receipt->fresh(['purchaseOrder.supplier', 'purchaseOrder.items.item', 'purchaseRequest', 'warehouseKeeper', 'siteEngineer', 'items.purchaseOrderItem']);
         });
     }
+
+    public function confirmByRequester(User $requester, PurchaseOrder $purchaseOrder, array $items = [], ?string $notes = null): PurchaseReceipt
+    {
+        $purchaseOrder->loadMissing(['purchaseRequest', 'items']);
+        $pr = $purchaseOrder->purchaseRequest;
+
+        if (!$pr) {
+            throw new \RuntimeException('لا يوجد طلب شراء مرتبط بأمر الشراء هذا.');
+        }
+
+        if ($pr->request_type !== 'OFFICE_SUPPLIES') {
+            throw new \RuntimeException('هذا الأمر يخص مشروعاً ويتطلب استلام أمين المخزن واعتماد مهندس الموقع.');
+        }
+
+        $isRequester = (int) $pr->user_id === (int) $requester->id;
+        $isPrivileged = $requester->hasAnyRole(['admin', 'general_manager', 'procurement_manager']);
+        if (!$isRequester && !$isPrivileged) {
+            throw new \RuntimeException('فقط مقدم الطلب أو إدارة المشتريات/الإدارة العامة يمكنهم تأكيد استلام هذا الطلب المكتبي.');
+        }
+
+        if (! in_array($purchaseOrder->status, ['ISSUED', 'PENDING_ACCOUNTING_REVIEW', 'APPROVED_BY_ACCOUNTING', 'FINAL_APPROVED'], true)) {
+            throw new \RuntimeException('لا يمكن تأكيد الاستلام في حالة أمر الشراء الحالية.');
+        }
+
+        if (PurchaseReceipt::where('purchase_order_id', $purchaseOrder->id)->where('status', 'APPROVED')->exists()) {
+            throw new \RuntimeException('تم تأكيد استلام هذا الطلب المكتبي بالفعل.');
+        }
+
+        $orderItems = $purchaseOrder->items->keyBy('id');
+        $itemsMap = collect($items)->keyBy('purchase_order_item_id');
+
+        return DB::transaction(function () use ($requester, $purchaseOrder, $pr, $orderItems, $itemsMap, $notes): PurchaseReceipt {
+            $receipt = PurchaseReceipt::create([
+                'purchase_order_id' => $purchaseOrder->id,
+                'purchase_request_id' => $pr->id,
+                'warehouse_keeper_user_id' => null,
+                'site_engineer_user_id' => null,
+                'receiver_user_id' => $requester->id,
+                'receipt_number' => 'OFFICE-RCV-' . now()->format('YmdHis') . '-' . $purchaseOrder->id,
+                'receipt_type' => 'REQUESTER_OFFICE',
+                'status' => 'APPROVED',
+                'received_at' => now()->toDateString(),
+                'receiver_approved_at' => now(),
+                'receiver_notes' => $notes,
+            ]);
+
+            foreach ($orderItems as $orderItem) {
+                $itemPayload = $itemsMap->get($orderItem->id);
+                $receivedQuantity = $itemPayload && isset($itemPayload['received_quantity'])
+                    ? (float) $itemPayload['received_quantity']
+                    : (float) $orderItem->quantity;
+
+                if ($receivedQuantity < 0) {
+                    $receivedQuantity = (float) $orderItem->quantity;
+                }
+
+                $receipt->items()->create([
+                    'purchase_order_item_id' => $orderItem->id,
+                    'ordered_quantity' => $orderItem->quantity,
+                    'received_quantity' => $receivedQuantity,
+                    'notes' => $itemPayload['notes'] ?? 'تم الاستلام بواسطة مقدم الطلب',
+                ]);
+            }
+
+            $purchaseOrder->update([
+                'delivery_status' => 'DELIVERED',
+                'actual_delivery_date' => now()->toDateString(),
+            ]);
+
+            ApprovalHistory::create([
+                'target_type' => PurchaseReceipt::class,
+                'target_id' => $receipt->id,
+                'actor_user_id' => $requester->id,
+                'action' => 'OFFICE_RECEIPT_CONFIRMED',
+                'from_state' => 'ISSUED',
+                'to_state' => 'APPROVED',
+                'comments' => $notes ?: 'أكد مقدم الطلب استلام المستلزمات المكتبية بالكامل.',
+            ]);
+
+            $notificationService = app(NotificationService::class);
+            $accountants = $notificationService->resolveUsersWithPermission('purchase_order.view_accounting');
+            $notificationService->queueAccountingWithPurchaseOrderAndReceipt(
+                $accountants,
+                $receipt->purchaseOrder,
+                $receipt
+            );
+
+            return $receipt->fresh(['purchaseOrder.supplier', 'purchaseOrder.items.item', 'purchaseRequest', 'receiver', 'items.purchaseOrderItem']);
+        });
+    }
 }

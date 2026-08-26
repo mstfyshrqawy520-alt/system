@@ -15,6 +15,7 @@ import {
 import { ApiError } from '../../types/api';
 import {
   PR_STATUS_LABELS,
+  PR_TYPE_LABELS,
   PurchaseRequest,
 } from '../../types/purchaseRequest';
 import { parseApiError } from '../../utils/apiError';
@@ -23,6 +24,7 @@ import { Card } from '../../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import SystemEventTimeline from '../../components/ui/SystemEventTimeline';
 import PurchaseRequestTimeline from '../../components/procurement/PurchaseRequestTimeline';
+import OfficeReceiptModal from '../../components/purchase-requests/OfficeReceiptModal';
 
 const REQUESTER_EDITABLE_STATUSES = ['DRAFT', 'SUBMITTED', 'UNDER_REVIEW'];
 const REVIEWER_DECISION_STATUSES = ['REJECTED', 'APPROVED_BY_REVIEWER', 'PENDING_PROCUREMENT_APPROVAL', 'APPROVED_BY_PROCUREMENT', 'PO_DRAFT', 'ISSUED'];
@@ -46,6 +48,8 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
+  const [isOfficeReceiptModalOpen, setIsOfficeReceiptModalOpen] = useState<boolean>(false);
+  const [selectedPoForReceipt, setSelectedPoForReceipt] = useState<any>(null);
 
   const fetchRequest = async () => {
     if (!id) return;
@@ -117,6 +121,11 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
   const canSubmit = isDraft && hasPermission('purchase_request.submit');
   const reviewerDecisionFinal = REVIEWER_DECISION_STATUSES.includes(requestData.status);
 
+  const isOffice = requestData.request_type === 'OFFICE_SUPPLIES';
+  const issuedPos = requestData.purchase_orders || [];
+  const activeOfficePo = isOffice && issuedPos.length > 0 ? issuedPos[0] : null;
+  const isOfficeReceiptConfirmed = activeOfficePo?.has_approved_receipt || false;
+
   return (
     <div className="space-y-6 animate-fade-in" dir="rtl">
       {/* Flash */}
@@ -127,6 +136,53 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
         </div>
       )}
       <ErrorMessage error={error} onDismiss={() => setError(null)} />
+
+      {/* Office Supplies Receipt Card for Requester */}
+      {isOffice && activeOfficePo && (
+        isOfficeReceiptConfirmed ? (
+          <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/30 p-4 text-xs text-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg shadow-emerald-950/20">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-xl">
+                ✓
+              </div>
+              <div>
+                <div className="font-bold text-sm text-emerald-100">تم استلام الأصناف المكتبية واعتمادها بنجاح</div>
+                <p className="text-emerald-300/80 text-[11px] mt-0.5">
+                  أمر الشراء ({activeOfficePo.po_number}) تم تأكيد استلامه في مقر الشركة وتحويله للحسابات لاستكمال إجراءات الفاتورة.
+                </p>
+              </div>
+            </div>
+            <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/50 text-emerald-300">
+              تم الاستلام الفعلي
+            </span>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-indigo-500/50 bg-indigo-950/40 p-4 text-xs text-indigo-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl shadow-indigo-950/40">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-xl">
+                📦
+              </div>
+              <div>
+                <div className="font-bold text-sm text-slate-100">المستلزمات المكتبية جاهزة / تم توريدها للاستلام</div>
+                <p className="text-indigo-300/90 text-[11px] mt-0.5">
+                  بصفتك مقدم الطلب، يمكنك تأكيد استلام الأصناف المكتبية مباشرة لنقل أمر الشراء ({activeOfficePo.po_number}) للحسابات وصرف المستحقات.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setSelectedPoForReceipt(activeOfficePo);
+                setIsOfficeReceiptModalOpen(true);
+              }}
+              className="bg-indigo-600 hover:bg-indigo-500 border-indigo-500 text-white font-bold px-4 py-2 text-xs flex items-center gap-2 whitespace-nowrap shadow-md"
+            >
+              <span>📦</span> تأكيد استلام الأصناف المكتبية
+            </Button>
+          </div>
+        )
+      )}
 
       {['SUBMITTED', 'UNDER_REVIEW'].includes(requestData.status) && (
         <div className="rounded-xl border border-cyan-700/40 bg-cyan-950/25 px-4 py-3 text-xs text-cyan-200">
@@ -154,9 +210,18 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div className="flex items-center space-x-3 space-x-reverse">
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-xl font-black font-mono text-cyan-400">{requestData.request_number}</h1>
               <PurchaseRequestStatusBadge status={requestData.status} />
+              {isOffice ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-950/90 text-indigo-300 border border-indigo-700/60 shadow-sm">
+                  <span>🏢</span> مستلزمات مكتبية للشركة
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-950/90 text-amber-300 border border-amber-700/60 shadow-sm">
+                  <span>🏗️</span> مشتريات مشروع / موقع
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -189,11 +254,17 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
       {/* Summary metadata */}
       <Card className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
         <div>
+          <div className="text-[10px] text-slate-400 font-semibold">نوع الطلب</div>
+          <div className="font-bold text-slate-200 mt-1 flex items-center gap-1">
+            {isOffice ? '🏢 مستلزمات مكتبية للشركة' : '🏗️ مشتريات مشروعات ومواقع'}
+          </div>
+        </div>
+        <div>
           <div className="text-[10px] text-slate-400 font-semibold">القسم المستهدف</div>
           <div className="font-bold text-slate-200 mt-1">{requestData.target_department?.name || requestData.department?.name || 'غير محدد'}</div>
         </div>
         <div>
-          <div className="text-[10px] text-slate-400 font-semibold">مقدم الطلب</div>
+          <div className="text-[10px] text-slate-400 font-semibold">مقدم الطلب (المستلم)</div>
           <div className="font-bold text-slate-200 mt-1">{requestData.requester?.name}</div>
         </div>
         <div>
@@ -214,7 +285,7 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
             {new Date(requestData.created_at).toLocaleDateString('ar-EG')}
           </div>
         </div>
-        <div className="col-span-2">
+        <div>
           <div className="text-[10px] text-slate-400 font-semibold">ملاحظات</div>
           <div className="font-bold text-slate-200 mt-1">{requestData.notes || '-'}</div>
         </div>
@@ -234,8 +305,8 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>م</TableHead>
-                <TableHead>رقم قطعة الأرض</TableHead>
-                <TableHead>المنطقة</TableHead>
+                <TableHead>{isOffice ? 'مكان / مكتب الاستلام' : 'رقم قطعة الأرض'}</TableHead>
+                {!isOffice && <TableHead>المنطقة</TableHead>}
                 <TableHead>الصنف</TableHead>
                 <TableHead>الكمية</TableHead>
                 <TableHead>الوحدة</TableHead>
@@ -246,8 +317,8 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
               {requestData.items?.map((item, index) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-bold font-mono text-slate-400">{index + 1}</TableCell>
-                  <TableCell className="font-mono text-slate-300">{item.item_reference || '—'}</TableCell>
-                  <TableCell className="text-slate-300">{item.region || '—'}</TableCell>
+                  <TableCell className="font-mono text-slate-300">{item.item_reference || (isOffice ? 'مقر الشركة' : '—')}</TableCell>
+                  {!isOffice && <TableCell className="text-slate-300">{item.region || '—'}</TableCell>}
                   <TableCell className="font-bold text-slate-100">{item.item_description}</TableCell>
                   <TableCell className="font-bold font-mono text-slate-200">
                     {parseFloat(item.quantity).toLocaleString()}
@@ -267,10 +338,10 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
                   <p className="text-[10px] font-bold text-cyan-300">بند #{index + 1}</p>
                   <p className="mt-1 break-words text-sm font-black text-slate-100">{item.item_description || 'بدون وصف'}</p>
                 </div>
-                <span className="shrink-0 font-mono text-xs font-bold text-slate-300">{item.item_reference || '—'}</span>
+                <span className="shrink-0 font-mono text-xs font-bold text-slate-300">{item.item_reference || (isOffice ? 'مقر الشركة' : '—')}</span>
               </div>
               <dl className="mt-3 grid grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
-                <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 text-slate-200">{item.region || '—'}</dd></div>
+                {!isOffice && <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 text-slate-200">{item.region || '—'}</dd></div>}
                 <div><dt className="text-slate-500">الكمية</dt><dd className="mt-1 font-bold text-slate-200">{parseFloat(item.quantity).toLocaleString()} {item.uom || ''}</dd></div>
                 <div className="col-span-1 min-[420px]:col-span-2"><dt className="text-slate-500">المواصفات</dt><dd className="mt-1 break-words leading-6 text-slate-300">{item.specifications || '—'}</dd></div>
               </dl>
@@ -303,6 +374,28 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
         pr={requestData}
         onClose={() => setIsPrintModalOpen(false)}
       />
+      {selectedPoForReceipt && (
+        <OfficeReceiptModal
+          isOpen={isOfficeReceiptModalOpen}
+          purchaseOrderId={selectedPoForReceipt.id}
+          poNumber={selectedPoForReceipt.po_number}
+          supplierName={selectedPoForReceipt.supplier?.company_name}
+          items={requestData.items?.map(i => ({
+            id: i.id,
+            item_description: i.item_description,
+            quantity: i.quantity,
+            uom: i.uom,
+          }))}
+          onClose={() => {
+            setIsOfficeReceiptModalOpen(false);
+            setSelectedPoForReceipt(null);
+          }}
+          onSuccess={(msg) => {
+            setFlashMessage(msg);
+            fetchRequest();
+          }}
+        />
+      )}
     </div>
   );
 };

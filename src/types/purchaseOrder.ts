@@ -61,6 +61,7 @@ export interface PurchaseOrder {
   purchase_request?: {
     id: number;
     request_number: string;
+    request_type?: 'PROJECT' | 'OFFICE_SUPPLIES';
     status: string;
     requester?: {
       id: number;

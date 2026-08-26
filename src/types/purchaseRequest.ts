@@ -148,9 +148,27 @@ export interface DepartmentOption {
   users_count?: number;
 }
 
+export type PurchaseRequestType = 'PROJECT' | 'OFFICE_SUPPLIES';
+
+export const PR_TYPE_LABELS: Record<PurchaseRequestType, { label: string; icon: string; badgeClass: string; desc: string }> = {
+  PROJECT: {
+    label: 'مشتريات مشروع / موقع إنشائي',
+    icon: '🏗️',
+    badgeClass: 'bg-amber-950/80 text-amber-300 border-amber-800/60',
+    desc: 'تخص أراضي ومشاريع الشركة وتمر على مهندس الموقع وأمين المخزن للاستلام.',
+  },
+  OFFICE_SUPPLIES: {
+    label: 'مستلزمات مكتبية وإدارية للشركة',
+    icon: '🏢',
+    badgeClass: 'bg-indigo-950/80 text-indigo-300 border-indigo-800/60',
+    desc: 'مستلزمات المقر وأجهزة وأدوات الشركة، ويستلمها مقدم الطلب مباشرة بنفسه.',
+  },
+};
+
 export interface PurchaseRequest {
   id: number;
   request_number: string;
+  request_type?: PurchaseRequestType;
   justification?: string | null;
   status: PurchaseRequestStatus;
   procurement_route?: 'UNDECIDED' | 'DIRECT' | 'QUOTES' | string;
@@ -200,6 +218,23 @@ export interface PurchaseRequest {
   attachments?: Attachment[];
   quotes?: PurchaseRequestQuote[];
   selected_quote?: PurchaseRequestQuote | null;
+  purchase_orders?: Array<{
+    id: number;
+    po_number: string;
+    status: string;
+    delivery_status?: string | null;
+    total_amount?: string | number | null;
+    supplier?: { id: number; company_name: string } | null;
+    has_approved_receipt?: boolean;
+    receipts?: Array<{
+      id: number;
+      receipt_number: string;
+      receipt_type?: string | null;
+      status: string;
+      received_at?: string | null;
+      receiver_notes?: string | null;
+    }>;
+  }>;
 }
 
 export interface ApprovalHistoryEntry {
@@ -223,6 +258,7 @@ export interface PurchaseRequestItemFormInput {
 }
 
 export interface CreatePurchaseRequestPayload {
+  request_type?: PurchaseRequestType;
   target_department_id?: number;
   // Legacy fields are retained for old drafts and API compatibility; new UI resolves them from the department.
   reviewer_user_id?: number;
@@ -235,10 +271,10 @@ export interface CreatePurchaseRequestPayload {
 }
 
 export interface UpdatePurchaseRequestPayload {
+  request_type?: PurchaseRequestType;
   target_department_id?: number;
   priority?: PurchaseRequestPriority;
   date_needed?: string;
-
   notes?: string;
   items?: PurchaseRequestItemFormInput[];
 }

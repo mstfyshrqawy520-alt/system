@@ -147,4 +147,32 @@ class PurchaseReceiptController extends Controller
 
         return response()->json(['message' => 'تم اعتماد إذن الاستلام وإرساله إلى الحسابات.', 'data' => $approved]);
     }
+
+    public function confirmOfficeReceipt(Request $request, int $purchaseOrderId)
+    {
+        $validated = $request->validate([
+            'notes' => ['nullable', 'string', 'max:3000'],
+            'items' => ['nullable', 'array'],
+            'items.*.purchase_order_item_id' => ['required_with:items', 'integer', 'exists:purchase_order_items,id'],
+            'items.*.received_quantity' => ['required_with:items', 'numeric', 'gte:0'],
+            'items.*.notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $purchaseOrder = PurchaseOrder::findOrFail($purchaseOrderId);
+        try {
+            $receipt = $this->service->confirmByRequester(
+                $request->user(),
+                $purchaseOrder,
+                $validated['items'] ?? [],
+                $validated['notes'] ?? null,
+            );
+        } catch (\RuntimeException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 409);
+        }
+
+        return response()->json([
+            'message' => 'تم تأكيد استلام المستلزمات المكتبية بنجاح وإرسال الإشعار للحسابات.',
+            'data' => $receipt,
+        ], 201);
+    }
 }
