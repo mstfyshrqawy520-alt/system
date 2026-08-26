@@ -627,7 +627,7 @@ export const CreatePurchaseOrderPage: React.FC = () => {
               disabled={loading || !supplierId || !prId}
               className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-cyan-600/20 disabled:opacity-50"
             >
-              {loading ? 'جاري إصدار وإرسال أمر الشراء...' : 'إصدار وإرسال أمر الشراء للحسابات ←'}
+              {loading ? 'جاري إصدار وإرسال أمر الشراء...' : 'إصدار وإرسال أمر الشراء للاستلام ←'}
             </button>
           </div>
         </Card>

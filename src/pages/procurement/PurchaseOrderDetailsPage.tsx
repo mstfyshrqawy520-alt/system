@@ -64,13 +64,13 @@ export const PurchaseOrderDetailsPage: React.FC = () => {
 
   const handleSubmitToAccounting = async () => {
     if (submitting) return;
-    if (!confirm('هل أنت متأكد من إرسال أمر الشراء إلى إدارة الحسابات والمالية للمراجعة؟')) return;
+    if (!confirm('هل أنت متأكد من تعميد وإرسال أمر الشراء للاستلام والتوريد؟')) return;
     setSubmitting(true);
     setError(null);
     try {
       await submitPurchaseOrderApi(po.id);
       await loadPo();
-      alert('تم إرسال أمر الشراء إلى الحسابات بنجاح');
+      alert('تم إرسال أمر الشراء للاستلام بنجاح');
       navigate('/procurement/purchase-orders');
     } catch (err: any) {
       if (err?.code === 'ECONNABORTED' || err?.message?.includes('timeout')) {
@@ -78,7 +78,7 @@ export const PurchaseOrderDetailsPage: React.FC = () => {
         try {
           const reloaded = await loadPo();
           if (reloaded?.status === 'ISSUED') {
-            alert('تم إرسال أمر الشراء بنجاح');
+            alert('تم إرسال أمر الشراء للاستلام بنجاح');
             navigate('/procurement/purchase-orders');
             return;
           }
@@ -125,7 +125,7 @@ export const PurchaseOrderDetailsPage: React.FC = () => {
               isLoading={submitting}
               className="flex-1 md:flex-none min-h-10 text-xs font-bold"
             >
-              {po.status === 'RETURNED_TO_PROCUREMENT' ? 'إعادة الإرسال للحسابات' : 'إرسال إلى الحسابات'}
+              {po.status === 'RETURNED_TO_PROCUREMENT' ? 'إعادة الإرسال للاستلام' : 'إرسال إلى الاستلام والمخزن'}
             </Button>
           )}
 

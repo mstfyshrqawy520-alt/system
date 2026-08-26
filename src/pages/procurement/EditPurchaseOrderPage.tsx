@@ -166,7 +166,7 @@ export const EditPurchaseOrderPage: React.FC = () => {
   };
 
   const handleSubmitToAccounting = async () => {
-    if (!confirm('هل أنت متأكد من حفظ التعديلات وإرسال أمر الشراء إلى الحسابات؟')) return;
+    if (!confirm('هل أنت متأكد من حفظ التعديلات وإرسال أمر الشراء للاستلام والتوريد؟')) return;
     setBusy(true);
     setError(null);
     try {
@@ -211,7 +211,7 @@ export const EditPurchaseOrderPage: React.FC = () => {
               disabled={busy}
               className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs px-5 py-2 rounded-lg shadow-lg shadow-cyan-600/20"
             >
-              حفظ وإرسال للحسابات
+              حفظ وإرسال للاستلام
             </button>
           )}
         </div>
