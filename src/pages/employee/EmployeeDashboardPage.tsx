@@ -142,8 +142,25 @@ export const EmployeeDashboardPage: React.FC = () => {
               urgency: 'HIGH' as const,
               reason: 'مسودة لم تُرسل بعد للمراجعة والاعتماد',
               actionUrl: `/employee/requests/${r.id}`,
-              actionLabel: 'فتح وإرسال للاعتماد',
+              actionLabel: 'فتح وتعديل المسودة',
               timeAgo: r.created_at ? r.created_at.slice(0, 10) : undefined,
+              request_type: r.request_type,
+              date_needed: r.date_needed || undefined,
+              priority: r.priority,
+              parcel_number: r.items?.[0]?.item_reference || undefined,
+              region: r.items?.[0]?.region || undefined,
+              items_count: r.items?.length || 0,
+              items_list: r.items?.map((it) => ({
+                description: it.item_description || it.item?.name || 'صنف',
+                quantity: it.quantity,
+                uom: it.uom,
+                parcel: it.item_reference,
+                region: it.region,
+              })),
+              onDirectSubmit: async (_item: any) => {
+                await submitPurchaseRequestApi(r.id);
+                await fetchRequests(true);
+              },
             })),
         ];
 
@@ -154,6 +171,7 @@ export const EmployeeDashboardPage: React.FC = () => {
             title="المهام والإجراءات العاجلة المطلوبة لطلباتك"
             description="الطلبات المسودة المطلوب إرسالها للمراجعة والاعتماد."
             roleName="لوحة الموظف"
+            onItemActionComplete={() => fetchRequests(true)}
             items={employeeActionItems}
           />
         );

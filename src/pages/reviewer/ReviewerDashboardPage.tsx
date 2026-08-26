@@ -4,7 +4,11 @@ import ErrorMessage from '../../components/ErrorMessage';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import PurchaseRequestStatusBadge from '../../components/purchase-requests/PurchaseRequestStatusBadge';
 import { useAuth } from '../../context/AuthContext';
-import { getReviewableRequestsApi } from '../../api/reviewer';
+import {
+  getReviewableRequestsApi,
+  approvePurchaseRequestApi,
+  rejectPurchaseRequestApi,
+} from '../../api/reviewer';
 import { ApiError } from '../../types/api';
 import { PurchaseRequest } from '../../types/purchaseRequest';
 import { parseApiError } from '../../utils/apiError';
@@ -85,6 +89,7 @@ export const ReviewerDashboardPage: React.FC = () => {
         title="المهام والإجراءات المطلوبة منك الآن"
         description="هذه الطلبات مقدمة من موظفي قسمك وتتطلب مراجعتك واعتمادك الفني للانتقال إلى قسم المشتريات."
         roleName={`رئيس قسم (${user?.department?.name || 'عام'})`}
+        onItemActionComplete={() => fetchRequests(true)}
         items={requests
           .filter((r) => r.status === 'SUBMITTED' || r.status === 'UNDER_REVIEW')
           .map((req) => ({
@@ -100,8 +105,35 @@ export const ReviewerDashboardPage: React.FC = () => {
             urgency: req.priority === 'HIGH' ? ('CRITICAL' as const) : ('NORMAL' as const),
             reason: req.status === 'SUBMITTED' ? 'طلب جديد مقدم بانتظار مراجعتك واعتمادك الفني' : 'طلب قيد المراجعة الفنية',
             actionUrl: hasPermission('purchase_request.review') ? `/reviewer/requests/${req.id}/review` : `/reviewer/requests/${req.id}`,
-            actionLabel: req.status === 'SUBMITTED' ? 'مراجعة واعتماد الطلب' : 'استكمال المراجعة',
+            actionLabel: req.status === 'SUBMITTED' ? 'مراجعة وتعديل الطلب' : 'استكمال المراجعة',
             timeAgo: req.created_at ? req.created_at.slice(0, 10) : undefined,
+            request_type: req.request_type,
+            date_needed: req.date_needed || undefined,
+            priority: req.priority,
+            parcel_number: req.items?.[0]?.item_reference || undefined,
+            region: req.items?.[0]?.region || undefined,
+            items_count: req.items?.length || 0,
+            items_list: req.items?.map((it) => ({
+              description: it.item_description || it.item?.name || 'صنف',
+              quantity: it.quantity,
+              uom: it.uom,
+              parcel: it.item_reference,
+              region: it.region,
+            })),
+            onDirectApprove: hasPermission('purchase_request.review')
+              ? async (_item: any, comment?: string) => {
+                  await approvePurchaseRequestApi(req.id, comment);
+                  await fetchRequests(true);
+                }
+              : undefined,
+            onDirectReject: hasPermission('purchase_request.review')
+              ? async (_item: any, reason: string) => {
+                  await rejectPurchaseRequestApi(req.id, reason);
+                  await fetchRequests(true);
+                }
+              : undefined,
+            directApproveLabel: 'اعتماد ونقل للمشتريات',
+            directRejectLabel: 'رفض الطلب',
           }))}
       />
 

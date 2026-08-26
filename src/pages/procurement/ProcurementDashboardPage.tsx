@@ -108,6 +108,19 @@ export const ProcurementDashboardPage: React.FC = () => {
             actionUrl: `/procurement/purchase-orders/create?pr=${pr.id}`,
             actionLabel: 'إصدار أمر الشراء',
             timeAgo: pr.created_at ? pr.created_at.slice(0, 10) : undefined,
+            request_type: pr.request_type,
+            date_needed: pr.date_needed || undefined,
+            priority: pr.priority,
+            parcel_number: pr.items?.[0]?.item_reference || undefined,
+            region: pr.items?.[0]?.region || undefined,
+            items_count: pr.items?.length || 0,
+            items_list: pr.items?.map((it) => ({
+              description: it.item_description || it.item?.name || 'صنف',
+              quantity: it.quantity,
+              uom: it.uom,
+              parcel: it.item_reference,
+              region: it.region,
+            })),
           })),
           ...pos
             .filter((p) => p.status === 'RETURNED_TO_PROCUREMENT')
@@ -125,6 +138,12 @@ export const ProcurementDashboardPage: React.FC = () => {
               actionUrl: `/procurement/purchase-orders/${po.id}/edit`,
               actionLabel: 'تعديل أمر الشراء',
               timeAgo: po.created_at ? po.created_at.slice(0, 10) : undefined,
+              items_count: po.items?.length || 0,
+              items_list: po.items?.map((it: any) => ({
+                description: it.item_description || it.item?.name || 'بند توريد',
+                quantity: it.quantity,
+                uom: it.uom,
+              })),
             })),
         ];
 
@@ -133,6 +152,7 @@ export const ProcurementDashboardPage: React.FC = () => {
             title="المهام والإجراءات المطلوبة من إدارة المشتريات الآن"
             description="الطلبات المعتمدة الجاهزة للتعميد وأوامر الشراء التي تحتاج تدخلك الفوري."
             roleName="إدارة المشتريات والتعاقدات"
+            onItemActionComplete={() => loadData()}
             items={procurementActionItems}
           />
         );

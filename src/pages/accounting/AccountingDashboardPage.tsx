@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getAccountingPurchaseOrdersApi, getAccountingPurchaseOrderApi } from '../../api/accounting';
-import { getDirectAccountingPurchaseRequestsApi } from '../../api/accountingPurchaseRequests';
+import { getAccountingPurchaseOrdersApi, getAccountingPurchaseOrderApi, approveAccountingPurchaseOrderApi } from '../../api/accounting';
+import { getDirectAccountingPurchaseRequestsApi, approveDirectAccountingPurchaseRequestApi } from '../../api/accountingPurchaseRequests';
 import { getApprovedReceiptsForAccountingApi, getSupplierAccountsApi, ApprovedReceipt, SupplierAccountSummary } from '../../api/supplierFinance';
 import { PurchaseOrder } from '../../types/purchaseOrder';
 import { PurchaseRequest } from '../../types/purchaseRequest';
@@ -128,6 +128,17 @@ export const AccountingDashboardPage: React.FC = () => {
             actionUrl: `/accounting/purchase-orders/${po.id}`,
             actionLabel: 'المراجعة والاعتماد المالي',
             timeAgo: po.created_at ? po.created_at.slice(0, 10) : undefined,
+            items_count: po.items?.length || 0,
+            items_list: po.items?.map((it: any) => ({
+              description: it.item_description || it.item?.name || 'بند توريد',
+              quantity: it.quantity,
+              uom: it.uom,
+            })),
+            onDirectApprove: async (_item: any, comment?: string) => {
+              await approveAccountingPurchaseOrderApi(po.id, { comment, financial_notes: comment });
+              await loadData(true);
+            },
+            directApproveLabel: 'اعتماد مالي فوري لأمر الشراء',
           })),
           ...receipts.map((rec) => ({
             id: `rec-${rec.id}`,
@@ -152,10 +163,23 @@ export const AccountingDashboardPage: React.FC = () => {
             requester: pr.requester?.name,
             amount: pr.total_estimated_cost ? Number(pr.total_estimated_cost) : undefined,
             urgency: pr.priority === 'HIGH' ? ('CRITICAL' as const) : ('NORMAL' as const),
-            reason: 'طلب شراء بالمسار المباشر بانتظار موافقة الحسابات',
+            reason: 'طلب شراء بالمسار المباشر بانتظار موافقة وتحديد أسعار الحسابات',
             actionUrl: `/accounting/purchase-requests`,
-            actionLabel: 'مراجعة واعتماد الطلب',
+            actionLabel: 'مراجعة وتحديد الأسعار والاعتماد',
             timeAgo: pr.created_at ? pr.created_at.slice(0, 10) : undefined,
+            request_type: pr.request_type,
+            date_needed: pr.date_needed || undefined,
+            priority: pr.priority,
+            parcel_number: pr.items?.[0]?.item_reference || undefined,
+            region: pr.items?.[0]?.region || undefined,
+            items_count: pr.items?.length || 0,
+            items_list: pr.items?.map((it: any) => ({
+              description: it.item_description || it.item?.name || 'صنف',
+              quantity: it.quantity,
+              uom: it.uom,
+              parcel: it.item_reference,
+              region: it.region,
+            })),
           })),
         ];
 
@@ -164,6 +188,7 @@ export const AccountingDashboardPage: React.FC = () => {
             title="المهام والإجراءات المالية المطلوبة منك الآن"
             description="أوامر الشراء وإذونات الاستلام وفواتير الموردين التي تتطلب مراجعتك أو اعتمادك أو الصرف."
             roleName="الإدارة المالية والمحاسبة"
+            onItemActionComplete={() => loadData(true)}
             items={accountingActionItems}
           />
         );

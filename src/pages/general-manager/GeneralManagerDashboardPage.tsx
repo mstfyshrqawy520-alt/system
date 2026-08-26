@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { getGeneralManagerPurchaseOrdersApi, getGeneralManagerPurchaseRequestsApi } from '../../api/generalManager';
+import {
+  getGeneralManagerPurchaseOrdersApi,
+  getGeneralManagerPurchaseRequestsApi,
+  approveGeneralManagerPurchaseRequestApi,
+  rejectGeneralManagerPurchaseRequestApi,
+} from '../../api/generalManager';
 import { PurchaseOrder } from '../../types/purchaseOrder';
 import { PurchaseRequest } from '../../types/purchaseRequest';
 import { Button } from '../../components/ui/Button';
@@ -141,8 +146,31 @@ export const GeneralManagerDashboardPage: React.FC = () => {
             urgency: req.priority === 'HIGH' ? ('CRITICAL' as const) : ('HIGH' as const),
             reason: 'طلب شراء محال للإدارة العامة للاعتماد والموافقة النهائية',
             actionUrl: `/general-manager/purchase-requests`,
-            actionLabel: 'اتخاذ قرار في الطلب',
+            actionLabel: 'مراجعة وتعديل الطلب',
             timeAgo: req.created_at ? req.created_at.slice(0, 10) : undefined,
+            request_type: req.request_type,
+            date_needed: req.date_needed || undefined,
+            priority: req.priority,
+            parcel_number: req.items?.[0]?.item_reference || undefined,
+            region: req.items?.[0]?.region || undefined,
+            items_count: req.items?.length || 0,
+            items_list: req.items?.map((it) => ({
+              description: it.item_description || it.item?.name || 'صنف',
+              quantity: it.quantity,
+              uom: it.uom,
+              parcel: it.item_reference,
+              region: it.region,
+            })),
+            onDirectApprove: async (_item: any, comment?: string) => {
+              await approveGeneralManagerPurchaseRequestApi(req.id, comment);
+              await loadData(true);
+            },
+            onDirectReject: async (_item: any, reason: string) => {
+              await rejectGeneralManagerPurchaseRequestApi(req.id, reason);
+              await loadData(true);
+            },
+            directApproveLabel: 'اعتماد تنفيذي نهائي',
+            directRejectLabel: 'رفض الطلب',
           })),
           ...pos
             .filter((p) => (p.status as string) === 'PENDING_EXECUTIVE_APPROVAL' || (p.status as string) === 'APPROVED_BY_ACCOUNTING')
@@ -160,8 +188,14 @@ export const GeneralManagerDashboardPage: React.FC = () => {
               urgency: 'HIGH' as const,
               reason: 'أمر شراء معتمد مالياً بانتظار الاعتماد والتوقيع التنفيذي النهائي',
               actionUrl: `/general-manager/purchase-orders/${po.id}`,
-              actionLabel: 'اعتماد وتوقيع أمر الشراء',
+              actionLabel: 'معاينة وطباعة أمر الشراء',
               timeAgo: po.created_at ? po.created_at.slice(0, 10) : undefined,
+              items_count: po.items?.length || 0,
+              items_list: po.items?.map((it: any) => ({
+                description: it.item_description || it.item?.name || 'بند توريد',
+                quantity: it.quantity,
+                uom: it.uom,
+              })),
             })),
         ];
 
@@ -170,6 +204,7 @@ export const GeneralManagerDashboardPage: React.FC = () => {
             title="القرارات والإجراءات التنفيذية المطلوبة منك الآن"
             description="طلبات الشراء وأوامر التوريد التي تتطلب قرار المدير العام للبدء في التنفيذ."
             roleName="الإدارة التنفيذية العليا"
+            onItemActionComplete={() => loadData(true)}
             items={gmActionItems}
           />
         );
