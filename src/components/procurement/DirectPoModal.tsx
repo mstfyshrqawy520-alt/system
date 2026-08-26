@@ -96,8 +96,6 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
     }));
   }, [siteEngineers]);
 
-  if (!isOpen) return null;
-
   const selectedDepartment = useMemo(() => {
     return departments.find((d) => String(d.id) === departmentId);
   }, [departments, departmentId]);
@@ -154,6 +152,8 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
     if (items.length <= 1) return;
     setItems(current => current.filter((_, itemIndex) => itemIndex !== index));
   };
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
