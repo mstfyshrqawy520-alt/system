@@ -187,9 +187,9 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
         </div>
 
         <div>
-          <div className="text-[10px] text-slate-400 font-semibold">مهندس الموقع</div>
-          <div className="font-bold text-slate-200 mt-1">
-            {requestData.target_department?.site_engineer?.name || 'غير محدد'}
+          <div className="text-[10px] text-slate-400 font-semibold">مسؤول الاستلام بالموقع</div>
+          <div className="font-bold text-emerald-300 mt-1">
+            {requestData.site_engineer?.name || 'يحدده المراجع عند الاعتماد'}
           </div>
         </div>
 

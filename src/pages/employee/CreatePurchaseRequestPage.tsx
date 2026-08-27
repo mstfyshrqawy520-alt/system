@@ -508,8 +508,8 @@ const CreatePurchaseRequestPage: React.FC = () => {
               </div>
             ) : (
               <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-2.5">
-                <span className="text-slate-500 text-[10px]">مهندس الموقع المعين:</span>
-                <div className="font-bold text-slate-200 mt-0.5">{targetDepartment.site_engineer?.name || 'غير معين'}</div>
+                <span className="text-slate-500 text-[10px]">مسؤول استلام الموقع:</span>
+                <div className="font-bold text-slate-200 mt-0.5">يحدده مراجع القسم عند الاعتماد</div>
               </div>
             )}
           </div>
