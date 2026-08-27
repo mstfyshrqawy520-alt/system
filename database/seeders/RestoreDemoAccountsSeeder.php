@@ -6,6 +6,7 @@ use App\Models\Department;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 
 class RestoreDemoAccountsSeeder extends Seeder
 {
@@ -66,12 +67,20 @@ class RestoreDemoAccountsSeeder extends Seeder
         ];
 
         $activeEmails = array_column($users, 0);
+
+        Schema::disableForeignKeyConstraints();
+
+        // Nullify foreign keys pointing to legacy users in departments
+        Department::query()->update(['manager_user_id' => null, 'site_engineer_user_id' => null]);
+
         User::withTrashed()->whereNotIn('email', $activeEmails)->where(function ($query) {
             $query->where('email', 'like', '%@ashbiliya.local')
                 ->orWhereHas('roles', function ($q) {
                     $q->whereIn('slug', ['site_engineer', 'reviewer', 'employee']);
                 });
         })->forceDelete();
+
+        Schema::enableForeignKeyConstraints();
 
         foreach ($users as [$email, $name, $role, $department]) {
             $user = User::withTrashed()->updateOrCreate(
