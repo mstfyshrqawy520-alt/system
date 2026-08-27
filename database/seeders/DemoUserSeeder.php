@@ -84,14 +84,23 @@ class DemoUserSeeder extends Seeder
             ['email' => 'banhawy@gmail.com', 'name' => 'أيمن البنهاوي', 'role' => 'site_engineer', 'department_id' => $executionDept->id],
         ];
 
+        $activeEmails = array_column($users, 'email');
+        User::withTrashed()->whereNotIn('email', $activeEmails)->where(function ($query) {
+            $query->where('email', 'like', '%@ashbiliya.local')
+                ->orWhereHas('roles', function ($q) {
+                    $q->whereIn('slug', ['site_engineer', 'reviewer', 'employee']);
+                });
+        })->forceDelete();
+
         foreach ($users as $userData) {
-            $user = User::updateOrCreate(
+            $user = User::withTrashed()->updateOrCreate(
                 ['email' => $userData['email']],
                 [
                     'name' => $userData['name'],
                     'password' => '123456',
                     'department_id' => $userData['department_id'],
                     'is_active' => true,
+                    'deleted_at' => null,
                 ]
             );
             $user->roles()->sync([$roles[$userData['role']]->id]);

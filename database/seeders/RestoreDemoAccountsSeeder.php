@@ -65,10 +65,18 @@ class RestoreDemoAccountsSeeder extends Seeder
             ['banhawy@gmail.com', 'أيمن البنهاوي', 'site_engineer', 'EXECUTION'],
         ];
 
+        $activeEmails = array_column($users, 0);
+        User::withTrashed()->whereNotIn('email', $activeEmails)->where(function ($query) {
+            $query->where('email', 'like', '%@ashbiliya.local')
+                ->orWhereHas('roles', function ($q) {
+                    $q->whereIn('slug', ['site_engineer', 'reviewer', 'employee']);
+                });
+        })->forceDelete();
+
         foreach ($users as [$email, $name, $role, $department]) {
-            $user = User::updateOrCreate(
+            $user = User::withTrashed()->updateOrCreate(
                 ['email' => $email],
-                ['name' => $name, 'password' => '123456', 'department_id' => $departments[$department]->id, 'is_active' => true]
+                ['name' => $name, 'password' => '123456', 'department_id' => $departments[$department]->id, 'is_active' => true, 'deleted_at' => null]
             );
             $user->roles()->sync([$roles[$role]->id]);
         }
