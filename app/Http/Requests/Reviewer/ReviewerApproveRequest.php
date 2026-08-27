@@ -15,6 +15,7 @@ class ReviewerApproveRequest extends FormRequest
     {
         return [
             'comment' => ['nullable', 'string', 'max:1000'],
+            'site_engineer_user_id' => ['nullable', 'integer', 'exists:users,id'],
         ];
     }
 }

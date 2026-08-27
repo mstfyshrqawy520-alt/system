@@ -27,8 +27,7 @@ class ReviewerPurchaseRequestService
         $request->loadMissing('targetDepartment');
 
         if (! $request->targetDepartment
-            || $request->targetDepartment->manager_user_id === null
-            || $request->targetDepartment->site_engineer_user_id === null) {
+            || $request->targetDepartment->manager_user_id === null) {
             return false;
         }
 
@@ -61,8 +60,7 @@ class ReviewerPurchaseRequestService
             ])
             ->whereHas('targetDepartment', function ($departmentQuery): void {
                 $departmentQuery
-                    ->whereNotNull('manager_user_id')
-                    ->whereNotNull('site_engineer_user_id');
+                    ->whereNotNull('manager_user_id');
             });
 
         if (! $user->hasRole('admin')) {
@@ -394,7 +392,7 @@ class ReviewerPurchaseRequestService
     /**
      * Approve Purchase Request (UNDER_REVIEW -> PENDING_EXECUTIVE_APPROVAL).
      */
-    public function approveRequest(User $reviewer, PurchaseRequest $request, ?string $comment): PurchaseRequest
+    public function approveRequest(User $reviewer, PurchaseRequest $request, ?string $comment, ?int $siteEngineerUserId = null): PurchaseRequest
     {
         if (! $this->canUserReviewRequest($reviewer, $request)) {
             throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('This action is unauthorized.');
@@ -410,16 +408,19 @@ class ReviewerPurchaseRequestService
             ]);
         }
 
-        return DB::transaction(function () use ($reviewer, $request, $comment) {
+        return DB::transaction(function () use ($reviewer, $request, $comment, $siteEngineerUserId) {
             $pr = PurchaseRequest::where('id', $request->id)->lockForUpdate()->firstOrFail();
             if (! in_array($pr->status, ['UNDER_REVIEW', 'SUBMITTED'], true)) {
                 throw new \RuntimeException('تم اعتماد طلب الشراء بالفعل أو لم يعد في حالة انتظار اعتماد المراجع.');
             }
             $fromState = $pr->status;
 
-            $pr->update([
-                'status' => 'PENDING_EXECUTIVE_APPROVAL',
-            ]);
+            $updateData = ['status' => 'PENDING_EXECUTIVE_APPROVAL'];
+            if ($siteEngineerUserId) {
+                $updateData['site_engineer_user_id'] = $siteEngineerUserId;
+            }
+
+            $pr->update($updateData);
 
             ApprovalHistory::create([
                 'target_type' => PurchaseRequest::class,

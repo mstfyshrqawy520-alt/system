@@ -196,7 +196,8 @@ class ReviewerPurchaseRequestController extends Controller
         $approvedPr = $this->reviewerService->approveRequest(
             $request->user(),
             $pr,
-            $request->validated('comment')
+            $request->validated('comment'),
+            $request->validated('site_engineer_user_id')
         );
 
         return response()->json([

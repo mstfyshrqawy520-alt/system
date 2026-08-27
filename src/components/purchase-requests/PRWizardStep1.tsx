@@ -159,11 +159,14 @@ export const PRWizardStep1: React.FC<Props> = ({
               </p>
             </div>
           ) : (
-            <div className={`rounded-lg border p-3 ${errors.targetSiteEngineer ? 'border-rose-700/70 bg-rose-950/20' : 'border-slate-800 bg-slate-950/50'}`}>
-              <span className="text-slate-500">مهندس الموقع للقسم</span>
-              <div className={`mt-1 font-bold ${errors.targetSiteEngineer ? 'text-rose-200' : 'text-slate-100'}`}>{targetDepartment.site_engineer?.name || 'غير معين بعد'}</div>
-              <p className="mt-1 text-[10px] text-slate-500">يعتمد إذن الاستلام بعد أمين المخزن.</p>
-              {errors.targetSiteEngineer && <p className="mt-2 text-[11px] font-bold text-rose-300">{errors.targetSiteEngineer}</p>}
+            <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+              <span className="text-slate-400 font-bold flex items-center gap-1.5">
+                <span>👷</span> مسؤول استلام الموقع
+              </span>
+              <div className="mt-1 font-bold text-slate-100">يحدده مراجع / رئيس القسم أثناء الاعتماد</div>
+              <p className="mt-1 text-[10px] text-slate-500">
+                يختار المراجع مهندس الموقع أو أي مسؤول استلام معتمد عند الموافقة على الطلب.
+              </p>
             </div>
           )}
           <div className="sm:col-span-2 rounded-lg border border-amber-800/40 bg-amber-950/20 p-3 text-[11px] leading-6 text-amber-100">

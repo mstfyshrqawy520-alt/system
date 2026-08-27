@@ -247,7 +247,7 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
             </span>
             <div>
               <h1 className="text-xl font-black text-slate-100 flex items-center gap-2.5 flex-wrap">
-                {mode === 'warehouse' ? 'مهام وأرشيف استلام المواد بالمخزن' : 'مهام وأرشيف فحص واعتماد الاستلام الميداني'}
+                {mode === 'warehouse' ? 'مهام وأرشيف استلام المواد بالمخزن' : 'إذن استلام المواد — فحص واعتماد الاستلام'}
                 {(mode === 'warehouse' ? orders.length : receipts.length) > 0 && (
                   <span
                     className={`rounded-full px-3 py-0.5 text-xs font-black ${

@@ -1,21 +1,28 @@
-export const getPurchaseRequestReviewerOptionsApi = async (): Promise<ReviewerOption[]> => {
-  const response = await apiClient.get<{ data: ReviewerOption[] }>('/purchase-requests/reviewer-options');
-  return response.data.data;
-};
-
-export const getPurchaseRequestSiteEngineerOptionsApi = async (): Promise<ReviewerOption[]> => {
-  const response = await apiClient.get<{ data: ReviewerOption[] }>('/purchase-requests/site-engineer-options');
-  return response.data.data;
-};
-
 import apiClient from './client';
 import {
   CreatePurchaseRequestPayload,
   PurchaseRequest,
   DepartmentOption,
   ReviewerOption,
+  SiteEngineerOptionsResponse,
+  SiteEngineerReceiverOption,
   UpdatePurchaseRequestPayload,
 } from '../types/purchaseRequest';
+
+export const getPurchaseRequestReviewerOptionsApi = async (): Promise<ReviewerOption[]> => {
+  const response = await apiClient.get<{ data: ReviewerOption[] }>('/purchase-requests/reviewer-options');
+  return response.data.data;
+};
+
+export const getPurchaseRequestSiteEngineerOptionsApi = async (): Promise<SiteEngineerReceiverOption[]> => {
+  const response = await apiClient.get<{ data: SiteEngineerReceiverOption[] }>('/purchase-requests/site-engineer-options');
+  return response.data.data;
+};
+
+export const getSiteEngineerReceiverOptionsApi = async (): Promise<SiteEngineerOptionsResponse> => {
+  const response = await apiClient.get<SiteEngineerOptionsResponse>('/purchase-requests/site-engineer-options');
+  return response.data;
+};
 
 export const getPurchaseRequestDepartmentOptionsApi = async (): Promise<DepartmentOption[]> => {
   const response = await apiClient.get<{ data: DepartmentOption[] }>('/purchase-requests/department-options');

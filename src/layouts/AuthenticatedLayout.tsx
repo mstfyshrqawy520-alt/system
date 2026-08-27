@@ -59,6 +59,12 @@ export const AuthenticatedLayout: React.FC = () => {
                         >
                             <span className="ml-2.5 text-sm" aria-hidden="true">💰</span> ترشيح عروض الأسعار
                         </Link>
+                        <Link
+                            to="/site-engineer"
+                            className={linkClassName("/site-engineer")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📦</span> إذن استلام المواد
+                        </Link>
                     </>
                 );
             case "warehouse_keeper":
@@ -66,8 +72,8 @@ export const AuthenticatedLayout: React.FC = () => {
                     <>
                         <Link to="/requests" className={linkClassName("/requests")}><span className="ml-2.5 text-sm" aria-hidden="true">📋</span> طلبات الشراء الخاصة بي</Link>
                         <Link to="/requests/create" className={linkClassName("/requests/create")}><span className="ml-2.5 text-sm" aria-hidden="true">✍️</span> إنشاء طلب شراء</Link>
-                        <Link to="/warehouse" className={linkClassName("/warehouse")}><span className="ml-2.5 text-sm" aria-hidden="true">📦</span> استلام المواد
-                        </Link>
+                        <Link to="/warehouse" className={linkClassName("/warehouse")}><span className="ml-2.5 text-sm" aria-hidden="true">📦</span> استلام المواد (المستودع)</Link>
+                        <Link to="/site-engineer" className={linkClassName("/site-engineer")}><span className="ml-2.5 text-sm" aria-hidden="true">📋</span> إذن استلام المواد</Link>
                     </>
                 );
             case "site_engineer":
@@ -75,8 +81,7 @@ export const AuthenticatedLayout: React.FC = () => {
                     <>
                         <Link to="/requests" className={linkClassName("/requests")}><span className="ml-2.5 text-sm" aria-hidden="true">📋</span> طلبات الشراء الخاصة بي</Link>
                         <Link to="/requests/create" className={linkClassName("/requests/create")}><span className="ml-2.5 text-sm" aria-hidden="true">✍️</span> إنشاء طلب شراء</Link>
-                        <Link to="/site-engineer" className={linkClassName("/site-engineer")}><span className="ml-2.5 text-sm" aria-hidden="true">🧰</span> اعتماد استلام الموقع
-                        </Link>
+                        <Link to="/site-engineer" className={linkClassName("/site-engineer")}><span className="ml-2.5 text-sm" aria-hidden="true">📦</span> إذن استلام المواد</Link>
                     </>
                 );
             case "procurement_manager":
@@ -113,6 +118,12 @@ export const AuthenticatedLayout: React.FC = () => {
                             className={linkClassName("/procurement/reports")}
                         >
                             <span className="ml-2.5 text-sm" aria-hidden="true">📈</span> التقارير والتحليلات
+                        </Link>
+                        <Link
+                            to="/site-engineer"
+                            className={linkClassName("/site-engineer")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📦</span> إذن استلام المواد
                         </Link>
                     </>
                 );
@@ -169,6 +180,12 @@ export const AuthenticatedLayout: React.FC = () => {
                         >
                             <span className="ml-2.5 text-sm" aria-hidden="true">📈</span> التقارير والتحليلات
                         </Link>
+                        <Link
+                            to="/site-engineer"
+                            className={linkClassName("/site-engineer")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📦</span> إذن استلام المواد
+                        </Link>
                     </>
                 );
             case "general_manager":
@@ -212,6 +229,12 @@ export const AuthenticatedLayout: React.FC = () => {
                         >
                             <span className="ml-2.5 text-sm" aria-hidden="true">📈</span> التقارير والتحليلات
                         </Link>
+                        <Link
+                            to="/site-engineer"
+                            className={linkClassName("/site-engineer")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📦</span> إذن استلام المواد
+                        </Link>
                     </>
                 );
             case "admin":
@@ -226,6 +249,7 @@ export const AuthenticatedLayout: React.FC = () => {
                         <Link to="/admin/categories" className={linkClassName("/admin/categories")}><span className="ml-2.5 text-sm" aria-hidden="true">📁</span> التصنيفات</Link>
                         <Link to="/admin/items" className={linkClassName("/admin/items")}><span className="ml-2.5 text-sm" aria-hidden="true">📦</span> الأصناف</Link>
                         <Link to="/admin/suppliers" className={linkClassName("/admin/suppliers")}><span className="ml-2.5 text-sm" aria-hidden="true">🏢</span> الموردين</Link>
+                        <Link to="/site-engineer" className={linkClassName("/site-engineer")}><span className="ml-2.5 text-sm" aria-hidden="true">📦</span> إذن استلام المواد</Link>
                     </>
                 );
             case "employee":
@@ -249,6 +273,12 @@ export const AuthenticatedLayout: React.FC = () => {
                             className={linkClassName("/employee/requests/create")}
                         >
                             <span className="ml-2.5 text-sm" aria-hidden="true">✍️</span> إنشاء طلب شراء
+                        </Link>
+                        <Link
+                            to="/site-engineer"
+                            className={linkClassName("/site-engineer")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📦</span> إذن استلام المواد
                         </Link>
                     </>
                 );

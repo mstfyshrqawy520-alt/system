@@ -100,9 +100,6 @@ const validateRequest = (
     targetManager: !isGeneralManager && data.target_department_id && targetDepartment && !targetDepartment.manager
       ? 'القسم المستهدف لا يوجد له مدير قسم معين. اطلب من مدير النظام تعيين مدير للقسم أولًا.'
       : undefined,
-    targetSiteEngineer: !isOffice && data.target_department_id && targetDepartment && !targetDepartment.site_engineer
-      ? 'القسم المستهدف لا يوجد له مهندس موقع معين. اطلب من مدير النظام تعيين مهندس للموقع أولًا.'
-      : undefined,
     dateNeeded: !data.date_needed
       ? 'حدد تاريخ الاحتياج.'
       : data.date_needed < today
@@ -113,7 +110,7 @@ const validateRequest = (
 };
 
 const hasValidationErrors = (validation: ValidationResult): boolean =>
-  Boolean(validation.targetDepartment || validation.targetManager || validation.targetSiteEngineer || validation.dateNeeded || Object.keys(validation.items).length);
+  Boolean(validation.targetDepartment || validation.targetManager || validation.dateNeeded || Object.keys(validation.items).length);
 
 const normalizeRequestData = (data: CreatePurchaseRequestPayload): CreatePurchaseRequestPayload => {
   const isOffice = (data.request_type || 'PROJECT') === 'OFFICE_SUPPLIES';

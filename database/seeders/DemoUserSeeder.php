@@ -37,12 +37,14 @@ class DemoUserSeeder extends Seeder
             ]);
         };
 
-        $itDept = $upsertDepartment('IT', 'Information Technology');
-        $opsDept = $upsertDepartment('OPS', 'Operations');
+        // Deactivate all old departments not in the official 5
+        Department::whereNotIn('code', ['EXECUTION', 'BUILDINGS', 'FINISHING', 'LICENSES', 'BUFFET'])->update(['is_active' => false]);
+
         $executionDept = $upsertDepartment('EXECUTION', 'التنفيذ');
-        $developmentDept = $upsertDepartment('DEVELOPMENT', 'التطوير');
+        $buildingsDept = $upsertDepartment('BUILDINGS', 'المباني');
+        $finishingDept = $upsertDepartment('FINISHING', 'التشطيبات');
         $licensesDept = $upsertDepartment('LICENSES', 'التراخيص');
-        $salesDept = $upsertDepartment('SALES', 'المبيعات');
+        $buffetDept = $upsertDepartment('BUFFET', 'البوفيه');
 
         $roles = [
             'employee' => Role::where('slug', 'employee')->firstOrFail(),
@@ -56,24 +58,30 @@ class DemoUserSeeder extends Seeder
         ];
 
         $users = [
-            // Employees added by the user
-            ['email' => 'amar@gmail.com', 'name' => 'عمار', 'role' => 'employee', 'department_id' => $itDept->id],
-            ['email' => 'safa@gmail.com', 'name' => 'صفا', 'role' => 'employee', 'department_id' => $itDept->id],
-            ['email' => 'zaid@gmail.com', 'name' => 'زياد', 'role' => 'employee', 'department_id' => $itDept->id],
+            // Employees
+            ['email' => 'amar@gmail.com', 'name' => 'عمار', 'role' => 'employee', 'department_id' => $executionDept->id],
+            ['email' => 'safa@gmail.com', 'name' => 'صفا', 'role' => 'employee', 'department_id' => $executionDept->id],
+            ['email' => 'zaid@gmail.com', 'name' => 'زياد', 'role' => 'employee', 'department_id' => $executionDept->id],
 
             // Department reviewers
-            ['email' => 'development.manager@ashbiliya.local', 'name' => 'المهندس سعود', 'role' => 'reviewer', 'department_id' => $developmentDept->id],
-            ['email' => 'execution.manager@ashbiliya.local', 'name' => 'م. كمال سعيد', 'role' => 'reviewer', 'department_id' => $executionDept->id],
-            ['email' => 'mostafa@gmail.com', 'name' => 'مصطفى', 'role' => 'reviewer', 'department_id' => $licensesDept->id],
-            ['email' => 'sales.manager@ashbiliya.local', 'name' => 'المهندس عمرو', 'role' => 'reviewer', 'department_id' => $salesDept->id],
+            ['email' => 'ayman@gmail.com', 'name' => 'م. أيمن ماهر', 'role' => 'reviewer', 'department_id' => $executionDept->id],
+            ['email' => 'hatem@gmail.com', 'name' => 'المهندس حاتم', 'role' => 'reviewer', 'department_id' => $buildingsDept->id],
+            ['email' => 'masoud@gmail.com', 'name' => 'م. مسعود', 'role' => 'reviewer', 'department_id' => $finishingDept->id],
+            ['email' => 'mostafa@gmail.com', 'name' => 'م. مصطفى', 'role' => 'reviewer', 'department_id' => $licensesDept->id],
+            ['email' => 'amr@gmail.com', 'name' => 'أ. عمرو', 'role' => 'reviewer', 'department_id' => $buffetDept->id],
 
-            // Procurement, General Manager, and Admin added by the user
-            ['email' => 'ahmed@gmail.com', 'name' => 'المهندس أحمد بدوي', 'role' => 'procurement_manager', 'department_id' => $opsDept->id],
-            ['email' => 'hasan@gmail.com', 'name' => 'حسن', 'role' => 'accountant', 'department_id' => $opsDept->id],
-            ['email' => 'mohamed@gmail.com', 'name' => 'المهندس محمد عبدالكريم', 'role' => 'general_manager', 'department_id' => $opsDept->id],
-            ['email' => 'admin@gmail.com', 'name' => 'Admin', 'role' => 'admin', 'department_id' => $itDept->id],
-            ['email' => 'salam@ashbiliya.local', 'name' => 'عم سلامة', 'role' => 'warehouse_keeper', 'department_id' => $opsDept->id],
-            ['email' => 'site.engineer@ashbiliya.local', 'name' => 'مهندس الموقع', 'role' => 'site_engineer', 'department_id' => $executionDept->id],
+            // Procurement, Accounting, General Manager, Admin, Warehouse
+            ['email' => 'ahmed@gmail.com', 'name' => 'المهندس أحمد بدوي', 'role' => 'procurement_manager', 'department_id' => $executionDept->id],
+            ['email' => 'hasan@gmail.com', 'name' => 'حسن', 'role' => 'accountant', 'department_id' => $executionDept->id],
+            ['email' => 'mohamed@gmail.com', 'name' => 'المهندس محمد عبدالكريم', 'role' => 'general_manager', 'department_id' => $executionDept->id],
+            ['email' => 'admin@gmail.com', 'name' => 'Admin', 'role' => 'admin', 'department_id' => $executionDept->id],
+            ['email' => 'salam@gmail.com', 'name' => 'عم سلامة', 'role' => 'warehouse_keeper', 'department_id' => $executionDept->id],
+
+            // The 4 Core Site Engineers
+            ['email' => 'kamel@gmail.com', 'name' => 'م. كامل', 'role' => 'site_engineer', 'department_id' => $executionDept->id],
+            ['email' => 'youssef@gmail.com', 'name' => 'م. يوسف', 'role' => 'site_engineer', 'department_id' => $executionDept->id],
+            ['email' => 'islam@gmail.com', 'name' => 'م. إسلام', 'role' => 'site_engineer', 'department_id' => $executionDept->id],
+            ['email' => 'banhawy@gmail.com', 'name' => 'أيمن البنهاوي', 'role' => 'site_engineer', 'department_id' => $executionDept->id],
         ];
 
         foreach ($users as $userData) {
@@ -89,21 +97,17 @@ class DemoUserSeeder extends Seeder
             $user->roles()->sync([$roles[$userData['role']]->id]);
         }
 
-        $executionManager = User::where('email', 'execution.manager@ashbiliya.local')->firstOrFail();
-        $developmentManager = User::where('email', 'development.manager@ashbiliya.local')->firstOrFail();
+        $executionManager = User::where('email', 'ayman@gmail.com')->firstOrFail();
+        $buildingsManager = User::where('email', 'hatem@gmail.com')->firstOrFail();
+        $finishingManager = User::where('email', 'masoud@gmail.com')->firstOrFail();
         $licensesManager = User::where('email', 'mostafa@gmail.com')->firstOrFail();
-        $salesManager = User::where('email', 'sales.manager@ashbiliya.local')->firstOrFail();
+        $buffetManager = User::where('email', 'amr@gmail.com')->firstOrFail();
 
         $executionDept->update(['manager_user_id' => $executionManager->id]);
-        $developmentDept->update(['manager_user_id' => $developmentManager->id]);
+        $buildingsDept->update(['manager_user_id' => $buildingsManager->id]);
+        $finishingDept->update(['manager_user_id' => $finishingManager->id]);
         $licensesDept->update(['manager_user_id' => $licensesManager->id]);
-        $salesDept->update(['manager_user_id' => $salesManager->id]);
-
-        // The same site engineer can serve multiple departments in the demo setup.
-        $siteEngineer = User::where('email', 'site.engineer@ashbiliya.local')->firstOrFail();
-        foreach ([$itDept, $opsDept, $executionDept, $developmentDept, $licensesDept, $salesDept] as $department) {
-            $department->update(['site_engineer_user_id' => $siteEngineer->id]);
-        }
+        $buffetDept->update(['manager_user_id' => $buffetManager->id]);
     }
 }
 

@@ -192,21 +192,28 @@ class RolePermissionSeeder extends Seeder
 
         $requestCreatorRoles = ['reviewer', 'site_engineer', 'warehouse_keeper', 'procurement_manager', 'accountant', 'general_manager'];
         $requestCreatorPermissions = ['purchase_request.create', 'purchase_request.view_own', 'purchase_request.edit_own', 'purchase_request.submit'];
+        $receiptPermissions = ['purchase_receipt.view_assigned', 'purchase_receipt.edit', 'purchase_receipt.approve'];
 
-        foreach ($rolesMatrix as $slug => $roleData) {
+        foreach ($rolesMatrix as $slug => $definition) {
+            $permissionsToSync = $definition['permissions'];
             if (in_array($slug, $requestCreatorRoles, true)) {
-                $roleData['permissions'] = array_values(array_unique(array_merge($roleData['permissions'], $requestCreatorPermissions)));
+                $permissionsToSync = array_values(array_unique(array_merge($permissionsToSync, $requestCreatorPermissions)));
             }
+            $permissionsToSync = array_values(array_unique(array_merge($permissionsToSync, $receiptPermissions)));
 
-            $role = Role::firstOrCreate(
+            $role = Role::updateOrCreate(
                 ['slug' => $slug],
-                ['name' => $roleData['name'], 'description' => $roleData['description']]
+                [
+                    'name' => $definition['name'],
+                    'description' => $definition['description'],
+                ]
             );
 
-            $permissionIds = collect($roleData['permissions'])
-                ->map(fn ($permSlug) => $createdPermissions[$permSlug]->id ?? null)
+            $permissionIds = collect($permissionsToSync)
+                ->map(fn (string $permissionSlug) => $createdPermissions[$permissionSlug]->id ?? null)
                 ->filter()
-                ->toArray();
+                ->values()
+                ->all();
 
             $role->permissions()->sync($permissionIds);
         }

@@ -87,11 +87,12 @@ export const deleteReviewItemApi = async (id: number, itemId: number): Promise<P
 
 export const approvePurchaseRequestApi = async (
   id: number,
-  comment?: string
+  comment?: string,
+  siteEngineerUserId?: number | null
 ): Promise<PurchaseRequest> => {
   const response = await apiClient.post<{ message: string; data: PurchaseRequest }>(
     `/reviewer/purchase-requests/${id}/approve`,
-    { comment }
+    { comment, site_engineer_user_id: siteEngineerUserId }
   );
   return response.data.data;
 };

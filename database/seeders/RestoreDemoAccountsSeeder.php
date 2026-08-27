@@ -12,14 +12,17 @@ class RestoreDemoAccountsSeeder extends Seeder
     public function run(): void
     {
         $this->call(RolePermissionSeeder::class);
+
+        // Deactivate all old departments not in the official 5
+        Department::whereNotIn('code', ['EXECUTION', 'BUILDINGS', 'FINISHING', 'LICENSES', 'BUFFET'])->update(['is_active' => false]);
+
         $departments = [];
         foreach ([
-            'IT' => 'Information Technology',
-            'OPS' => 'Operations',
             'EXECUTION' => 'التنفيذ',
-            'DEVELOPMENT' => 'التطوير',
+            'BUILDINGS' => 'المباني',
+            'FINISHING' => 'التشطيبات',
             'LICENSES' => 'التراخيص',
-            'SALES' => 'المبيعات',
+            'BUFFET' => 'البوفيه',
         ] as $code => $name) {
             $departments[$code] = Department::withTrashed()->updateOrCreate(
                 ['code' => $code],
@@ -36,19 +39,30 @@ class RestoreDemoAccountsSeeder extends Seeder
         }
 
         $users = [
-            ['amar@gmail.com', 'عمار', 'employee', 'IT'],
-            ['safa@gmail.com', 'صفا', 'employee', 'IT'],
-            ['zaid@gmail.com', 'زياد', 'employee', 'IT'],
-            ['development.manager@ashbiliya.local', 'المهندس سعود', 'reviewer', 'DEVELOPMENT'],
-            ['execution.manager@ashbiliya.local', 'م. كمال سعيد', 'reviewer', 'EXECUTION'],
-            ['mostafa@gmail.com', 'مصطفى', 'reviewer', 'LICENSES'],
-            ['sales.manager@ashbiliya.local', 'المهندس عمرو', 'reviewer', 'SALES'],
-            ['ahmed@gmail.com', 'المهندس أحمد بدوي', 'procurement_manager', 'OPS'],
-            ['hasan@gmail.com', 'حسن', 'accountant', 'OPS'],
-            ['mohamed@gmail.com', 'المهندس محمد عبدالكريم', 'general_manager', 'OPS'],
-            ['admin@gmail.com', 'Admin', 'admin', 'IT'],
-            ['salam@ashbiliya.local', 'عم سلامة', 'warehouse_keeper', 'OPS'],
-            ['site.engineer@ashbiliya.local', 'مهندس الموقع', 'site_engineer', 'EXECUTION'],
+            // Employees
+            ['amar@gmail.com', 'عمار', 'employee', 'EXECUTION'],
+            ['safa@gmail.com', 'صفا', 'employee', 'EXECUTION'],
+            ['zaid@gmail.com', 'زياد', 'employee', 'EXECUTION'],
+
+            // Department Reviewers
+            ['ayman@gmail.com', 'م. أيمن ماهر', 'reviewer', 'EXECUTION'],
+            ['hatem@gmail.com', 'المهندس حاتم', 'reviewer', 'BUILDINGS'],
+            ['masoud@gmail.com', 'م. مسعود', 'reviewer', 'FINISHING'],
+            ['mostafa@gmail.com', 'م. مصطفى', 'reviewer', 'LICENSES'],
+            ['amr@gmail.com', 'أ. عمرو', 'reviewer', 'BUFFET'],
+
+            // Management & Operations
+            ['ahmed@gmail.com', 'المهندس أحمد بدوي', 'procurement_manager', 'EXECUTION'],
+            ['hasan@gmail.com', 'حسن', 'accountant', 'EXECUTION'],
+            ['mohamed@gmail.com', 'المهندس محمد عبدالكريم', 'general_manager', 'EXECUTION'],
+            ['admin@gmail.com', 'Admin', 'admin', 'EXECUTION'],
+            ['salam@gmail.com', 'عم سلامة', 'warehouse_keeper', 'EXECUTION'],
+
+            // The 4 Site Engineers
+            ['kamel@gmail.com', 'م. كامل', 'site_engineer', 'EXECUTION'],
+            ['youssef@gmail.com', 'م. يوسف', 'site_engineer', 'EXECUTION'],
+            ['islam@gmail.com', 'م. إسلام', 'site_engineer', 'EXECUTION'],
+            ['banhawy@gmail.com', 'أيمن البنهاوي', 'site_engineer', 'EXECUTION'],
         ];
 
         foreach ($users as [$email, $name, $role, $department]) {
@@ -60,19 +74,15 @@ class RestoreDemoAccountsSeeder extends Seeder
         }
 
         foreach ([
-            'EXECUTION' => 'execution.manager@ashbiliya.local',
-            'DEVELOPMENT' => 'development.manager@ashbiliya.local',
+            'EXECUTION' => 'ayman@gmail.com',
+            'BUILDINGS' => 'hatem@gmail.com',
+            'FINISHING' => 'masoud@gmail.com',
             'LICENSES' => 'mostafa@gmail.com',
-            'SALES' => 'sales.manager@ashbiliya.local',
+            'BUFFET' => 'amr@gmail.com',
         ] as $department => $email) {
-            $departments[$department]->update(['manager_user_id' => User::where('email', $email)->value('id')]);
-        }
-
-        // Demo behavior: the same active site engineer may serve multiple departments.
-        $siteEngineerId = User::where('email', 'site.engineer@ashbiliya.local')->value('id');
-        if ($siteEngineerId) {
-            foreach ($departments as $department) {
-                $department->update(['site_engineer_user_id' => $siteEngineerId]);
+            $managerId = User::where('email', $email)->value('id');
+            if ($managerId && isset($departments[$department])) {
+                $departments[$department]->update(['manager_user_id' => $managerId]);
             }
         }
     }

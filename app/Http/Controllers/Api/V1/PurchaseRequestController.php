@@ -65,20 +65,41 @@ class PurchaseRequestController extends Controller
 
     public function siteEngineerOptions(Request $request): JsonResponse
     {
-        $engineers = User::query()
+        $allUsers = User::query()
             ->where('is_active', true)
-            ->whereHas('roles', fn ($query) => $query->where('slug', 'site_engineer'))
-            ->with('department:id,name')
+            ->with(['roles:id,name,slug', 'department:id,name'])
             ->orderBy('name')
-            ->get(['id', 'name', 'email', 'department_id']);
+            ->get();
+
+        $engineers = $allUsers->filter(fn (User $engineer) => $engineer->hasRole('site_engineer'))->values();
+        $otherUsers = $allUsers->filter(fn (User $user) => ! $user->hasRole('site_engineer'))->values();
 
         return response()->json([
-            'data' => $engineers->map(fn (User $engineer) => [
+            'data' => $allUsers->map(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'department_id' => $user->department_id,
+                'department_name' => $user->department?->name,
+                'is_site_engineer' => $user->hasRole('site_engineer'),
+                'role_name' => $user->roles->first()?->name ?: 'مستخدم',
+                'roles' => $user->roles->map(fn ($r) => ['slug' => $r->slug, 'name' => $r->name]),
+            ])->values(),
+            'site_engineers' => $engineers->map(fn (User $engineer) => [
                 'id' => $engineer->id,
                 'name' => $engineer->name,
                 'email' => $engineer->email,
                 'department_id' => $engineer->department_id,
                 'department_name' => $engineer->department?->name,
+                'role_name' => 'مهندس موقع',
+            ])->values(),
+            'other_users' => $otherUsers->map(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'department_id' => $user->department_id,
+                'department_name' => $user->department?->name,
+                'role_name' => $user->roles->first()?->name ?: 'مستخدم',
             ])->values(),
         ]);
     }

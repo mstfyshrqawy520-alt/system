@@ -7,6 +7,22 @@ export interface ReviewerOption {
   department_name?: string;
 }
 
+export interface SiteEngineerReceiverOption {
+  id: number;
+  name: string;
+  email?: string;
+  role_name?: string;
+  department_id?: number;
+  department_name?: string;
+  is_site_engineer?: boolean;
+}
+
+export interface SiteEngineerOptionsResponse {
+  data: SiteEngineerReceiverOption[];
+  site_engineers: SiteEngineerReceiverOption[];
+  other_users: SiteEngineerReceiverOption[];
+}
+
 export type PurchaseRequestStatus =
   | 'DRAFT'
   | 'SUBMITTED'
@@ -213,6 +229,7 @@ export interface PurchaseRequest {
     email?: string;
     department_id?: number | null;
   } | null;
+  site_engineer_user_id?: number | null;
   items?: PurchaseRequestItem[];
   approval_history?: ApprovalHistoryEntry[];
   attachments?: Attachment[];

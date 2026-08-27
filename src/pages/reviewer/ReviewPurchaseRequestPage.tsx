@@ -164,15 +164,15 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
     }
   };
 
-  const handleApprove = async (comments?: string) => {
+  const handleApprove = async (comments?: string, siteEngineerUserId?: number | null) => {
     if (!id) return;
     setIsMutating(true);
     setError(null);
     try {
-      await approvePurchaseRequestApi(parseInt(id, 10), comments || '');
+      await approvePurchaseRequestApi(parseInt(id, 10), comments || '', siteEngineerUserId);
       setIsApproveModalOpen(false);
       navigate('/reviewer/requests', {
-        state: { message: 'تم اعتماد طلب الشراء وإرساله إلى مدير المشتريات.' },
+        state: { message: '✅ تم اعتماد طلب الشراء وتحديد مسؤول الاستلام وإرساله إلى المدير التنفيذي.' },
       });
     } catch (err) {
       setError(parseApiError(err));
@@ -198,20 +198,8 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
     }
   };
 
-  const handleDirectApprove = async () => {
-    if (!id) return;
-    setIsMutating(true);
-    setError(null);
-    try {
-      await approvePurchaseRequestApi(parseInt(id, 10), 'تم الاعتماد المباشر بواسطة المراجع');
-      navigate('/reviewer/requests', {
-        state: { message: '✅ تم اعتماد طلب الشراء فوراً بخطوة واحدة وإرساله لمدير المشتريات.' },
-      });
-    } catch (err) {
-      setError(parseApiError(err));
-    } finally {
-      setIsMutating(false);
-    }
+  const handleDirectApprove = () => {
+    setIsApproveModalOpen(true);
   };
 
   if (isLoading) return <TableSkeleton rows={8} columns={6} className="min-h-[340px]" />;
@@ -635,6 +623,7 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
       <ApproveRequestDialog
         isOpen={isApproveModalOpen}
         requestNumber={requestData.request_number}
+        initialSiteEngineerId={requestData.site_engineer?.id || requestData.site_engineer_user_id || requestData.target_department?.site_engineer?.id || null}
         isApproving={isMutating}
         onConfirm={handleApprove}
         onCancel={() => setIsApproveModalOpen(false)}

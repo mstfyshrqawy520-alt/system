@@ -59,14 +59,9 @@ Route::middleware('auth:sanctum')->prefix('purchase-requests')->group(function (
     Route::post('/', [PurchaseRequestController::class, 'store'])
         ->middleware('permission:purchase_request.create');
 
-    Route::get('/department-options', [PurchaseRequestController::class, 'departmentOptions'])
-        ->middleware('permission:purchase_request.view_own');
-
-    Route::get('/reviewer-options', [PurchaseRequestController::class, 'reviewerOptions'])
-        ->middleware('permission:purchase_request.view_own');
-
-    Route::get('/site-engineer-options', [PurchaseRequestController::class, 'siteEngineerOptions'])
-        ->middleware('permission:purchase_request.view_own');
+    Route::get('/department-options', [PurchaseRequestController::class, 'departmentOptions']);
+    Route::get('/reviewer-options', [PurchaseRequestController::class, 'reviewerOptions']);
+    Route::get('/site-engineer-options', [PurchaseRequestController::class, 'siteEngineerOptions']);
 
     Route::get('/{id}', [PurchaseRequestController::class, 'show'])
         ->middleware('permission:purchase_request.view_own');
@@ -316,7 +311,7 @@ Route::middleware('auth:sanctum')->prefix('purchase-receipts')->group(function (
     Route::get('/archive', [PurchaseReceiptController::class, 'archive'])
         ->middleware('permission:purchase_receipt.view_assigned');
     Route::get('/{id}', [PurchaseReceiptController::class, 'show'])
-        ->middleware('permission:accounting.invoice.view');
+        ->middleware('permission:purchase_receipt.view_assigned');
     Route::post('/purchase-orders/{purchaseOrderId}', [PurchaseReceiptController::class, 'store'])
         ->middleware('permission:purchase_receipt.edit');
     Route::post('/purchase-orders/{purchaseOrderId}/confirm-office', [PurchaseReceiptController::class, 'confirmOfficeReceipt']);
