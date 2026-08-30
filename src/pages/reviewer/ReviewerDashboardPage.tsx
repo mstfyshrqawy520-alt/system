@@ -47,6 +47,7 @@ export const ReviewerDashboardPage: React.FC = () => {
   const submittedCount = requests.filter((r) => r.status === 'SUBMITTED').length;
   const underReviewCount = requests.filter((r) => r.status === 'UNDER_REVIEW').length;
   const approvedCount = requests.filter((r) => r.status === 'APPROVED_BY_REVIEWER' || r.status === 'PENDING_PROCUREMENT_APPROVAL').length;
+  const rejectedCount = requests.filter((r) => r.status === 'REJECTED').length;
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED'>('ALL');
 
   const filteredRequests = requests.filter((r) => {
