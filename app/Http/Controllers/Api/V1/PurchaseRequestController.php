@@ -146,7 +146,21 @@ class PurchaseRequestController extends Controller
             'purchaseOrders.receipts',
         ])->findOrFail($id);
 
-        if ($pr->user_id !== $request->user()->id) {
+        $user = $request->user();
+        $isAllowed = $pr->user_id === $user->id
+            || $user->hasAnyRole(['admin', 'general_manager', 'procurement_manager', 'accountant', 'warehouse_keeper'])
+            || $pr->reviewer_user_id === $user->id
+            || $pr->site_engineer_user_id === $user->id
+            || ($user->hasRole('reviewer') && ($pr->target_department_id === $user->department_id || $pr->targetDepartment?->manager_user_id === $user->id))
+            || $user->hasAnyPermission([
+                'purchase_request.view',
+                'purchase_request.review',
+                'purchase_request.approve_gm',
+                'purchase_request.convert_po',
+                'purchase_request.review_accounting',
+            ]);
+
+        if (! $isAllowed) {
             return response()->json([
                 'message' => 'ليس لديك صلاحية لتنفيذ هذا الإجراء.',
             ], 403);
