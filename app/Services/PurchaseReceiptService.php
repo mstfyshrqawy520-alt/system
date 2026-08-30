@@ -45,10 +45,12 @@ class PurchaseReceiptService
             'items.purchaseOrderItem.prItem',
         ])->orderByDesc('created_at');
 
-        if ($user->hasRole('warehouse_keeper') && ! $user->hasAnyRole(['admin', 'general_manager', 'accountant', 'procurement_manager'])) {
-            $query->where('warehouse_keeper_user_id', $user->id);
-        } elseif ($user->hasRole('site_engineer') && ! $user->hasAnyRole(['admin', 'general_manager', 'accountant', 'procurement_manager'])) {
-            $query->where('site_engineer_user_id', $user->id);
+        if (! $user->hasAnyRole(['admin', 'general_manager', 'accountant', 'procurement_manager'])) {
+            if ($user->hasRole('warehouse_keeper')) {
+                $query->where('warehouse_keeper_user_id', $user->id);
+            } else {
+                $query->where('site_engineer_user_id', $user->id);
+            }
         }
 
         return $query->paginate($perPage);
