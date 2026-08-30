@@ -67,9 +67,9 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
   onItemActionComplete,
 }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const isReviewer = Boolean(
-    user?.roles?.some((r) => r.slug === 'reviewer') ||
+    hasRole('reviewer') ||
     roleName?.includes('قسم') ||
     roleName?.includes('مراجع')
   );
