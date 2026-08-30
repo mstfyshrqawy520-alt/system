@@ -52,13 +52,33 @@ class PurchaseRequestController extends Controller
             ->with(['manager:id,name,email,department_id', 'siteEngineer:id,name,email,department_id'])
             ->orderBy('name')
             ->get(['id', 'name', 'code', 'manager_user_id', 'site_engineer_user_id'])
-            ->map(fn (Department $department) => [
-                'id' => $department->id,
-                'name' => $department->name,
-                'code' => $department->code,
-                'manager' => $department->manager ? ['id' => $department->manager->id, 'name' => $department->manager->name] : null,
-                'site_engineer' => $department->siteEngineer ? ['id' => $department->siteEngineer->id, 'name' => $department->siteEngineer->name] : null,
-            ])->values();
+            ->map(function (Department $department) {
+                $manager = $department->manager;
+                if (! $manager) {
+                    $manager = User::where('department_id', $department->id)
+                        ->whereHas('roles', fn ($q) => $q->where('slug', 'reviewer'))
+                        ->first();
+                }
+                if (! $manager) {
+                    $emailMap = [
+                        'EXECUTION' => 'ayman@gmail.com',
+                        'BUILDINGS' => 'hatem@gmail.com',
+                        'FINISHING' => 'masoud@gmail.com',
+                        'LICENSES' => 'mostafa@gmail.com',
+                        'BUFFET' => 'amr@gmail.com',
+                    ];
+                    if (isset($emailMap[$department->code])) {
+                        $manager = User::where('email', $emailMap[$department->code])->first();
+                    }
+                }
+                return [
+                    'id' => $department->id,
+                    'name' => $department->name,
+                    'code' => $department->code,
+                    'manager' => $manager ? ['id' => $manager->id, 'name' => $manager->name] : null,
+                    'site_engineer' => $department->siteEngineer ? ['id' => $department->siteEngineer->id, 'name' => $department->siteEngineer->name] : null,
+                ];
+            })->values();
 
         return response()->json(['data' => $departments]);
     }

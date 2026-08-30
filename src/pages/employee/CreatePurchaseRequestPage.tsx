@@ -484,9 +484,16 @@ const CreatePurchaseRequestPage: React.FC = () => {
                   dept.code === 'FINISHING' ? '🎨' :
                   dept.code === 'LICENSES' ? '📜' :
                   dept.code === 'BUFFET' ? '☕' : '🏢';
+                const managerName =
+                  dept.manager?.name ||
+                  (dept.code === 'EXECUTION' ? 'م. أيمن ماهر' :
+                   dept.code === 'BUILDINGS' ? 'المهندس حاتم' :
+                   dept.code === 'FINISHING' ? 'م. مسعود' :
+                   dept.code === 'LICENSES' ? 'م. مصطفى' :
+                   dept.code === 'BUFFET' ? 'أ. عمرو' : '');
                 return (
                   <option key={dept.id} value={dept.id}>
-                    {icon} {dept.name} {dept.manager?.name ? `— (المراجع: ${dept.manager.name})` : ''}
+                    {icon} {dept.name} {managerName ? `— (المراجع: ${managerName})` : ''}
                   </option>
                 );
               })}
@@ -510,7 +517,16 @@ const CreatePurchaseRequestPage: React.FC = () => {
           <div className="grid grid-cols-1 gap-3 rounded-xl border border-cyan-800/40 bg-cyan-950/20 p-3 text-xs sm:grid-cols-2">
             <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-2.5">
               <span className="text-slate-500 text-[10px]">مدير القسم المستهدف (المراجع):</span>
-              <div className="font-bold text-slate-200 mt-0.5">{isGeneralManager ? 'مسار المدير العام المباشر' : targetDepartment.manager?.name || 'غير معين'}</div>
+              <div className="font-bold text-slate-200 mt-0.5">
+                {isGeneralManager
+                  ? 'مسار المدير العام المباشر'
+                  : targetDepartment.manager?.name ||
+                    (targetDepartment.code === 'EXECUTION' ? 'م. أيمن ماهر' :
+                     targetDepartment.code === 'BUILDINGS' ? 'المهندس حاتم' :
+                     targetDepartment.code === 'FINISHING' ? 'م. مسعود' :
+                     targetDepartment.code === 'LICENSES' ? 'م. مصطفى' :
+                     targetDepartment.code === 'BUFFET' ? 'أ. عمرو' : 'غير معين')}
+              </div>
             </div>
 
             {isOffice ? (

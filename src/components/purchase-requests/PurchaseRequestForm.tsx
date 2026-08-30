@@ -377,19 +377,32 @@ export const PurchaseRequestForm: React.FC<Props> = ({
                   dept.code === 'BUILDINGS' ? '🏢' :
                   dept.code === 'FINISHING' ? '🎨' :
                   dept.code === 'LICENSES' ? '📜' :
-                  dept.code === 'BUFFET' ? '☕' : '🏢';
+                const managerName =
+                  dept.manager?.name ||
+                  (dept.code === 'EXECUTION' ? 'م. أيمن ماهر' :
+                   dept.code === 'BUILDINGS' ? 'المهندس حاتم' :
+                   dept.code === 'FINISHING' ? 'م. مسعود' :
+                   dept.code === 'LICENSES' ? 'م. مصطفى' :
+                   dept.code === 'BUFFET' ? 'أ. عمرو' : '');
                 return (
                   <option key={dept.id} value={dept.id}>
-                    {icon} {dept.name} {dept.manager?.name ? `— (المراجع: ${dept.manager.name})` : ''}
+                    {icon} {dept.name} {managerName ? `— (المراجع: ${managerName})` : ''}
                   </option>
                 );
               })}
             </Select>
             {targetDepartmentId && (() => {
               const selectedDepartment = departmentOptions.find((department) => department.id === Number(targetDepartmentId));
+              const managerName =
+                selectedDepartment?.manager?.name ||
+                (selectedDepartment?.code === 'EXECUTION' ? 'م. أيمن ماهر' :
+                 selectedDepartment?.code === 'BUILDINGS' ? 'المهندس حاتم' :
+                 selectedDepartment?.code === 'FINISHING' ? 'م. مسعود' :
+                 selectedDepartment?.code === 'LICENSES' ? 'م. مصطفى' :
+                 selectedDepartment?.code === 'BUFFET' ? 'أ. عمرو' : 'غير معين');
               return selectedDepartment ? (
                 <p className="mt-1 text-[11px] text-slate-400">
-                  مدير القسم: {selectedDepartment.manager?.name || 'غير معين'} {requestType === 'PROJECT' ? `| مهندس الموقع: ${selectedDepartment.site_engineer?.name || 'غير معين'}` : ''}
+                  مدير القسم المستهدف (المراجع): <strong className="text-slate-200">{managerName}</strong>
                 </p>
               ) : null;
             })()}
