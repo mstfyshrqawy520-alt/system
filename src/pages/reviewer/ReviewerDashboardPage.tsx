@@ -114,8 +114,8 @@ export const ReviewerDashboardPage: React.FC = () => {
               region: it.region,
             })),
             onDirectApprove: hasPermission('purchase_request.review')
-              ? async (_item: any, comment?: string) => {
-                  await approvePurchaseRequestApi(req.id, comment);
+              ? async (_item: any, comment?: string, siteEngineerUserId?: number | null) => {
+                  await approvePurchaseRequestApi(req.id, comment, siteEngineerUserId);
                   await fetchRequests(true);
                 }
               : undefined,

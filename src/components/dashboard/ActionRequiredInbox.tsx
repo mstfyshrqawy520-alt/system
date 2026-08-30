@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import QuickPeekDrawer, { PeekType } from '../ui/QuickPeekDrawer';
+import { getSiteEngineerReceiverOptionsApi } from '../../api/reviewer';
 
 export interface ActionInboxItemDetail {
   description: string;
@@ -40,7 +41,7 @@ export interface ActionInboxItem {
   items_list?: ActionInboxItemDetail[];
 
   // --- Direct Action Callbacks ---
-  onDirectApprove?: (item: ActionInboxItem, comment?: string) => Promise<void> | void;
+  onDirectApprove?: (item: ActionInboxItem, comment?: string, siteEngineerUserId?: number | null) => Promise<void> | void;
   onDirectReject?: (item: ActionInboxItem, reason: string) => Promise<void> | void;
   onDirectSubmit?: (item: ActionInboxItem) => Promise<void> | void;
   directApproveLabel?: string;
@@ -86,6 +87,33 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
     isSubmitting: false,
   });
 
+  const [receiverOptions, setReceiverOptions] = useState<{
+    siteEngineers: Array<{ id: number; name: string; department_name?: string }>;
+    otherUsers: Array<{ id: number; name: string; role_name?: string; department_name?: string }>;
+  }>({ siteEngineers: [], otherUsers: [] });
+  const [selectedEngineerId, setSelectedEngineerId] = useState<number | string>('');
+  const [receiverError, setReceiverError] = useState<string | null>(null);
+  const [isLoadingReceivers, setIsLoadingReceivers] = useState(false);
+
+  useEffect(() => {
+    if (approveModal.isOpen && approveModal.item?.type === 'PR') {
+      setIsLoadingReceivers(true);
+      setReceiverError(null);
+      getSiteEngineerReceiverOptionsApi()
+        .then((res) => {
+          setReceiverOptions({
+            siteEngineers: res.site_engineers || [],
+            otherUsers: res.other_users || [],
+          });
+          if (res.site_engineers && res.site_engineers.length > 0) {
+            setSelectedEngineerId(res.site_engineers[0].id);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setIsLoadingReceivers(false));
+    }
+  }, [approveModal.isOpen, approveModal.item]);
+
   const [rejectModal, setRejectModal] = useState<{
     isOpen: boolean;
     item: ActionInboxItem | null;
@@ -115,9 +143,18 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
 
   const handleConfirmDirectApprove = async () => {
     if (!approveModal.item?.onDirectApprove) return;
+    if (approveModal.item.type === 'PR' && !selectedEngineerId) {
+      setReceiverError('يجب تحديد مهندس الموقع / مسؤول الاستلام قبل اعتماد الطلب.');
+      return;
+    }
+    setReceiverError(null);
     setApproveModal((prev) => ({ ...prev, isSubmitting: true }));
     try {
-      await approveModal.item.onDirectApprove(approveModal.item, approveModal.comment);
+      await approveModal.item.onDirectApprove(
+        approveModal.item,
+        approveModal.comment,
+        selectedEngineerId ? Number(selectedEngineerId) : undefined
+      );
       setApproveModal({ isOpen: false, item: null, comment: '', isSubmitting: false });
       onItemActionComplete?.();
     } catch (err: any) {
@@ -472,6 +509,50 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
               </div>
             )}
           </div>
+
+          {approveModal.item?.type === 'PR' && (
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                مهندس الموقع / مسؤول استلام المواد بالموقع <span className="text-rose-400">*</span>
+              </label>
+              {isLoadingReceivers ? (
+                <div className="text-slate-400 text-xs py-2">جاري تحميل قائمة المهندسين والمستلمين...</div>
+              ) : (
+                <select
+                  value={selectedEngineerId}
+                  onChange={(e) => {
+                    setSelectedEngineerId(e.target.value ? Number(e.target.value) : '');
+                    setReceiverError(null);
+                  }}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-slate-100 outline-none focus:border-emerald-400 font-bold"
+                >
+                  <option value="" disabled>-- اختر مهندس الموقع أو مسؤول الاستلام --</option>
+                  {receiverOptions.siteEngineers.length > 0 && (
+                    <optgroup label="👷 مهندسو الموقع الأساسيون">
+                      {receiverOptions.siteEngineers.map((eng) => (
+                        <option key={`se-${eng.id}`} value={eng.id}>
+                          {eng.name} {eng.department_name ? `(${eng.department_name})` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {receiverOptions.otherUsers.length > 0 && (
+                    <optgroup label="👥 مستخدمو النظام الآخرون (تفويض أي دور آخر)">
+                      {receiverOptions.otherUsers.map((u) => (
+                        <option key={`other-${u.id}`} value={u.id}>
+                          {u.name} — {u.role_name || 'مستخدم'} {u.department_name ? `(${u.department_name})` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+              )}
+              {receiverError && <p className="mt-1 text-xs text-rose-400 font-bold">{receiverError}</p>}
+              <p className="mt-1 text-[11px] text-slate-400">
+                الشخص المختار سيتولى مراجعة إذن الاستلام واعتماده بالموقع فور توريد الأصناف.
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-bold text-slate-300 mb-1.5">
