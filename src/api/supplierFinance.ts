@@ -177,7 +177,7 @@ export interface CreateSupplierInvoicePayload {
   amount: number;
   invoice_date?: string;
   due_date?: string;
-  land_allocations: Array<{
+  land_allocations?: Array<{
     land_parcel_id: number;
     department_id?: number | null;
     amount: number;
