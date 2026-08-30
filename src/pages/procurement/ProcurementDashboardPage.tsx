@@ -165,36 +165,48 @@ export const ProcurementDashboardPage: React.FC = () => {
           value={<CurrencyDisplay amount={analytics?.metrics.total_value || 0} amountClassName="text-base font-bold font-mono text-cyan-400" />}
           subtext="أمر شراء فعال"
           accentColor="cyan"
+          to="/procurement/reports"
+          clickableHint="عرض التقارير ←"
         />
         <KpiCard
           title="طلبات معتمدة بانتظار PO"
           value={prs.length}
           subtext="جاهزة للإصدار"
           accentColor="amber"
+          to="/procurement/approved-requests"
+          clickableHint="إصدار أوامر شراء ←"
         />
         <KpiCard
           title="أوامر مسودة DRAFT"
           value={countStatus('PO_DRAFT')}
           subtext="قيد التحرير"
           accentColor="slate"
+          to="/procurement/manager?tab=1&status=PO_DRAFT"
+          clickableHint="عرض المسودات ←"
         />
         <KpiCard
           title="مراجعة المحاسبة"
           value={countStatus('PENDING_ACCOUNTING_REVIEW')}
           subtext="لدى الحسابات"
           accentColor="amber"
+          to="/procurement/manager?tab=1&status=PENDING_ACCOUNTING_REVIEW"
+          clickableHint="متابعة الحسابات ←"
         />
         <KpiCard
           title="أوامر معادة للمشتريات"
           value={countStatus('RETURNED_TO_PROCUREMENT')}
           subtext="تطلب تعديل"
           accentColor="rose"
+          to="/procurement/manager?tab=1&status=RETURNED_TO_PROCUREMENT"
+          clickableHint="تعديل وإعادة إرسال ←"
         />
         <KpiCard
           title="معتمدة نهائياً"
           value={countStatus('FINAL_APPROVED')}
           subtext="جاهزة للتوريد"
           accentColor="emerald"
+          to="/procurement/manager?tab=1&status=FINAL_APPROVED"
+          clickableHint="متابعة التوريدات ←"
         />
       </div>
 

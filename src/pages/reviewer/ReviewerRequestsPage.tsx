@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import ErrorMessage from '../../components/ErrorMessage';
 import { TableSkeleton } from '../../components/ui/StateFeedback';
 import PurchaseRequestStatusBadge from '../../components/purchase-requests/PurchaseRequestStatusBadge';
@@ -43,8 +43,10 @@ import { useRealtimeRefresh, emitAppDataUpdated } from '../../hooks/useRealtimeR
 
 export const ReviewerRequestsPage: React.FC = () => {
   const { hasPermission } = useAuth();
+  const [searchParams] = useSearchParams();
+  const urlStatus = searchParams.get('status');
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
-  const [activeFilter, setActiveFilter] = usePersistedState<string>('reviewer.active-filter.v1', 'ALL');
+  const [activeFilter, setActiveFilter] = usePersistedState<string>('reviewer.active-filter.v1', urlStatus || 'ALL');
   const [searchFilters, setSearchFilters] = usePersistedState<ReviewerRequestFilters>('reviewer.search-filters.v3', INITIAL_FILTERS);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [approvingId, setApprovingId] = useState<number | null>(null);

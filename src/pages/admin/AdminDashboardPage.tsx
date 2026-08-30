@@ -283,6 +283,8 @@ export const AdminDashboardPage: React.FC = () => {
             value={usersCount !== null ? usersCount : '—'}
             accentColor="cyan"
             icon={<span className="text-sm">👥</span>}
+            to="/admin/users"
+            clickableHint="إدارة المستخدمين ←"
           />
         )}
 
@@ -292,6 +294,8 @@ export const AdminDashboardPage: React.FC = () => {
             value={deptsCount !== null ? deptsCount : '—'}
             accentColor="indigo"
             icon={<span className="text-sm">🏢</span>}
+            to="/admin/departments"
+            clickableHint="إدارة الأقسام ←"
           />
         )}
 
@@ -301,6 +305,8 @@ export const AdminDashboardPage: React.FC = () => {
             value={itemsCount !== null ? itemsCount : '—'}
             accentColor="emerald"
             icon={<span className="text-sm">📦</span>}
+            to="/admin/items"
+            clickableHint="كتالوج الأصناف ←"
           />
         )}
 
@@ -310,6 +316,8 @@ export const AdminDashboardPage: React.FC = () => {
             value={suppliersCount !== null ? suppliersCount : '—'}
             accentColor="amber"
             icon={<span className="text-sm">🏭</span>}
+            to="/admin/suppliers"
+            clickableHint="سجل الموردين ←"
           />
         )}
       </div>

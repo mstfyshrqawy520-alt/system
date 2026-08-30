@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import ErrorMessage from '../../components/ErrorMessage';
 import { TableSkeleton } from '../../components/ui/StateFeedback';
 import PurchaseRequestTable from '../../components/purchase-requests/PurchaseRequestTable';
@@ -36,8 +36,10 @@ import { useRealtimeRefresh, emitAppDataUpdated } from '../../hooks/useRealtimeR
 
 export const PurchaseRequestsPage: React.FC = () => {
   const { hasPermission } = useAuth();
+  const [searchParams] = useSearchParams();
+  const initialStatus = searchParams.get('status') || 'ALL';
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
-  const [activeFilter, setActiveFilter] = useState<string>('ALL');
+  const [activeFilter, setActiveFilter] = useState<string>(initialStatus);
   const [needsActionOnly, setNeedsActionOnly] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const todayInputDate = getTodayInputDate();

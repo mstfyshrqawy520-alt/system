@@ -47,8 +47,28 @@ export const ReviewerDashboardPage: React.FC = () => {
   const submittedCount = requests.filter((r) => r.status === 'SUBMITTED').length;
   const underReviewCount = requests.filter((r) => r.status === 'UNDER_REVIEW').length;
   const approvedCount = requests.filter((r) => r.status === 'APPROVED_BY_REVIEWER' || r.status === 'PENDING_PROCUREMENT_APPROVAL').length;
-  const rejectedCount = requests.filter((r) => r.status === 'REJECTED').length;
-  const visibleRequests = requests.slice(0, 5);
+  const [activeFilter, setActiveFilter] = useState<'ALL' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED'>('ALL');
+
+  const filteredRequests = requests.filter((r) => {
+    if (activeFilter === 'ALL') return true;
+    if (activeFilter === 'SUBMITTED') return r.status === 'SUBMITTED';
+    if (activeFilter === 'UNDER_REVIEW') return r.status === 'UNDER_REVIEW';
+    if (activeFilter === 'APPROVED') return r.status === 'APPROVED_BY_REVIEWER' || r.status === 'PENDING_PROCUREMENT_APPROVAL';
+    if (activeFilter === 'REJECTED') return r.status === 'REJECTED';
+    return true;
+  });
+
+  const getFilterLabel = () => {
+    switch (activeFilter) {
+      case 'SUBMITTED': return 'في انتظار المراجعة';
+      case 'UNDER_REVIEW': return 'قيد المراجعة';
+      case 'APPROVED': return 'المعتمدة';
+      case 'REJECTED': return 'المرفوضة';
+      default: return 'جميع الطلبات';
+    }
+  };
+
+  const visibleRequests = filteredRequests.slice(0, 10);
 
   if (isLoading) {
     return <LoadingSpinner fullScreen message="تحميل لوحة مراجعة الطلبات..." />;
@@ -67,7 +87,10 @@ export const ReviewerDashboardPage: React.FC = () => {
         </div>
 
         {hasPermission('purchase_request.view_assigned') && (
-          <Link to="/reviewer/requests" className="w-full sm:w-auto">
+          <Link
+            to={activeFilter === 'ALL' ? '/reviewer/requests' : `/reviewer/requests?status=${activeFilter}`}
+            className="w-full sm:w-auto"
+          >
             <Button variant="primary" size="md" className="w-full whitespace-nowrap sm:w-auto">
               عرض قائمة مراجعة الطلبات ←
             </Button>
@@ -131,14 +154,67 @@ export const ReviewerDashboardPage: React.FC = () => {
       />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <KpiCard title="في انتظار المراجعة" value={submittedCount} accentColor="indigo" icon={<span className="text-sm">⏳</span>} />
-        <KpiCard title="قيد المراجعة" value={underReviewCount} accentColor="cyan" icon={<span className="text-sm">🔍</span>} />
-        <KpiCard title="معتمدة" value={approvedCount} accentColor="emerald" icon={<span className="text-sm">✅</span>} />
-        <KpiCard title="مرفوضة" value={rejectedCount} accentColor="rose" icon={<span className="text-sm">❌</span>} />
+        <KpiCard
+          title="في انتظار المراجعة"
+          value={submittedCount}
+          accentColor="indigo"
+          icon={<span className="text-sm">⏳</span>}
+          isActive={activeFilter === 'SUBMITTED'}
+          onClick={() => setActiveFilter(activeFilter === 'SUBMITTED' ? 'ALL' : 'SUBMITTED')}
+          clickableHint={activeFilter === 'SUBMITTED' ? '● محدد حالياً' : 'اضغط لتصفية في الانتظار'}
+        />
+        <KpiCard
+          title="قيد المراجعة"
+          value={underReviewCount}
+          accentColor="cyan"
+          icon={<span className="text-sm">🔍</span>}
+          isActive={activeFilter === 'UNDER_REVIEW'}
+          onClick={() => setActiveFilter(activeFilter === 'UNDER_REVIEW' ? 'ALL' : 'UNDER_REVIEW')}
+          clickableHint={activeFilter === 'UNDER_REVIEW' ? '● محدد حالياً' : 'اضغط لتصفية قيد المراجعة'}
+        />
+        <KpiCard
+          title="معتمدة"
+          value={approvedCount}
+          accentColor="emerald"
+          icon={<span className="text-sm">✅</span>}
+          isActive={activeFilter === 'APPROVED'}
+          onClick={() => setActiveFilter(activeFilter === 'APPROVED' ? 'ALL' : 'APPROVED')}
+          clickableHint={activeFilter === 'APPROVED' ? '● محدد حالياً' : 'اضغط لتصفية المعتمدة'}
+        />
+        <KpiCard
+          title="مرفوضة"
+          value={rejectedCount}
+          accentColor="rose"
+          icon={<span className="text-sm">❌</span>}
+          isActive={activeFilter === 'REJECTED'}
+          onClick={() => setActiveFilter(activeFilter === 'REJECTED' ? 'ALL' : 'REJECTED')}
+          clickableHint={activeFilter === 'REJECTED' ? '● محدد حالياً' : 'اضغط لتصفية المرفوضة'}
+        />
       </div>
 
       <section className="min-w-0 space-y-4">
-        <h2 className="text-sm font-bold text-slate-200">📋 طلبات تنتظر المراجعة والاعتماد</h2>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-bold text-slate-200">
+              📋 {activeFilter === 'ALL' ? 'طلبات تنتظر المراجعة والاعتماد' : `طلبات (${getFilterLabel()})`}
+            </h2>
+            {activeFilter !== 'ALL' && (
+              <button
+                type="button"
+                onClick={() => setActiveFilter('ALL')}
+                className="text-[11px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded-full border border-slate-700 transition-colors"
+              >
+                إلغاء التصفية ✕
+              </button>
+            )}
+          </div>
+          <Link
+            to={activeFilter === 'ALL' ? '/reviewer/requests' : `/reviewer/requests?status=${activeFilter}`}
+            className="text-xs text-cyan-400 hover:underline"
+          >
+            عرض القائمة الكاملة ({filteredRequests.length}) &rarr;
+          </Link>
+        </div>
 
         {requests.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-800 bg-slate-900/40 p-6 py-12 text-center text-xs text-slate-400">

@@ -61,6 +61,27 @@ export const EmployeeDashboardPage: React.FC = () => {
   ).length;
   const rejectedCount = requests.filter((r) => r.status === 'REJECTED').length;
 
+  const [activeFilter, setActiveFilter] = useState<'ALL' | 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
+
+  const filteredRequests = requests.filter((r) => {
+    if (activeFilter === 'ALL') return true;
+    if (activeFilter === 'DRAFT') return r.status === 'DRAFT';
+    if (activeFilter === 'PENDING') return r.status === 'SUBMITTED' || r.status === 'UNDER_REVIEW';
+    if (activeFilter === 'APPROVED') return r.status === 'APPROVED_BY_REVIEWER' || r.status === 'PENDING_PROCUREMENT_APPROVAL' || r.status === 'APPROVED_BY_PROCUREMENT';
+    if (activeFilter === 'REJECTED') return r.status === 'REJECTED';
+    return true;
+  });
+
+  const getFilterLabel = () => {
+    switch (activeFilter) {
+      case 'DRAFT': return 'المسودات';
+      case 'PENDING': return 'قيد المراجعة';
+      case 'APPROVED': return 'المعتمدة';
+      case 'REJECTED': return 'المرفوضة';
+      default: return 'جميع الطلبات';
+    }
+  };
+
   const handleConfirmSubmit = async () => {
     if (!selectedSubmitPr) return;
     setIsSubmitting(true);
@@ -169,60 +190,92 @@ export const EmployeeDashboardPage: React.FC = () => {
         );
       })()}
 
-      {/* Summary KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+      {/* Summary KPI Cards with Click Actions */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
         <KpiCard
           title="إجمالي"
           value={totalCount}
           accentColor="cyan"
           icon={<span className="text-sm">📋</span>}
+          isActive={activeFilter === 'ALL'}
+          onClick={() => setActiveFilter('ALL')}
+          clickableHint={activeFilter === 'ALL' ? '● محدد حالياً' : 'اضغط لعرض الكل'}
         />
         <KpiCard
           title="مسودات"
           value={draftCount}
           accentColor="slate"
           icon={<span className="text-sm">✏️</span>}
+          isActive={activeFilter === 'DRAFT'}
+          onClick={() => setActiveFilter('DRAFT')}
+          clickableHint={activeFilter === 'DRAFT' ? '● محدد حالياً' : 'اضغط لتصفية المسودات'}
         />
         <KpiCard
           title="قيد المراجعة"
           value={pendingCount}
           accentColor="amber"
           icon={<span className="text-sm">⏳</span>}
+          isActive={activeFilter === 'PENDING'}
+          onClick={() => setActiveFilter('PENDING')}
+          clickableHint={activeFilter === 'PENDING' ? '● محدد حالياً' : 'اضغط لتصفية قيد المراجعة'}
         />
         <KpiCard
           title="معتمدة"
           value={approvedCount}
           accentColor="emerald"
           icon={<span className="text-sm">✅</span>}
+          isActive={activeFilter === 'APPROVED'}
+          onClick={() => setActiveFilter('APPROVED')}
+          clickableHint={activeFilter === 'APPROVED' ? '● محدد حالياً' : 'اضغط لتصفية المعتمدة'}
         />
         <KpiCard
           title="مرفوضة"
           value={rejectedCount}
           accentColor="rose"
           icon={<span className="text-sm">❌</span>}
+          isActive={activeFilter === 'REJECTED'}
+          onClick={() => setActiveFilter('REJECTED')}
+          clickableHint={activeFilter === 'REJECTED' ? '● محدد حالياً' : 'اضغط لتصفية المرفوضة'}
         />
       </div>
 
-      {/* Recent Requests Section */}
+      {/* Recent Requests Section with Dynamic Filter Header */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-slate-200">
-            📋 طلبات الشراء الأخيرة
-          </h2>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-bold text-slate-200">
+              📋 {activeFilter === 'ALL' ? 'طلبات الشراء الأخيرة' : `طلبات الشراء (${getFilterLabel()})`}
+            </h2>
+            {activeFilter !== 'ALL' && (
+              <button
+                type="button"
+                onClick={() => setActiveFilter('ALL')}
+                className="text-[11px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded-full border border-slate-700 transition-colors"
+              >
+                إلغاء التصفية ✕
+              </button>
+            )}
+          </div>
           <Link
-            to="/employee/requests"
+            to={activeFilter === 'ALL' ? '/employee/requests' : `/employee/requests?status=${activeFilter}`}
             className="text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1"
           >
-            <span>عرض كافة الطلبات({totalCount})</span>
+            <span>عرض في صفحة مستقلة ({filteredRequests.length})</span>
             <span>&rarr;</span>
           </Link>
         </div>
 
-        <PurchaseRequestTable
-          requests={requests.slice(0, 5)}
-          onOpenSubmitModal={(pr) => setSelectedSubmitPr(pr)}
-          onOpenDeleteModal={(pr) => setSelectedDeletePr(pr)}
-        />
+        {filteredRequests.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-800 bg-slate-900/40 p-6 py-8 text-center text-xs text-slate-400">
+            لا توجد طلبات تطابق تصنيف &quot;{getFilterLabel()}&quot;.
+          </div>
+        ) : (
+          <PurchaseRequestTable
+            requests={filteredRequests.slice(0, 10)}
+            onOpenSubmitModal={(pr) => setSelectedSubmitPr(pr)}
+            onOpenDeleteModal={(pr) => setSelectedDeletePr(pr)}
+          />
+        )}
       </div>
 
       {/* Confirmation Dialogs */}

@@ -239,24 +239,40 @@ export const GeneralManagerDashboardPage: React.FC = () => {
         </button>
       </div>
 
-      {/* KPI Executive Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <RouterLink to="/general-manager/purchase-orders">
-          <KpiCard
-            title="إجمالي أوامر الشراء المصدرة"
-            value={filteredPos.length}
-            accentColor="cyan"
-            icon={<span className="text-sm">📋</span>}
-          />
-        </RouterLink>
-        <RouterLink to="/general-manager/purchase-orders">
-          <KpiCard
-            title="إجمالي قيم المشتريات المعتمدة (EGP)"
-            value={<CurrencyDisplay amount={totalValue} amountClassName="text-base font-bold font-mono text-emerald-400" />}
-            accentColor="emerald"
-            icon={<span className="text-sm">💵</span>}
-          />
-        </RouterLink>
+      {/* KPI Executive Summary Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
+          title="أوامر الشراء المصدرة"
+          value={filteredPos.length}
+          accentColor="cyan"
+          icon={<span className="text-sm">📋</span>}
+          to="/general-manager/purchase-orders"
+          clickableHint="عرض أوامر الشراء ←"
+        />
+        <KpiCard
+          title="إجمالي قيم المشتريات (EGP)"
+          value={<CurrencyDisplay amount={totalValue} amountClassName="text-base font-bold font-mono text-emerald-400" />}
+          accentColor="emerald"
+          icon={<span className="text-sm">💵</span>}
+          to="/general-manager/reports"
+          clickableHint="تقارير الإنفاق ←"
+        />
+        <KpiCard
+          title="طلبات بانتظار الاعتماد"
+          value={pendingGmRequestsCount}
+          accentColor="amber"
+          icon={<span className="text-sm">⏳</span>}
+          to="/general-manager/purchase-requests"
+          clickableHint="مراجعة واعتماد الطلبات ←"
+        />
+        <KpiCard
+          title="عروض أسعار للترسية"
+          value={<span className="text-sm font-bold text-indigo-300">قرارات العروض</span>}
+          accentColor="indigo"
+          icon={<span className="text-sm">⚖️</span>}
+          to="/general-manager/purchase-quotes"
+          clickableHint="اتخاذ قرارات الترسية ←"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
