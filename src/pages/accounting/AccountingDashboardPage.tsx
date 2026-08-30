@@ -153,7 +153,7 @@ export const AccountingDashboardPage: React.FC = () => {
             actionUrl: `/accounting/supplier-payments?purchase_receipt_id=${rec.id}`,
             actionLabel: 'تسجيل وسداد الفاتورة',
             timeAgo: rec.received_at ? rec.received_at.slice(0, 10) : undefined,
-            created_at: rec.created_at || rec.received_at || undefined,
+            created_at: (rec as any).created_at || rec.received_at || undefined,
           })),
           ...directPrs.map((pr: any) => ({
             id: `pr-${pr.id}`,
