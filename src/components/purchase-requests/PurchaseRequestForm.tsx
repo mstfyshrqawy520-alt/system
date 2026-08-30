@@ -377,6 +377,7 @@ export const PurchaseRequestForm: React.FC<Props> = ({
                   dept.code === 'BUILDINGS' ? '🏢' :
                   dept.code === 'FINISHING' ? '🎨' :
                   dept.code === 'LICENSES' ? '📜' :
+                  dept.code === 'BUFFET' ? '☕' : '🏢';
                 const managerName =
                   dept.manager?.name ||
                   (dept.code === 'EXECUTION' ? 'م. أيمن ماهر' :
