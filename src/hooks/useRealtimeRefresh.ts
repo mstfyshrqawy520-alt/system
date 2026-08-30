@@ -29,12 +29,19 @@ export const useRealtimeRefresh = (
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') return;
 
+    let debounceTimer: number | null = null;
     const triggerRefresh = () => {
       try {
         void refreshRef.current();
       } catch (err) {
         console.warn('Realtime refresh error:', err);
       }
+    };
+
+    // Debounced refresh to prevent burst calls when visibility+focus fire together
+    const debouncedRefresh = () => {
+      if (debounceTimer) window.clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(triggerRefresh, 500);
     };
 
     // 1. Realtime notification received
@@ -45,14 +52,14 @@ export const useRealtimeRefresh = (
     const onDataUpdated = () => triggerRefresh();
     window.addEventListener('app-data-updated', onDataUpdated);
 
-    // 3. Tab visibility & focus
+    // 3. Tab visibility & focus (debounced to prevent double-fire)
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        triggerRefresh();
+        debouncedRefresh();
       }
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
-    window.addEventListener('focus', triggerRefresh);
+    window.addEventListener('focus', debouncedRefresh);
 
     // 4. Background heartbeat timer while tab is active
     const timer = window.setInterval(() => {
@@ -62,10 +69,11 @@ export const useRealtimeRefresh = (
     }, intervalMs);
 
     return () => {
+      if (debounceTimer) window.clearTimeout(debounceTimer);
       window.removeEventListener('notification-received', onNotification);
       window.removeEventListener('app-data-updated', onDataUpdated);
       document.removeEventListener('visibilitychange', onVisibilityChange);
-      window.removeEventListener('focus', triggerRefresh);
+      window.removeEventListener('focus', debouncedRefresh);
       window.clearInterval(timer);
     };
   }, [enabled, intervalMs]);

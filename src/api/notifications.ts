@@ -31,9 +31,7 @@ export const sendTestPushApi = async (): Promise<{ message: string; device_count
 };
 
 const realtimeBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-const realtimeStreamTimeout = Number(
-  import.meta.env.VITE_NOTIFICATIONS_STREAM_TIMEOUT || (import.meta.env.DEV ? 0 : 120),
-);
+const realtimeStreamTimeout = 30; // 30 seconds long-poll; server holds connection open
 let realtimeAbortController: AbortController | null = null;
 let realtimeStarted = false;
 let lastRealtimeNotificationId = 0;
@@ -68,10 +66,16 @@ const runNotificationsRealtime = async () => {
   const controller = realtimeAbortController;
   if (!controller) return;
 
-  let retryDelay = 2000;
+  let retryDelay = 5000;
   let consecutiveFailures = 0;
 
   while (realtimeStarted && realtimeAbortController === controller && !controller.signal.aborted) {
+    // Don't open connections when tab is hidden
+    if (document.visibilityState === 'hidden') {
+      await new Promise((resolve) => window.setTimeout(resolve, 5000));
+      continue;
+    }
+
     const token = getToken();
     if (!token) return;
 
@@ -89,7 +93,7 @@ const runNotificationsRealtime = async () => {
       }
 
       // Reset retry delay on connection success
-      retryDelay = 2000;
+      retryDelay = 5000;
       consecutiveFailures = 0;
 
       const reader = response.body.getReader();
@@ -106,12 +110,12 @@ const runNotificationsRealtime = async () => {
     } catch {
       if (controller.signal.aborted || realtimeAbortController !== controller) return;
       consecutiveFailures++;
-      retryDelay = Math.min(30000, retryDelay * 2);
+      retryDelay = Math.min(60000, retryDelay * 2);
     }
 
     if (realtimeStarted && realtimeAbortController === controller && !controller.signal.aborted) {
-      // If we have failed multiple times continuously, back off significantly to prevent request spam
-      const waitTime = consecutiveFailures > 3 ? retryDelay : 3000;
+      // Back off on repeated failures to prevent request spam
+      const waitTime = consecutiveFailures > 3 ? retryDelay : 10000;
       await new Promise((resolve) => window.setTimeout(resolve, waitTime));
     }
   }

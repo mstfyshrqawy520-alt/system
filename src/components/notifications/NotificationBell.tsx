@@ -127,12 +127,12 @@ export const NotificationBell: React.FC = () => {
     document.addEventListener('visibilitychange', handleVisibilityOrFocus);
     window.addEventListener('focus', handleVisibilityOrFocus);
 
-    // Periodic heartbeat poll for mobile background throttling protection (every 25 seconds)
+    // Periodic heartbeat poll for mobile background throttling protection (every 90 seconds)
     const pollInterval = window.setInterval(() => {
       if (document.visibilityState === 'visible') {
         void fetchUnreadData();
       }
-    }, 25000);
+    }, 90000);
 
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
