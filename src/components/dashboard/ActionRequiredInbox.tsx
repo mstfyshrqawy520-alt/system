@@ -30,6 +30,7 @@ export interface ActionInboxItem {
   actionUrl: string;
   actionLabel: string;
   timeAgo?: string;
+  created_at?: string;
   
   // --- Rich Details Fields ---
   request_type?: 'PROJECT' | 'OFFICE_SUPPLIES';
@@ -73,6 +74,28 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
     roleName?.includes('قسم') ||
     roleName?.includes('مراجع')
   );
+
+  // Sort items newest to oldest (الأحدث للأقدم)
+  const sortedItems = React.useMemo(() => {
+    return [...items].sort((a, b) => {
+      const rawDateA = a.created_at || (a.timeAgo && /^\d{4}-\d{2}-\d{2}/.test(a.timeAgo) ? a.timeAgo : null);
+      const rawDateB = b.created_at || (b.timeAgo && /^\d{4}-\d{2}-\d{2}/.test(b.timeAgo) ? b.timeAgo : null);
+
+      if (rawDateA && rawDateB) {
+        const timeA = new Date(rawDateA).getTime();
+        const timeB = new Date(rawDateB).getTime();
+        if (!isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
+          return timeB - timeA; // Newest first
+        }
+      } else if (rawDateB && !rawDateA) {
+        return 1;
+      } else if (rawDateA && !rawDateB) {
+        return -1;
+      }
+
+      return (Number(b.rawId) || 0) - (Number(a.rawId) || 0);
+    });
+  }, [items]);
 
   // Drawer Peek State
   const [peekState, setPeekState] = useState<{ isOpen: boolean; type: PeekType; id: number | null }>({
@@ -270,7 +293,7 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
         {/* Action Items List */}
         {hasItems ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
-            {items.map((item) => {
+            {sortedItems.map((item) => {
               const isUrgent = item.urgency === 'CRITICAL' || item.urgency === 'HIGH' || item.priority === 'HIGH' || item.priority === 'URGENT';
               const canPeek = item.type === 'PR' || item.type === 'PO';
               const isOffice = item.request_type === 'OFFICE_SUPPLIES';

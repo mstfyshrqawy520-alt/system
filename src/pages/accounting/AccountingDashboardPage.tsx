@@ -128,6 +128,7 @@ export const AccountingDashboardPage: React.FC = () => {
             actionUrl: `/accounting/purchase-orders/${po.id}`,
             actionLabel: 'المراجعة والاعتماد المالي',
             timeAgo: po.created_at ? po.created_at.slice(0, 10) : undefined,
+            created_at: po.created_at || undefined,
             items_count: po.items?.length || 0,
             items_list: po.items?.map((it: any) => ({
               description: it.item_description || it.item?.name || 'بند توريد',
@@ -152,6 +153,7 @@ export const AccountingDashboardPage: React.FC = () => {
             actionUrl: `/accounting/supplier-payments?purchase_receipt_id=${rec.id}`,
             actionLabel: 'تسجيل وسداد الفاتورة',
             timeAgo: rec.received_at ? rec.received_at.slice(0, 10) : undefined,
+            created_at: rec.created_at || rec.received_at || undefined,
           })),
           ...directPrs.map((pr: any) => ({
             id: `pr-${pr.id}`,
@@ -167,6 +169,7 @@ export const AccountingDashboardPage: React.FC = () => {
             actionUrl: `/accounting/purchase-requests`,
             actionLabel: 'مراجعة وتحديد الأسعار والاعتماد',
             timeAgo: pr.created_at ? pr.created_at.slice(0, 10) : undefined,
+            created_at: pr.created_at || undefined,
             request_type: pr.request_type,
             date_needed: pr.date_needed || undefined,
             priority: pr.priority,
