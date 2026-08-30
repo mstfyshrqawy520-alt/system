@@ -1,4 +1,4 @@
-import apiClient from './client';
+import apiClient, { cachedGetData } from './client';
 import {
   CreatePurchaseRequestPayload,
   PurchaseRequest,
@@ -10,23 +10,22 @@ import {
 } from '../types/purchaseRequest';
 
 export const getPurchaseRequestReviewerOptionsApi = async (): Promise<ReviewerOption[]> => {
-  const response = await apiClient.get<{ data: ReviewerOption[] }>('/purchase-requests/reviewer-options');
-  return response.data.data;
-};
-
-export const getPurchaseRequestSiteEngineerOptionsApi = async (): Promise<SiteEngineerReceiverOption[]> => {
-  const response = await apiClient.get<{ data: SiteEngineerReceiverOption[] }>('/purchase-requests/site-engineer-options');
-  return response.data.data;
-};
-
-export const getSiteEngineerReceiverOptionsApi = async (): Promise<SiteEngineerOptionsResponse> => {
-  const response = await apiClient.get<SiteEngineerOptionsResponse>('/purchase-requests/site-engineer-options');
+  const response = await cachedGetData<{ data: ReviewerOption[] }>('/purchase-requests/reviewer-options', undefined, 60000);
   return response.data;
 };
 
+export const getPurchaseRequestSiteEngineerOptionsApi = async (): Promise<SiteEngineerReceiverOption[]> => {
+  const response = await cachedGetData<{ data: SiteEngineerReceiverOption[] }>('/purchase-requests/site-engineer-options', undefined, 60000);
+  return response.data;
+};
+
+export const getSiteEngineerReceiverOptionsApi = async (): Promise<SiteEngineerOptionsResponse> => {
+  return await cachedGetData<SiteEngineerOptionsResponse>('/purchase-requests/site-engineer-options', undefined, 60000);
+};
+
 export const getPurchaseRequestDepartmentOptionsApi = async (): Promise<DepartmentOption[]> => {
-  const response = await apiClient.get<{ data: DepartmentOption[] }>('/purchase-requests/department-options');
-  return response.data.data;
+  const response = await cachedGetData<{ data: DepartmentOption[] }>('/purchase-requests/department-options', undefined, 60000);
+  return response.data;
 };
 
 export const getOwnPurchaseRequestsApi = async (): Promise<PurchaseRequest[]> => {

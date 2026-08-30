@@ -1,3 +1,3 @@
-web: export PHP_CLI_SERVER_WORKERS=10 && php artisan migrate --force && (php artisan db:seed --class=RestoreDemoAccountsSeeder --force || true) && (php artisan queue:work --sleep=1 --tries=3 &) && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
+web: export PHP_CLI_SERVER_WORKERS=10 && php artisan migrate --force && (php artisan db:seed --class=RestoreDemoAccountsSeeder --force || true) && php artisan config:cache && php artisan route:cache && php artisan view:cache && (php artisan queue:work --sleep=1 --tries=3 &) && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
 
 
