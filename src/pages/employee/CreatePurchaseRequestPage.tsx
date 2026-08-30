@@ -485,6 +485,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
               type="date"
               id="pr-date-needed"
               min={getTodayDateInputValue()}
+              max="2099-12-31"
               value={data.date_needed || ''}
               onChange={(event) => setData({ ...data, date_needed: event.target.value })}
               error={Boolean(showValidation && validation.dateNeeded)}
