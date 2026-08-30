@@ -198,10 +198,8 @@ export const PurchaseRequestForm: React.FC<Props> = ({
     }
 
     const selectedDepartment = departmentOptions.find((department) => department.id === Number(targetDepartmentId));
-    if (targetDepartmentId && !isGeneralManager && !selectedDepartment?.manager) {
+    if (targetDepartmentId && !isGeneralManager && !selectedDepartment?.manager && !['EXECUTION', 'BUILDINGS', 'FINISHING', 'LICENSES', 'BUFFET'].includes(selectedDepartment?.code || '')) {
       nextFieldErrors.targetDepartment = 'القسم المختار لا يحتوي على مدير قسم معين من الإدارة.';
-    } else if (targetDepartmentId && !isOffice && !selectedDepartment?.site_engineer) {
-      nextFieldErrors.targetDepartment = 'القسم المختار لا يحتوي على مهندس موقع معين من الإدارة لمشتريات المشروعات.';
     }
 
     if (!dateNeeded) {

@@ -97,7 +97,7 @@ const validateRequest = (
   const today = getTodayDateInputValue();
   return {
     targetDepartment: data.target_department_id ? undefined : 'اختر القسم الذي سيعالج الطلب.',
-    targetManager: !isGeneralManager && data.target_department_id && targetDepartment && !targetDepartment.manager
+    targetManager: !isGeneralManager && data.target_department_id && targetDepartment && !targetDepartment.manager && !['EXECUTION', 'BUILDINGS', 'FINISHING', 'LICENSES', 'BUFFET'].includes(targetDepartment?.code || '')
       ? 'القسم المستهدف لا يوجد له مدير قسم معين. اطلب من مدير النظام تعيين مدير للقسم أولًا.'
       : undefined,
     dateNeeded: !data.date_needed
