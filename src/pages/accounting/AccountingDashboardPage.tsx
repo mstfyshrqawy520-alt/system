@@ -230,39 +230,9 @@ export const AccountingDashboardPage: React.FC = () => {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <DashboardDonut title="حالة أوامر الشراء" subtitle="التوزيع التشغيلي للحركات المالية" segments={deliverySegments} centerLabel="الأوامر" centerValue={pos.length} />
-        <DashboardBars title="الإنفاق حسب القسم" subtitle="قيمة الأوامر المصدرة" segments={departmentSegments} unit="ج.م" />
-        <DashboardBars title="الإنفاق حسب المورد" subtitle="أعلى الموردين قيمة" segments={supplierSegments} unit="ج.م" />
-      </div>
-
-      {/* Spend Breakdown Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Spend by القسم */}
-        <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-4">
-          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">توزيع الإنفاق حسب الأقسام (EGP)</h3>
-          <div className="space-y-3 text-xs">
-            {Object.entries(deptSpendMap).map(([dept, amount], idx) => (
-              <div key={idx} className="flex justify-between items-center p-2 rounded bg-slate-900 border border-slate-800">
-                <span className="font-semibold text-slate-300">{dept}</span>
-                <span className="font-mono font-bold text-cyan-400">{amount.toFixed(2)} ج.م</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Spend by المورد */}
-        <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-4">
-          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">توزيع الإنفاق حسب الموردين (EGP)</h3>
-          <div className="space-y-3 text-xs">
-            {Object.entries(supplierSpendMap).slice(0, 5).map(([supplier, amount], idx) => (
-              <div key={idx} className="flex justify-between items-center p-2 rounded bg-slate-900 border border-slate-800">
-                <span className="font-semibold text-slate-300">{supplier}</span>
-                <span className="font-mono font-bold text-emerald-400">{amount.toFixed(2)} ج.م</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <DashboardBars title="الإنفاق حسب القسم" subtitle="قيمة الأوامر المصدرة للأقسام" segments={departmentSegments} unit="ج.م" />
+        <DashboardBars title="الإنفاق حسب المورد" subtitle="أعلى الموردين قيمة وتعاملاً" segments={supplierSegments} unit="ج.م" />
       </div>
 
       {/* Recent PO Issues List */}
