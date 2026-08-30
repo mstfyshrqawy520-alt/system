@@ -1,4 +1,4 @@
-﻿import React, { FormEvent, useEffect, useMemo, useState } from 'react';
+import React, { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { usePersistedState } from '../../hooks/usePersistedState';
@@ -211,11 +211,6 @@ export const SupplierPaymentsPage: React.FC = () => {
         amount: Number(allocation.amount),
         notes: (allocation.notes || '').trim() || undefined,
       }));
-    if (!normalizedAllocations.length) {
-      setInvoiceAllocationError('اختر قطعة أرض واحدة على الأقل وأدخل مبلغ المصروف المخصص لها.');
-      setInvoiceModalError('يرجى اختيار قطعة الأرض وتحديد مبلغ المصروف.');
-      return;
-    }
     setSaving(true);
     setError(null);
     try {
@@ -226,7 +221,7 @@ export const SupplierPaymentsPage: React.FC = () => {
         amount,
         invoice_date: invoiceForm.invoice_date,
         due_date: invoiceForm.due_date || undefined,
-        land_allocations: normalizedAllocations,
+        land_allocations: normalizedAllocations.length > 0 ? normalizedAllocations : undefined,
       };
       const createdInvoice = await createSupplierInvoiceApi(payload);
       setInvoiceReceipt(null);
@@ -236,12 +231,12 @@ export const SupplierPaymentsPage: React.FC = () => {
       if (Math.abs(amount - receiptTotal) <= tolerance && createdInvoice?.id) {
         try {
           await matchSupplierInvoiceApi(createdInvoice.id);
-          setNotice('تم تسجيل فاتورة المورد وترحيل مصروفها وإجراء المطابقة الثلاثية تلقائيًا ✅ — الفاتورة جاهزة للدفع.');
+          setNotice('تم تسجيل فاتورة المورد وإجراء المطابقة الثلاثية تلقائيًا ✅ — الفاتورة جاهزة للدفع.');
         } catch {
           setNotice('تم تسجيل الفاتورة بنجاح. لم تتم المطابقة التلقائية — يمكنك تنفيذها يدويًا من أرشيف الفواتير.');
         }
       } else {
-        setNotice('تم تسجيل فاتورة المورد وترحيل مصروفها على قطع الأراضي بنجاح ✅');
+        setNotice('تم تسجيل فاتورة المورد بنجاح ✅' + (normalizedAllocations.length > 0 ? ' وتم ترحيل المصروف على قطع الأراضي.' : ''));
       }
       await Promise.all([refreshReceipts(), refreshInvoices(), refreshAccounts(), refreshParcels()]);
     } catch (err) {

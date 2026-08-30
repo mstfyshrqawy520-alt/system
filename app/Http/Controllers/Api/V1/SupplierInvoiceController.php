@@ -58,7 +58,7 @@ class SupplierInvoiceController extends Controller
             $validated['invoice_number'],
             $validated['invoice_date'] ?? null,
             $validated['due_date'] ?? null,
-            $validated['land_allocations'],
+            $validated['land_allocations'] ?? [],
             $validated['notes'] ?? null,
         );
 
