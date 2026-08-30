@@ -361,6 +361,7 @@ export const PurchaseRequestForm: React.FC<Props> = ({
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="القسم المطلوب منه الشراء" required error={fieldErrors.targetDepartment}>
             <Select
               id="pr-form-target-department"
               value={targetDepartmentId || ''}
