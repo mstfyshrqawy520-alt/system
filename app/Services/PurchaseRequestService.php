@@ -110,25 +110,25 @@ class PurchaseRequestService
 
             $isExecutiveRequester = $user->hasRole('general_manager');
             $assignedManager = $targetDepartment->manager;
-            $siteEngineer = $targetDepartment->siteEngineer;
+            if (!$assignedManager) {
+                $assignedManager = User::where('department_id', $targetDepartment->id)
+                    ->where('is_active', true)
+                    ->whereHas('roles', fn ($q) => $q->where('slug', 'reviewer'))
+                    ->first();
+            }
 
             // Backward compatibility for old clients/drafts that still send explicit assignments.
             if (!$assignedManager && !empty($data['reviewer_user_id'])) {
                 $assignedManager = User::query()->whereKey((int) $data['reviewer_user_id'])->where('is_active', true)->first();
             }
-            if (!$siteEngineer && !empty($data['site_engineer_user_id'])) {
+            $siteEngineer = null;
+            if (!empty($data['site_engineer_user_id'])) {
                 $siteEngineer = User::query()->whereKey((int) $data['site_engineer_user_id'])->where('is_active', true)->first();
             }
 
             if (!$assignedManager && !$user->hasRole('general_manager')) {
                 throw ValidationException::withMessages([
-                    'target_department_id' => ['لا يمكن إرسال الطلب قبل تعيين مدير للقسم المستهدف.'],
-                ]);
-            }
-
-            if (!$isOffice && !$siteEngineer) {
-                throw ValidationException::withMessages([
-                    'target_department_id' => ['لا يمكن إرسال الطلب قبل تعيين مهندس موقع للقسم المستهدف.'],
+                    'target_department_id' => ['لا يمكن إرسال الطلب قبل تعيين مراجع أو مدير للقسم المستهدف.'],
                 ]);
             }
 
@@ -205,16 +205,19 @@ class PurchaseRequestService
                 if (!$targetDepartment) {
                     throw ValidationException::withMessages(['target_department_id' => ['اختر قسمًا مستهدفًا صحيحًا.']]);
                 }
-                if (!$targetDepartment->manager && !$user->hasRole('general_manager')) {
-                    throw ValidationException::withMessages(['target_department_id' => ['القسم المستهدف لا يحتوي على مدير قسم معين بعد.']]);
+                $assignedManager = $targetDepartment->manager;
+                if (!$assignedManager) {
+                    $assignedManager = User::where('department_id', $targetDepartment->id)
+                        ->where('is_active', true)
+                        ->whereHas('roles', fn ($q) => $q->where('slug', 'reviewer'))
+                        ->first();
                 }
-                if (!$isOffice && !$targetDepartment->siteEngineer) {
-                    throw ValidationException::withMessages(['target_department_id' => ['القسم المستهدف لا يحتوي على مهندس موقع معين بعد.']]);
+                if (!$assignedManager && !$user->hasRole('general_manager')) {
+                    throw ValidationException::withMessages(['target_department_id' => ['القسم المستهدف لا يحتوي على مدير قسم أو مراجع معين بعد.']]);
                 }
                 $isExecutiveRequester = $user->hasRole('general_manager');
                 $updateFields['target_department_id'] = $targetDepartment->id;
-                $updateFields['reviewer_user_id'] = $isExecutiveRequester ? null : $targetDepartment->manager?->id;
-                $updateFields['site_engineer_user_id'] = $isOffice ? null : $targetDepartment->siteEngineer?->id;
+                $updateFields['reviewer_user_id'] = $isExecutiveRequester ? null : $assignedManager?->id;
             }
             $simpleFields = ['priority', 'notes'];
             foreach ($simpleFields as $field) {
