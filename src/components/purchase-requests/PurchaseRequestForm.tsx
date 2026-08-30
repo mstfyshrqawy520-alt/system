@@ -361,17 +361,29 @@ export const PurchaseRequestForm: React.FC<Props> = ({
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="القسم المطلوب منه الشراء" required error={fieldErrors.targetDepartment} helperText={requestType === 'OFFICE_SUPPLIES' ? 'سيتم توجيه الطلب إلى مدير القسم للمراجعة، والاستلام يتم من قبلك مباشرة.' : 'سيتم توجيه الطلب تلقائيًا إلى مدير القسم ثم مهندس الموقع التابع له.'}>
-            <SearchableSelect
-              options={departmentSelectOptions}
+            <Select
+              id="pr-form-target-department"
               value={targetDepartmentId || ''}
-              onChange={(val) => setTargetDepartmentId(val ? Number(val) : '')}
-              disabled={isLoadingDepartments}
-              placeholder={isLoadingDepartments ? 'جاري تحميل الأقسام...' : 'اختر أو ابحث عن القسم'}
-              searchPlaceholder="ابحث باسم القسم أو الكود أو المدير..."
-              emptyMessage="لا يوجد قسم بهذا الاسم"
+              onChange={(e) => setTargetDepartmentId(e.target.value ? Number(e.target.value) : '')}
+              disabled={isLoadingDepartments || departmentOptions.length === 0}
               error={Boolean(fieldErrors.targetDepartment)}
-            />
+              className="font-bold text-slate-100 bg-slate-950 border-slate-700"
+            >
+              <option value="" disabled>-- اختر القسم المستهدف --</option>
+              {departmentOptions.map((dept) => {
+                const icon =
+                  dept.code === 'EXECUTION' ? '🏗️' :
+                  dept.code === 'BUILDINGS' ? '🏢' :
+                  dept.code === 'FINISHING' ? '🎨' :
+                  dept.code === 'LICENSES' ? '📜' :
+                  dept.code === 'BUFFET' ? '☕' : '🏢';
+                return (
+                  <option key={dept.id} value={dept.id}>
+                    {icon} {dept.name} {dept.manager?.name ? `— (المراجع: ${dept.manager.name})` : ''}
+                  </option>
+                );
+              })}
+            </Select>
             {targetDepartmentId && (() => {
               const selectedDepartment = departmentOptions.find((department) => department.id === Number(targetDepartmentId));
               return selectedDepartment ? (

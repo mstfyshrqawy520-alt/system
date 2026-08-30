@@ -461,23 +461,36 @@ const CreatePurchaseRequestPage: React.FC = () => {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="القسم المستهدف" required error={showValidation ? validation.targetDepartment : undefined}>
-            <SearchableSelect
-              options={departmentSelectOptions}
+            <Select
+              id="pr-target-department"
               value={data.target_department_id || ''}
-              onChange={(val) =>
+              onChange={(e) =>
                 setData({
                   ...data,
-                  target_department_id: val ? Number(val) : undefined,
+                  target_department_id: e.target.value ? Number(e.target.value) : undefined,
                   reviewer_user_id: undefined,
                   site_engineer_user_id: undefined,
                 })
               }
               disabled={departmentLoading || departmentOptions.length === 0}
-              placeholder={departmentLoading ? 'جاري تحميل الأقسام...' : 'اختر أو ابحث عن القسم'}
-              searchPlaceholder="ابحث باسم القسم أو الكود أو المدير..."
-              emptyMessage="لا يوجد قسم بهذا الاسم"
               error={Boolean(showValidation && validation.targetDepartment)}
-            />
+              className="font-bold text-slate-100 bg-slate-950 border-slate-700"
+            >
+              <option value="" disabled>-- اختر القسم المستهدف --</option>
+              {departmentOptions.map((dept) => {
+                const icon =
+                  dept.code === 'EXECUTION' ? '🏗️' :
+                  dept.code === 'BUILDINGS' ? '🏢' :
+                  dept.code === 'FINISHING' ? '🎨' :
+                  dept.code === 'LICENSES' ? '📜' :
+                  dept.code === 'BUFFET' ? '☕' : '🏢';
+                return (
+                  <option key={dept.id} value={dept.id}>
+                    {icon} {dept.name} {dept.manager?.name ? `— (المراجع: ${dept.manager.name})` : ''}
+                  </option>
+                );
+              })}
+            </Select>
           </FormField>
 
           <FormField label="تاريخ الاحتياج" required error={showValidation ? validation.dateNeeded : undefined}>
