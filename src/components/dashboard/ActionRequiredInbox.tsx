@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import QuickPeekDrawer, { PeekType } from '../ui/QuickPeekDrawer';
 import { getSiteEngineerReceiverOptionsApi } from '../../api/purchaseRequests';
+import { useAuth } from '../../context/AuthContext';
 
 export interface ActionInboxItemDetail {
   description: string;
@@ -66,6 +67,12 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
   onItemActionComplete,
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isReviewer = Boolean(
+    user?.roles?.some((r) => r.slug === 'reviewer') ||
+    roleName?.includes('قسم') ||
+    roleName?.includes('مراجع')
+  );
 
   // Drawer Peek State
   const [peekState, setPeekState] = useState<{ isOpen: boolean; type: PeekType; id: number | null }>({
@@ -96,7 +103,7 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
   const [isLoadingReceivers, setIsLoadingReceivers] = useState(false);
 
   useEffect(() => {
-    if (approveModal.isOpen && approveModal.item?.type === 'PR') {
+    if (approveModal.isOpen && approveModal.item?.type === 'PR' && isReviewer) {
       setIsLoadingReceivers(true);
       setReceiverError(null);
       getSiteEngineerReceiverOptionsApi()
@@ -112,7 +119,7 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
         .catch(() => {})
         .finally(() => setIsLoadingReceivers(false));
     }
-  }, [approveModal.isOpen, approveModal.item]);
+  }, [approveModal.isOpen, approveModal.item, isReviewer]);
 
   const [rejectModal, setRejectModal] = useState<{
     isOpen: boolean;
@@ -143,7 +150,7 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
 
   const handleConfirmDirectApprove = async () => {
     if (!approveModal.item?.onDirectApprove) return;
-    if (approveModal.item.type === 'PR' && !selectedEngineerId) {
+    if (approveModal.item.type === 'PR' && isReviewer && !selectedEngineerId) {
       setReceiverError('يجب تحديد مهندس الموقع / مسؤول الاستلام قبل اعتماد الطلب.');
       return;
     }
@@ -153,7 +160,7 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
       await approveModal.item.onDirectApprove(
         approveModal.item,
         approveModal.comment,
-        selectedEngineerId ? Number(selectedEngineerId) : undefined
+        isReviewer && selectedEngineerId ? Number(selectedEngineerId) : undefined
       );
       setApproveModal({ isOpen: false, item: null, comment: '', isSubmitting: false });
       onItemActionComplete?.();
@@ -510,7 +517,7 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
             )}
           </div>
 
-          {approveModal.item?.type === 'PR' && (
+          {approveModal.item?.type === 'PR' && isReviewer && (
             <div>
               <label className="block text-xs font-bold text-slate-300 mb-1.5">
                 مهندس الموقع / مسؤول استلام المواد بالموقع <span className="text-rose-400">*</span>
