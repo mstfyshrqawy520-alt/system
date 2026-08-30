@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import QuickPeekDrawer, { PeekType } from '../ui/QuickPeekDrawer';
-import { getSiteEngineerReceiverOptionsApi } from '../../api/reviewer';
+import { getSiteEngineerReceiverOptionsApi } from '../../api/purchaseRequests';
 
 export interface ActionInboxItemDetail {
   description: string;
