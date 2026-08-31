@@ -16,7 +16,7 @@ use Illuminate\Validation\ValidationException;
 class ReviewerPurchaseRequestService
 {
     /**
-     * Determine if the request is explicitly assigned to the authenticated reviewer.
+     * Determine if the request is explicitly assigned to the authenticated reviewer or belongs to their department.
      */
     public function canUserReviewRequest(User $user, PurchaseRequest $request): bool
     {
@@ -24,25 +24,50 @@ class ReviewerPurchaseRequestService
             return true;
         }
 
-        $request->loadMissing('targetDepartment');
+        $request->loadMissing(['targetDepartment', 'department']);
 
-        if (! $request->targetDepartment
-            || $request->targetDepartment->manager_user_id === null) {
-            return false;
+        // 1. Explicitly assigned reviewer on the request
+        if ($request->reviewer_user_id !== null && (int) $request->reviewer_user_id === (int) $user->id) {
+            return true;
         }
 
-        return ($request->reviewer_user_id !== null
-                && (int) $request->reviewer_user_id === (int) $user->id)
-            || ($request->targetDepartment?->manager_user_id !== null
-                && (int) $request->targetDepartment->manager_user_id === (int) $user->id)
-            || ($request->reviewer_user_id === null
-                && $request->target_department_id === null
-                && $user->department_id !== null
-                && (int) $user->department_id === (int) $request->department_id);
+        // 2. Designated manager of target department
+        if ($request->targetDepartment?->manager_user_id !== null && (int) $request->targetDepartment->manager_user_id === (int) $user->id) {
+            return true;
+        }
+
+        // 3. Designated manager of requesting department
+        if ($request->department?->manager_user_id !== null && (int) $request->department->manager_user_id === (int) $user->id) {
+            return true;
+        }
+
+        // 4. Any reviewer belonging to the target department OR the requesting department
+        if ($user->department_id !== null) {
+            $userDeptId = (int) $user->department_id;
+            $targetDeptId = $request->target_department_id ? (int) $request->target_department_id : null;
+            $requestDeptId = $request->department_id ? (int) $request->department_id : null;
+
+            if ($targetDeptId !== null && $userDeptId === $targetDeptId) {
+                return true;
+            }
+
+            if ($requestDeptId !== null && $userDeptId === $requestDeptId) {
+                return true;
+            }
+        }
+
+        // 5. Fallback for unassigned or general review
+        if ($request->reviewer_user_id === null && $request->target_department_id === null) {
+            if ($user->department_id !== null && $request->department_id !== null && (int) $user->department_id === (int) $request->department_id) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
-     * Get reviewable PRs assigned to the Reviewer, with a legacy fallback for unassigned requests in their department.
+     * Get reviewable PRs assigned to the Reviewer or within their department scope.
      */
     public function getReviewableRequests(User $user, array $filters = [], int $perPage = 200): LengthAwarePaginator
     {
@@ -57,11 +82,7 @@ class ReviewerPurchaseRequestService
             ->whereIn('status', [
                 'SUBMITTED', 'UNDER_REVIEW',
                 'PENDING_PROCUREMENT_APPROVAL', 'PENDING_EXECUTIVE_APPROVAL', 'APPROVED_BY_REVIEWER', 'APPROVED_BY_PROCUREMENT', 'REJECTED',
-            ])
-            ->whereHas('targetDepartment', function ($departmentQuery): void {
-                $departmentQuery
-                    ->whereNotNull('manager_user_id');
-            });
+            ]);
 
         if (! $user->hasRole('admin')) {
             $query->where(function ($scopeQuery) use ($user) {
@@ -69,11 +90,14 @@ class ReviewerPurchaseRequestService
                     ->orWhereHas('targetDepartment', function ($departmentQuery) use ($user) {
                         $departmentQuery->where('manager_user_id', $user->id);
                     })
-                    ->orWhere(function ($legacyQuery) use ($user) {
-                        $legacyQuery->whereNull('reviewer_user_id')
-                            ->whereNull('target_department_id')
-                            ->where('department_id', $user->department_id);
+                    ->orWhereHas('department', function ($departmentQuery) use ($user) {
+                        $departmentQuery->where('manager_user_id', $user->id);
                     });
+
+                if ($user->department_id !== null) {
+                    $scopeQuery->orWhere('department_id', $user->department_id)
+                        ->orWhere('target_department_id', $user->department_id);
+                }
             });
         }
 

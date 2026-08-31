@@ -171,7 +171,12 @@ class PurchaseRequestController extends Controller
             || $user->hasAnyRole(['admin', 'general_manager', 'procurement_manager', 'accountant', 'warehouse_keeper'])
             || $pr->reviewer_user_id === $user->id
             || $pr->site_engineer_user_id === $user->id
-            || ($user->hasRole('reviewer') && ($pr->target_department_id === $user->department_id || $pr->targetDepartment?->manager_user_id === $user->id))
+            || ($user->hasRole('reviewer') && (
+                $pr->target_department_id === $user->department_id
+                || $pr->department_id === $user->department_id
+                || $pr->targetDepartment?->manager_user_id === $user->id
+                || $pr->department?->manager_user_id === $user->id
+            ))
             || $user->hasAnyPermission([
                 'purchase_request.view',
                 'purchase_request.review',
