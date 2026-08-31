@@ -79,10 +79,7 @@ class ReviewerPurchaseRequestService
             'assignedReviewer:id,name,email,department_id',
             'items:id,purchase_request_id,item_id,item_description,quantity,uom,item_reference,region',
         ])
-            ->whereIn('status', [
-                'SUBMITTED', 'UNDER_REVIEW',
-                'PENDING_PROCUREMENT_APPROVAL', 'PENDING_EXECUTIVE_APPROVAL', 'APPROVED_BY_REVIEWER', 'APPROVED_BY_PROCUREMENT', 'REJECTED',
-            ]);
+            ->where('status', '!=', 'DRAFT');
 
         if (! $user->hasRole('admin')) {
             $query->where(function ($scopeQuery) use ($user) {

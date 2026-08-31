@@ -37,6 +37,18 @@ const priorityLabels: Record<string, string> = {
   URGENT: 'عاجلة',
 };
 
+const REVIEWER_PENDING_STATUSES = new Set(['SUBMITTED', 'UNDER_REVIEW']);
+const REVIEWER_APPROVED_STATUSES = new Set([
+  'PENDING_EXECUTIVE_APPROVAL',
+  'PENDING_PROCUREMENT_APPROVAL',
+  'APPROVED_BY_REVIEWER',
+  'APPROVED_BY_PROCUREMENT',
+  'PENDING_ACCOUNTING_APPROVAL',
+  'APPROVED_BY_ACCOUNTING',
+  'PENDING_QUOTE_RECOMMENDATIONS',
+  'PENDING_EXECUTIVE_QUOTE_DECISION',
+]);
+
 const REVIEWER_EDITABLE_STATUSES = ['UNDER_REVIEW', 'PENDING_PROCUREMENT_APPROVAL', 'APPROVED_BY_REVIEWER'];
 
 import { useRealtimeRefresh, emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
@@ -89,9 +101,13 @@ export const ReviewerRequestsPage: React.FC = () => {
   };
 
   const filteredRequests = requests.filter((request) => {
-    const matchesActive = activeFilter === 'ALL'
-      || (activeFilter === 'PENDING' ? request.status === 'SUBMITTED' : request.status === activeFilter);
-    return matchesActive;
+    if (activeFilter === 'ALL') return true;
+    if (activeFilter === 'PENDING') return REVIEWER_PENDING_STATUSES.has(request.status);
+    if (activeFilter === 'APPROVED') return REVIEWER_APPROVED_STATUSES.has(request.status);
+    if (activeFilter === 'SUBMITTED') return request.status === 'SUBMITTED';
+    if (activeFilter === 'UNDER_REVIEW') return request.status === 'UNDER_REVIEW';
+    if (activeFilter === 'REJECTED') return request.status === 'REJECTED';
+    return request.status === activeFilter;
   });
 
   if (isLoading) {

@@ -20,6 +20,17 @@ import ActionRequiredInbox, { ActionInboxItem } from '../../components/dashboard
 
 import { useRealtimeRefresh, emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
 
+const EMPLOYEE_APPROVED_STATUSES = new Set([
+  'APPROVED_BY_REVIEWER',
+  'PENDING_EXECUTIVE_APPROVAL',
+  'PENDING_PROCUREMENT_APPROVAL',
+  'APPROVED_BY_PROCUREMENT',
+  'PENDING_ACCOUNTING_APPROVAL',
+  'APPROVED_BY_ACCOUNTING',
+  'PENDING_QUOTE_RECOMMENDATIONS',
+  'PENDING_EXECUTIVE_QUOTE_DECISION',
+]);
+
 export const EmployeeDashboardPage: React.FC = () => {
   const { user, hasPermission } = useAuth();
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
@@ -56,9 +67,7 @@ export const EmployeeDashboardPage: React.FC = () => {
   const pendingCount = requests.filter(
     (r) => r.status === 'SUBMITTED' || r.status === 'UNDER_REVIEW'
   ).length;
-  const approvedCount = requests.filter((r) =>
-    r.status === 'APPROVED_BY_REVIEWER' || r.status === 'PENDING_PROCUREMENT_APPROVAL' || r.status === 'APPROVED_BY_PROCUREMENT'
-  ).length;
+  const approvedCount = requests.filter((r) => EMPLOYEE_APPROVED_STATUSES.has(r.status)).length;
   const rejectedCount = requests.filter((r) => r.status === 'REJECTED').length;
 
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
@@ -67,7 +76,7 @@ export const EmployeeDashboardPage: React.FC = () => {
     if (activeFilter === 'ALL') return true;
     if (activeFilter === 'DRAFT') return r.status === 'DRAFT';
     if (activeFilter === 'PENDING') return r.status === 'SUBMITTED' || r.status === 'UNDER_REVIEW';
-    if (activeFilter === 'APPROVED') return r.status === 'APPROVED_BY_REVIEWER' || r.status === 'PENDING_PROCUREMENT_APPROVAL' || r.status === 'APPROVED_BY_PROCUREMENT';
+    if (activeFilter === 'APPROVED') return EMPLOYEE_APPROVED_STATUSES.has(r.status);
     if (activeFilter === 'REJECTED') return r.status === 'REJECTED';
     return true;
   });

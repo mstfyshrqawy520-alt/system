@@ -19,6 +19,17 @@ import ActionRequiredInbox from '../../components/dashboard/ActionRequiredInbox'
 
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
 
+const REVIEWER_APPROVED_STATUSES = new Set([
+  'PENDING_EXECUTIVE_APPROVAL',
+  'PENDING_PROCUREMENT_APPROVAL',
+  'APPROVED_BY_REVIEWER',
+  'APPROVED_BY_PROCUREMENT',
+  'PENDING_ACCOUNTING_APPROVAL',
+  'APPROVED_BY_ACCOUNTING',
+  'PENDING_QUOTE_RECOMMENDATIONS',
+  'PENDING_EXECUTIVE_QUOTE_DECISION',
+]);
+
 export const ReviewerDashboardPage: React.FC = () => {
   const { user, hasPermission } = useAuth();
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
@@ -46,7 +57,7 @@ export const ReviewerDashboardPage: React.FC = () => {
 
   const submittedCount = requests.filter((r) => r.status === 'SUBMITTED').length;
   const underReviewCount = requests.filter((r) => r.status === 'UNDER_REVIEW').length;
-  const approvedCount = requests.filter((r) => r.status === 'APPROVED_BY_REVIEWER' || r.status === 'PENDING_PROCUREMENT_APPROVAL').length;
+  const approvedCount = requests.filter((r) => REVIEWER_APPROVED_STATUSES.has(r.status)).length;
   const rejectedCount = requests.filter((r) => r.status === 'REJECTED').length;
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED'>('ALL');
 
@@ -54,7 +65,7 @@ export const ReviewerDashboardPage: React.FC = () => {
     if (activeFilter === 'ALL') return true;
     if (activeFilter === 'SUBMITTED') return r.status === 'SUBMITTED';
     if (activeFilter === 'UNDER_REVIEW') return r.status === 'UNDER_REVIEW';
-    if (activeFilter === 'APPROVED') return r.status === 'APPROVED_BY_REVIEWER' || r.status === 'PENDING_PROCUREMENT_APPROVAL';
+    if (activeFilter === 'APPROVED') return REVIEWER_APPROVED_STATUSES.has(r.status);
     if (activeFilter === 'REJECTED') return r.status === 'REJECTED';
     return true;
   });

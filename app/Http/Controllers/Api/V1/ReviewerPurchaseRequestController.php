@@ -31,10 +31,7 @@ class ReviewerPurchaseRequestController extends Controller
         $filters = $request->validate([
             'request_number' => ['nullable', 'string', 'max:35'],
             'requester_name' => ['nullable', 'string', 'max:150'],
-            'status' => ['nullable', Rule::in([
-                'SUBMITTED', 'UNDER_REVIEW',
-                'PENDING_PROCUREMENT_APPROVAL', 'APPROVED_BY_REVIEWER', 'APPROVED_BY_PROCUREMENT', 'REJECTED',
-            ])],
+            'status' => ['nullable', 'string', 'max:60'],
             'priority' => ['nullable', Rule::in(['LOW', 'NORMAL', 'HIGH', 'URGENT'])],
             'from_date' => ['nullable', 'date'],
             'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
