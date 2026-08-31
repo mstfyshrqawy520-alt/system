@@ -26,6 +26,7 @@ import SystemEventTimeline from '../../components/ui/SystemEventTimeline';
 import PurchaseRequestTimeline from '../../components/procurement/PurchaseRequestTimeline';
 import OfficeReceiptModal from '../../components/purchase-requests/OfficeReceiptModal';
 import { getUnitLabel } from '../../utils/units';
+import { UnifiedNotesCard } from '../../components/common/UnifiedNotesCard';
 
 const REQUESTER_EDITABLE_STATUSES = ['DRAFT', 'SUBMITTED', 'UNDER_REVIEW'];
 const REVIEWER_DECISION_STATUSES = ['REJECTED', 'APPROVED_BY_REVIEWER', 'PENDING_PROCUREMENT_APPROVAL', 'APPROVED_BY_PROCUREMENT', 'PO_DRAFT', 'ISSUED'];
@@ -352,6 +353,8 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      <UnifiedNotesCard request={requestData} />
 
       <SystemEventTimeline entity="purchase_request" entityId={requestData.id} />
 

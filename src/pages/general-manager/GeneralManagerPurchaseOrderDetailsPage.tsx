@@ -9,6 +9,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import { getUnitLabel } from '../../utils/units';
 import PrintablePO from '../../components/procurement/PrintablePO';
+import { UnifiedNotesCard } from '../../components/common/UnifiedNotesCard';
 
 export const GeneralManagerPurchaseOrderDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -230,6 +231,8 @@ export const GeneralManagerPurchaseOrderDetailsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <UnifiedNotesCard purchaseOrder={po} />
 
       {/* Printable PO Modal */}
       {printPo && (

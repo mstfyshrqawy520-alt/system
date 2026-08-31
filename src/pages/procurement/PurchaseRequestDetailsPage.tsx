@@ -7,6 +7,7 @@ import ErrorMessage from '../../components/ErrorMessage';
 import { useAuth } from '../../context/AuthContext';
 import { parseApiError } from '../../utils/apiError';
 import { getUnitLabel } from '../../utils/units';
+import { UnifiedNotesCard } from '../../components/common/UnifiedNotesCard';
 
 export const ProcurementPurchaseRequestDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -123,6 +124,8 @@ export const ProcurementPurchaseRequestDetailsPage: React.FC = () => {
           </table>
         </div>
       </div>
+
+      <UnifiedNotesCard request={pr} />
     </div>
   );
 };

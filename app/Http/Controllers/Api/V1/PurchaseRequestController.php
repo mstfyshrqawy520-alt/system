@@ -153,14 +153,17 @@ class PurchaseRequestController extends Controller
     public function show(Request $request, int $id): JsonResponse|PurchaseRequestResource
     {
         $pr = PurchaseRequest::with([
-            'requester',
+            'requester.roles',
             'department',
             'targetDepartment.manager',
             'targetDepartment.siteEngineer',
-            'assignedReviewer',
-            'siteEngineer',
+            'assignedReviewer.roles',
+            'siteEngineer.roles',
             'items.item',
-            'approvalHistory.actor',
+            'approvalHistory.actor.roles',
+            'quotes.supplier',
+            'quotes.recommendations.user.roles',
+            'selectedQuote.supplier',
             'attachments.uploadedBy',
             'purchaseOrders.supplier',
             'purchaseOrders.receipts',

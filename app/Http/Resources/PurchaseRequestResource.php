@@ -154,7 +154,11 @@ class PurchaseRequestResource extends JsonResource
                     'to_state' => $entry->to_state,
                     'comments' => $entry->comments,
                     'created_at' => $entry->created_at?->toIso8601String(),
-                    'actor' => $entry->relationLoaded('actor') && $entry->actor ? ['name' => $entry->actor->name] : null,
+                    'actor' => $entry->relationLoaded('actor') && $entry->actor ? [
+                        'id' => $entry->actor->id,
+                        'name' => $entry->actor->name,
+                        'role' => $entry->actor->relationLoaded('roles') ? ($entry->actor->roles->pluck('name')->first() ?? $entry->actor->roles->pluck('slug')->first()) : null,
+                    ] : null,
                 ])->values();
             }),
             'attachments' => $this->whenLoaded('attachments', function () {

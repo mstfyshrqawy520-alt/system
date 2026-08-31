@@ -22,6 +22,7 @@ import PurchaseRequestTimeline from '../../components/procurement/PurchaseReques
 import RejectRequestDialog from '../../components/reviewer/RejectRequestDialog';
 import ErrorMessage from '../../components/ErrorMessage';
 import { getUnitLabel } from '../../utils/units';
+import { UnifiedNotesCard } from '../../components/common/UnifiedNotesCard';
 
 interface DraftItemState extends PurchaseRequestItemFormInput {
   isExcluded?: boolean;
@@ -808,6 +809,9 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Universal Notes and Decisions Trail */}
+              <UnifiedNotesCard request={selected} title="سجل الملاحظات والقرارات السابقة للطلب" />
 
               {/* Error Message inside Modal */}
               {error && (

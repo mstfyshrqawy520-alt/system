@@ -14,6 +14,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import { getUnitLabel } from '../../utils/units';
 import SystemEventTimeline from '../../components/ui/SystemEventTimeline';
+import { UnifiedNotesCard } from '../../components/common/UnifiedNotesCard';
 
 export const PurchaseOrderDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -281,6 +282,8 @@ export const PurchaseOrderDetailsPage: React.FC = () => {
           </div>
         </div>
       </Card>
+
+      <UnifiedNotesCard purchaseOrder={po} />
 
       <SystemEventTimeline entity="purchase_order" entityId={po.id} />
 

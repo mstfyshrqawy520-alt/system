@@ -18,13 +18,17 @@ class GeneralManagerPurchaseRequestService
     {
         return PurchaseRequest::query()
             ->with([
-                'requester:id,name,email',
+                'requester.roles',
                 'department:id,name,code',
+                'targetDepartment:id,name,code',
                 'directSupplier:id,company_name',
-                'assignedReviewer:id,name,email,department_id',
-                'siteEngineer:id,name,email,department_id',
+                'assignedReviewer.roles',
+                'siteEngineer.roles',
                 'items.item',
-                'approvalHistory.actor',
+                'approvalHistory.actor.roles',
+                'quotes.supplier',
+                'quotes.recommendations.user.roles',
+                'selectedQuote.supplier',
             ])
             ->where('status', self::PENDING_STATUS)
             ->where(function ($query): void {
@@ -38,13 +42,17 @@ class GeneralManagerPurchaseRequestService
     {
         return PurchaseRequest::query()
             ->with([
-                'requester:id,name,email',
+                'requester.roles',
                 'department:id,name,code',
+                'targetDepartment:id,name,code',
                 'directSupplier:id,company_name',
-                'assignedReviewer:id,name,email,department_id',
-                'siteEngineer:id,name,email,department_id',
+                'assignedReviewer.roles',
+                'siteEngineer.roles',
                 'items.item',
-                'approvalHistory.actor',
+                'approvalHistory.actor.roles',
+                'quotes.supplier',
+                'quotes.recommendations.user.roles',
+                'selectedQuote.supplier',
             ])
             ->where('status', self::PENDING_STATUS)
             ->where(function ($query): void {

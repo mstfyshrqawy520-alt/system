@@ -11,6 +11,7 @@ import { parseApiError } from '../../utils/apiError';
 import { getUnitLabel } from '../../utils/units';
 import TableColumnFilters from '../../components/ui/TableColumnFilters';
 import { getDefaultDateFrom, getTodayInputDate } from '../../utils/dateFilters';
+import { UnifiedNotesCard } from '../../components/common/UnifiedNotesCard';
 
 type DecisionMode = 'recommend' | 'executive';
 
@@ -500,6 +501,8 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
                 );
               })}
             </div>
+
+            <UnifiedNotesCard request={request} title="سجل الملاحظات والقرارات السابقة لهذا الطلب" />
           </Card>
         );
       })}

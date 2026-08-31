@@ -15,6 +15,7 @@ import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { getUnitLabel } from '../../utils/units';
 import { tafqeetCurrency } from '../../utils/tafqeet';
+import { UnifiedNotesCard } from '../../components/common/UnifiedNotesCard';
 
 const getLocalDateIso = () => {
   const now = new Date();
@@ -350,6 +351,8 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                 ))}
               </div>
             </div>
+
+            <UnifiedNotesCard request={pr} title="سجل الملاحظات والقرارات السابقة للطلب" />
           </Card>
         )}
 

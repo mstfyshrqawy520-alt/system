@@ -13,6 +13,7 @@ import { Card } from '../../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import { getUnitLabel } from '../../utils/units';
 import SystemEventTimeline from '../../components/ui/SystemEventTimeline';
+import { UnifiedNotesCard } from '../../components/common/UnifiedNotesCard';
 
 const PRIORITY_LABELS: Record<string, string> = {
   LOW: 'منخفضة',
@@ -284,48 +285,9 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
         </div>
       </div>
 
+      <UnifiedNotesCard request={requestData} />
+
       <SystemEventTimeline entity="purchase_request" entityId={requestData.id} />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
-        <Card className="space-y-2">
-          <h3 className="font-bold text-slate-100 flex items-center gap-2">
-            <span>📝</span>
-            <span>الملاحظات</span>
-          </h3>
-          <p className="whitespace-pre-wrap text-slate-300">{requestData.notes || 'لا توجد ملاحظات.'}</p>
-          {requestData.rejection_reason && (
-            <p className="text-rose-400 pt-2 border-t border-slate-800">
-              <strong className="font-bold">سبب الرفض:</strong> {requestData.rejection_reason}
-            </p>
-          )}
-        </Card>
-
-        <Card className="space-y-3">
-          <h3 className="font-bold text-slate-100 flex items-center gap-2">
-            <span>📜</span>
-            <span>سجل المراجعة</span>
-          </h3>
-          {requestData.approval_history?.length ? (
-            <ol className="space-y-3">
-              {requestData.approval_history.map((entry, index) => (
-                <li key={`${entry.action}-${index}`} className="border-r-2 border-slate-800 pr-3">
-                  <div className="font-bold text-slate-200">{ACTION_LABELS[entry.action] || 'إجراء في الطلب'}</div>
-                  <div className="text-[10px] text-slate-500 font-mono">
-                    {entry.actor?.name || 'غير معروف'} · {entry.created_at ? new Date(entry.created_at).toLocaleString('ar-EG') : '—'}
-                  </div>
-                  {entry.comments && (
-                    <div className="text-slate-300 mt-1 bg-slate-950/60 p-2 rounded-lg border border-slate-800 font-mono text-[11px]">
-                      {entry.comments}
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="text-slate-400">لا يوجد سجل مراجعة متاح.</p>
-          )}
-        </Card>
-      </div>
     </div>
   );
 };
