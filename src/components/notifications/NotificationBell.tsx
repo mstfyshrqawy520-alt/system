@@ -315,27 +315,53 @@ export const NotificationBell: React.FC = () => {
                   <div
                     key={n.id}
                     onClick={() => handleNotificationClick(n)}
-                    className={`p-3.5 hover:bg-slate-800/70 transition-colors cursor-pointer space-y-2 ${
-                      isUnread ? 'bg-cyan-950/20 border-r-4 border-cyan-400' : 'bg-slate-900/40'
+                    className={`p-3.5 transition-all cursor-pointer space-y-2 border-b border-slate-800/60 ${
+                      isUnread
+                        ? 'bg-gradient-to-r from-cyan-950/50 via-slate-900 to-cyan-950/20 border-r-4 border-cyan-400 hover:bg-cyan-900/30 shadow-inner'
+                        : 'bg-slate-950/70 border-r-4 border-slate-700/40 opacity-75 hover:opacity-100 hover:bg-slate-900/80'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">{action.icon}</span>
-                        <span className="text-xs font-bold text-slate-100">{n.title}</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-base shrink-0">{action.icon}</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`text-xs ${isUnread ? 'font-black text-cyan-100' : 'font-bold text-slate-300'}`}>
+                              {n.title}
+                            </span>
+                            {isUnread ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shrink-0">
+                                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                                غير مقروء
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-slate-800/90 text-slate-400 border border-slate-700/50 shrink-0">
+                                ✓ مقروء
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                       <span className="text-[10px] font-mono text-slate-500 shrink-0">
                         {n.created_at ? n.created_at.slice(11, 16) : ''}
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-300 leading-5 line-clamp-2">{n.message}</p>
+                    <p className={`text-xs leading-5 line-clamp-2 ${isUnread ? 'text-slate-200' : 'text-slate-400'}`}>
+                      {n.message}
+                    </p>
 
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                        isUnread
+                          ? 'bg-cyan-950/80 text-cyan-300 border-cyan-800/70'
+                          : 'bg-slate-800 text-slate-400 border-slate-700'
+                      }`}>
                         {action.badgeLabel}
                       </span>
-                      <span className="text-xs font-bold text-cyan-400 flex items-center gap-1 group-hover:underline">
+                      <span className={`text-xs font-bold flex items-center gap-1 group-hover:underline ${
+                        isUnread ? 'text-cyan-300' : 'text-slate-400'
+                      }`}>
                         <span>{action.actionLabel}</span>
                         <span>←</span>
                       </span>

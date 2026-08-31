@@ -22,7 +22,7 @@ import {
   NotificationActionRoute,
 } from '../utils/notificationRouting';
 
-export type QuickFilterKey = 'ALL' | 'TODAY' | 'LAST_10_DAYS' | 'NEEDS_ACTION' | 'COMPLETED' | 'RETURNED';
+export type QuickFilterKey = 'ALL' | 'UNREAD' | 'READ' | 'TODAY' | 'LAST_10_DAYS' | 'NEEDS_ACTION' | 'COMPLETED' | 'RETURNED';
 
 interface StoredActionState {
   status: 'needs_action' | 'executing' | 'resolved' | 'failed' | 'archived';
@@ -312,6 +312,10 @@ export const NotificationsPage: React.FC = () => {
       const isReturned = (item.type || '').includes('returned') || (item.type || '').includes('rejected') || (item.title || '').includes('إرجاع') || (item.title || '').includes('مرفوض');
 
       switch (filter) {
+        case 'UNREAD':
+          return !item.read_at;
+        case 'READ':
+          return !!item.read_at;
         case 'TODAY':
           return !!itemDate && itemDate >= startOfToday;
         case 'LAST_10_DAYS':
@@ -334,6 +338,8 @@ export const NotificationsPage: React.FC = () => {
   const filterCounts = useMemo(() => {
     const counts: Record<QuickFilterKey, number> = {
       ALL: currentTabBaseList.length,
+      UNREAD: 0,
+      READ: 0,
       TODAY: 0,
       LAST_10_DAYS: 0,
       NEEDS_ACTION: 0,
@@ -342,6 +348,8 @@ export const NotificationsPage: React.FC = () => {
     };
 
     currentTabBaseList.forEach((item) => {
+      if (applyQuickFilter(item, 'UNREAD')) counts.UNREAD++;
+      if (applyQuickFilter(item, 'READ')) counts.READ++;
       if (applyQuickFilter(item, 'TODAY')) counts.TODAY++;
       if (applyQuickFilter(item, 'LAST_10_DAYS')) counts.LAST_10_DAYS++;
       if (applyQuickFilter(item, 'NEEDS_ACTION')) counts.NEEDS_ACTION++;
@@ -543,6 +551,31 @@ export const NotificationsPage: React.FC = () => {
 
             <button
               type="button"
+              onClick={() => updateQuickFilter('UNREAD')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                quickFilter === 'UNREAD'
+                  ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/30'
+                  : 'bg-slate-950 text-cyan-400 hover:text-cyan-300 border border-cyan-800/60'
+              }`}
+            >
+              <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span>غير مقروء ({filterCounts.UNREAD})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => updateQuickFilter('READ')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                quickFilter === 'READ'
+                  ? 'bg-slate-600 text-white shadow-sm font-black'
+                  : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+              }`}
+            >
+              <span>✓ مقروء ({filterCounts.READ})</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => updateQuickFilter('TODAY')}
               className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 quickFilter === 'TODAY'
@@ -642,13 +675,13 @@ export const NotificationsPage: React.FC = () => {
               <Card
                 key={notification.id}
                 className={`p-4 sm:p-5 flex flex-col gap-3 transition-all border ${
-                  status === 'needs_action'
-                    ? 'border-amber-500/50 bg-gradient-to-r from-slate-900 via-slate-900/95 to-amber-950/20 shadow-md shadow-amber-950/20'
-                    : status === 'failed'
-                    ? 'border-rose-500/60 bg-gradient-to-r from-slate-900 to-rose-950/20 shadow-md shadow-rose-950/20'
-                    : status === 'resolved'
-                    ? 'border-emerald-800/60 bg-slate-900/60'
-                    : 'border-slate-800 bg-slate-900/80'
+                  isUnread
+                    ? status === 'needs_action'
+                      ? 'border-amber-500/90 bg-gradient-to-r from-amber-950/30 via-slate-900 to-amber-950/15 shadow-xl shadow-amber-950/30 ring-1 ring-amber-500/40'
+                      : status === 'failed'
+                      ? 'border-rose-500/90 bg-gradient-to-r from-rose-950/30 via-slate-900 to-rose-950/15 shadow-xl shadow-rose-950/30 ring-1 ring-rose-500/40'
+                      : 'border-cyan-500/80 bg-gradient-to-r from-cyan-950/35 via-slate-900 to-cyan-950/15 shadow-xl shadow-cyan-950/40 ring-1 ring-cyan-500/35'
+                    : 'border-slate-800/80 bg-slate-950/70 opacity-80 hover:opacity-100 hover:border-slate-700 hover:bg-slate-900/80'
                 }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -656,13 +689,13 @@ export const NotificationsPage: React.FC = () => {
                   <div className="flex items-start gap-3.5 min-w-0">
                     <div
                       className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl border shadow-inner ${
-                        status === 'needs_action'
-                          ? 'bg-amber-500/20 text-amber-300 border-amber-400/40'
-                          : status === 'failed'
-                          ? 'bg-rose-500/20 text-rose-300 border-rose-400/40'
-                          : status === 'resolved'
-                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40'
-                          : 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30'
+                        isUnread
+                          ? status === 'needs_action'
+                            ? 'bg-amber-500/25 text-amber-200 border-amber-400/60 shadow-amber-500/20'
+                            : status === 'failed'
+                            ? 'bg-rose-500/25 text-rose-200 border-rose-400/60 shadow-rose-500/20'
+                            : 'bg-cyan-500/20 text-cyan-200 border-cyan-400/50 shadow-cyan-500/20'
+                          : 'bg-slate-800/90 text-slate-400 border-slate-700/60'
                       }`}
                     >
                       {action.icon}
@@ -670,11 +703,28 @@ export const NotificationsPage: React.FC = () => {
 
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-sm font-bold text-slate-100">{notification.title}</h3>
+                        <h3 className={`text-sm ${isUnread ? 'font-black text-slate-50' : 'font-bold text-slate-300'}`}>
+                          {notification.title}
+                        </h3>
 
                         {docInfo.docNumber && (
-                          <span className="font-mono text-xs px-2 py-0.5 rounded-lg bg-slate-800 border border-slate-700 text-cyan-300 font-black">
+                          <span className={`font-mono text-xs px-2 py-0.5 rounded-lg border font-black ${
+                            isUnread
+                              ? 'bg-cyan-950/80 border-cyan-700/80 text-cyan-300'
+                              : 'bg-slate-800 border-slate-700 text-slate-400'
+                          }`}>
                             {docInfo.docNumber}
+                          </span>
+                        )}
+
+                        {isUnread ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 px-2.5 py-0.5 text-[10px] font-black shadow-xs">
+                            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                            غير مقروء
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-slate-800/90 text-slate-400 border border-slate-700/50 px-2 py-0.5 text-[10px] font-medium">
+                            ✓ مقروء
                           </span>
                         )}
 
@@ -695,18 +745,20 @@ export const NotificationsPage: React.FC = () => {
                             ✅ منجز ومكتمل
                           </span>
                         )}
-
-                        {isUnread && (
-                          <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" title="إشعار غير مقروء" />
-                        )}
                       </div>
 
-                      <p className="text-xs text-slate-300 leading-relaxed">{notification.message}</p>
+                      <p className={`text-xs leading-relaxed ${isUnread ? 'text-slate-100 font-medium' : 'text-slate-400'}`}>
+                        {notification.message}
+                      </p>
 
                       {/* Metadata row */}
                       <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-400 flex-wrap font-mono">
                         <span>{notification.created_at ? notification.created_at.slice(0, 16).replace('T', ' ') : ''}</span>
-                        <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400 border border-slate-700 font-sans">
+                        <span className={`rounded px-1.5 py-0.5 border font-sans ${
+                          isUnread
+                            ? 'bg-slate-800/90 text-slate-300 border-slate-700'
+                            : 'bg-slate-900 text-slate-500 border-slate-800'
+                        }`}>
                           {action.badgeLabel}
                         </span>
                         {actionState?.updatedAt && status === 'resolved' && (
