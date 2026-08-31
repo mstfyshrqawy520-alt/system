@@ -179,237 +179,330 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
         </div>
       )}
       {!visibleRequests.length && <Card className="py-12 text-center text-slate-400">لا توجد عروض أسعار تحتاج إلى إجراء حاليًا.</Card>}
-      {visibleRequests.map(request => (
-        <Card key={request.id} className={`space-y-4 ${request.id === openRequestId ? 'border-cyan-400/80 ring-2 ring-cyan-400/20' : ''}`}>
-          <div className="flex flex-col gap-2 border-b border-slate-800 pb-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="font-bold text-cyan-300 font-mono">طلب {request.request_number}</h2>
-                {request.date_needed && (
-                  <span className="rounded-full border border-amber-700/60 bg-amber-950/30 px-2.5 py-0.5 text-xs font-mono font-bold text-amber-300">
-                    ⏳ تاريخ الاحتياج: {request.date_needed}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-400 mt-1">
-                {request.requester?.name || '—'} — {request.department?.name || '—'}
-                {isGeneralManagerRequest(request) && <span className="mr-2 font-bold text-amber-300">طلب المدير العام — لا يحتاج ترشيح القسم</span>}
-              </p>
-            </div>
-          </div>
-          {mode === 'executive' && (() => {
-            const accountingRecommendation = request.quotes?.flatMap(quote => (quote.recommendations || []).map(recommendation => ({ recommendation, quote }))).find(entry => entry.recommendation.role_type === 'ACCOUNTING' && entry.recommendation.decision === 'RECOMMEND');
-            const departmentRecommendation = request.quotes?.flatMap(quote => (quote.recommendations || []).map(recommendation => ({ recommendation, quote }))).find(entry => entry.recommendation.role_type === 'DEPARTMENT' && entry.recommendation.decision === 'RECOMMEND');
-            const executiveOwnRequest = isGeneralManagerRequest(request);
-            return (
-              <div className={`grid gap-3 rounded-xl border border-cyan-900/70 bg-slate-950/70 p-4 text-sm ${executiveOwnRequest ? 'md:grid-cols-1' : 'md:grid-cols-2'}`}>
-                <div className="rounded-lg border border-emerald-800/70 bg-emerald-950/20 px-3 py-2 font-bold text-emerald-200">
-                  <div className="text-xs text-emerald-400">ترشيح الحسابات</div>
-                  <div className="mt-1">{accountingRecommendation ? `${accountingRecommendation.recommendation.user?.name || 'الحسابات'} رشّح ${accountingRecommendation.quote.supplier?.company_name || 'هذا العرض'}` : 'لم يصل ترشيح الحسابات بعد'}</div>
-                </div>
-                {!executiveOwnRequest && (
-                  <div className="rounded-lg border border-amber-800/70 bg-amber-950/20 px-3 py-2 font-bold text-amber-200">
-                    <div className="text-xs text-amber-400">ترشيح مدير القسم</div>
-                    <div className="mt-1">{departmentRecommendation ? `${departmentRecommendation.recommendation.user?.name || 'مدير القسم'} رشّح ${departmentRecommendation.quote.supplier?.company_name || 'هذا العرض'}` : 'لم يصل ترشيح مدير القسم بعد'}</div>
+      {visibleRequests.map((request, reqIndex) => {
+        const totalQuotes = (request.quotes || []).length;
+        const totalItems = request.items?.length || 0;
+
+        return (
+          <Card key={request.id} className={`space-y-5 border-2 ${request.id === openRequestId ? 'border-cyan-400/90 ring-4 ring-cyan-400/20 shadow-cyan-950/50' : 'border-slate-700/80'} shadow-2xl bg-slate-900/95 rounded-2xl p-4 sm:p-6 mb-8`}>
+            {/* Request Master Header */}
+            <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-4 space-y-3">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border-b border-slate-800 pb-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-950 border border-cyan-700/70 text-xs font-black text-cyan-300">
+                      {reqIndex + 1}
+                    </span>
+                    <h2 className="font-mono text-base font-black text-cyan-300">
+                      طلب شراء: {request.request_number}
+                    </h2>
                   </div>
-                )}
+                  {request.date_needed && (
+                    <span className="rounded-full border border-amber-700/60 bg-amber-950/40 px-3 py-1 text-xs font-mono font-bold text-amber-300">
+                      ⏳ تاريخ الاحتياج: {request.date_needed}
+                    </span>
+                  )}
+                  <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-bold text-slate-300">
+                    📋 عدد عروض الأسعار: {totalQuotes} عروض
+                  </span>
+                </div>
+                <div className="text-xs text-slate-400">
+                  <span className="font-bold text-slate-200">{request.requester?.name || 'مقدم الطلب'}</span>
+                  <span className="mx-1.5">•</span>
+                  <span className="text-slate-300">{request.department?.name || 'القسم'}</span>
+                  {isGeneralManagerRequest(request) && (
+                    <span className="mr-2 rounded bg-amber-950/80 px-2 py-0.5 font-bold text-amber-300 border border-amber-700/60">
+                      طلب المدير العام — لا يحتاج ترشيح القسم
+                    </span>
+                  )}
+                </div>
               </div>
-            );
-          })()}
-          <TableColumnFilters filters={[{ key: 'item', label: 'الصنف / القطعة / المنطقة', value: quoteFilters.item, onChange: (value) => setQuoteFilters(current => ({ ...current, item: value })) }, { key: 'supplier', label: 'المورد', value: quoteFilters.supplier, onChange: (value) => setQuoteFilters(current => ({ ...current, supplier: value })) }, { key: 'unitPrice', label: 'سعر الوحدة', type: 'number', value: quoteFilters.unitPrice, onChange: (value) => setQuoteFilters(current => ({ ...current, unitPrice: value })) }, { key: 'total', label: 'الإجمالي', type: 'number', value: quoteFilters.total, onChange: (value) => setQuoteFilters(current => ({ ...current, total: value })) }, { key: 'currency', label: 'العملة', value: quoteFilters.currency, onChange: (value) => setQuoteFilters(current => ({ ...current, currency: value })) }, { key: 'accounting', label: 'ترشيح الحسابات', value: quoteFilters.accounting, onChange: (value) => setQuoteFilters(current => ({ ...current, accounting: value })) }, { key: 'department', label: 'ترشيح القسم', value: quoteFilters.department, onChange: (value) => setQuoteFilters(current => ({ ...current, department: value })) }, { key: 'action', label: 'الإجراء', value: quoteFilters.action, onChange: (value) => setQuoteFilters(current => ({ ...current, action: value })) }, { key: 'dateFrom', label: 'من تاريخ الطلب', type: 'date', value: quoteFilters.dateFrom, onChange: (value) => setQuoteFilters(current => ({ ...current, dateFrom: value })) }, { key: 'dateTo', label: 'إلى تاريخ الطلب', type: 'date', value: quoteFilters.dateTo, onChange: (value) => setQuoteFilters(current => ({ ...current, dateTo: value })) }]} hasActiveFilters={Boolean(hasNonDateQuoteFilter || quoteFilters.dateFrom !== defaultDateFrom || quoteFilters.dateTo !== today)} onClear={() => setQuoteFilters({ item: '', supplier: '', unitPrice: '', total: '', currency: '', accounting: '', department: '', action: '', dateFrom: defaultDateFrom, dateTo: today })} />
-          
-          <div className="hidden min-w-0 md:block">
-            <div className="overflow-x-auto">
-              <Table className="min-w-[1120px] text-sm">
-                <TableHeader className="border-b-2 border-cyan-800/70 bg-slate-950"><TableRow className="border-b border-slate-700/80"><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">الصنف / القطعة / المنطقة</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">المورد</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">سعر الوحدة</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">الإجمالي</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">العملة</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">ترشيح الحسابات</TableHead><TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">ترشيح القسم (إن لزم)</TableHead><TableHead className="text-center text-sm font-black text-slate-100">الإجراء</TableHead></TableRow></TableHeader>
-                <TableBody className="divide-y divide-slate-700/80">
-                  {(request.quotes || []).map(quote => {
-                    const primaryItem = request.items?.[0];
-                    const accounting = quote.recommendations?.find(item => item.role_type === 'ACCOUNTING');
-                    const department = quote.recommendations?.find(item => item.role_type === 'DEPARTMENT');
-                    const pdfUrl = getQuoteFileUrl(quote);
-                    return <TableRow key={quote.id} className="border-b border-slate-700/80 even:bg-slate-800/25">
-                      <TableCell className="min-w-[240px] border-l border-slate-700/70 align-top text-sm">
-                        <div className="font-bold text-slate-100">{primaryItem?.item_description || primaryItem?.item?.name || '—'}</div>
-                        <div className="font-mono text-xs text-cyan-300">رقم قطعة الأرض: {primaryItem?.item_reference || '—'}</div>
-                        <div className="text-xs text-slate-400">المنطقة: {primaryItem?.region || '—'} — الوحدة: {getUnitLabel(primaryItem?.uom)} — الكمية: {primaryItem?.quantity || '—'}</div>
-                      </TableCell>
-                      <TableCell className="min-w-[190px] border-l border-slate-700/70 align-top text-sm">
-                        <div className="font-black text-slate-100">{quote.supplier?.company_name || '—'}</div>
-                        {pdfUrl ? (
-                          <a
-                            href={pdfUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-600/70 text-cyan-300 transition-all shadow-sm"
-                            title="فتح وتحميل ملف عرض السعر PDF"
-                          >
-                            <span>📄</span>
-                            <span>معاينة عرض السعر PDF</span>
-                            <span className="text-[10px]">↗</span>
-                          </a>
-                        ) : (
-                          <div className="text-[10px] text-slate-500 mt-1">لم يُرفق ملف</div>
-                        )}
-                        {quote.notes && (
-                          <div className="text-[11px] text-slate-400 mt-1 bg-slate-950/60 p-1.5 rounded-lg border border-slate-800">
-                            {quote.notes}
+
+              {/* All Items Summary for this Purchase Request */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-400">
+                  <span>📦 بنود ومواد الطلب ({totalItems}):</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {request.items?.map((item, itemIdx) => (
+                    <div key={item.id || itemIdx} className="rounded-lg border border-slate-800/90 bg-slate-900/90 p-2.5 text-xs space-y-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="font-bold text-slate-100 line-clamp-1">{item.item_description || item.item?.name || 'بند غير محدد'}</span>
+                        <span className="shrink-0 font-mono text-[10px] font-bold text-cyan-300 bg-cyan-950/70 border border-cyan-800/50 px-1.5 py-0.5 rounded">
+                          #{itemIdx + 1}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-400">
+                        {item.item_reference && <span className="font-mono text-cyan-300 font-semibold">قطعة: {item.item_reference}</span>}
+                        {item.region && <span>المنطقة: {item.region}</span>}
+                        <span className="font-bold text-amber-300 font-mono">الكمية: {item.quantity} {getUnitLabel(item.uom)}</span>
+                      </div>
+                      {item.specifications && (
+                        <p className="text-[10px] text-slate-400 line-clamp-1">المواصفات: {item.specifications}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Executive Mode Overall Recommendation Badges */}
+            {mode === 'executive' && (() => {
+              const accountingRecommendation = request.quotes?.flatMap(quote => (quote.recommendations || []).map(recommendation => ({ recommendation, quote }))).find(entry => entry.recommendation.role_type === 'ACCOUNTING' && entry.recommendation.decision === 'RECOMMEND');
+              const departmentRecommendation = request.quotes?.flatMap(quote => (quote.recommendations || []).map(recommendation => ({ recommendation, quote }))).find(entry => entry.recommendation.role_type === 'DEPARTMENT' && entry.recommendation.decision === 'RECOMMEND');
+              const executiveOwnRequest = isGeneralManagerRequest(request);
+              return (
+                <div className={`grid gap-3 rounded-xl border border-cyan-900/70 bg-slate-950/70 p-4 text-sm ${executiveOwnRequest ? 'md:grid-cols-1' : 'md:grid-cols-2'}`}>
+                  <div className="rounded-lg border border-emerald-800/70 bg-emerald-950/20 px-3 py-2 font-bold text-emerald-200">
+                    <div className="text-xs text-emerald-400">ترشيح الحسابات</div>
+                    <div className="mt-1">{accountingRecommendation ? `${accountingRecommendation.recommendation.user?.name || 'الحسابات'} رشّح ${accountingRecommendation.quote.supplier?.company_name || 'هذا العرض'}` : 'لم يصل ترشيح الحسابات بعد'}</div>
+                  </div>
+                  {!executiveOwnRequest && (
+                    <div className="rounded-lg border border-amber-800/70 bg-amber-950/20 px-3 py-2 font-bold text-amber-200">
+                      <div className="text-xs text-amber-400">ترشيح مدير القسم</div>
+                      <div className="mt-1">{departmentRecommendation ? `${departmentRecommendation.recommendation.user?.name || 'مدير القسم'} رشّح ${departmentRecommendation.quote.supplier?.company_name || 'هذا العرض'}` : 'لم يصل ترشيح مدير القسم بعد'}</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Column Filters */}
+            <TableColumnFilters filters={[{ key: 'item', label: 'الصنف / القطعة / المنطقة', value: quoteFilters.item, onChange: (value) => setQuoteFilters(current => ({ ...current, item: value })) }, { key: 'supplier', label: 'المورد', value: quoteFilters.supplier, onChange: (value) => setQuoteFilters(current => ({ ...current, supplier: value })) }, { key: 'unitPrice', label: 'سعر الوحدة', type: 'number', value: quoteFilters.unitPrice, onChange: (value) => setQuoteFilters(current => ({ ...current, unitPrice: value })) }, { key: 'total', label: 'الإجمالي', type: 'number', value: quoteFilters.total, onChange: (value) => setQuoteFilters(current => ({ ...current, total: value })) }, { key: 'currency', label: 'العملة', value: quoteFilters.currency, onChange: (value) => setQuoteFilters(current => ({ ...current, currency: value })) }, { key: 'accounting', label: 'ترشيح الحسابات', value: quoteFilters.accounting, onChange: (value) => setQuoteFilters(current => ({ ...current, accounting: value })) }, { key: 'department', label: 'ترشيح القسم', value: quoteFilters.department, onChange: (value) => setQuoteFilters(current => ({ ...current, department: value })) }, { key: 'action', label: 'الإجراء', value: quoteFilters.action, onChange: (value) => setQuoteFilters(current => ({ ...current, action: value })) }, { key: 'dateFrom', label: 'من تاريخ الطلب', type: 'date', value: quoteFilters.dateFrom, onChange: (value) => setQuoteFilters(current => ({ ...current, dateFrom: value })) }, { key: 'dateTo', label: 'إلى تاريخ الطلب', type: 'date', value: quoteFilters.dateTo, onChange: (value) => setQuoteFilters(current => ({ ...current, dateTo: value })) }]} hasActiveFilters={Boolean(hasNonDateQuoteFilter || quoteFilters.dateFrom !== defaultDateFrom || quoteFilters.dateTo !== today)} onClear={() => setQuoteFilters({ item: '', supplier: '', unitPrice: '', total: '', currency: '', accounting: '', department: '', action: '', dateFrom: defaultDateFrom, dateTo: today })} />
+            
+            {/* Desktop Table View */}
+            <div className="hidden min-w-0 md:block">
+              <div className="overflow-x-auto">
+                <Table className="min-w-[1120px] text-sm">
+                  <TableHeader className="border-b-2 border-cyan-800/70 bg-slate-950">
+                    <TableRow className="border-b border-slate-700/80">
+                      <TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">#</TableHead>
+                      <TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">المورد</TableHead>
+                      <TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">الأصناف المشمولة</TableHead>
+                      <TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">سعر الوحدة</TableHead>
+                      <TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">إجمالي العرض</TableHead>
+                      <TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">العملة</TableHead>
+                      <TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">ترشيح الحسابات</TableHead>
+                      <TableHead className="border-l border-slate-700/80 text-sm font-black text-slate-100">ترشيح القسم</TableHead>
+                      <TableHead className="text-center text-sm font-black text-slate-100">الإجراء والقرار</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-slate-700/80">
+                    {(request.quotes || []).map((quote, qIndex) => {
+                      const accounting = quote.recommendations?.find(item => item.role_type === 'ACCOUNTING');
+                      const department = quote.recommendations?.find(item => item.role_type === 'DEPARTMENT');
+                      const pdfUrl = getQuoteFileUrl(quote);
+                      return (
+                        <TableRow key={quote.id} className="border-b border-slate-700/80 even:bg-slate-800/25">
+                          <TableCell className="border-l border-slate-700/70 align-top font-bold text-cyan-400 text-center">
+                            {qIndex + 1}
+                          </TableCell>
+                          <TableCell className="min-w-[190px] border-l border-slate-700/70 align-top text-sm">
+                            <div className="font-black text-slate-100">{quote.supplier?.company_name || '—'}</div>
+                            {pdfUrl ? (
+                              <a
+                                href={pdfUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-600/70 text-cyan-300 transition-all shadow-sm"
+                                title="فتح وتحميل ملف عرض السعر PDF"
+                              >
+                                <span>📄</span>
+                                <span>معاينة PDF</span>
+                                <span className="text-[10px]">↗</span>
+                              </a>
+                            ) : (
+                              <div className="text-[10px] text-slate-500 mt-1">لم يُرفق ملف</div>
+                            )}
+                            {quote.notes && (
+                              <div className="text-[11px] text-slate-400 mt-1 bg-slate-950/60 p-1.5 rounded-lg border border-slate-800">
+                                {quote.notes}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="min-w-[240px] border-l border-slate-700/70 align-top text-sm">
+                            <div className="space-y-1">
+                              {request.items?.map((item, iIdx) => (
+                                <div key={item.id || iIdx} className="text-xs text-slate-200">
+                                  <span className="font-bold text-slate-100">{item.item_description}</span>
+                                  <span className="text-slate-400 mx-1">({item.quantity} {getUnitLabel(item.uom)})</span>
+                                </div>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="border-l border-slate-700/70 align-top font-mono text-sm font-black text-amber-300">{quote.unit_price || '—'} ج.م</TableCell>
+                          <TableCell className="border-l border-slate-700/70 align-top font-mono text-sm font-black text-emerald-300">{quote.total_amount} ج.م</TableCell>
+                          <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">{quote.currency}</TableCell>
+                          <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">
+                            {renderRecommendationBadge(accounting)}
+                          </TableCell>
+                          <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">
+                            {isGeneralManagerRequest(request) ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-cyan-950/80 border border-cyan-500/50 text-cyan-300">
+                                <span>👑</span>
+                                <span>قرار المدير العام مباشرة</span>
+                              </span>
+                            ) : (
+                              renderRecommendationBadge(department)
+                            )}
+                          </TableCell>
+                          <TableCell className="min-w-[250px] border-l border-slate-700/70 align-top text-sm">
+                            <input value={comments[quote.id] || ''} onChange={event => setComments(current => ({ ...current, [quote.id]: event.target.value }))} placeholder="تعليق اختياري" className="mb-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100" />
+                            <div className="flex justify-center gap-2">
+                              <Button size="sm" variant={mode === 'executive' ? 'primary' : 'success'} disabled={savingId === quote.id} onClick={() => void act(request, quote, mode === 'executive' ? 'SELECT' : 'RECOMMEND')}>{mode === 'executive' ? copy.action : copy.action}</Button>
+                              <Button size="sm" variant="danger" disabled={savingId === quote.id} onClick={() => void act(request, quote, 'REJECT')}>{mode === 'executive' ? 'رفض جميع العروض' : 'رفض العرض'}</Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            {/* Mobile Quote Cards View with Distinct Separation */}
+            <div className="space-y-4 md:hidden">
+              <div className="flex items-center gap-2 text-xs font-bold text-cyan-400 bg-cyan-950/40 border border-cyan-800/40 rounded-xl px-3 py-2">
+                <span>📑</span>
+                <span>قائمة عروض الأسعار المقدمة لهذا الطلب ({totalQuotes} عروض):</span>
+              </div>
+
+              {(request.quotes || []).map((quote, qIndex) => {
+                const accounting = quote.recommendations?.find(item => item.role_type === 'ACCOUNTING');
+                const department = quote.recommendations?.find(item => item.role_type === 'DEPARTMENT');
+                const pdfUrl = getQuoteFileUrl(quote);
+
+                return (
+                  <article
+                    key={`mobile-quote-${quote.id}`}
+                    className="min-w-0 rounded-2xl border-2 border-slate-700/90 bg-slate-950/90 p-4 shadow-xl space-y-3.5 relative overflow-hidden"
+                  >
+                    {/* Top Quote Header Bar */}
+                    <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-cyan-900 border border-cyan-600 text-xs font-black text-cyan-200">
+                          {qIndex + 1}
+                        </span>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block">عرض مورد #{qIndex + 1} من {totalQuotes}</span>
+                          <span className="font-black text-sm text-slate-100 block mt-0.5">
+                            🏢 {quote.supplier?.company_name || 'مورد غير محدد'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-left shrink-0">
+                        <span className="text-[10px] text-slate-400 block">إجمالي العرض</span>
+                        <span className="font-mono text-base font-black text-emerald-400 block">
+                          {quote.total_amount} {quote.currency || 'ج.م'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Price details & PDF Button */}
+                    <div className="grid grid-cols-2 gap-2 bg-slate-900/90 rounded-xl p-2.5 border border-slate-800 text-xs">
+                      <div>
+                        <span className="text-slate-500 text-[11px] block">سعر الوحدة:</span>
+                        <span className="font-mono font-black text-amber-300 text-sm">{quote.unit_price || '—'} ج.م</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 text-[11px] block">العملة:</span>
+                        <span className="font-bold text-slate-200">{quote.currency || 'EGP'}</span>
+                      </div>
+                    </div>
+
+                    {pdfUrl && (
+                      <div>
+                        <a
+                          href={pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-600/80 text-cyan-200 text-xs font-bold transition-all shadow-md active:scale-95"
+                        >
+                          <span>📄</span>
+                          <span>معاينة وتحميل عرض السعر PDF</span>
+                          <span>↗</span>
+                        </a>
+                      </div>
+                    )}
+
+                    {quote.notes && (
+                      <div className="text-xs text-slate-300 bg-slate-900/90 p-2.5 rounded-xl border border-slate-800">
+                        <span className="text-slate-500 font-bold">شروط وملاحظات المورد: </span>
+                        {quote.notes}
+                      </div>
+                    )}
+
+                    {/* Items for this quote */}
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3 space-y-2 text-xs">
+                      <span className="font-bold text-slate-300 text-[11px] block">الأصناف المغطاة بالعرض:</span>
+                      <div className="space-y-1.5">
+                        {request.items?.map((item, itmIdx) => (
+                          <div key={item.id || itmIdx} className="flex items-center justify-between border-b border-slate-800/50 pb-1 text-xs">
+                            <span className="text-slate-200 font-semibold">{item.item_description}</span>
+                            <span className="font-mono font-bold text-amber-300">{item.quantity} {getUnitLabel(item.uom)}</span>
                           </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="border-l border-slate-700/70 align-top font-mono text-sm font-black text-amber-300">{quote.unit_price || '—'} ج.م</TableCell><TableCell className="border-l border-slate-700/70 align-top font-mono text-sm font-black text-emerald-300">{quote.total_amount} ج.م</TableCell>
-                      <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">{quote.currency}</TableCell>
-                        <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">
-                          {renderRecommendationBadge(accounting)}
-                        </TableCell>
-                        <TableCell className="border-l border-slate-700/70 align-top text-sm font-bold text-slate-200">
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Recommendations Status */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 text-xs">
+                      <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2.5 space-y-1">
+                        <span className="text-slate-400 font-bold block text-[11px]">ترشيح الحسابات:</span>
+                        <div>{renderRecommendationBadge(accounting)}</div>
+                      </div>
+                      <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2.5 space-y-1">
+                        <span className="text-slate-400 font-bold block text-[11px]">ترشيح القسم:</span>
+                        <div>
                           {isGeneralManagerRequest(request) ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-cyan-950/80 border border-cyan-500/50 text-cyan-300">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-cyan-950/80 border border-cyan-500/50 text-cyan-300">
                               <span>👑</span>
-                              <span>قرار المدير العام مباشرة</span>
+                              <span>قرار المدير العام</span>
                             </span>
                           ) : (
                             renderRecommendationBadge(department)
                           )}
-                        </TableCell>
-                      <TableCell className="min-w-[250px] border-l border-slate-700/70 align-top text-sm">
-                        <input value={comments[quote.id] || ''} onChange={event => setComments(current => ({ ...current, [quote.id]: event.target.value }))} placeholder="تعليق اختياري" className="mb-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100" />
-                        <div className="flex justify-center gap-2">
-                          <Button size="sm" variant={mode === 'executive' ? 'primary' : 'success'} disabled={savingId === quote.id} onClick={() => void act(request, quote, mode === 'executive' ? 'SELECT' : 'RECOMMEND')}>{mode === 'executive' ? copy.action : copy.action}</Button>
-                          <Button size="sm" variant="danger" disabled={savingId === quote.id} onClick={() => void act(request, quote, 'REJECT')}>{mode === 'executive' ? 'رفض جميع العروض' : 'رفض العرض'}</Button>
                         </div>
-                      </TableCell>
-                    </TableRow>;
-                  })}
-                </TableBody>
-              </Table>
+                      </div>
+                    </div>
+
+                    {/* Action & Decisions */}
+                    <div className="space-y-2.5 border-t-2 border-slate-800 pt-3">
+                      <input
+                        value={comments[quote.id] || ''}
+                        onChange={event => setComments(current => ({ ...current, [quote.id]: event.target.value }))}
+                        placeholder="أدخل تعليقًا أو سبب القرار (اختياري)..."
+                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-100 placeholder-slate-500 min-h-10 focus:border-cyan-500 focus:outline-none"
+                      />
+                      <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
+                        <Button
+                          size="sm"
+                          variant={mode === 'executive' ? 'primary' : 'success'}
+                          disabled={savingId === quote.id}
+                          onClick={() => void act(request, quote, mode === 'executive' ? 'SELECT' : 'RECOMMEND')}
+                          className="w-full min-h-11 font-bold text-xs"
+                        >
+                          {mode === 'executive' ? `✓ ${copy.action}` : `✓ ${copy.action}`}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          disabled={savingId === quote.id}
+                          onClick={() => void act(request, quote, 'REJECT')}
+                          className="w-full min-h-11 font-bold text-xs"
+                        >
+                          {mode === 'executive' ? '✕ رفض جميع العروض' : '✕ رفض العرض'}
+                        </Button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
-          </div>
-
-          <div className="space-y-3 md:hidden">
-            {(request.quotes || []).map(quote => {
-              const primaryItem = request.items?.[0];
-              const accounting = quote.recommendations?.find(item => item.role_type === 'ACCOUNTING');
-              const department = quote.recommendations?.find(item => item.role_type === 'DEPARTMENT');
-              const pdfUrl = getQuoteFileUrl(quote);
-              return (
-                <article key={`mobile-quote-${quote.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
-                  <div className="flex min-w-0 items-start justify-between gap-3 border-b border-slate-800 pb-3">
-                    <span className="min-w-0 break-normal font-black text-sm text-slate-100">
-                      {quote.supplier?.company_name || 'غير محدد'}
-                    </span>
-                    <span className="shrink-0 font-mono text-sm font-black text-emerald-400">
-                      {quote.total_amount} {quote.currency || 'ج.م'}
-                    </span>
-                  </div>
-
-                  {pdfUrl && (
-                    <div className="mt-2.5">
-                      <a
-                        href={pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-600/70 text-cyan-200 text-xs font-bold transition-all shadow-sm"
-                      >
-                        <span>📄</span>
-                        <span>فتح ومعاينة عرض السعر PDF من المورد</span>
-                        <span>↗</span>
-                      </a>
-                    </div>
-                  )}
-
-                  {quote.notes && (
-                    <div className="mt-2 text-xs text-slate-300 bg-slate-950/70 p-2 rounded-xl border border-slate-800">
-                      <span className="text-slate-500 font-bold">شروط المورد: </span>
-                      {quote.notes}
-                    </div>
-                  )}
-
-                  <dl className="mt-3 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
-                    <div className="min-w-0 min-[420px]:col-span-2">
-                      <dt className="text-slate-500">الصنف / الوصف</dt>
-                      <dd className="mt-1 font-bold text-slate-200 break-normal">
-                        {primaryItem?.item_description || primaryItem?.item?.name || '—'}
-                      </dd>
-                    </div>
-                    {primaryItem?.item_reference && (
-                      <div>
-                        <dt className="text-slate-500">رقم القطعة</dt>
-                        <dd className="mt-1 font-mono text-cyan-300">{primaryItem.item_reference}</dd>
-                      </div>
-                    )}
-                    {primaryItem?.region && (
-                      <div>
-                        <dt className="text-slate-500">المنطقة</dt>
-                        <dd className="mt-1 text-slate-300">{primaryItem.region}</dd>
-                      </div>
-                    )}
-                    <div>
-                      <dt className="text-slate-500">الكمية</dt>
-                      <dd className="mt-1 font-mono text-slate-300">
-                        {primaryItem?.quantity || '—'} {getUnitLabel(primaryItem?.uom)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-slate-500">سعر الوحدة</dt>
-                      <dd className="mt-1 font-mono font-bold text-amber-300">
-                        {quote.unit_price || '—'} ج.م
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-slate-500 mb-1">ترشيح الحسابات</dt>
-                      <dd className="mt-0.5">
-                        {renderRecommendationBadge(accounting)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-slate-500 mb-1">ترشيح القسم</dt>
-                      <dd className="mt-0.5">
-                        {isGeneralManagerRequest(request) ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-cyan-950/80 border border-cyan-500/50 text-cyan-300">
-                            <span>👑</span>
-                            <span>قرار المدير العام مباشرة</span>
-                          </span>
-                        ) : (
-                          renderRecommendationBadge(department)
-                        )}
-                      </dd>
-                    </div>
-                  </dl>
-                  <div className="mt-4 space-y-2 border-t border-slate-800 pt-3">
-                    <input
-                      value={comments[quote.id] || ''}
-                      onChange={event => setComments(current => ({ ...current, [quote.id]: event.target.value }))}
-                      placeholder="تعليق اختياري"
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 min-h-10"
-                    />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <Button
-                        size="sm"
-                        variant={mode === 'executive' ? 'primary' : 'success'}
-                        disabled={savingId === quote.id}
-                        onClick={() => void act(request, quote, mode === 'executive' ? 'SELECT' : 'RECOMMEND')}
-                        className="w-full min-h-10"
-                      >
-                        {mode === 'executive' ? copy.action : copy.action}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        disabled={savingId === quote.id}
-                        onClick={() => void act(request, quote, 'REJECT')}
-                        className="w-full min-h-10"
-                      >
-                        {mode === 'executive' ? 'رفض جميع العروض' : 'رفض العرض'}
-                      </Button>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </Card>
-      ))}
+          </Card>
+        );
+      })}
     </div>
   );
 };
