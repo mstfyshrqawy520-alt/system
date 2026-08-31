@@ -9,6 +9,7 @@ import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import TableFilterBar from '../../components/ui/TableFilterBar';
 import { getDefaultDateFrom, getTodayInputDate, isDefaultTodayRange } from '../../utils/dateFilters';
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
+import { getUnitLabel } from '../../utils/units';
 
 export const GeneralManagerPurchaseOrdersPage: React.FC = () => {
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
@@ -128,7 +129,7 @@ export const GeneralManagerPurchaseOrdersPage: React.FC = () => {
                 const item = (x.items && x.items.length > 0) ? x.items[0] : (x.purchase_request?.items && x.purchase_request.items.length > 0 ? x.purchase_request.items[0] : undefined);
                 const itemName = item ? ((item as any).item_name || (item as any).item_description || (item as any).item?.name || '—') : '—';
                 const parcelNumber = item ? ((item as any).item_reference || '—') : '—';
-                const quantity = item ? `${(item as any).quantity || '—'} ${(item as any).uom || ''}` : '—';
+                const quantity = item ? `${(item as any).quantity || '—'} ${getUnitLabel((item as any).uom)}` : '—';
 
                 return (
                   <TableRow key={x.id}>
@@ -169,7 +170,7 @@ export const GeneralManagerPurchaseOrdersPage: React.FC = () => {
             const item = (x.items && x.items.length > 0) ? x.items[0] : (x.purchase_request?.items && x.purchase_request.items.length > 0 ? x.purchase_request.items[0] : undefined);
             const itemName = item ? ((item as any).item_name || (item as any).item_description || (item as any).item?.name || 'غير محدد') : 'غير محدد';
             const parcelNumber = item ? ((item as any).item_reference || '—') : '—';
-            const quantity = item ? `${(item as any).quantity || '—'} ${(item as any).uom || ''}` : '—';
+            const quantity = item ? `${(item as any).quantity || '—'} ${getUnitLabel((item as any).uom)}` : '—';
 
             return (
               <article key={`mobile-gm-po-${x.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">

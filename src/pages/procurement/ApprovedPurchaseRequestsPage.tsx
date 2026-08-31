@@ -15,6 +15,7 @@ import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import { Input, Select } from '../../components/ui/FormField';
 import TableFilterBar from '../../components/ui/TableFilterBar';
 import { getDefaultDateFrom, getTodayInputDate, isDefaultTodayRange } from '../../utils/dateFilters';
+import { getUnitLabel } from '../../utils/units';
 
 export const ApprovedPurchaseRequestsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -156,7 +157,7 @@ export const ApprovedPurchaseRequestsPage: React.FC = () => {
                 const item = r.items?.[0];
                 const itemName = item?.item_description || item?.item?.name || '—';
                 const parcelNumber = item?.item_reference || '—';
-                const quantity = item ? `${item.quantity || '—'} ${item.uom || ''}` : '—';
+                const quantity = item ? `${item.quantity || '—'} ${getUnitLabel(item.uom)}` : '—';
 
                 return (
                   <TableRow key={r.id}>
@@ -198,7 +199,7 @@ export const ApprovedPurchaseRequestsPage: React.FC = () => {
             const item = r.items?.[0];
             const itemName = item?.item_description || item?.item?.name || 'غير محدد';
             const parcelNumber = item?.item_reference || '—';
-            const quantity = item ? `${item.quantity || '—'} ${item.uom || ''}` : '—';
+            const quantity = item ? `${item.quantity || '—'} ${getUnitLabel(item.uom)}` : '—';
 
             return (
               <article key={`mobile-approved-${r.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">

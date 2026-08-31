@@ -12,6 +12,7 @@ import { Button } from '../../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import { usePersistedState } from '../../hooks/usePersistedState';
 import { getDefaultDateFrom, getTodayInputDate, isDefaultTodayRange } from '../../utils/dateFilters';
+import { getUnitLabel } from '../../utils/units';
 
 const INITIAL_FILTERS: ReviewerRequestFilters = {
   request_number: '',
@@ -251,7 +252,7 @@ export const ReviewerRequestsPage: React.FC = () => {
                 : itemNames.length === 1
                   ? itemNames[0]
                   : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
-              const quantitiesDisplay = request.items?.map((item) => `${item.quantity} ${item.uom || ''}`).join('، ') || '—';
+              const quantitiesDisplay = request.items?.map((item) => `${item.quantity} ${getUnitLabel(item.uom)}`).join('، ') || '—';
 
               const canQuickApprove = (request.status === 'SUBMITTED' || request.status === 'UNDER_REVIEW') && hasPermission('purchase_request.approve');
 
@@ -303,7 +304,7 @@ export const ReviewerRequestsPage: React.FC = () => {
         <div className="space-y-3 md:hidden">
           {filteredRequests.map((request) => {
             const itemNames = request.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
-            const quantitiesDisplay = request.items?.map((item) => `${item.quantity} ${item.uom || ''}`).join('، ') || '—';
+            const quantitiesDisplay = request.items?.map((item) => `${item.quantity} ${getUnitLabel(item.uom)}`).join('، ') || '—';
             const canQuickApprove = (request.status === 'SUBMITTED' || request.status === 'UNDER_REVIEW') && hasPermission('purchase_request.approve');
 
             return (

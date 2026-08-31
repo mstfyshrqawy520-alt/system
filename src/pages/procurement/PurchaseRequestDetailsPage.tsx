@@ -6,6 +6,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import { useAuth } from '../../context/AuthContext';
 import { parseApiError } from '../../utils/apiError';
+import { getUnitLabel } from '../../utils/units';
 
 export const ProcurementPurchaseRequestDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -115,7 +116,7 @@ export const ProcurementPurchaseRequestDetailsPage: React.FC = () => {
                   <td className="p-3 font-mono text-slate-300">{item.item_reference || '—'}</td>
                   <td className="p-3 text-slate-300">{item.region || '—'}</td>
                   <td className="p-3 text-slate-200 font-medium">{item.item_description}</td>
-                  <td className="p-3 font-mono text-slate-200">{item.quantity} {item.uom}</td>
+                  <td className="p-3 font-mono text-slate-200">{item.quantity} {getUnitLabel(item.uom)}</td>
                 </tr>
               ))}
             </tbody>

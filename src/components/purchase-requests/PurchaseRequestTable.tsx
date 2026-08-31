@@ -6,6 +6,7 @@ import PurchaseRequestStatusBadge from './PurchaseRequestStatusBadge';
 import PurchaseRequestTimeline from '../procurement/PurchaseRequestTimeline';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/Table';
 import { Button } from '../ui/Button';
+import { getUnitLabel } from '../../utils/units';
 
 const REQUESTER_EDITABLE_STATUSES = ['DRAFT', 'SUBMITTED', 'UNDER_REVIEW'];
 const REQUESTER_DELETABLE_STATUSES = ['DRAFT'];
@@ -111,7 +112,7 @@ export const PurchaseRequestTable: React.FC<Props> = ({
               : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
           const parcelsDisplay = pr.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || '—';
           const regionsDisplay = pr.items?.map((item) => item.region).filter(Boolean).join('، ') || (pr.request_type === 'OFFICE_SUPPLIES' ? 'مقر الشركة' : '—');
-          const quantitiesDisplay = pr.items?.map((item) => `${item.quantity} ${item.uom || ''}`).join('، ') || '—';
+          const quantitiesDisplay = pr.items?.map((item) => `${item.quantity} ${getUnitLabel(item.uom)}`).join('، ') || '—';
 
           return (
             <TableRow key={pr.id}>
@@ -189,7 +190,7 @@ export const PurchaseRequestTable: React.FC<Props> = ({
           const itemNames = pr.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
           const parcelsDisplay = pr.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || '—';
           const regionsDisplay = pr.items?.map((item) => item.region).filter(Boolean).join('، ') || (pr.request_type === 'OFFICE_SUPPLIES' ? 'مقر الشركة' : 'غير محددة');
-          const quantitiesDisplay = pr.items?.map((item) => `${item.quantity} ${item.uom || ''}`).join('، ') || '—';
+          const quantitiesDisplay = pr.items?.map((item) => `${item.quantity} ${getUnitLabel(item.uom)}`).join('، ') || '—';
 
           return (
             <article key={`mobile-card-${pr.id}`} className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 space-y-3">

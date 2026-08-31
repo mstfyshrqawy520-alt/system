@@ -25,6 +25,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import SystemEventTimeline from '../../components/ui/SystemEventTimeline';
 import PurchaseRequestTimeline from '../../components/procurement/PurchaseRequestTimeline';
 import OfficeReceiptModal from '../../components/purchase-requests/OfficeReceiptModal';
+import { getUnitLabel } from '../../utils/units';
 
 const REQUESTER_EDITABLE_STATUSES = ['DRAFT', 'SUBMITTED', 'UNDER_REVIEW'];
 const REVIEWER_DECISION_STATUSES = ['REJECTED', 'APPROVED_BY_REVIEWER', 'PENDING_PROCUREMENT_APPROVAL', 'APPROVED_BY_PROCUREMENT', 'PO_DRAFT', 'ISSUED'];
@@ -323,7 +324,7 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
                   <TableCell className="font-bold font-mono text-slate-200">
                     {parseFloat(item.quantity).toLocaleString()}
                   </TableCell>
-                  <TableCell className="text-slate-400">{item.uom || '-'}</TableCell>
+                  <TableCell className="text-slate-400">{getUnitLabel(item.uom)}</TableCell>
                   <TableCell className="text-xs text-slate-300">{item.specifications || '-'}</TableCell>
                 </TableRow>
               ))}
@@ -342,7 +343,7 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
               </div>
               <dl className="mt-3 grid grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
                 {!isOffice && <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 text-slate-200">{item.region || '—'}</dd></div>}
-                <div><dt className="text-slate-500">الكمية</dt><dd className="mt-1 font-bold text-slate-200">{parseFloat(item.quantity).toLocaleString()} {item.uom || ''}</dd></div>
+                <div><dt className="text-slate-500">الكمية</dt><dd className="mt-1 font-bold text-slate-200">{parseFloat(item.quantity).toLocaleString()} {getUnitLabel(item.uom)}</dd></div>
                 <div className="col-span-1 min-[420px]:col-span-2"><dt className="text-slate-500">المواصفات</dt><dd className="mt-1 break-words leading-6 text-slate-300">{item.specifications || '—'}</dd></div>
               </dl>
             </article>

@@ -16,6 +16,7 @@ import { KpiCard } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import ActionRequiredInbox from '../../components/dashboard/ActionRequiredInbox';
+import { getUnitLabel } from '../../utils/units';
 
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
 
@@ -256,7 +257,7 @@ export const ReviewerDashboardPage: React.FC = () => {
                     const itemName = item?.item_description || item?.item?.name || '—';
                     const parcelNumber = item?.item_reference || '—';
                     const regionName = item?.region || (pr.request_type === 'OFFICE_SUPPLIES' ? 'مقر الشركة' : '—');
-                    const quantity = item ? `${item.quantity || '—'} ${item.uom || ''}` : '—';
+                    const quantity = item ? `${item.quantity || '—'} ${getUnitLabel(item.uom)}` : '—';
 
                     return (
                       <TableRow key={pr.id}>
@@ -301,7 +302,7 @@ export const ReviewerDashboardPage: React.FC = () => {
                 const itemName = item?.item_description || item?.item?.name || 'غير محدد';
                 const parcelNumber = item?.item_reference || '—';
                 const regionName = item?.region || (pr.request_type === 'OFFICE_SUPPLIES' ? 'مقر الشركة' : 'غير محددة');
-                const quantity = item ? `${item.quantity || '—'} ${item.uom || ''}` : '—';
+                const quantity = item ? `${item.quantity || '—'} ${getUnitLabel(item.uom)}` : '—';
 
                 return (
                   <article key={`mobile-${pr.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">

@@ -472,7 +472,7 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                             </div>
                           )}
                         </td>
-                        <td className="p-3 text-slate-400">{item.uom}</td>
+                        <td className="p-3 text-slate-400">{getUnitLabel(item.uom)}</td>
                         <td className="p-3 font-mono font-semibold text-slate-400">
                           {item.original_quantity.toLocaleString()}
                         </td>
