@@ -26,20 +26,33 @@ class ReviewerPurchaseRequestController extends Controller
     /**
      * Display a listing of reviewable purchase requests for the reviewer.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request): JsonResponse|AnonymousResourceCollection
     {
-        $filters = $request->validate([
-            'request_number' => ['nullable', 'string', 'max:35'],
-            'requester_name' => ['nullable', 'string', 'max:150'],
-            'status' => ['nullable', 'string', 'max:60'],
-            'priority' => ['nullable', Rule::in(['LOW', 'NORMAL', 'HIGH', 'URGENT'])],
-            'from_date' => ['nullable', 'date'],
-            'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
-        ]);
+        try {
+            $filters = $request->validate([
+                'request_number' => ['nullable', 'string', 'max:35'],
+                'requester_name' => ['nullable', 'string', 'max:150'],
+                'status' => ['nullable', 'string', 'max:60'],
+                'priority' => ['nullable', Rule::in(['LOW', 'NORMAL', 'HIGH', 'URGENT'])],
+                'from_date' => ['nullable', 'date'],
+                'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
+            ]);
 
-        $prs = $this->reviewerService->getReviewableRequests($request->user(), $filters);
+            $prs = $this->reviewerService->getReviewableRequests($request->user(), $filters);
 
-        return PurchaseRequestResource::collection($prs);
+            return PurchaseRequestResource::collection($prs);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Reviewer PR index error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'message' => $e->getMessage(),
+                'file' => basename($e->getFile()) . ':' . $e->getLine(),
+            ], 500);
+        }
     }
 
     /**
