@@ -16,6 +16,7 @@ import {
   showNativeSystemNotification,
   requestAndRegisterPushToken,
 } from '../../services/pushNotificationService';
+import { formatTime12h } from '../../utils/dateTime';
 
 export const NotificationBell: React.FC = () => {
   const { user } = useAuth();
@@ -342,8 +343,8 @@ export const NotificationBell: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      <span className="text-[10px] font-mono text-slate-500 shrink-0">
-                        {n.created_at ? n.created_at.slice(11, 16) : ''}
+                      <span className="text-[11px] font-bold text-slate-400 shrink-0">
+                        {formatTime12h(n.created_at)}
                       </span>
                     </div>
 

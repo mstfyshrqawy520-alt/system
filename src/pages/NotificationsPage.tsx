@@ -21,6 +21,7 @@ import {
   extractDocumentInfo,
   NotificationActionRoute,
 } from '../utils/notificationRouting';
+import { formatDateTime12h } from '../utils/dateTime';
 
 export type QuickFilterKey = 'ALL' | 'UNREAD' | 'READ' | 'TODAY' | 'LAST_10_DAYS' | 'NEEDS_ACTION' | 'COMPLETED' | 'RETURNED';
 
@@ -737,8 +738,8 @@ export const NotificationsPage: React.FC = () => {
                       </p>
 
                       {/* Metadata row */}
-                      <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-400 flex-wrap font-mono">
-                        <span>{notification.created_at ? notification.created_at.slice(0, 16).replace('T', ' ') : ''}</span>
+                      <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-400 flex-wrap">
+                        <span className="font-bold text-slate-300">{formatDateTime12h(notification.created_at)}</span>
                         <span className={`rounded px-1.5 py-0.5 border font-sans ${isUnread
                             ? 'bg-slate-800/90 text-slate-300 border-slate-700'
                             : 'bg-slate-900 text-slate-500 border-slate-800'
@@ -747,7 +748,7 @@ export const NotificationsPage: React.FC = () => {
                         </span>
                         {actionState?.updatedAt && status === 'resolved' && (
                           <span className="text-emerald-400/80 font-sans text-[10px]">
-                            تاريخ الإنجاز: {actionState.updatedAt.slice(0, 16).replace('T', ' ')}
+                            تاريخ الإنجاز: {formatDateTime12h(actionState.updatedAt)}
                           </span>
                         )}
                       </div>
