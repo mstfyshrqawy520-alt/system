@@ -87,6 +87,29 @@ Route::middleware('auth:sanctum')->prefix('purchase-requests')->group(function (
 
 // Reviewer Purchase Request Routes
 Route::middleware('auth:sanctum')->prefix('reviewer/purchase-requests')->group(function () {
+    Route::get('/debug-diag', function (\Illuminate\Http\Request $request) {
+        try {
+            $user = $request->user();
+            $service = app(\App\Services\ReviewerPurchaseRequestService::class);
+            $prs = $service->getReviewableRequests($user, []);
+            $res = \App\Http\Resources\PurchaseRequestResource::collection($prs);
+            return response()->json([
+                'status' => 'OK',
+                'user' => ['id' => $user->id, 'name' => $user->name, 'dept' => $user->department_id],
+                'count' => $prs->total(),
+                'data' => $res->response()->getData(true),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'ERROR',
+                'msg' => $e->getMessage(),
+                'class' => get_class($e),
+                'file' => $e->getFile() . ':' . $e->getLine(),
+                'trace' => explode("\n", $e->getTraceAsString()),
+            ], 200);
+        }
+    });
+
     Route::get('/', [ReviewerPurchaseRequestController::class, 'index'])
         ->middleware('permission:purchase_request.view_assigned');
 
