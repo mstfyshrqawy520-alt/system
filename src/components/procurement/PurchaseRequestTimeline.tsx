@@ -28,23 +28,35 @@ const historyHas = (request: PurchaseRequest, actions: string[]) =>
   request.approval_history?.some(entry => actions.includes(entry.action)) || false;
 
 const currentDirectIndex = (request: PurchaseRequest) => {
-  const status = request.status;
+  const status = String(request.status);
   if (status === 'REJECTED') return -1;
-  if (request.purchase_order_issued) return 5;
-  if (historyHas(request, ['SITE_ENGINEER_APPROVED', 'RECEIPT_APPROVED_BY_SITE_ENGINEER'])) return 5;
-  if (historyHas(request, ['WAREHOUSE_RECEIPT_APPROVED', 'PURCHASE_RECEIPT_CREATED'])) return 4;
-  if (status === 'PENDING_PROCUREMENT_APPROVAL' || status === 'APPROVED_BY_PROCUREMENT') return 2;
-  if (status === 'PENDING_ACCOUNTING_APPROVAL' || status === 'APPROVED_BY_ACCOUNTING') return 1;
+
+  const pos = (request as any).purchase_orders || [];
+  const hasApprovedReceipt = pos.some((po: any) => po.has_approved_receipt || (po.receipts || []).some((r: any) => r.status === 'APPROVED')) || historyHas(request, ['SITE_ENGINEER_APPROVED', 'RECEIPT_APPROVED_BY_SITE_ENGINEER']);
+  const hasWarehouseReceipt = pos.some((po: any) => (po.receipts || []).length > 0) || historyHas(request, ['WAREHOUSE_RECEIPT_APPROVED', 'PURCHASE_RECEIPT_CREATED', 'WAREHOUSE_RECEIPT_SUBMITTED']);
+  const hasIssuedPo = pos.some((po: any) => ['ISSUED', 'PENDING_ACCOUNTING_REVIEW', 'APPROVED_BY_ACCOUNTING', 'FINAL_APPROVED'].includes(po.status)) || Boolean(request.purchase_order_issued) || status === 'PO_DRAFT' || status === 'ISSUED';
+  const isAccountingApproved = status === 'APPROVED_BY_ACCOUNTING' || status === 'APPROVED_BY_PROCUREMENT' || status === 'PENDING_PROCUREMENT_APPROVAL';
+
+  if (hasApprovedReceipt) return 5; // Step 6 (Invoice/Accounting) is active, steps 1-5 done
+  if (hasWarehouseReceipt) return 4; // Step 5 (Site Engineer) is active, steps 1-4 done
+  if (hasIssuedPo) return 3; // Step 4 (Warehouse Keeper) is active, steps 1-3 done
+  if (isAccountingApproved) return 2; // Step 3 (Procurement Manager) is active, steps 1-2 done
+  if (status === 'PENDING_ACCOUNTING_APPROVAL') return 1; // Step 2 (Accounting) is active, step 1 done
   return 0;
 };
 
 const currentStandardIndex = (request: PurchaseRequest) => {
-  const status = request.status;
+  const status = String(request.status);
   if (status === 'REJECTED') return -1;
-  if (request.purchase_order_issued) return 5;
-  if (historyHas(request, ['SITE_ENGINEER_APPROVED', 'RECEIPT_APPROVED_BY_SITE_ENGINEER'])) return 5;
-  if (historyHas(request, ['WAREHOUSE_RECEIPT_APPROVED', 'PURCHASE_RECEIPT_CREATED'])) return 4;
-  if (status === 'PENDING_ACCOUNTING_APPROVAL' || status === 'APPROVED_BY_ACCOUNTING') return 5;
+
+  const pos = (request as any).purchase_orders || [];
+  const hasApprovedReceipt = pos.some((po: any) => po.has_approved_receipt || (po.receipts || []).some((r: any) => r.status === 'APPROVED')) || historyHas(request, ['SITE_ENGINEER_APPROVED', 'RECEIPT_APPROVED_BY_SITE_ENGINEER']);
+  const hasWarehouseReceipt = pos.some((po: any) => (po.receipts || []).length > 0) || historyHas(request, ['WAREHOUSE_RECEIPT_APPROVED', 'PURCHASE_RECEIPT_CREATED', 'WAREHOUSE_RECEIPT_SUBMITTED']);
+  const hasIssuedPo = pos.some((po: any) => ['ISSUED', 'PENDING_ACCOUNTING_REVIEW', 'APPROVED_BY_ACCOUNTING', 'FINAL_APPROVED'].includes(po.status)) || Boolean(request.purchase_order_issued) || status === 'PO_DRAFT' || status === 'ISSUED';
+
+  if (hasApprovedReceipt) return 5;
+  if (hasWarehouseReceipt) return 4;
+  if (hasIssuedPo) return 4;
   if (status === 'PENDING_PROCUREMENT_APPROVAL' || status === 'APPROVED_BY_PROCUREMENT' || status === 'PENDING_QUOTE_RECOMMENDATIONS' || status === 'PENDING_EXECUTIVE_QUOTE_DECISION') return 3;
   if (status === 'PENDING_EXECUTIVE_APPROVAL') return 2;
   if (status === 'SUBMITTED' || status === 'UNDER_REVIEW' || status === 'APPROVED_BY_REVIEWER') return 1;
@@ -53,11 +65,51 @@ const currentStandardIndex = (request: PurchaseRequest) => {
 
 const getActionGuidance = (request: PurchaseRequest): { text: string; bg: string; icon: string } => {
   const status = String(request.status);
+  const pos = (request as any).purchase_orders || [];
+  const hasApprovedReceipt = pos.some((po: any) => po.has_approved_receipt || (po.receipts || []).some((r: any) => r.status === 'APPROVED')) || historyHas(request, ['SITE_ENGINEER_APPROVED', 'RECEIPT_APPROVED_BY_SITE_ENGINEER']);
+  const hasWarehouseReceipt = pos.some((po: any) => (po.receipts || []).length > 0) || historyHas(request, ['WAREHOUSE_RECEIPT_APPROVED', 'PURCHASE_RECEIPT_CREATED', 'WAREHOUSE_RECEIPT_SUBMITTED']);
+  const hasIssuedPo = pos.some((po: any) => ['ISSUED', 'PENDING_ACCOUNTING_REVIEW', 'APPROVED_BY_ACCOUNTING', 'FINAL_APPROVED'].includes(po.status)) || Boolean(request.purchase_order_issued) || status === 'PO_DRAFT' || status === 'ISSUED';
+
   if (status === 'DRAFT') {
     return {
       icon: '✍️',
       text: 'الطلب ما زال مسودة لديك. اضغط على «إرسال الطلب» لإرساله إلى رئيس قسمك للمراجعة والاعتماد.',
       bg: 'border-slate-700 bg-slate-900/80 text-slate-200',
+    };
+  }
+  if (status === 'REJECTED') {
+    return {
+      icon: '❌',
+      text: `تم رفض هذا الطلب. ${request.rejection_reason ? `سبب الرفض: ${request.rejection_reason}` : ''}`,
+      bg: 'border-rose-800 bg-rose-950/50 text-rose-200',
+    };
+  }
+  if (hasApprovedReceipt) {
+    return {
+      icon: '🏗️',
+      text: 'تم فحص واعتماد المواد هندسياً بالموقع بنجاح، والطلب الآن لدى الحسابات لاستكمال الفواتير وصرف الدفعات.',
+      bg: 'border-emerald-600 bg-emerald-950/50 text-emerald-100',
+    };
+  }
+  if (hasWarehouseReceipt) {
+    return {
+      icon: '📦',
+      text: 'تم تسجيل استلام المواد بالمخزن بنجاح، وبانتظار اعتماد ومطابقة مهندس الموقع في الميدان.',
+      bg: 'border-amber-600 bg-amber-950/50 text-amber-200',
+    };
+  }
+  if (hasIssuedPo) {
+    return {
+      icon: '📋',
+      text: 'تم إصدار أمر الشراء للمورد. الخطوة القادمة هي وصول المواد وتأكيد استلامها بالمخزن والموقع.',
+      bg: 'border-cyan-700/50 bg-cyan-950/40 text-cyan-200',
+    };
+  }
+  if (status === 'APPROVED_BY_ACCOUNTING' || status === 'APPROVED_BY_PROCUREMENT' || status === 'PENDING_PROCUREMENT_APPROVAL') {
+    return {
+      icon: '💼',
+      text: 'تم اعتماد الطلب مالياً بنجاح، وهو الآن لدى مدير المشتريات لإصدار أمر الشراء للمورد.',
+      bg: 'border-amber-700/50 bg-amber-950/40 text-amber-200',
     };
   }
   if (status === 'SUBMITTED' || status === 'UNDER_REVIEW') {
@@ -74,32 +126,11 @@ const getActionGuidance = (request: PurchaseRequest): { text: string; bg: string
       bg: 'border-violet-700/50 bg-violet-950/40 text-violet-200',
     };
   }
-  if (status === 'PENDING_PROCUREMENT_APPROVAL' || status === 'PENDING_QUOTE_RECOMMENDATIONS' || status === 'PENDING_EXECUTIVE_QUOTE_DECISION' || status === 'APPROVED_BY_PROCUREMENT') {
-    return {
-      icon: '💼',
-      text: 'الطلب معتمد ومحول لإدارة المشتريات للتسعير وتجهيز أمر الشراء للمورد.',
-      bg: 'border-amber-700/50 bg-amber-950/40 text-amber-200',
-    };
-  }
-  if (status === 'PO_DRAFT' || status === 'ISSUED' || Boolean(request.purchase_order_issued)) {
-    return {
-      icon: '📋',
-      text: 'تم إصدار أمر الشراء للمورد. الخطوة القادمة هي وصول المواد للموقع وتأكيد استلامها.',
-      bg: 'border-emerald-700/50 bg-emerald-950/40 text-emerald-200',
-    };
-  }
   if (status === 'COMPLETED') {
     return {
       icon: '🎉',
       text: 'اكتملت دورة الشراء بالكامل وتم استلام المواد بنجاح ومطابقتها وتسجيلها في الحسابات.',
       bg: 'border-emerald-600 bg-emerald-950/60 text-emerald-100',
-    };
-  }
-  if (status === 'REJECTED') {
-    return {
-      icon: '❌',
-      text: `تم رفض هذا الطلب. ${request.rejection_reason ? `سبب الرفض: ${request.rejection_reason}` : ''}`,
-      bg: 'border-rose-800 bg-rose-950/50 text-rose-200',
     };
   }
   return {
