@@ -1,4 +1,5 @@
 <?php
+
 $ch = curl_init('https://system-production-7ba9.up.railway.app/api/v1/auth/login');
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -18,5 +19,5 @@ $res = curl_exec($ch2);
 $code = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
 curl_close($ch2);
 
-echo "STATUS: $code\n";
-echo "RESPONSE: $res\n";
+echo "HTTP CODE: $code\n";
+echo "RESPONSE:\n$res\n";

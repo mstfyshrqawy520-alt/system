@@ -19,13 +19,21 @@ class PurchaseRequestResource extends JsonResource
             'total_estimated_cost' => number_format((float) $this->total_estimated_cost, 2, '.', ''),
             'purchase_order_issued' => (int) ($this->issued_purchase_orders_count ?? 0) > 0,
             'priority' => $this->priority,
-            'date_needed' => $this->date_needed ? $this->date_needed->format('Y-m-d') : null,
+            'date_needed' => $this->date_needed instanceof \DateTimeInterface
+                ? $this->date_needed->format('Y-m-d')
+                : ($this->date_needed ? substr((string) $this->date_needed, 0, 10) : null),
             'notes' => $this->notes,
             'rejection_reason' => $this->rejection_reason,
             'return_reason' => $this->return_reason,
-            'submitted_at' => $this->submitted_at ? $this->submitted_at->toIso8601String() : null,
-            'created_at' => $this->created_at ? $this->created_at->toIso8601String() : null,
-            'updated_at' => $this->updated_at ? $this->updated_at->toIso8601String() : null,
+            'submitted_at' => $this->submitted_at instanceof \DateTimeInterface
+                ? $this->submitted_at->toIso8601String()
+                : ($this->submitted_at ? (string) $this->submitted_at : null),
+            'created_at' => $this->created_at instanceof \DateTimeInterface
+                ? $this->created_at->toIso8601String()
+                : ($this->created_at ? (string) $this->created_at : null),
+            'updated_at' => $this->updated_at instanceof \DateTimeInterface
+                ? $this->updated_at->toIso8601String()
+                : ($this->updated_at ? (string) $this->updated_at : null),
             'requester' => $this->whenLoaded('requester', function () {
                 return [
                     'id' => $this->requester->id,
@@ -44,21 +52,17 @@ class PurchaseRequestResource extends JsonResource
                 $this->relationLoaded('requester') && $this->requester->relationLoaded('roles'),
                 fn () => $this->requester->roles->contains(fn ($role) => $role->slug === 'general_manager'),
             ),
-            'department' => $this->department ? [
+            'department' => $this->relationLoaded('department') && $this->department ? [
                 'id' => $this->department->id,
                 'name' => $this->department->name,
                 'code' => $this->department->code,
-            ] : ($this->relationLoaded('requester') && $this->requester?->department ? [
-                'id' => $this->requester->department->id,
-                'name' => $this->requester->department->name,
-                'code' => $this->requester->department->code,
-            ] : ($this->targetDepartment ? [
+            ] : ($this->relationLoaded('targetDepartment') && $this->targetDepartment ? [
                 'id' => $this->targetDepartment->id,
                 'name' => $this->targetDepartment->name,
                 'code' => $this->targetDepartment->code,
-            ] : null)),
+            ] : null),
             'target_department_id' => $this->target_department_id ?? $this->department_id,
-            'target_department' => $this->targetDepartment ? [
+            'target_department' => $this->relationLoaded('targetDepartment') && $this->targetDepartment ? [
                 'id' => $this->targetDepartment->id,
                 'name' => $this->targetDepartment->name,
                 'code' => $this->targetDepartment->code,
@@ -68,7 +72,7 @@ class PurchaseRequestResource extends JsonResource
                 'site_engineer' => $this->targetDepartment->relationLoaded('siteEngineer') && $this->targetDepartment->siteEngineer
                     ? ['id' => $this->targetDepartment->siteEngineer->id, 'name' => $this->targetDepartment->siteEngineer->name]
                     : null,
-            ] : ($this->department ? [
+            ] : ($this->relationLoaded('department') && $this->department ? [
                 'id' => $this->department->id,
                 'name' => $this->department->name,
                 'code' => $this->department->code,
