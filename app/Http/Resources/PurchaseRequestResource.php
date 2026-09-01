@@ -35,6 +35,9 @@ class PurchaseRequestResource extends JsonResource
                 ? $this->updated_at->toIso8601String()
                 : ($this->updated_at ? (string) $this->updated_at : null),
             'requester' => $this->whenLoaded('requester', function () {
+                if (! $this->requester) {
+                    return null;
+                }
                 return [
                     'id' => $this->requester->id,
                     'name' => $this->requester->name,
@@ -45,12 +48,12 @@ class PurchaseRequestResource extends JsonResource
                 ];
             }),
             'requester_role' => $this->when(
-                $this->relationLoaded('requester') && $this->requester->relationLoaded('roles'),
-                fn () => $this->requester->roles->pluck('slug')->first(),
+                $this->relationLoaded('requester') && $this->requester && $this->requester->relationLoaded('roles'),
+                fn () => $this->requester?->roles->pluck('slug')->first(),
             ),
             'is_general_manager_requester' => $this->when(
-                $this->relationLoaded('requester') && $this->requester->relationLoaded('roles'),
-                fn () => $this->requester->roles->contains(fn ($role) => $role->slug === 'general_manager'),
+                $this->relationLoaded('requester') && $this->requester && $this->requester->relationLoaded('roles'),
+                fn () => (bool) $this->requester?->roles->contains(fn ($role) => $role->slug === 'general_manager'),
             ),
             'department' => $this->relationLoaded('department') && $this->department ? [
                 'id' => $this->department->id,
