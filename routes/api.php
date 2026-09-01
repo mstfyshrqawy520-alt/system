@@ -87,56 +87,42 @@ Route::middleware('auth:sanctum')->prefix('purchase-requests')->group(function (
 
 // Reviewer Purchase Request Routes
 Route::middleware('auth:sanctum')->prefix('reviewer/purchase-requests')->group(function () {
-    Route::get('/debug-diag', function (\Illuminate\Http\Request $request) {
-        try {
-            $user = $request->user();
-            $service = app(\App\Services\ReviewerPurchaseRequestService::class);
-            $prs = $service->getReviewableRequests($user, []);
-            $res = \App\Http\Resources\PurchaseRequestResource::collection($prs);
-            return response()->json([
-                'status' => 'OK',
-                'user' => ['id' => $user->id, 'name' => $user->name, 'dept' => $user->department_id],
-                'count' => $prs->total(),
-                'data' => $res->response()->getData(true),
-            ]);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'status' => 'ERROR',
-                'msg' => $e->getMessage(),
-                'class' => get_class($e),
-                'file' => $e->getFile() . ':' . $e->getLine(),
-                'trace' => explode("\n", $e->getTraceAsString()),
-            ], 200);
-        }
-    });
-
     Route::get('/', [ReviewerPurchaseRequestController::class, 'index'])
         ->middleware('permission:purchase_request.view_assigned');
 
     Route::get('/{id}', [ReviewerPurchaseRequestController::class, 'show'])
+        ->whereNumber('id')
         ->middleware('permission:purchase_request.view_assigned');
 
     Route::post('/{id}/review', [ReviewerPurchaseRequestController::class, 'startReview'])
+        ->whereNumber('id')
         ->middleware('permission:purchase_request.review');
 
     Route::put('/{id}', [ReviewerPurchaseRequestController::class, 'updateHeader'])
+        ->whereNumber('id')
         ->middleware('permission:purchase_request.edit_during_review');
 
     Route::put('/{id}/items/{itemId}', [ReviewerPurchaseRequestController::class, 'updateItem'])
+        ->whereNumber('id')
+        ->whereNumber('itemId')
         ->middleware('permission:purchase_request.edit_during_review');
 
     Route::post('/{id}/items', [ReviewerPurchaseRequestController::class, 'addItem'])
+        ->whereNumber('id')
         ->middleware('permission:purchase_request.edit_during_review');
 
     Route::delete('/{id}/items/{itemId}', [ReviewerPurchaseRequestController::class, 'deleteItem'])
+        ->whereNumber('id')
+        ->whereNumber('itemId')
         ->middleware('permission:purchase_request.edit_during_review');
 
     Route::post('/{id}/approve', [ReviewerPurchaseRequestController::class, 'approve'])
+        ->whereNumber('id')
         ->middleware('permission:purchase_request.approve');
 
     Route::post('/{id}/reject', [ReviewerPurchaseRequestController::class, 'reject'])
+        ->whereNumber('id')
         ->middleware('permission:purchase_request.reject');
-
 });
 
 // Procurement Manager Routes

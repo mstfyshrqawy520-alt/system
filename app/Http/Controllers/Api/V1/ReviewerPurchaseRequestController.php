@@ -28,37 +28,24 @@ class ReviewerPurchaseRequestController extends Controller
      */
     public function index(Request $request): JsonResponse|AnonymousResourceCollection
     {
-        try {
-            $filters = $request->validate([
-                'request_number' => ['nullable', 'string', 'max:35'],
-                'requester_name' => ['nullable', 'string', 'max:150'],
-                'status' => ['nullable', 'string', 'max:60'],
-                'priority' => ['nullable', Rule::in(['LOW', 'NORMAL', 'HIGH', 'URGENT'])],
-                'from_date' => ['nullable', 'date'],
-                'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
-            ]);
+        $filters = $request->validate([
+            'request_number' => ['nullable', 'string', 'max:35'],
+            'requester_name' => ['nullable', 'string', 'max:150'],
+            'status' => ['nullable', 'string', 'max:60'],
+            'priority' => ['nullable', Rule::in(['LOW', 'NORMAL', 'HIGH', 'URGENT'])],
+            'from_date' => ['nullable', 'date'],
+            'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
+        ]);
 
-            $prs = $this->reviewerService->getReviewableRequests($request->user(), $filters);
+        $prs = $this->reviewerService->getReviewableRequests($request->user(), $filters);
 
-            return PurchaseRequestResource::collection($prs);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Reviewer PR index error: ' . $e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json([
-                'message' => $e->getMessage(),
-                'file' => basename($e->getFile()) . ':' . $e->getLine(),
-            ], 500);
-        }
+        return PurchaseRequestResource::collection($prs);
     }
 
     /**
      * Display a specific purchase request for review.
      */
-    public function show(Request $request, int $id): JsonResponse|PurchaseRequestResource
+    public function show(Request $request, string|int $id): JsonResponse|PurchaseRequestResource
     {
         $pr = PurchaseRequest::with([
             'requester.roles',
@@ -74,7 +61,7 @@ class ReviewerPurchaseRequestController extends Controller
             'selectedQuote.supplier',
             'purchaseOrders.supplier',
             'purchaseOrders.receipts',
-        ])->findOrFail($id);
+        ])->findOrFail((int) $id);
 
         if (! $this->reviewerService->canUserReviewRequest($request->user(), $pr)) {
             return response()->json(['message' => 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'], 403);
@@ -86,9 +73,9 @@ class ReviewerPurchaseRequestController extends Controller
     /**
      * Start/enter review process on a submitted purchase request.
      */
-    public function startReview(Request $request, int $id): JsonResponse|PurchaseRequestResource
+    public function startReview(Request $request, string|int $id): JsonResponse|PurchaseRequestResource
     {
-        $pr = PurchaseRequest::findOrFail($id);
+        $pr = PurchaseRequest::findOrFail((int) $id);
 
         if (! $this->reviewerService->canUserReviewRequest($request->user(), $pr)) {
             return response()->json(['message' => 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'], 403);
@@ -106,9 +93,9 @@ class ReviewerPurchaseRequestController extends Controller
     /**
      * Directly update header fields on a purchase request.
      */
-    public function updateHeader(ReviewerUpdateHeaderRequest $request, int $id): JsonResponse|PurchaseRequestResource
+    public function updateHeader(ReviewerUpdateHeaderRequest $request, string|int $id): JsonResponse|PurchaseRequestResource
     {
-        $pr = PurchaseRequest::findOrFail($id);
+        $pr = PurchaseRequest::findOrFail((int) $id);
 
         if (! $this->reviewerService->canUserReviewRequest($request->user(), $pr)) {
             return response()->json(['message' => 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'], 403);
@@ -126,10 +113,10 @@ class ReviewerPurchaseRequestController extends Controller
     /**
      * Directly update a line item on a purchase request.
      */
-    public function updateItem(ReviewerUpdateItemRequest $request, int $id, int $itemId): JsonResponse|PurchaseRequestResource
+    public function updateItem(ReviewerUpdateItemRequest $request, string|int $id, string|int $itemId): JsonResponse|PurchaseRequestResource
     {
-        $pr = PurchaseRequest::findOrFail($id);
-        $item = PurchaseRequestItem::findOrFail($itemId);
+        $pr = PurchaseRequest::findOrFail((int) $id);
+        $item = PurchaseRequestItem::findOrFail((int) $itemId);
 
         if (! $this->reviewerService->canUserReviewRequest($request->user(), $pr)) {
             return response()->json(['message' => 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'], 403);
@@ -151,9 +138,9 @@ class ReviewerPurchaseRequestController extends Controller
     /**
      * Add a new line item to a purchase request during review.
      */
-    public function addItem(ReviewerAddItemRequest $request, int $id): JsonResponse|PurchaseRequestResource
+    public function addItem(ReviewerAddItemRequest $request, string|int $id): JsonResponse|PurchaseRequestResource
     {
-        $pr = PurchaseRequest::findOrFail($id);
+        $pr = PurchaseRequest::findOrFail((int) $id);
 
         if (! $this->reviewerService->canUserReviewRequest($request->user(), $pr)) {
             return response()->json(['message' => 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'], 403);
@@ -171,10 +158,10 @@ class ReviewerPurchaseRequestController extends Controller
     /**
      * Remove a line item from a purchase request during review.
      */
-    public function deleteItem(Request $request, int $id, int $itemId): JsonResponse|PurchaseRequestResource
+    public function deleteItem(Request $request, string|int $id, string|int $itemId): JsonResponse|PurchaseRequestResource
     {
-        $pr = PurchaseRequest::findOrFail($id);
-        $item = PurchaseRequestItem::findOrFail($itemId);
+        $pr = PurchaseRequest::findOrFail((int) $id);
+        $item = PurchaseRequestItem::findOrFail((int) $itemId);
 
         if (! $this->reviewerService->canUserReviewRequest($request->user(), $pr)) {
             return response()->json(['message' => 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'], 403);
@@ -196,9 +183,9 @@ class ReviewerPurchaseRequestController extends Controller
     /**
      * Approve purchase request.
      */
-    public function approve(ReviewerApproveRequest $request, int $id): JsonResponse
+    public function approve(ReviewerApproveRequest $request, string|int $id): JsonResponse
     {
-        $pr = PurchaseRequest::with('items')->findOrFail($id);
+        $pr = PurchaseRequest::with('items')->findOrFail((int) $id);
 
         if (! $this->reviewerService->canUserReviewRequest($request->user(), $pr)) {
             return response()->json(['message' => 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'], 403);
@@ -224,9 +211,9 @@ class ReviewerPurchaseRequestController extends Controller
     /**
      * Reject purchase request.
      */
-    public function reject(ReviewerRejectRequest $request, int $id): JsonResponse
+    public function reject(ReviewerRejectRequest $request, string|int $id): JsonResponse
     {
-        $pr = PurchaseRequest::findOrFail($id);
+        $pr = PurchaseRequest::findOrFail((int) $id);
 
         if (! $this->reviewerService->canUserReviewRequest($request->user(), $pr)) {
             return response()->json(['message' => 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'], 403);
@@ -247,5 +234,4 @@ class ReviewerPurchaseRequestController extends Controller
             'data' => new PurchaseRequestResource($rejectedPr),
         ], 200);
     }
-
 }
