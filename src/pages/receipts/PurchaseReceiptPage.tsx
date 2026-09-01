@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/Table';
 import { TableSkeleton } from '../../components/ui/StateFeedback';
 import ErrorMessage from '../../components/ErrorMessage';
 import { parseApiError } from '../../utils/apiError';
@@ -31,7 +30,6 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<number, string>>({});
-  const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const [expandedArchiveId, setExpandedArchiveId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<number | null>(null);
@@ -167,31 +165,6 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
     }
   };
 
-  const updateReceipt = async (receipt: ReceiptRecord) => {
-    const items = (receipt.items || []).map((item) => ({
-      id: item.id,
-      received_quantity: Number(quantities[`receipt-${receipt.id}-${item.id}`] ?? item.received_quantity),
-      notes: itemNotes[`receipt-${receipt.id}-${item.id}`] || undefined,
-    }));
-
-    if (items.some((item) => Number.isNaN(item.received_quantity) || item.received_quantity < 0)) {
-      setError('يرجى إدخال كميات مستلمة صحيحة قبل حفظ التعديل.');
-      return;
-    }
-
-    setSaving(receipt.id);
-    setError(null);
-    try {
-      await updatePurchaseReceiptApi(receipt.id, { items, site_engineer_notes: notes[receipt.id] });
-      setSuccessMessage(`تم حفظ تعديل إذن الاستلام ${receipt.receipt_number} بنجاح.`);
-      await load();
-    } catch (err) {
-      setError(parseApiError(err).message);
-    } finally {
-      setSaving(null);
-    }
-  };
-
   const approveReceipt = async (receipt: ReceiptRecord) => {
     const items = (receipt.items || []).map((item) => ({
       id: item.id,
@@ -213,7 +186,6 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
       });
       setSuccessMessage(`تم اعتماد إذن الاستلام ${receipt.receipt_number} وإرساله للحسابات لصرف الدفعات.`);
       await load();
-      setActiveTab('ARCHIVE');
     } catch (err) {
       setError(parseApiError(err).message);
     } finally {
@@ -238,14 +210,14 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
             <span
               className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl font-black shadow-inner ${
                 mode === 'warehouse'
-                  ? 'bg-amber-600/30 border border-amber-500/50 text-amber-300'
-                  : 'bg-emerald-600/30 border border-emerald-500/50 text-emerald-300'
+                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                  : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
               }`}
             >
               {mode === 'warehouse' ? '📦' : '🏗️'}
             </span>
             <div>
-              <h1 className="text-xl font-black text-slate-100 flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-lg sm:text-xl font-black text-slate-100 flex items-center gap-2.5 flex-wrap">
                 {mode === 'warehouse' ? 'مهام وأرشيف استلام المواد بالمخزن' : 'إذن استلام المواد — فحص واعتماد الاستلام'}
                 {(mode === 'warehouse' ? orders.length : receipts.length) > 0 && (
                   <span
@@ -290,7 +262,7 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
         <button
           type="button"
           onClick={() => setActiveTab('QUEUE')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
             activeTab === 'QUEUE'
               ? mode === 'warehouse'
                 ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-950/40'
@@ -300,7 +272,7 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
         >
           <span>📦 مهام الاستلام المعلقة</span>
           <span
-            className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+            className={`px-2.5 py-0.5 rounded-full text-xs font-black ${
               activeTab === 'QUEUE'
                 ? 'bg-slate-950/20 text-current'
                 : (mode === 'warehouse' ? orders.length : receipts.length) > 0
@@ -315,14 +287,14 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
         <button
           type="button"
           onClick={() => setActiveTab('ARCHIVE')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
             activeTab === 'ARCHIVE'
               ? 'bg-cyan-600 text-white font-black shadow-lg shadow-cyan-950/40'
               : 'bg-slate-900/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800'
           }`}
         >
           <span>🗄️ أرشيف استلام المواد</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300">
+          <span className="px-2.5 py-0.5 rounded-full text-xs bg-slate-800 text-slate-300">
             {archiveReceipts.length}
           </span>
         </button>
@@ -363,159 +335,178 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
           {mode === 'warehouse' ? (
             /* Warehouse Keeper Pending Orders Queue */
             visibleOrders.length > 0 ? (
-              <div className="space-y-5">
+              <div className="space-y-6">
                 {visibleOrders.map((order) => {
                   const isSavingThis = saving === order.id;
 
                   return (
-                    <Card key={order.id} className="p-4 sm:p-6 space-y-5 border-2 border-amber-500/40 bg-slate-900/90 shadow-xl">
-                      {/* Header with quick info & 1-click action */}
-                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-                        <div className="space-y-2">
+                    <Card key={order.id} className="p-4 sm:p-6 space-y-5 border-2 border-amber-500/50 bg-slate-900/95 shadow-2xl rounded-2xl">
+                      {/* Header Card with PO info */}
+                      <div className="space-y-3 border-b border-slate-800 pb-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
                           <div className="flex items-center gap-2.5 flex-wrap">
-                            <span className="font-mono text-base font-black text-cyan-300 bg-cyan-950/90 border border-cyan-700/80 px-3 py-1 rounded-xl shadow-inner">
+                            <span className="font-mono text-base sm:text-lg font-black text-cyan-300 bg-cyan-950 border border-cyan-700 px-3.5 py-1.5 rounded-xl shadow-inner">
                               {order.po_number}
                             </span>
                             {order.purchase_request && (
-                              <span className="text-xs font-bold text-slate-200 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg">
+                              <span className="text-xs sm:text-sm font-bold text-slate-200 bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg">
                                 طلب #{order.purchase_request.request_number}
                               </span>
                             )}
-                            <span className="text-xs font-bold text-slate-200 bg-slate-800/80 border border-slate-700/80 px-2.5 py-1 rounded-lg flex items-center gap-1">
-                              <span>🏢</span> {order.supplier?.company_name || 'مورد غير محدد'}
-                            </span>
-                            {order.purchase_request?.site_engineer && (
-                              <span className="text-xs font-bold text-emerald-300 bg-emerald-950/60 border border-emerald-700/60 px-2.5 py-1 rounded-lg flex items-center gap-1">
-                                <span>👷</span> مهندس الموقع: {order.purchase_request.site_engineer.name}
-                              </span>
-                            )}
                           </div>
-                          <p className="text-xs text-slate-400">
-                            راجع الكميات بالأسفل ثم اضغط زر الاعتماد. الكميات مسجلة كاملة وجاهزة، يمكنك تعديل أي كمية مباشرة إذا كانت البضاعة ناقصة.
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Button
-                            variant="success"
-                            size="md"
-                            isLoading={isSavingThis}
-                            onClick={() => submitWarehouseReceipt(order)}
-                            className="font-black text-xs sm:text-sm bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-950/50 px-5 py-2.5"
-                          >
-                            ✓ اعتماد واستلام المواد فوراً
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Items Table - Always Open and Interactive */}
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between gap-2 flex-wrap bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-                          <h4 className="text-xs font-black text-amber-300 flex items-center gap-1.5">
-                            <span>📦</span> بنود أمر الشراء والكميات المستلمة:
-                          </h4>
                           <button
                             type="button"
                             onClick={() => setAllReceivedFull(order)}
-                            className="text-xs font-bold text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+                            className="text-xs sm:text-sm font-black text-cyan-400 hover:text-cyan-300 bg-cyan-950/60 border border-cyan-800/80 px-3 py-1.5 rounded-xl transition-all hover:bg-cyan-900/80 cursor-pointer flex items-center gap-1.5"
                           >
-                            إعادة ضبط كافة الكميات للمطلوب بالكامل
+                            <span>🔄</span> إعادة ضبط كافة الكميات للمطلوب
                           </button>
                         </div>
 
-                        <div className="overflow-x-auto rounded-xl border border-slate-800">
-                          <Table>
-                            <TableHeader>
-                              <TableRow className="bg-slate-950/80">
-                                <TableHead className="w-12 text-center">#</TableHead>
-                                <TableHead>اسم الصنف والمواصفات</TableHead>
-                                <TableHead>الكمية المطلوبة بأمر الشراء</TableHead>
-                                <TableHead className="w-48 bg-emerald-950/30 text-emerald-300 font-black">الكمية المستلمة فعلياً (جاهزة للتعديل)</TableHead>
-                                <TableHead>ملاحظات البند (اختياري)</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {(order.items || []).map((item, idx) => {
-                                const key = `${order.id}-${item.id}`;
-                                const val = quantities[key] ?? String(item.quantity);
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs sm:text-sm pt-1">
+                          <div className="flex items-center gap-2 text-slate-200 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                            <span className="text-base">🏢</span>
+                            <div>
+                              <span className="text-slate-400 block text-[11px]">المورد:</span>
+                              <span className="font-bold text-slate-100">{order.supplier?.company_name || 'مورد غير محدد'}</span>
+                            </div>
+                          </div>
 
-                                return (
-                                  <TableRow key={item.id} className="hover:bg-slate-800/50 transition-colors">
-                                    <TableCell className="font-mono text-center text-cyan-400 font-bold">{idx + 1}</TableCell>
-                                    <TableCell>
-                                      <div className="font-black text-sm text-slate-100">{item.item_description || item.item?.name}</div>
-                                      {item.specifications && (
-                                        <div className="text-[11px] text-slate-400 mt-0.5">{item.specifications}</div>
-                                      )}
-                                      <div className="flex items-center gap-2 flex-wrap text-[11px] mt-1.5">
-                                        {(item.item_reference || item.pr_item?.item_reference) && (
-                                          <span className="font-mono text-cyan-300 bg-cyan-950/70 border border-cyan-800/60 px-2 py-0.5 rounded font-bold">
-                                            قطعة الأرض: {item.item_reference || item.pr_item?.item_reference}
-                                          </span>
-                                        )}
-                                        {(item.region || item.pr_item?.region) && (
-                                          <span className="text-amber-300 bg-amber-950/70 border border-amber-800/60 px-2 py-0.5 rounded font-bold">
-                                            المنطقة: {item.region || item.pr_item?.region}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </TableCell>
-                                    <TableCell className="font-mono font-bold text-slate-200">
-                                      <span className="text-sm">{item.quantity}</span> {getUnitLabel(item.uom || '')}
-                                    </TableCell>
-                                    <TableCell className="bg-emerald-950/20">
-                                      <div className="flex items-center gap-2">
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          step="any"
-                                          value={val}
-                                          onChange={(e) => setQuantities({ ...quantities, [key]: e.target.value })}
-                                          className="w-32 rounded-xl border-2 border-emerald-500/70 bg-slate-950 px-3 py-1.5 text-sm text-emerald-300 font-black focus:border-emerald-400 focus:outline-none shadow-inner"
-                                        />
-                                        <span className="text-xs text-slate-400 font-bold">{getUnitLabel(item.uom || '')}</span>
-                                      </div>
-                                    </TableCell>
-                                    <TableCell>
+                          {order.purchase_request?.site_engineer && (
+                            <div className="flex items-center gap-2 text-emerald-300 bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-800/50">
+                              <span className="text-base">👷</span>
+                              <div>
+                                <span className="text-emerald-400/80 block text-[11px]">مهندس الموقع المسؤول:</span>
+                                <span className="font-bold">{order.purchase_request.site_engineer.name}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Items List as Touch-Friendly High-Contrast Cards */}
+                      <div className="space-y-4">
+                        <h4 className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-2">
+                          <span>📦</span> بنود أمر الشراء والكميات المستلمة ({order.items?.length || 0} بنود):
+                        </h4>
+
+                        <div className="space-y-3.5">
+                          {(order.items || []).map((item, idx) => {
+                            const key = `${order.id}-${item.id}`;
+                            const val = quantities[key] ?? String(item.quantity);
+
+                            return (
+                              <div
+                                key={item.id}
+                                className="rounded-2xl border-2 border-slate-700/80 bg-slate-950/90 p-4 sm:p-5 space-y-3.5 shadow-lg"
+                              >
+                                {/* Item Title & Index */}
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="space-y-1 flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-300 font-black text-sm border border-cyan-500/40 shrink-0">
+                                        #{idx + 1}
+                                      </span>
+                                      <h4 className="text-base sm:text-lg font-black text-slate-50 tracking-wide">
+                                        {item.item_description || item.item?.name}
+                                      </h4>
+                                    </div>
+                                    {item.specifications && (
+                                      <p className="text-xs sm:text-sm text-slate-400 leading-relaxed pr-9">
+                                        المواصفات: {item.specifications}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Tags: Land parcel & Region */}
+                                <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm">
+                                  {(item.item_reference || item.pr_item?.item_reference) && (
+                                    <span className="inline-flex items-center gap-1.5 font-mono text-cyan-200 bg-cyan-950 border border-cyan-700/80 px-3 py-1 rounded-xl font-black">
+                                      <span>🏷️</span> قطعة الأرض: {item.item_reference || item.pr_item?.item_reference}
+                                    </span>
+                                  )}
+                                  {(item.region || item.pr_item?.region) && (
+                                    <span className="inline-flex items-center gap-1.5 text-amber-200 bg-amber-950 border border-amber-700/80 px-3 py-1 rounded-xl font-black">
+                                      <span>📍</span> المنطقة: {item.region || item.pr_item?.region}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Quantities Comparison Grid */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                  {/* Box 1: Required in PO */}
+                                  <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3.5 flex flex-col justify-between space-y-1">
+                                    <span className="text-xs font-bold text-slate-400">الكمية المطلوبة بأمر الشراء:</span>
+                                    <div className="font-mono text-lg sm:text-xl font-black text-slate-100 flex items-baseline gap-1.5">
+                                      <span>{item.quantity}</span>
+                                      <span className="text-sm font-bold text-slate-400">{getUnitLabel(item.uom || '')}</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Box 2: Received Quantity (Editable, Big Input) */}
+                                  <div className="rounded-xl border-2 border-emerald-500/70 bg-emerald-950/30 p-3.5 space-y-1.5 shadow-inner">
+                                    <label className="text-xs font-black text-emerald-300 flex items-center justify-between">
+                                      <span>الكمية المستلمة فعلياً بالمخزن:</span>
+                                      <span className="text-[11px] font-normal text-emerald-400/80">(جاهزة للتعديل)</span>
+                                    </label>
+                                    <div className="flex items-center gap-2">
                                       <input
-                                        type="text"
-                                        placeholder="ملاحظات حالة البند إن وجدت..."
-                                        value={itemNotes[key] || ''}
-                                        onChange={(e) => setItemNotes({ ...itemNotes, [key]: e.target.value })}
-                                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-200 focus:border-cyan-400"
+                                        type="number"
+                                        min="0"
+                                        step="any"
+                                        value={val}
+                                        onChange={(e) => setQuantities({ ...quantities, [key]: e.target.value })}
+                                        className="w-full rounded-xl border-2 border-emerald-400 bg-slate-950 px-3.5 py-2 text-lg sm:text-xl text-emerald-300 font-black focus:ring-2 focus:ring-emerald-400 focus:outline-none shadow-inner"
                                       />
-                                    </TableCell>
-                                  </TableRow>
-                                );
-                              })}
-                            </TableBody>
-                          </Table>
+                                      <span className="text-sm sm:text-base font-black text-emerald-300 shrink-0 px-1">
+                                        {getUnitLabel(item.uom || '')}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Item Notes */}
+                                <div className="space-y-1 pt-1">
+                                  <input
+                                    type="text"
+                                    placeholder="ملاحظات حالة الصنف إن وجدت (اختياري)..."
+                                    value={itemNotes[key] || ''}
+                                    onChange={(e) => setItemNotes({ ...itemNotes, [key]: e.target.value })}
+                                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs sm:text-sm text-slate-200 focus:border-cyan-400 focus:outline-none"
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
 
-                        <div className="space-y-1 pt-1">
-                          <label className="text-xs font-bold text-slate-300">ملاحظات عامة على الاستلام (اختياري):</label>
+                        {/* General Order Notes */}
+                        <div className="space-y-1.5 pt-2">
+                          <label className="text-xs sm:text-sm font-bold text-slate-300">ملاحظات عامة على الاستلام (اختياري):</label>
                           <textarea
                             rows={2}
                             value={notes[order.id] || ''}
                             onChange={(e) => setNotes({ ...notes, [order.id]: e.target.value })}
                             placeholder="مثال: تم فحص البضاعة ومطابقة الأختام، البضاعة سليمة وبحالة جيدة..."
-                            className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-slate-100 focus:border-cyan-400"
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs sm:text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
                           />
                         </div>
 
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-800">
-                          <span className="text-xs text-slate-400">
-                            💡 بالضغط على الزر الأخضر، سيتم حفظ الاستلام فوراً وتحويل الإذن لمهندس الموقع للاعتماد.
-                          </span>
+                        {/* Big Submit Button */}
+                        <div className="pt-3 border-t border-slate-800 space-y-2">
                           <Button
                             variant="success"
-                            size="md"
+                            size="lg"
                             isLoading={isSavingThis}
                             onClick={() => submitWarehouseReceipt(order)}
-                            className="w-full sm:w-auto font-black text-sm bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-6 py-2.5 shadow-lg shadow-emerald-950/50"
+                            className="w-full font-black text-base sm:text-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 py-3.5 rounded-2xl shadow-xl shadow-emerald-950/60 flex items-center justify-center gap-2"
                           >
-                            ✓ اعتماد واستلام المواد وإرسالها لمهندس الموقع
+                            <span>✓</span> اعتماد واستلام المواد وإرسالها لمهندس الموقع
                           </Button>
+                          <p className="text-center text-xs text-slate-400">
+                            💡 بمجرد الضغط على الزر، سيتم حفظ إذن الاستلام فوراً وإرساله لمهندس الموقع لاعتماده.
+                          </p>
                         </div>
                       </div>
                     </Card>
@@ -534,124 +525,163 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
           ) : (
             /* Site Engineer Pending Receipts Queue */
             visibleReceipts.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {visibleReceipts.map((receipt) => {
                   const isSavingThis = saving === receipt.id;
 
                   return (
-                    <Card key={receipt.id} className="p-4 sm:p-5 space-y-4 border border-slate-800 bg-slate-900/80">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <span className="font-mono text-sm font-black text-emerald-300 bg-emerald-950/80 border border-emerald-800/60 px-2.5 py-1 rounded-lg">
-                            {receipt.receipt_number}
-                          </span>
-                          <span className="text-xs font-bold text-slate-300">
-                            أمر شراء: <span className="font-mono text-cyan-400">{receipt.purchase_order?.po_number}</span>
-                          </span>
-                          <span className="text-xs text-slate-300">
-                            🏢 {receipt.purchase_order?.supplier?.company_name || 'مورد غير محدد'}
-                          </span>
-                          {receipt.warehouse_keeper && (
-                            <span className="text-xs text-amber-300 bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded">
-                              📦 أمين المخزن: {receipt.warehouse_keeper.name}
+                    <Card key={receipt.id} className="p-4 sm:p-6 space-y-5 border-2 border-emerald-500/50 bg-slate-900/95 shadow-2xl rounded-2xl">
+                      {/* Header */}
+                      <div className="space-y-3 border-b border-slate-800 pb-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            <span className="font-mono text-base sm:text-lg font-black text-emerald-300 bg-emerald-950 border border-emerald-700 px-3.5 py-1.5 rounded-xl shadow-inner">
+                              {receipt.receipt_number}
                             </span>
+                            <span className="text-xs sm:text-sm font-bold text-slate-300 bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg">
+                              أمر شراء: <span className="font-mono text-cyan-300">{receipt.purchase_order?.po_number}</span>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs sm:text-sm pt-1">
+                          <div className="flex items-center gap-2 text-slate-200 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                            <span className="text-base">🏢</span>
+                            <div>
+                              <span className="text-slate-400 block text-[11px]">المورد:</span>
+                              <span className="font-bold text-slate-100">{receipt.purchase_order?.supplier?.company_name || 'مورد غير محدد'}</span>
+                            </div>
+                          </div>
+
+                          {receipt.warehouse_keeper && (
+                            <div className="flex items-center gap-2 text-amber-300 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/50">
+                              <span className="text-base">📦</span>
+                              <div>
+                                <span className="text-amber-400/80 block text-[11px]">أمين المخزن:</span>
+                                <span className="font-bold">{receipt.warehouse_keeper.name}</span>
+                              </div>
+                            </div>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="success"
-                            size="sm"
-                            isLoading={isSavingThis}
-                            onClick={() => approveReceipt(receipt)}
-                            className="font-bold text-xs"
-                          >
-                            ✓ اعتماد مطابق للموقع وإرسال للحسابات
-                          </Button>
-                        </div>
+                        {receipt.warehouse_notes && (
+                          <div className="rounded-xl border border-amber-500/40 bg-amber-950/30 p-3 text-xs sm:text-sm text-amber-200">
+                            <strong className="text-amber-400">ملاحظات أمين المخزن: </strong>
+                            {receipt.warehouse_notes}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Items List */}
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-slate-950/80">
-                            <TableHead className="w-12 text-center">#</TableHead>
-                            <TableHead>الصنف</TableHead>
-                            <TableHead>الكمية المطلوبة بأمر الشراء</TableHead>
-                            <TableHead className="w-48 bg-emerald-950/30 text-emerald-300 font-black">الكمية المستلمة المعتمدة (جاهزة للتعديل)</TableHead>
-                            <TableHead>ملاحظات فنية للموقع</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
+                      {/* Items Cards */}
+                      <div className="space-y-4">
+                        <h4 className="text-xs sm:text-sm font-black text-emerald-300 flex items-center gap-2">
+                          <span>🏗️</span> بنود الاستلام المطلوب فحصها هندسياً ({receipt.items?.length || 0} بنود):
+                        </h4>
+
+                        <div className="space-y-3.5">
                           {(receipt.items || []).map((item, idx) => {
                             const key = `receipt-${receipt.id}-${item.id}`;
                             const val = quantities[key] ?? String(item.received_quantity);
 
                             return (
-                              <TableRow key={item.id} className="hover:bg-slate-800/50 transition-colors">
-                                <TableCell className="font-mono text-center text-cyan-400 font-bold">{idx + 1}</TableCell>
-                                <TableCell className="font-bold text-slate-100">
-                                  <div>{item.purchase_order_item?.item_description || item.purchase_order_item?.item?.name}</div>
-                                  <div className="flex items-center gap-2 flex-wrap text-[11px] mt-1 font-normal">
-                                    {(item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference) && (
-                                      <span className="font-mono text-cyan-300 bg-cyan-950/70 border border-cyan-800/60 px-2 py-0.5 rounded font-bold">
-                                        قطعة الأرض: {item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference}
+                              <div
+                                key={item.id}
+                                className="rounded-2xl border-2 border-slate-700/80 bg-slate-950/90 p-4 sm:p-5 space-y-3.5 shadow-lg"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="space-y-1 flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300 font-black text-sm border border-emerald-500/40 shrink-0">
+                                        #{idx + 1}
                                       </span>
-                                    )}
-                                    {(item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region) && (
-                                      <span className="text-amber-300 bg-amber-950/70 border border-amber-800/60 px-2 py-0.5 rounded font-bold">
-                                        المنطقة: {item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region}
+                                      <h4 className="text-base sm:text-lg font-black text-slate-50 tracking-wide">
+                                        {item.purchase_order_item?.item_description || item.purchase_order_item?.item?.name}
+                                      </h4>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm">
+                                  {(item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference) && (
+                                    <span className="inline-flex items-center gap-1.5 font-mono text-cyan-200 bg-cyan-950 border border-cyan-700/80 px-3 py-1 rounded-xl font-black">
+                                      <span>🏷️</span> قطعة الأرض: {item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference}
+                                    </span>
+                                  )}
+                                  {(item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region) && (
+                                    <span className="inline-flex items-center gap-1.5 text-amber-200 bg-amber-950 border border-amber-700/80 px-3 py-1 rounded-xl font-black">
+                                      <span>📍</span> المنطقة: {item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                  <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3.5 flex flex-col justify-between space-y-1">
+                                    <span className="text-xs font-bold text-slate-400">الكمية المطلوبة بأمر الشراء:</span>
+                                    <div className="font-mono text-lg sm:text-xl font-black text-slate-100 flex items-baseline gap-1.5">
+                                      <span>{item.ordered_quantity}</span>
+                                      <span className="text-sm font-bold text-slate-400">{getUnitLabel(item.purchase_order_item?.uom || '')}</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="rounded-xl border-2 border-emerald-500/70 bg-emerald-950/30 p-3.5 space-y-1.5 shadow-inner">
+                                    <label className="text-xs font-black text-emerald-300 flex items-center justify-between">
+                                      <span>الكمية المعتمدة ميدانياً:</span>
+                                      <span className="text-[11px] font-normal text-emerald-400/80">(جاهزة للتعديل)</span>
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="any"
+                                        value={val}
+                                        onChange={(e) => setQuantities({ ...quantities, [key]: e.target.value })}
+                                        className="w-full rounded-xl border-2 border-emerald-400 bg-slate-950 px-3.5 py-2 text-lg sm:text-xl text-emerald-300 font-black focus:ring-2 focus:ring-emerald-400 focus:outline-none shadow-inner"
+                                      />
+                                      <span className="text-sm sm:text-base font-black text-emerald-300 shrink-0 px-1">
+                                        {getUnitLabel(item.purchase_order_item?.uom || '')}
                                       </span>
-                                    )}
+                                    </div>
                                   </div>
-                                </TableCell>
-                                <TableCell className="font-mono text-slate-300">
-                                  {item.ordered_quantity} {getUnitLabel(item.purchase_order_item?.uom || '')}
-                                </TableCell>
-                                <TableCell className="bg-emerald-950/20">
-                                  <div className="flex items-center gap-2">
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      step="any"
-                                      value={val}
-                                      onChange={(e) => setQuantities({ ...quantities, [key]: e.target.value })}
-                                      className="w-32 rounded-xl border-2 border-emerald-500/70 bg-slate-950 px-3 py-1.5 text-sm text-emerald-300 font-black focus:border-emerald-400 focus:outline-none shadow-inner"
-                                    />
-                                    <span className="text-xs text-slate-400 font-bold">{getUnitLabel(item.purchase_order_item?.uom || '')}</span>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
+                                </div>
+
+                                <div className="space-y-1 pt-1">
                                   <input
                                     type="text"
-                                    placeholder="ملاحظات مهندس الموقع..."
+                                    placeholder="ملاحظات مهندس الموقع على هذا الصنف..."
                                     value={itemNotes[key] ?? (item.notes || '')}
                                     onChange={(e) => setItemNotes({ ...itemNotes, [key]: e.target.value })}
-                                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-200 focus:border-cyan-400"
+                                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs sm:text-sm text-slate-200 focus:border-cyan-400 focus:outline-none"
                                   />
-                                </TableCell>
-                              </TableRow>
+                                </div>
+                              </div>
                             );
                           })}
-                        </TableBody>
-                      </Table>
-
-                      {receipt.warehouse_notes && (
-                        <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 p-2.5 text-xs text-amber-200">
-                          <strong className="text-amber-400">ملاحظات أمين المخزن ({receipt.warehouse_keeper?.name}): </strong>
-                          {receipt.warehouse_notes}
                         </div>
-                      )}
 
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-300">ملاحظات واعتماد مهندس الموقع:</label>
-                        <textarea
-                          rows={2}
-                          value={notes[receipt.id] || ''}
-                          onChange={(e) => setNotes({ ...notes, [receipt.id]: e.target.value })}
-                          placeholder="ملاحظات مهندس الموقع على استلام وفحص المواد بالموقع..."
-                          className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-slate-100 focus:border-cyan-400"
-                        />
+                        {/* General Site Notes */}
+                        <div className="space-y-1.5 pt-2">
+                          <label className="text-xs sm:text-sm font-bold text-slate-300">ملاحظات واعتماد مهندس الموقع (اختياري):</label>
+                          <textarea
+                            rows={2}
+                            value={notes[receipt.id] || ''}
+                            onChange={(e) => setNotes({ ...notes, [receipt.id]: e.target.value })}
+                            placeholder="ملاحظات مهندس الموقع على استلام وفحص المواد بالموقع..."
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs sm:text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                          />
+                        </div>
+
+                        {/* Big Submit Button */}
+                        <div className="pt-3 border-t border-slate-800 space-y-2">
+                          <Button
+                            variant="success"
+                            size="lg"
+                            isLoading={isSavingThis}
+                            onClick={() => approveReceipt(receipt)}
+                            className="w-full font-black text-base sm:text-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 py-3.5 rounded-2xl shadow-xl shadow-emerald-950/60 flex items-center justify-center gap-2"
+                          >
+                            <span>✓</span> اعتماد مطابق للموقع وإرسال للحسابات لصرف الدفعات
+                          </Button>
+                        </div>
                       </div>
                     </Card>
                   );
@@ -682,33 +712,28 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
               return (
                 <Card
                   key={`archive-${receipt.id}`}
-                  className={`p-4 sm:p-5 space-y-4 border transition-all ${
+                  className={`p-4 sm:p-6 space-y-4 border rounded-2xl transition-all ${
                     isApproved
-                      ? 'border-emerald-800/70 bg-slate-900/85'
-                      : 'border-slate-800 bg-slate-900/70'
+                      ? 'border-emerald-800/70 bg-slate-900/90'
+                      : 'border-slate-800 bg-slate-900/80'
                   }`}
                 >
                   {/* Top Summary Bar */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <span className="font-mono text-sm font-black text-cyan-300 bg-cyan-950/80 border border-cyan-800/60 px-2.5 py-1 rounded-lg">
+                      <span className="font-mono text-sm sm:text-base font-black text-cyan-300 bg-cyan-950 border border-cyan-800/80 px-3 py-1 rounded-xl">
                         {receipt.receipt_number}
                       </span>
                       {receipt.purchase_order && (
-                        <span className="text-xs font-bold text-slate-300">
+                        <span className="text-xs sm:text-sm font-bold text-slate-300">
                           أمر شراء: <span className="font-mono text-cyan-400">{receipt.purchase_order.po_number}</span>
                         </span>
                       )}
-                      <span className="text-xs text-slate-300">
+                      <span className="text-xs sm:text-sm text-slate-300">
                         🏢 {receipt.purchase_order?.supplier?.company_name || 'مورد غير محدد'}
                       </span>
-                      {receipt.purchase_order?.purchase_request?.department && (
-                        <span className="text-xs text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
-                          قسم {receipt.purchase_order.purchase_request.department.name}
-                        </span>
-                      )}
                       <span
-                        className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                        className={`text-xs font-bold px-3 py-1 rounded-full border ${
                           isApproved
                             ? 'bg-emerald-950 text-emerald-300 border-emerald-800/60'
                             : isPendingSite
@@ -725,7 +750,7 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                         variant="secondary"
                         size="sm"
                         onClick={() => setExpandedArchiveId(isExpanded ? null : receipt.id)}
-                        className="text-xs font-bold"
+                        className="text-xs sm:text-sm font-bold rounded-xl"
                       >
                         {isExpanded ? 'إخفاء التفاصيل' : 'عرض التفاصيل والبنود ←'}
                       </Button>
@@ -733,86 +758,93 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                   </div>
 
                   {/* Audit Trail & Sign-offs Banner */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 space-y-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
+                    <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3.5 space-y-1">
                       <div className="flex items-center justify-between text-slate-400 font-bold">
                         <span>📦 استلام أمين المخزن:</span>
-                        <span className="font-mono text-[11px] text-slate-500">
+                        <span className="font-mono text-xs text-slate-500">
                           {receipt.received_at || receipt.created_at?.slice(0, 10) || '—'}
                         </span>
                       </div>
-                      <p className="text-slate-200 font-bold text-sm">
+                      <p className="text-slate-100 font-bold text-sm sm:text-base">
                         {receipt.warehouse_keeper?.name || 'عم سلامة (أمين المخزن)'}
                       </p>
                       {receipt.warehouse_notes && (
-                        <p className="text-amber-300 text-xs bg-amber-950/30 p-2 rounded-lg border border-amber-900/40 mt-1">
+                        <p className="text-amber-300 text-xs sm:text-sm bg-amber-950/30 p-2.5 rounded-lg border border-amber-900/40 mt-1">
                           «{receipt.warehouse_notes}»
                         </p>
                       )}
                     </div>
 
-                    <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 space-y-1">
+                    <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3.5 space-y-1">
                       <div className="flex items-center justify-between text-slate-400 font-bold">
                         <span>👷 اعتماد مهندس الموقع:</span>
-                        <span className="font-mono text-[11px] text-slate-500">
+                        <span className="font-mono text-xs text-slate-500">
                           {isApproved ? 'تم الاعتماد الميداني' : 'قيد المراجعة'}
                         </span>
                       </div>
-                      <p className="text-slate-200 font-bold text-sm">
+                      <p className="text-slate-100 font-bold text-sm sm:text-base">
                         {receipt.site_engineer?.name || receipt.purchase_order?.purchase_request?.site_engineer?.name || 'مهندس الموقع'}
                       </p>
                       {receipt.site_engineer_notes && (
-                        <p className="text-emerald-300 text-xs bg-emerald-950/30 p-2 rounded-lg border border-emerald-900/40 mt-1">
+                        <p className="text-emerald-300 text-xs sm:text-sm bg-emerald-950/30 p-2.5 rounded-lg border border-emerald-900/40 mt-1">
                           «{receipt.site_engineer_notes}»
                         </p>
                       )}
                     </div>
                   </div>
 
-                  {/* Expanded Items Table in Archive */}
+                  {/* Expanded Items Cards in Archive */}
                   {isExpanded && (
-                    <div className="space-y-3 pt-2 border-t border-slate-800 animate-fade-in">
-                      <h4 className="text-xs font-bold text-slate-300">تفاصيل البنود والكميات المسجلة في هذا الإذن:</h4>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>#</TableHead>
-                            <TableHead>الصنف</TableHead>
-                            <TableHead>الكمية المطلوبة بأمر الشراء</TableHead>
-                            <TableHead>الكمية المستلمة والمطابقة</TableHead>
-                            <TableHead>الملاحظات الفنية</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {(receipt.items || []).map((item, idx) => (
-                            <TableRow key={item.id}>
-                              <TableCell className="font-mono text-cyan-400">{idx + 1}</TableCell>
-                              <TableCell className="font-bold text-slate-100">
-                                <div>{item.purchase_order_item?.item_description || item.purchase_order_item?.item?.name}</div>
-                                <div className="flex items-center gap-2 flex-wrap text-[11px] mt-1 font-normal">
-                                  {(item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference) && (
-                                    <span className="font-mono text-cyan-300 bg-cyan-950/70 border border-cyan-800/60 px-2 py-0.5 rounded font-bold">
-                                      قطعة الأرض: {item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference}
-                                    </span>
-                                  )}
-                                  {(item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region) && (
-                                    <span className="text-amber-300 bg-amber-950/70 border border-amber-800/60 px-2 py-0.5 rounded font-bold">
-                                      المنطقة: {item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region}
-                                    </span>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="font-mono text-slate-300">
-                                {item.ordered_quantity} {getUnitLabel(item.purchase_order_item?.uom || '')}
-                              </TableCell>
-                              <TableCell className="font-mono font-bold text-emerald-400">
-                                {item.received_quantity} {getUnitLabel(item.purchase_order_item?.uom || '')}
-                              </TableCell>
-                              <TableCell className="text-slate-400 text-xs">{item.notes || '—'}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                    <div className="space-y-3 pt-3 border-t border-slate-800 animate-fade-in">
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-300">تفاصيل البنود والكميات المسجلة في هذا الإذن:</h4>
+                      <div className="space-y-2.5">
+                        {(receipt.items || []).map((item, idx) => (
+                          <div key={item.id} className="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-mono text-cyan-400 font-bold text-xs">#{idx + 1}</span>
+                                <span className="font-black text-sm text-slate-100">
+                                  {item.purchase_order_item?.item_description || item.purchase_order_item?.item?.name}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 flex-wrap text-xs">
+                              {(item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference) && (
+                                <span className="font-mono text-cyan-300 bg-cyan-950/80 border border-cyan-800/60 px-2.5 py-0.5 rounded-lg font-bold">
+                                  قطعة الأرض: {item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference}
+                                </span>
+                              )}
+                              {(item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region) && (
+                                <span className="text-amber-300 bg-amber-950/80 border border-amber-800/60 px-2.5 py-0.5 rounded-lg font-bold">
+                                  المنطقة: {item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm pt-1">
+                              <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                <span className="text-slate-400 block text-[11px]">المطلوب بأمر الشراء:</span>
+                                <span className="font-mono font-bold text-slate-200">
+                                  {item.ordered_quantity} {getUnitLabel(item.purchase_order_item?.uom || '')}
+                                </span>
+                              </div>
+                              <div className="bg-emerald-950/40 p-2 rounded-lg border border-emerald-800/60">
+                                <span className="text-emerald-400 block text-[11px]">المستلم الفعلي:</span>
+                                <span className="font-mono font-black text-emerald-300">
+                                  {item.received_quantity} {getUnitLabel(item.purchase_order_item?.uom || '')}
+                                </span>
+                              </div>
+                            </div>
+                            {item.notes && (
+                              <p className="text-xs text-slate-400 bg-slate-900/60 p-2 rounded-lg">
+                                ملاحظات: {item.notes}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </Card>
