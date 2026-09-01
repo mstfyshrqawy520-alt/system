@@ -160,7 +160,6 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
       await createPurchaseReceiptApi(order.id, { items, warehouse_notes: notes[order.id] });
       setSuccessMessage(`تم تسجيل استلام أمر الشراء ${order.po_number} وإرساله لمهندس الموقع بنجاح!`);
       await load();
-      setActiveTab('ARCHIVE');
     } catch (err) {
       setError(parseApiError(err).message);
     } finally {
