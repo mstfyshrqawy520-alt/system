@@ -32,10 +32,10 @@ class AccountingPurchaseOrderController extends Controller
     /**
      * Display specific Purchase Order details for accounting review.
      */
-    public function show(Request $request, int $id): PurchaseOrderResource
+    public function show(Request $request, string|int $id): PurchaseOrderResource
     {
         $po = PurchaseOrder::with(['purchaseRequest.requester', 'purchaseRequest.department', 'purchaseRequest.assignedReviewer', 'purchaseRequest.approvalHistory.actor', 'supplier', 'createdBy', 'accountingReviewer', 'items.item', 'approvalHistory.actor'])
-            ->findOrFail($id);
+            ->findOrFail((int) $id);
 
         return new PurchaseOrderResource($po);
     }
@@ -43,7 +43,7 @@ class AccountingPurchaseOrderController extends Controller
     /**
      * Prohibited: Accountant has read-only access in Stage 3 scope.
      */
-    public function approve(Request $request, int $id): JsonResponse
+    public function approve(Request $request, string|int $id): JsonResponse
     {
         return response()->json([
             'message' => 'Prohibited action: Accountant has read-only access. Approval is not allowed.',
@@ -53,7 +53,7 @@ class AccountingPurchaseOrderController extends Controller
     /**
      * Prohibited: Accountant has read-only access in Stage 3 scope.
      */
-    public function returnToProcurement(Request $request, int $id): JsonResponse
+    public function returnToProcurement(Request $request, string|int $id): JsonResponse
     {
         return response()->json([
             'message' => 'Prohibited action: Accountant has read-only access. Returning PO is not allowed.',

@@ -28,16 +28,16 @@ class GeneralManagerPurchaseOrderController extends Controller
     /**
      * Display complete Purchase Order details for General Manager — read-only.
      */
-    public function show(Request $request, int $id): JsonResponse|PurchaseOrderResource
+    public function show(Request $request, string|int $id): JsonResponse|PurchaseOrderResource
     {
-        $po = $this->gmService->getPoForGmView($id);
+        $po = $this->gmService->getPoForGmView((int) $id);
         return new PurchaseOrderResource($po);
     }
 
     /**
      * Prohibited: General Manager has read-only access.
      */
-    public function approve(Request $request, int $id): JsonResponse
+    public function approve(Request $request, string|int $id): JsonResponse
     {
         return response()->json([
             'message' => 'Prohibited action: General Manager has read-only access. Approval is not allowed.',
@@ -47,7 +47,7 @@ class GeneralManagerPurchaseOrderController extends Controller
     /**
      * Prohibited: General Manager has read-only access.
      */
-    public function reject(Request $request, int $id): JsonResponse
+    public function reject(Request $request, string|int $id): JsonResponse
     {
         return response()->json([
             'message' => 'Prohibited action: General Manager has read-only access. Rejection is not allowed.',
@@ -57,7 +57,7 @@ class GeneralManagerPurchaseOrderController extends Controller
     /**
      * Prohibited: General Manager has read-only access.
      */
-    public function returnToProcurement(Request $request, int $id): JsonResponse
+    public function returnToProcurement(Request $request, string|int $id): JsonResponse
     {
         return response()->json([
             'message' => 'Prohibited action: General Manager has read-only access. Returning PO is not allowed.',

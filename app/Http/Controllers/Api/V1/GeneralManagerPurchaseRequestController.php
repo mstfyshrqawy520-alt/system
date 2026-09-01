@@ -22,21 +22,21 @@ class GeneralManagerPurchaseRequestController extends Controller
         return PurchaseRequestResource::collection($this->service->getPendingRequests($perPage));
     }
 
-    public function show(Request $request, int $id): PurchaseRequestResource
+    public function show(Request $request, string|int $id): PurchaseRequestResource
     {
-        return new PurchaseRequestResource($this->service->getPendingRequest($id));
+        return new PurchaseRequestResource($this->service->getPendingRequest((int) $id));
     }
 
-    public function update(UpdatePurchaseRequestRequest $request, int $id): PurchaseRequestResource
+    public function update(UpdatePurchaseRequestRequest $request, string|int $id): PurchaseRequestResource
     {
         $validated = $request->validated();
 
         return new PurchaseRequestResource(
-            $this->service->updateRequest($request->user(), $this->service->getPendingRequest($id), $validated)
+            $this->service->updateRequest($request->user(), $this->service->getPendingRequest((int) $id), $validated)
         );
     }
 
-    public function approve(Request $request, int $id): PurchaseRequestResource
+    public function approve(Request $request, string|int $id): PurchaseRequestResource
     {
         $validated = $request->validate([
             'comment' => ['sometimes', 'nullable', 'string', 'max:2000'],
@@ -45,13 +45,13 @@ class GeneralManagerPurchaseRequestController extends Controller
         return new PurchaseRequestResource(
             $this->service->approveRequest(
                 $request->user(),
-                $this->service->getPendingRequest($id),
+                $this->service->getPendingRequest((int) $id),
                 $validated['comment'] ?? null
             )
         );
     }
 
-    public function reject(Request $request, int $id): PurchaseRequestResource
+    public function reject(Request $request, string|int $id): PurchaseRequestResource
     {
         $validated = $request->validate([
             'comment' => ['required', 'string', 'min:2', 'max:2000'],
@@ -60,7 +60,7 @@ class GeneralManagerPurchaseRequestController extends Controller
         return new PurchaseRequestResource(
             $this->service->rejectRequest(
                 $request->user(),
-                $this->service->getPendingRequest($id),
+                $this->service->getPendingRequest((int) $id),
                 $validated['comment']
             )
         );

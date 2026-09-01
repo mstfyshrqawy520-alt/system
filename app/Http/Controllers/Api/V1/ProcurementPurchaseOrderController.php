@@ -64,10 +64,10 @@ class ProcurementPurchaseOrderController extends Controller
     /**
      * View a purchase request (pending or approved by procurement).
      */
-    public function showApprovedPr(Request $request, int $id): JsonResponse|PurchaseRequestResource
+    public function showApprovedPr(Request $request, string|int $id): JsonResponse|PurchaseRequestResource
     {
         $pr = PurchaseRequest::with(['requester', 'department', 'assignedReviewer', 'siteEngineer', 'directSupplier', 'items.item', 'approvalHistory.actor', 'quotes.supplier', 'quotes.recommendations.user', 'selectedQuote.supplier'])
-            ->findOrFail($id);
+            ->findOrFail((int) $id);
 
         if (! in_array($pr->status, ['PENDING_PROCUREMENT_APPROVAL', 'PENDING_QUOTE_RECOMMENDATIONS', 'PENDING_EXECUTIVE_QUOTE_DECISION', 'APPROVED_BY_PROCUREMENT', 'APPROVED_BY_ACCOUNTING'])) {
             return response()->json(['message' => 'Purchase request is not in a procurement queue status.'], 409);
@@ -79,7 +79,7 @@ class ProcurementPurchaseOrderController extends Controller
     /**
      * Procurement Manager chooses the next route: three quotes or direct accounting approval.
      */
-    public function approvePurchaseRequest(Request $request, int $id): JsonResponse
+    public function approvePurchaseRequest(Request $request, string|int $id): JsonResponse
     {
         $validated = $request->validate([
             'use_quotes' => ['nullable', 'boolean'],
@@ -93,7 +93,7 @@ class ProcurementPurchaseOrderController extends Controller
             'financial_data.items.*.unit_price' => ['required_if:use_quotes,false', 'numeric', 'gte:0'],
             'financial_data.notes' => ['nullable', 'string', 'max:5000'],
         ]);
-        $pr = PurchaseRequest::with(['requester', 'department', 'items'])->findOrFail($id);
+        $pr = PurchaseRequest::with(['requester', 'department', 'items'])->findOrFail((int) $id);
         $useQuotes = array_key_exists('use_quotes', $validated) ? (bool) $validated['use_quotes'] : true;
 
         try {
@@ -124,13 +124,13 @@ class ProcurementPurchaseOrderController extends Controller
     /**
      * Reject a PR at procurement level (PENDING_PROCUREMENT_APPROVAL → REJECTED).
      */
-    public function rejectPurchaseRequest(Request $request, int $id): JsonResponse
+    public function rejectPurchaseRequest(Request $request, string|int $id): JsonResponse
     {
         $validated = $request->validate([
             'comment' => ['required', 'string', 'min:3', 'max:1000'],
         ]);
 
-        $pr = PurchaseRequest::with(['requester', 'department', 'items'])->findOrFail($id);
+        $pr = PurchaseRequest::with(['requester', 'department', 'items'])->findOrFail((int) $id);
 
         try {
             $rejected = $this->procurementPrService->rejectPurchaseRequest(
@@ -214,9 +214,9 @@ class ProcurementPurchaseOrderController extends Controller
     /**
      * View purchase order details.
      */
-    public function showPo(Request $request, int $id): PurchaseOrderResource
+    public function showPo(Request $request, string|int $id): PurchaseOrderResource
     {
-        $po = PurchaseOrder::with(['purchaseRequest.requester', 'purchaseRequest.department', 'purchaseRequest.assignedReviewer', 'purchaseRequest.approvalHistory.actor', 'supplier', 'createdBy', 'items.item'])->findOrFail($id);
+        $po = PurchaseOrder::with(['purchaseRequest.requester', 'purchaseRequest.department', 'purchaseRequest.assignedReviewer', 'purchaseRequest.approvalHistory.actor', 'supplier', 'createdBy', 'items.item'])->findOrFail((int) $id);
         return new PurchaseOrderResource($po);
     }
 
@@ -250,9 +250,9 @@ class ProcurementPurchaseOrderController extends Controller
     /**
      * Update draft Purchase Order header details.
      */
-    public function updateHeader(UpdatePurchaseOrderHeaderRequest $request, int $id): JsonResponse|PurchaseOrderResource
+    public function updateHeader(UpdatePurchaseOrderHeaderRequest $request, string|int $id): JsonResponse|PurchaseOrderResource
     {
-        $po = PurchaseOrder::where('id', $id)->firstOrFail();
+        $po = PurchaseOrder::where('id', (int) $id)->firstOrFail();
 
         if ($po->status !== 'PO_DRAFT' && $po->status !== 'RETURNED_TO_PROCUREMENT') {
             return response()->json(['message' => 'Only draft or returned purchase orders can be edited.'], 409);
@@ -270,10 +270,10 @@ class ProcurementPurchaseOrderController extends Controller
     /**
      * Update commercial details for a PO line item.
      */
-    public function updateItem(UpdatePurchaseOrderItemRequest $request, int $id, int $itemId): JsonResponse|PurchaseOrderResource
+    public function updateItem(UpdatePurchaseOrderItemRequest $request, string|int $id, string|int $itemId): JsonResponse|PurchaseOrderResource
     {
-        $po = PurchaseOrder::findOrFail($id);
-        $item = PurchaseOrderItem::findOrFail($itemId);
+        $po = PurchaseOrder::findOrFail((int) $id);
+        $item = PurchaseOrderItem::findOrFail((int) $itemId);
 
         if ($po->status !== 'PO_DRAFT' && $po->status !== 'RETURNED_TO_PROCUREMENT') {
             return response()->json(['message' => 'Only draft or returned purchase orders can be edited.'], 409);
@@ -290,9 +290,9 @@ class ProcurementPurchaseOrderController extends Controller
     /**
      * Add a new line item to a draft PO.
      */
-    public function addItem(AddPurchaseOrderItemRequest $request, int $id): JsonResponse|PurchaseOrderResource
+    public function addItem(AddPurchaseOrderItemRequest $request, string|int $id): JsonResponse|PurchaseOrderResource
     {
-        $po = PurchaseOrder::findOrFail($id);
+        $po = PurchaseOrder::findOrFail((int) $id);
 
         if ($po->status !== 'PO_DRAFT' && $po->status !== 'RETURNED_TO_PROCUREMENT') {
             return response()->json(['message' => 'Only draft or returned purchase orders can be edited.'], 409);
@@ -305,10 +305,10 @@ class ProcurementPurchaseOrderController extends Controller
     /**
      * Remove a line item from a draft PO.
      */
-    public function deleteItem(Request $request, int $id, int $itemId): JsonResponse|PurchaseOrderResource
+    public function deleteItem(Request $request, string|int $id, string|int $itemId): JsonResponse|PurchaseOrderResource
     {
-        $po = PurchaseOrder::findOrFail($id);
-        $item = PurchaseOrderItem::findOrFail($itemId);
+        $po = PurchaseOrder::findOrFail((int) $id);
+        $item = PurchaseOrderItem::findOrFail((int) $itemId);
 
         if ($po->status !== 'PO_DRAFT' && $po->status !== 'RETURNED_TO_PROCUREMENT') {
             return response()->json(['message' => 'Only draft or returned purchase orders can be edited.'], 409);
@@ -325,9 +325,9 @@ class ProcurementPurchaseOrderController extends Controller
     /**
      * Submit draft Purchase Order to Accounting for financial audit.
      */
-    public function submitPoToAccounting(Request $request, int $id): JsonResponse
+    public function submitPoToAccounting(Request $request, string|int $id): JsonResponse
     {
-        $po = PurchaseOrder::with(['purchaseRequest.requester', 'purchaseRequest.department', 'items', 'supplier', 'createdBy'])->findOrFail($id);
+        $po = PurchaseOrder::with(['purchaseRequest.requester', 'purchaseRequest.department', 'items', 'supplier', 'createdBy'])->findOrFail((int) $id);
 
         if (in_array($po->status, ['ISSUED', 'PENDING_ACCOUNTING_REVIEW', 'APPROVED_BY_ACCOUNTING', 'FINAL_APPROVED'], true)) {
             return response()->json([
@@ -384,11 +384,11 @@ class ProcurementPurchaseOrderController extends Controller
     /**
      * Update delivery tracking details for a PO.
      */
-    public function updateDeliveryStatus(UpdateDeliveryStatusRequest $request, int $id): JsonResponse
+    public function updateDeliveryStatus(UpdateDeliveryStatusRequest $request, string|int $id): JsonResponse
     {
         $validated = $request->validated();
 
-        $po = PurchaseOrder::findOrFail($id);
+        $po = PurchaseOrder::findOrFail((int) $id);
         $oldStatus = $po->delivery_status;
 
         $po->update([

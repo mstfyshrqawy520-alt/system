@@ -64,24 +64,33 @@ Route::middleware('auth:sanctum')->prefix('purchase-requests')->group(function (
     Route::get('/site-engineer-options', [PurchaseRequestController::class, 'siteEngineerOptions']);
 
     Route::get('/{id}', [PurchaseRequestController::class, 'show'])
+        ->whereNumber('id')
         ->middleware('permission:purchase_request.view_own');
 
     Route::put('/{id}', [PurchaseRequestController::class, 'update'])
+        ->whereNumber('id')
         ->middleware('permission:purchase_request.edit_own');
 
     Route::delete('/{id}', [PurchaseRequestController::class, 'destroy'])
+        ->whereNumber('id')
         ->middleware('permission:purchase_request.edit_own');
 
     Route::post('/{id}/submit', [PurchaseRequestController::class, 'submit'])
+        ->whereNumber('id')
         ->middleware('permission:purchase_request.submit');
 
     Route::post('/{id}/attachments', [PurchaseRequestController::class, 'attachmentUpload'])
+        ->whereNumber('id')
         ->middleware('permission:purchase_request.create');
 
     Route::delete('/{id}/attachments/{attachmentId}', [PurchaseRequestController::class, 'attachmentDelete'])
+        ->whereNumber('id')
+        ->whereNumber('attachmentId')
         ->middleware('permission:purchase_request.edit_own');
 
     Route::get('/{id}/attachments/{attachmentId}/download', [PurchaseRequestController::class, 'attachmentDownload'])
+        ->whereNumber('id')
+        ->whereNumber('attachmentId')
         ->middleware('permission:purchase_request.view_own');
 });
 

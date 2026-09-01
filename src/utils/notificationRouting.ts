@@ -20,9 +20,9 @@ export const extractDocumentInfo = (notification: Notification & { data?: any })
   const notifiableType = notification.notifiable_type || '';
   const type = notification.type || '';
 
-  const prId = data.purchase_request_id || (notifiableType.includes('PurchaseRequest') ? notification.notifiable_id : null) || data.id;
-  const poId = data.purchase_order_id || (notifiableType.includes('PurchaseOrder') ? notification.notifiable_id : null);
-  const receiptId = data.purchase_receipt_id || (notifiableType.includes('PurchaseReceipt') ? notification.notifiable_id : null);
+  const prId = data.purchase_request_id || data.pr_id || (notifiableType.includes('PurchaseRequest') ? notification.notifiable_id : null);
+  const poId = data.purchase_order_id || data.po_id || (notifiableType.includes('PurchaseOrder') ? notification.notifiable_id : null);
+  const receiptId = data.purchase_receipt_id || data.receipt_id || (notifiableType.includes('PurchaseReceipt') ? notification.notifiable_id : null);
   const invoiceId = data.invoice_id || (notifiableType.includes('SupplierInvoice') ? notification.notifiable_id : null);
   const supplierId = data.supplier_id;
   const quoteId = data.quote_id || data.purchase_request_quote_id;
@@ -180,6 +180,20 @@ export const resolveNotificationAction = (
     priority = 'URGENT';
   } else if (data.priority === 'HIGH' || isActionable) {
     priority = 'HIGH';
+  }
+
+  // Target URL override if specified directly by backend
+  if (notification.target_url && notification.target_url !== '/' && notification.target_url !== '/notifications') {
+    return {
+      url: notification.target_url,
+      actionLabel: isActionable ? 'متابعة الإجراء المطلوب' : 'عرض ومتابعة الطلب',
+      icon: isActionable ? '⚡' : '📋',
+      badgeLabel: isActionable ? 'مطلوب إجراء' : 'إشعار',
+      docType: info.docType,
+      docNumber: info.docNumber,
+      isActionable,
+      priority,
+    };
   }
 
   // 1. General Manager (المدير العام)

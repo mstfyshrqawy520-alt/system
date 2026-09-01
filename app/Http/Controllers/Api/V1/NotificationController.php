@@ -96,9 +96,9 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function markAsRead(Request $request, int $id): JsonResponse|NotificationResource
+    public function markAsRead(Request $request, string|int $id): JsonResponse|NotificationResource
     {
-        $notification = Notification::findOrFail($id);
+        $notification = Notification::findOrFail((int) $id);
         try {
             $updatedNotif = $this->notificationService->markAsRead($request->user(), $notification);
         } catch (AuthorizationException $e) {

@@ -150,7 +150,7 @@ class PurchaseRequestController extends Controller
     /**
      * Display the specified Purchase Request.
      */
-    public function show(Request $request, int $id): JsonResponse|PurchaseRequestResource
+    public function show(Request $request, string|int $id): JsonResponse|PurchaseRequestResource
     {
         $pr = PurchaseRequest::with([
             'requester.roles',
@@ -167,7 +167,7 @@ class PurchaseRequestController extends Controller
             'attachments.uploadedBy',
             'purchaseOrders.supplier',
             'purchaseOrders.receipts',
-        ])->findOrFail($id);
+        ])->findOrFail((int) $id);
 
         $user = $request->user();
         $isAllowed = $pr->user_id === $user->id
@@ -200,9 +200,9 @@ class PurchaseRequestController extends Controller
     /**
      * Update the specified draft or returned Purchase Request.
      */
-    public function update(UpdatePurchaseRequestRequest $request, int $id): JsonResponse|PurchaseRequestResource
+    public function update(UpdatePurchaseRequestRequest $request, string|int $id): JsonResponse|PurchaseRequestResource
     {
-        $pr = PurchaseRequest::findOrFail($id);
+        $pr = PurchaseRequest::findOrFail((int) $id);
 
         if ($pr->user_id !== $request->user()->id) {
             return response()->json([
@@ -228,9 +228,9 @@ class PurchaseRequestController extends Controller
     /**
      * Remove the specified draft Purchase Request from storage.
      */
-    public function destroy(Request $request, int $id): JsonResponse
+    public function destroy(Request $request, string|int $id): JsonResponse
     {
-        $pr = PurchaseRequest::findOrFail($id);
+        $pr = PurchaseRequest::findOrFail((int) $id);
 
         if ($pr->user_id !== $request->user()->id) {
             return response()->json([
@@ -254,9 +254,9 @@ class PurchaseRequestController extends Controller
     /**
      * Submit a draft Purchase Request for review.
      */
-    public function submit(Request $request, int $id): JsonResponse
+    public function submit(Request $request, string|int $id): JsonResponse
     {
-        $pr = PurchaseRequest::with('items')->findOrFail($id);
+        $pr = PurchaseRequest::with('items')->findOrFail((int) $id);
 
         if ($pr->user_id !== $request->user()->id) {
             return response()->json([
@@ -281,7 +281,7 @@ class PurchaseRequestController extends Controller
     /**
      * Upload an attachment to a Purchase Request.
      */
-    public function attachmentUpload(Request $request, int $id): JsonResponse
+    public function attachmentUpload(Request $request, string|int $id): JsonResponse
     {
         $request->validate([
             'file' => [
@@ -292,7 +292,7 @@ class PurchaseRequestController extends Controller
             ],
         ]);
 
-        $pr = PurchaseRequest::findOrFail($id);
+        $pr = PurchaseRequest::findOrFail((int) $id);
 
         if ($pr->user_id !== $request->user()->id) {
             return response()->json(['message' => 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'], 403);
@@ -335,9 +335,9 @@ class PurchaseRequestController extends Controller
     /**
      * Delete an attachment from a Purchase Request.
      */
-    public function attachmentDelete(Request $request, int $prId, int $attachmentId): JsonResponse
+    public function attachmentDelete(Request $request, string|int $prId, string|int $attachmentId): JsonResponse
     {
-        $pr = PurchaseRequest::findOrFail($prId);
+        $pr = PurchaseRequest::findOrFail((int) $prId);
 
         if ($pr->user_id !== $request->user()->id) {
             return response()->json(['message' => 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'], 403);
@@ -349,10 +349,9 @@ class PurchaseRequestController extends Controller
             ], 409);
         }
 
-        $attachment = Attachment::where('id', $attachmentId)
-            ->where('attachable_type', PurchaseRequest::class)
+        $attachment = Attachment::where('attachable_type', PurchaseRequest::class)
             ->where('attachable_id', $pr->id)
-            ->firstOrFail();
+            ->findOrFail((int) $attachmentId);
 
         Storage::disk('local')->delete($attachment->file_path);
         $attachment->delete();
@@ -361,20 +360,42 @@ class PurchaseRequestController extends Controller
     }
 
     /**
-     * Download an attachment.
+     * Download an attachment from a Purchase Request.
      */
-    public function attachmentDownload(Request $request, int $prId, int $attachmentId)
+    public function attachmentDownload(Request $request, string|int $prId, string|int $attachmentId)
     {
-        $pr = PurchaseRequest::findOrFail($prId);
+        $pr = PurchaseRequest::findOrFail((int) $prId);
 
-        if ($pr->user_id !== $request->user()->id) {
+        $user = $request->user();
+        $isAllowed = $pr->user_id === $user->id
+            || $user->hasAnyRole(['admin', 'general_manager', 'procurement_manager', 'accountant', 'warehouse_keeper'])
+            || $pr->reviewer_user_id === $user->id
+            || $pr->site_engineer_user_id === $user->id
+            || ($user->hasRole('reviewer') && (
+                $pr->target_department_id === $user->department_id
+                || $pr->department_id === $user->department_id
+                || $pr->targetDepartment?->manager_user_id === $user->id
+                || $pr->department?->manager_user_id === $user->id
+            ))
+            || $user->hasAnyPermission([
+                'purchase_request.view',
+                'purchase_request.review',
+                'purchase_request.approve_gm',
+                'purchase_request.convert_po',
+                'purchase_request.review_accounting',
+            ]);
+
+        if (! $isAllowed) {
             return response()->json(['message' => 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'], 403);
         }
 
-        $attachment = Attachment::where('id', $attachmentId)
-            ->where('attachable_type', PurchaseRequest::class)
+        $attachment = Attachment::where('attachable_type', PurchaseRequest::class)
             ->where('attachable_id', $pr->id)
-            ->firstOrFail();
+            ->findOrFail((int) $attachmentId);
+
+        if (! Storage::disk('local')->exists($attachment->file_path)) {
+            return response()->json(['message' => 'File not found on disk.'], 404);
+        }
 
         return Storage::disk('local')->download($attachment->file_path, $attachment->file_name);
     }

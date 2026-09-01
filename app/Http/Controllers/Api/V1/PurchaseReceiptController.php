@@ -76,7 +76,7 @@ class PurchaseReceiptController extends Controller
         return response()->json($receipts);
     }
 
-    public function show(int $id)
+    public function show(string|int $id)
     {
         $receipt = PurchaseReceipt::with([
             'purchaseOrder.supplier',
@@ -98,12 +98,12 @@ class PurchaseReceiptController extends Controller
             'siteEngineer',
             'items.purchaseOrderItem.item',
             'items.purchaseOrderItem.prItem',
-        ])->findOrFail($id);
+        ])->findOrFail((int) $id);
 
         return response()->json(['data' => $receipt]);
     }
 
-    public function update(Request $request, int $id)
+    public function update(Request $request, string|int $id)
     {
         $validated = $request->validate([
             'site_engineer_notes' => ['nullable', 'string', 'max:3000'],
@@ -112,7 +112,7 @@ class PurchaseReceiptController extends Controller
             'items.*.received_quantity' => ['required', 'numeric', 'gte:0'],
             'items.*.notes' => ['nullable', 'string', 'max:1000'],
         ]);
-        $receipt = PurchaseReceipt::findOrFail($id);
+        $receipt = PurchaseReceipt::findOrFail((int) $id);
 
         try {
             $updated = $this->service->updateBySiteEngineer(
@@ -128,7 +128,7 @@ class PurchaseReceiptController extends Controller
         return response()->json(['message' => 'تم حفظ تعديل إذن الاستلام ويمكن اعتماده وإرساله للحسابات.', 'data' => $updated]);
     }
 
-    public function approve(Request $request, int $id)
+    public function approve(Request $request, string|int $id)
     {
         $validated = $request->validate([
             'site_engineer_notes' => ['nullable', 'string', 'max:3000'],
@@ -137,7 +137,7 @@ class PurchaseReceiptController extends Controller
             'items.*.received_quantity' => ['required_with:items', 'numeric', 'gte:0'],
             'items.*.notes' => ['nullable', 'string', 'max:1000'],
         ]);
-        $receipt = PurchaseReceipt::findOrFail($id);
+        $receipt = PurchaseReceipt::findOrFail((int) $id);
 
         try {
             if (! empty($validated['items'])) {

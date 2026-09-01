@@ -28,7 +28,7 @@ class AccountingPurchaseRequestController extends Controller
         return SupplierResource::collection($this->service->getActiveSuppliers());
     }
 
-    public function approve(Request $request, int $id): JsonResponse
+    public function approve(Request $request, string|int $id): JsonResponse
     {
         $validated = $request->validate([
             'comment' => ['nullable', 'string', 'max:2000'],
@@ -41,7 +41,7 @@ class AccountingPurchaseRequestController extends Controller
             'financial_data.items.*.unit_price' => ['required', 'numeric', 'gte:0'],
             'financial_data.notes' => ['nullable', 'string', 'max:5000'],
         ]);
-        $purchaseRequest = PurchaseRequest::findOrFail($id);
+        $purchaseRequest = PurchaseRequest::findOrFail((int) $id);
 
         try {
             $approved = $this->service->approveRequest(
@@ -60,12 +60,12 @@ class AccountingPurchaseRequestController extends Controller
         ]);
     }
 
-    public function reject(Request $request, int $id): JsonResponse
+    public function reject(Request $request, string|int $id): JsonResponse
     {
         $validated = $request->validate([
             'comment' => ['required', 'string', 'min:3', 'max:2000'],
         ]);
-        $purchaseRequest = PurchaseRequest::findOrFail($id);
+        $purchaseRequest = PurchaseRequest::findOrFail((int) $id);
 
         try {
             $rejected = $this->service->rejectRequest(

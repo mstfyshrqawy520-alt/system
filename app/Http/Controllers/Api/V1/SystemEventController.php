@@ -16,9 +16,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SystemEventController extends Controller
 {
-    public function purchaseRequest(Request $request, int $id)
+    public function purchaseRequest(Request $request, string|int $id)
     {
-        $purchaseRequest = PurchaseRequest::query()->findOrFail($id);
+        $purchaseRequest = PurchaseRequest::query()->findOrFail((int) $id);
         abort_unless($this->canViewPurchaseRequest($request, $purchaseRequest), Response::HTTP_FORBIDDEN);
 
         $events = SystemEvent::query()
@@ -51,9 +51,9 @@ class SystemEventController extends Controller
         return SystemEventResource::collection($events);
     }
 
-    public function purchaseOrder(Request $request, int $id)
+    public function purchaseOrder(Request $request, string|int $id)
     {
-        $purchaseOrder = PurchaseOrder::query()->findOrFail($id);
+        $purchaseOrder = PurchaseOrder::query()->findOrFail((int) $id);
         abort_unless($this->canViewPurchaseOrder($request, $purchaseOrder), Response::HTTP_FORBIDDEN);
 
         $events = SystemEvent::query()
