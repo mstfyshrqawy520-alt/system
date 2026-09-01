@@ -5,6 +5,7 @@ import { Modal } from '../ui/Modal';
 import QuickPeekDrawer, { PeekType } from '../ui/QuickPeekDrawer';
 import { getSiteEngineerReceiverOptionsApi } from '../../api/purchaseRequests';
 import { useAuth } from '../../context/AuthContext';
+import { getUnitLabel } from '../../utils/units';
 
 export interface ActionInboxItemDetail {
   description: string;
@@ -354,7 +355,7 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
 
                     {/* Detailed Line Items Box (If available) */}
                     {item.items_list && item.items_list.length > 0 && (
-                      <div className="rounded-xl border border-slate-800/90 bg-slate-900/70 p-2.5 space-y-1.5 text-xs">
+                      <div className="rounded-xl border border-slate-800/90 bg-slate-900/70 p-2.5 space-y-2 text-xs">
                         <div className="text-[11px] font-bold text-slate-300 flex items-center justify-between">
                           <span className="flex items-center gap-1 text-cyan-400">
                             <span>📦</span> بنود الطلب ({item.items_list.length}):
@@ -363,15 +364,31 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                             <span className="text-[10px] text-slate-500">+{item.items_count - item.items_list.length} أصناف أخرى</span>
                           )}
                         </div>
-                        <div className="space-y-1 max-h-24 overflow-y-auto custom-select-scrollbar pr-1">
+                        <div className="space-y-1.5 max-h-36 overflow-y-auto custom-select-scrollbar pr-1">
                           {item.items_list.map((it, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-[11px] text-slate-200 bg-slate-950/50 px-2 py-1 rounded border border-slate-800/60">
-                              <span className="truncate max-w-[150px] font-medium" title={it.description}>
-                                • {it.description}
-                              </span>
-                              <span className="font-mono font-bold text-amber-300 shrink-0">
-                                {it.quantity} {it.uom || ''}
-                              </span>
+                            <div key={idx} className="flex flex-col gap-1 text-[11px] text-slate-200 bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-semibold text-slate-100 truncate" title={it.description}>
+                                  • {it.description}
+                                </span>
+                                <span className="font-mono font-bold text-amber-300 shrink-0">
+                                  {it.quantity} {getUnitLabel(it.uom || '')}
+                                </span>
+                              </div>
+                              {(it.parcel || it.region) && (
+                                <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
+                                  {it.parcel && (
+                                    <span className="font-mono text-cyan-300 bg-cyan-950/90 border border-cyan-800/60 px-1.5 py-0.5 rounded font-bold">
+                                      قطعة: {it.parcel}
+                                    </span>
+                                  )}
+                                  {it.region && (
+                                    <span className="text-amber-300 bg-amber-950/90 border border-amber-800/60 px-1.5 py-0.5 rounded font-bold">
+                                      المنطقة: {it.region}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -394,15 +411,27 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                         </div>
                       )}
 
-                      {/* Location / Parcel */}
-                      {(item.parcel_number || item.region || isOffice) && (
-                        <div className="rounded-lg bg-slate-900/80 px-2 py-1 border border-slate-800/80 text-slate-300 flex items-center gap-1.5 truncate col-span-2 sm:col-span-1">
-                          <span className="text-slate-500">📍 الموقع:</span>
-                          <strong className="truncate font-semibold text-cyan-300">
-                            {isOffice ? 'مقر الشركة' : `${item.parcel_number ? `ق ${item.parcel_number}` : ''} ${item.region ? `(${item.region})` : ''}`.trim() || '—'}
-                          </strong>
-                        </div>
-                      )}
+                      {/* Location / Parcel Summary */}
+                      {(() => {
+                        const uniqueParcels = Array.from(new Set((item.items_list || []).map(it => it.parcel).filter(Boolean)));
+                        const uniqueRegions = Array.from(new Set((item.items_list || []).map(it => it.region).filter(Boolean)));
+                        const parcelsText = uniqueParcels.length > 0 
+                          ? uniqueParcels.map(p => `ق ${p}`).join('، ')
+                          : (item.parcel_number ? `ق ${item.parcel_number}` : '');
+                        const regionsText = uniqueRegions.length > 0
+                          ? `(${uniqueRegions.join('، ')})`
+                          : (item.region ? `(${item.region})` : '');
+                        const fullLocation = isOffice ? 'مقر الشركة' : `${parcelsText} ${regionsText}`.trim() || '—';
+
+                        return (item.parcel_number || item.region || isOffice || uniqueParcels.length > 0) ? (
+                          <div className="rounded-lg bg-slate-900/80 px-2 py-1 border border-slate-800/80 text-slate-300 flex items-center gap-1.5 truncate col-span-2 sm:col-span-1">
+                            <span className="text-slate-500">📍 الموقع:</span>
+                            <strong className="truncate font-semibold text-cyan-300" title={fullLocation}>
+                              {fullLocation}
+                            </strong>
+                          </div>
+                        ) : null;
+                      })()}
 
                       {/* Date Needed */}
                       {item.date_needed && (
