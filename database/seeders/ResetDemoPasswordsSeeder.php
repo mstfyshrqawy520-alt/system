@@ -11,9 +11,6 @@ class ResetDemoPasswordsSeeder extends Seeder
     public function run(): void
     {
         $emails = [
-            'amar@gmail.com',
-            'safa@gmail.com',
-            'zaid@gmail.com',
             'ayman@gmail.com',
             'hatem@gmail.com',
             'masoud@gmail.com',

@@ -40,11 +40,6 @@ class RestoreDemoAccountsSeeder extends Seeder
         }
 
         $users = [
-            // Employees
-            ['amar@gmail.com', 'عمار', 'employee', 'EXECUTION'],
-            ['safa@gmail.com', 'صفا', 'employee', 'EXECUTION'],
-            ['zaid@gmail.com', 'زياد', 'employee', 'EXECUTION'],
-
             // Department Reviewers
             ['ayman@gmail.com', 'م. أيمن ماهر', 'reviewer', 'EXECUTION'],
             ['hatem@gmail.com', 'المهندس حاتم', 'reviewer', 'BUILDINGS'],

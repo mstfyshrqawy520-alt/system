@@ -59,11 +59,6 @@ class DemoUserSeeder extends Seeder
         ];
 
         $users = [
-            // Employees
-            ['email' => 'amar@gmail.com', 'name' => 'عمار', 'role' => 'employee', 'department_id' => $executionDept->id],
-            ['email' => 'safa@gmail.com', 'name' => 'صفا', 'role' => 'employee', 'department_id' => $executionDept->id],
-            ['email' => 'zaid@gmail.com', 'name' => 'زياد', 'role' => 'employee', 'department_id' => $executionDept->id],
-
             // Department reviewers
             ['email' => 'ayman@gmail.com', 'name' => 'م. أيمن ماهر', 'role' => 'reviewer', 'department_id' => $executionDept->id],
             ['email' => 'hatem@gmail.com', 'name' => 'المهندس حاتم', 'role' => 'reviewer', 'department_id' => $buildingsDept->id],
