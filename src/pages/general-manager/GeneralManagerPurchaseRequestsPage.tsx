@@ -811,7 +811,7 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
               </div>
 
               {/* Universal Notes and Decisions Trail */}
-              <UnifiedNotesCard request={selected} title="سجل الملاحظات والقرارات السابقة للطلب" />
+              <UnifiedNotesCard request={selected} />
 
               {/* Error Message inside Modal */}
               {error && (

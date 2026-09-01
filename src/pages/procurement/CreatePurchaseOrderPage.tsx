@@ -352,7 +352,7 @@ export const CreatePurchaseOrderPage: React.FC = () => {
               </div>
             </div>
 
-            <UnifiedNotesCard request={pr} title="سجل الملاحظات والقرارات السابقة للطلب" />
+            <UnifiedNotesCard request={pr} />
           </Card>
         )}
 

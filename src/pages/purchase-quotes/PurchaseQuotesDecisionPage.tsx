@@ -502,7 +502,7 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
               })}
             </div>
 
-            <UnifiedNotesCard request={request} title="سجل الملاحظات والقرارات السابقة لهذا الطلب" />
+            <UnifiedNotesCard request={request} />
           </Card>
         );
       })}
