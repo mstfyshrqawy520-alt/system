@@ -511,10 +511,14 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                     {/* Bottom Action Row: Detailed Review + Quick Peek */}
                     <div className="flex items-center gap-2">
                       <Button
-                        variant="secondary"
+                        variant={(!item.onDirectApprove && !item.onDirectSubmit) ? 'primary' : 'secondary'}
                         size="sm"
                         onClick={() => navigate(item.actionUrl)}
-                        className="flex-1 text-xs font-bold bg-slate-900 border-slate-700 hover:border-cyan-500/60 hover:text-cyan-300"
+                        className={`flex-1 text-xs font-bold ${
+                          (!item.onDirectApprove && !item.onDirectSubmit)
+                            ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black shadow-md shadow-cyan-950/50'
+                            : 'bg-slate-900 border-slate-700 hover:border-cyan-500/60 hover:text-cyan-300'
+                        }`}
                       >
                         <span>{item.actionLabel}</span>
                         <span className="mr-1">←</span>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getAccountingPurchaseOrdersApi, getAccountingPurchaseOrderApi, approveAccountingPurchaseOrderApi } from '../../api/accounting';
 import { getDirectAccountingPurchaseRequestsApi, approveDirectAccountingPurchaseRequestApi } from '../../api/accountingPurchaseRequests';
 import { getApprovedReceiptsForAccountingApi, getSupplierAccountsApi, ApprovedReceipt, SupplierAccountSummary } from '../../api/supplierFinance';
+import { getPendingQuoteRequestsApi } from '../../api/purchaseQuotes';
 import { PurchaseOrder } from '../../types/purchaseOrder';
 import { PurchaseRequest } from '../../types/purchaseRequest';
 import { Button } from '../../components/ui/Button';
@@ -17,6 +18,7 @@ import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
 export const AccountingDashboardPage: React.FC = () => {
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
   const [directPrs, setDirectPrs] = useState<PurchaseRequest[]>([]);
+  const [quoteRequests, setQuoteRequests] = useState<PurchaseRequest[]>([]);
   const [receipts, setReceipts] = useState<ApprovedReceipt[]>([]);
   const [accounts, setAccounts] = useState<SupplierAccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,16 +40,18 @@ export const AccountingDashboardPage: React.FC = () => {
   const loadData = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [posData, directData, receiptsData, accountsData] = await Promise.all([
+      const [posData, directData, receiptsData, accountsData, quotesData] = await Promise.all([
         getAccountingPurchaseOrdersApi().catch(() => []),
         getDirectAccountingPurchaseRequestsApi().catch(() => []),
         getApprovedReceiptsForAccountingApi().catch(() => []),
         getSupplierAccountsApi().catch(() => []),
+        getPendingQuoteRequestsApi().catch(() => []),
       ]);
       setPos(posData);
       setDirectPrs(directData);
       setReceipts(receiptsData);
       setAccounts(accountsData);
+      setQuoteRequests(quotesData);
     } finally {
       if (!silent) setLoading(false);
     }
@@ -177,6 +181,33 @@ export const AccountingDashboardPage: React.FC = () => {
             region: pr.items?.[0]?.region || undefined,
             items_count: pr.items?.length || 0,
             items_list: pr.items?.map((it: any) => ({
+              description: it.item_description || it.item?.name || 'صنف',
+              quantity: it.quantity,
+              uom: it.uom,
+              parcel: it.item_reference,
+              region: it.region,
+            })),
+          })),
+
+          // 4. Pending Quotes for Accounting Verification / Pricing
+          ...quoteRequests.map((q) => ({
+            id: `quote-${q.id}`,
+            rawId: q.id,
+            type: 'QUOTE' as const,
+            code: q.request_number,
+            title: q.items?.[0]?.item_description || q.justification || 'عروض أسعار بانتظار المراجعة والترشيح',
+            subtitle: `${q.quotes?.length || 'عدة'} عروض أسعار مسجلة للمراجعة والتدقيق المالي`,
+            department: q.department?.name,
+            requester: q.requester?.name,
+            amount: q.total_estimated_cost ? Number(q.total_estimated_cost) : undefined,
+            urgency: 'HIGH' as const,
+            reason: 'عروض أسعار مسجلة بانتظار الرقابة والمراجعة المالية وترشيح الأسعار',
+            actionUrl: `/reviewer/purchase-quotes`,
+            actionLabel: 'مراجعة عروض الأسعار والترشيح',
+            timeAgo: q.created_at ? q.created_at.slice(0, 10) : undefined,
+            created_at: q.created_at || undefined,
+            items_count: q.items?.length || 0,
+            items_list: q.items?.map((it) => ({
               description: it.item_description || it.item?.name || 'صنف',
               quantity: it.quantity,
               uom: it.uom,
