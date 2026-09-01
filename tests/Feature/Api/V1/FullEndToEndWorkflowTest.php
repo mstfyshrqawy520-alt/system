@@ -180,14 +180,13 @@ class FullEndToEndWorkflowTest extends TestCase
 
     /**
      * Test complete end-to-end happy path workflow:
-     * Employee PR -> Reviewer Review -> Procurement Manager Approval -> PO Creation -> Accounting Approval -> GM Notification & Read-only.
      */
     public function test_full_procurement_lifecycle_end_to_end_happy_path(): void
     {
         $siteEngineerOptionsResponse = $this->actingAs($this->employee, 'sanctum')
             ->getJson('/api/v1/purchase-requests/site-engineer-options');
         $siteEngineerOptionsResponse->assertStatus(200);
-        $siteEngineerOptionIds = collect($siteEngineerOptionsResponse->json('data'))->pluck('id')->all();
+        $siteEngineerOptionIds = collect($siteEngineerOptionsResponse->json('site_engineers'))->pluck('id')->all();
         $this->assertContains($this->siteEngineer->id, $siteEngineerOptionIds);
         $this->assertNotContains($this->reviewer->id, $siteEngineerOptionIds);
 
@@ -196,9 +195,6 @@ class FullEndToEndWorkflowTest extends TestCase
         // -------------------------------------------------------------
         $createPrPayload = [
             'target_department_id' => $this->department->id,
-            'title' => 'Laptops for IT Department Upgrade',
-            'priority' => 'HIGH',
-            'date_needed' => now()->addDays(14)->format('Y-m-d'),
             'notes' => 'Urgent procurement for new team members.',
             'items' => [
                 [

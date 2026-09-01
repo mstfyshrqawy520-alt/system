@@ -125,6 +125,9 @@ class PurchaseRequestService
             if (!empty($data['site_engineer_user_id'])) {
                 $siteEngineer = User::query()->whereKey((int) $data['site_engineer_user_id'])->where('is_active', true)->first();
             }
+            if (!$siteEngineer && !$isOffice && $targetDepartment->site_engineer_user_id) {
+                $siteEngineer = $targetDepartment->siteEngineer;
+            }
 
             if (!$assignedManager && !$user->hasRole('general_manager')) {
                 throw ValidationException::withMessages([

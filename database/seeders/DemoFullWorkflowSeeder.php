@@ -89,11 +89,29 @@ class DemoFullWorkflowSeeder extends Seeder
         }
 
         $userForRole = static function (string $role): User {
-            return User::query()
+            $user = User::query()
                 ->where('is_active', true)
                 ->whereHas('roles', fn ($query) => $query->where('slug', $role))
                 ->orderBy('id')
-                ->firstOrFail();
+                ->first();
+
+            if ($user) {
+                return $user;
+            }
+
+            $roleModel = \App\Models\Role::where('slug', $role)->first();
+            $dept = \App\Models\Department::first();
+            $newUser = User::create([
+                'name' => 'مستخدم ' . $role,
+                'email' => "demo_{$role}@ashbiliya.com",
+                'password' => bcrypt('123456'),
+                'department_id' => $dept?->id,
+                'is_active' => true,
+            ]);
+            if ($roleModel) {
+                $newUser->roles()->attach($roleModel->id);
+            }
+            return $newUser;
         };
 
         $accountant = $userForRole('accountant');
