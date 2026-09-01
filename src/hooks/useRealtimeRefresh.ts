@@ -22,7 +22,7 @@ export const useRealtimeRefresh = (
     enabled?: boolean;
   } = {}
 ) => {
-  const { intervalMs = 45000, enabled = true } = options;
+  const { intervalMs = 3500, enabled = true } = options;
   const refreshRef = useRef(refreshFn);
   refreshRef.current = refreshFn;
 
@@ -38,10 +38,10 @@ export const useRealtimeRefresh = (
       }
     };
 
-    // Debounced refresh to prevent burst calls when visibility+focus fire together
+    // Fast debounce to prevent burst calls
     const debouncedRefresh = () => {
       if (debounceTimer) window.clearTimeout(debounceTimer);
-      debounceTimer = window.setTimeout(triggerRefresh, 500);
+      debounceTimer = window.setTimeout(triggerRefresh, 100);
     };
 
     // 1. Realtime notification received
