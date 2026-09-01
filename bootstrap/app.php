@@ -67,11 +67,13 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
-        $exceptions->render(function (\Illuminate\Database\Eloquent\ModelNotFoundException $exception, Request $request) use ($isApiRequest) {
+        $exceptions->render(function (\Throwable $exception, Request $request) use ($isApiRequest) {
             if ($request->expectsJson() || $isApiRequest($request)) {
                 return response()->json([
-                    'message' => 'العنصر المطلوب غير موجود أو لم يعد متاحًا. أعد تحميل الصفحة وتحقق من الرقم المستخدم.',
-                ], 404);
+                    'message' => $exception->getMessage(),
+                    'exception' => get_class($exception),
+                    'file' => basename($exception->getFile()) . ':' . $exception->getLine(),
+                ], 500);
             }
         });
     })->create();
