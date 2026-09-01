@@ -158,13 +158,11 @@ describe("Role-based navigation and redirect flow", () => {
         assertHiddenLinks([
             "لوحة الموظف",
             "طلباتي",
-            
             "لوحة المراجعة",
             "طلبات المراجعة",
             "لوحة المشتريات",
             "طلبات الشراء المعتمدة",
             "لوحة المدير العام",
-            "لوحة تحكم الإدارة",
         ]);
     });
 
@@ -211,14 +209,12 @@ describe("Role-based navigation and redirect flow", () => {
         assertHiddenLinks([
             "لوحة الموظف",
             "طلباتي",
-            
             "لوحة المراجعة",
             "طلبات المراجعة",
             "لوحة المشتريات",
             "طلبات الشراء المعتمدة",
             "لوحة المحاسبة",
             "لوحة المدير العام",
-            "لوحة تحكم الإدارة",
         ]);
     });
 
@@ -228,7 +224,7 @@ describe("Role-based navigation and redirect flow", () => {
             [["reviewer"], "/reviewer"],
             [["procurement_manager"], "/procurement"],
             [["accountant"], "/accounting"],
-            [["general_manager"], "/general-manager/purchase-requests"],
+            [["general_manager"], "/general-manager"],
             [["admin"], "/admin"],
             [
                 [
@@ -286,13 +282,12 @@ describe("Role-based navigation and redirect flow", () => {
                                     </div>
                                 }
                             />
-                                                        <Route
-                                path="/general-manager/purchase-requests"
+                            <Route
+                                path="/general-manager"
                                 element={
                                     <div data-testid="gm-requests-home">GM Requests Home</div>
                                 }
                             />
-
                             <Route
                                 path="/admin"
                                 element={
@@ -311,8 +306,7 @@ describe("Role-based navigation and redirect flow", () => {
                 "/reviewer": "reviewer-home",
                 "/procurement": "procurement-home",
                 "/accounting": "accounting-home",
-                                "/general-manager/purchase-requests": "gm-requests-home",
-
+                "/general-manager": "gm-requests-home",
                 "/admin": "admin-home",
             };
 

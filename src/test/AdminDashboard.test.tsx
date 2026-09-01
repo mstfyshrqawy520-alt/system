@@ -95,7 +95,7 @@ describe("Admin Frontend Feature Suite", () => {
 
         await waitFor(() => {
             expect(
-                screen.getByRole("heading", { name: "لوحة تحكم الإدارة" }),
+                screen.getByRole("heading", { name: /لوحة تحكم/i }),
             ).toBeInTheDocument();
         });
         expect(

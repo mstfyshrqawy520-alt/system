@@ -387,18 +387,6 @@ export const NotificationsPage: React.FC = () => {
 
   const hasActiveFilters = quickFilter !== 'ALL' || searchQuery.trim().length > 0;
 
-  if (loading) {
-    return (
-      <div className="space-y-6" dir="rtl">
-        <div className="border-b border-slate-800 pb-4">
-          <div className="h-7 w-48 animate-pulse rounded-lg bg-slate-800" />
-          <div className="mt-3 h-4 w-72 animate-pulse rounded-lg bg-slate-800/70" />
-        </div>
-        <TableSkeleton rows={6} columns={3} />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6" dir="rtl">
       {/* Page Header */}
@@ -442,13 +430,17 @@ export const NotificationsPage: React.FC = () => {
         </div>
       </div>
 
-      {error && <ErrorMessage error={error} />}
+      {loading ? (
+        <TableSkeleton rows={6} columns={3} />
+      ) : (
+        <>
+          {error && <ErrorMessage error={error} />}
 
-      {/* Push Notification Device Settings Prompt */}
-      <PushNotificationPrompt variant="card" />
+          {/* Push Notification Device Settings Prompt */}
+          <PushNotificationPrompt variant="card" />
 
-      {/* Summary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Summary KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <button
           type="button"
           onClick={() => updateTab('ACTION_REQUIRED')}
@@ -868,6 +860,8 @@ export const NotificationsPage: React.FC = () => {
             </Button>
           )}
         </div>
+      )}
+        </>
       )}
     </div>
   );

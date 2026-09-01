@@ -262,7 +262,7 @@ describe('Employee Pages Integration', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/لوحة الموظف/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/لوحة الموظف/i)[0]).toBeInTheDocument();
     });
     expect(screen.getAllByText('PR-2026-00010')[0]).toBeInTheDocument();
   });

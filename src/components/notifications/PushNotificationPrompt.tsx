@@ -17,20 +17,21 @@ export const PushNotificationPrompt: React.FC<PushNotificationPromptProps> = ({
   variant = 'banner',
   onEnabled,
 }) => {
-  const [permission, setPermission] = useState<PushPermissionState>('default');
+  const [permission, setPermission] = useState<PushPermissionState>(() => getPushPermissionState());
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [isSupported, setIsSupported] = useState(true);
-  const [isConfigured, setIsConfigured] = useState(true);
+  const [isSupported, setIsSupported] = useState<boolean>(() => getPushSupportStatus());
+  const [isConfigured, setIsConfigured] = useState<boolean>(() => isFirebaseConfigured());
 
   useEffect(() => {
-    setIsSupported(getPushSupportStatus());
+    const isSupp = getPushSupportStatus();
+    setIsSupported(isSupp);
     const perm = getPushPermissionState();
     setPermission(perm);
     setIsConfigured(isFirebaseConfigured());
 
-    if (perm === 'granted') {
+    if (isSupp && perm === 'granted') {
       // Automatically ensure FCM device token is registered and active in backend
       void requestAndRegisterPushToken().catch(() => {});
     }
