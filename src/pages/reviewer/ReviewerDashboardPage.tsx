@@ -9,13 +9,15 @@ import {
   approvePurchaseRequestApi,
   rejectPurchaseRequestApi,
 } from '../../api/reviewer';
+import { getAssignedReceiptsApi, ReceiptRecord } from '../../api/purchaseReceipts';
+import { getPendingQuoteRequestsApi } from '../../api/purchaseQuotes';
 import { ApiError } from '../../types/api';
 import { PurchaseRequest } from '../../types/purchaseRequest';
 import { parseApiError } from '../../utils/apiError';
 import { KpiCard } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
-import ActionRequiredInbox from '../../components/dashboard/ActionRequiredInbox';
+import ActionRequiredInbox, { ActionInboxItem } from '../../components/dashboard/ActionRequiredInbox';
 import { getUnitLabel } from '../../utils/units';
 
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
@@ -34,6 +36,8 @@ const REVIEWER_APPROVED_STATUSES = new Set([
 export const ReviewerDashboardPage: React.FC = () => {
   const { user, hasPermission } = useAuth();
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
+  const [assignedReceipts, setAssignedReceipts] = useState<ReceiptRecord[]>([]);
+  const [quoteRequests, setQuoteRequests] = useState<PurchaseRequest[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<ApiError | null>(null);
 
@@ -41,8 +45,14 @@ export const ReviewerDashboardPage: React.FC = () => {
     if (!silent) setIsLoading(true);
     setError(null);
     try {
-      const data = await getReviewableRequestsApi();
-      setRequests(data);
+      const [data, receipts, quotes] = await Promise.all([
+        getReviewableRequestsApi(),
+        getAssignedReceiptsApi().catch(() => []),
+        getPendingQuoteRequestsApi().catch(() => []),
+      ]);
+      setRequests(data || []);
+      setAssignedReceipts(receipts || []);
+      setQuoteRequests(quotes || []);
     } catch (err) {
       if (!silent) setError(parseApiError(err));
     } finally {
@@ -87,6 +97,107 @@ export const ReviewerDashboardPage: React.FC = () => {
     return <LoadingSpinner fullScreen message="تحميل لوحة مراجعة الطلبات..." />;
   }
 
+  const reviewerActionItems: ActionInboxItem[] = [
+    ...requests
+      .filter((r) => r.status === 'SUBMITTED' || r.status === 'UNDER_REVIEW')
+      .map((req) => ({
+        id: `pr-${req.id}`,
+        rawId: req.id,
+        type: 'PR' as const,
+        code: req.request_number,
+        title: req.items?.[0]?.item_description || req.justification || 'طلب شراء جديد',
+        subtitle: req.justification || undefined,
+        department: req.department?.name,
+        requester: req.requester?.name,
+        amount: req.total_estimated_cost ? Number(req.total_estimated_cost) : undefined,
+        urgency: req.priority === 'HIGH' ? ('CRITICAL' as const) : ('NORMAL' as const),
+        reason: req.status === 'SUBMITTED' ? 'طلب جديد مقدم بانتظار مراجعتك واعتمادك الفني' : 'طلب قيد المراجعة الفنية',
+        actionUrl: hasPermission('purchase_request.review') ? `/reviewer/requests/${req.id}/review` : `/reviewer/requests/${req.id}`,
+        actionLabel: req.status === 'SUBMITTED' ? 'مراجعة وتعديل الطلب' : 'استكمال المراجعة',
+        timeAgo: req.created_at ? req.created_at.slice(0, 10) : undefined,
+        request_type: req.request_type,
+        date_needed: req.date_needed || undefined,
+        priority: req.priority,
+        parcel_number: req.items?.[0]?.item_reference || undefined,
+        region: req.items?.[0]?.region || undefined,
+        items_count: req.items?.length || 0,
+        items_list: req.items?.map((it) => ({
+          description: it.item_description || it.item?.name || 'صنف',
+          quantity: it.quantity,
+          uom: it.uom,
+          parcel: it.item_reference,
+          region: it.region,
+        })),
+        onDirectApprove: hasPermission('purchase_request.review')
+          ? async (_item: any, comment?: string, siteEngineerUserId?: number | null) => {
+              await approvePurchaseRequestApi(req.id, comment, siteEngineerUserId);
+              await fetchRequests(true);
+            }
+          : undefined,
+        onDirectReject: hasPermission('purchase_request.review')
+          ? async (_item: any, reason: string) => {
+              await rejectPurchaseRequestApi(req.id, reason);
+              await fetchRequests(true);
+            }
+          : undefined,
+        directApproveLabel: 'اعتماد ونقل للمدير التنفيذي',
+        directRejectLabel: 'رفض الطلب',
+      })),
+
+    ...quoteRequests
+      .filter((q) => q.status === 'PENDING_QUOTE_RECOMMENDATIONS')
+      .map((q) => ({
+        id: `quote-${q.id}`,
+        rawId: q.id,
+        type: 'QUOTE' as const,
+        code: q.request_number,
+        title: q.items?.[0]?.item_description || q.justification || 'عروض أسعار بانتظار الترشيح',
+        subtitle: `${q.quotes?.length || 'عدة'} عروض أسعار مسجلة من الموردين`,
+        department: q.department?.name,
+        requester: q.requester?.name,
+        amount: q.total_estimated_cost ? Number(q.total_estimated_cost) : undefined,
+        urgency: 'HIGH' as const,
+        reason: 'عروض أسعار مسجلة بانتظار التوصية الفنية لاختيار العرض الأنسب',
+        actionUrl: `/reviewer/purchase-quotes`,
+        actionLabel: 'البت وترشيح عروض الأسعار',
+        timeAgo: q.created_at ? q.created_at.slice(0, 10) : undefined,
+        items_count: q.items?.length || 0,
+        items_list: q.items?.map((it) => ({
+          description: it.item_description || it.item?.name || 'صنف',
+          quantity: it.quantity,
+          uom: it.uom,
+          parcel: it.item_reference,
+          region: it.region,
+        })),
+      })),
+
+    ...assignedReceipts
+      .filter((r) => r.status === 'WAREHOUSE_RECEIPT_SUBMITTED' || r.status === 'PENDING_SITE_ENGINEER')
+      .map((r) => ({
+        id: `receipt-${r.id}`,
+        rawId: r.id,
+        type: 'RECEIPT' as const,
+        code: r.receipt_number,
+        title: r.purchase_order?.items?.[0]?.item_description || `إذن استلام ${r.receipt_number}`,
+        subtitle: r.purchase_order ? `لأمر الشراء ${r.purchase_order.po_number}` : undefined,
+        department: r.purchase_request?.department?.name || r.purchase_order?.purchase_request?.department?.name,
+        supplier: r.purchase_order?.supplier?.company_name,
+        urgency: 'CRITICAL' as const,
+        reason: 'تم استلام المواد بالمخزن وبانتظار معاينتك ومطابقتك الهندسية بالموقع',
+        actionUrl: `/site-engineer?receipt_id=${r.id}`,
+        actionLabel: 'فحص واعتماد إذن الاستلام',
+        timeAgo: r.created_at ? r.created_at.slice(0, 10) : undefined,
+        items_count: r.items?.length || 0,
+        items_list: r.items?.map((it) => ({
+          description: it.purchase_order_item?.item_description || 'بند استلام',
+          quantity: it.received_quantity,
+          uom: it.purchase_order_item?.uom,
+          parcel: it.purchase_order_item?.item_reference,
+          region: it.purchase_order_item?.region,
+        })),
+      })),
+  ];
+
   return (
     <div className="min-w-0 space-y-6 animate-fade-in" dir="rtl">
       <div className="flex min-w-0 flex-col justify-between gap-4 border-b border-slate-800 pb-4 sm:flex-row sm:items-center">
@@ -94,8 +205,8 @@ export const ReviewerDashboardPage: React.FC = () => {
           <h1 className="flex items-center gap-2 text-xl font-black text-slate-100">
             <span aria-hidden="true">📊</span> لوحة مراجعة الطلبات
           </h1>
-          <p className="mt-1 text-xs leading-6 text-slate-400">
-            مرحباً <strong className="font-bold text-cyan-400">{user?.name}</strong>. الطلبات المتاحة لمراجعتك ضمن النطاق المعتمد (قسم: {user?.department?.name || 'الكل'}).
+          <p className="mt-1 text-xs text-slate-400">
+            مراجعة واعتماد طلبات الشراء، ترشيح عروض الأسعار، وفحص أذونات الاستلام الميدانية
           </p>
         </div>
 
@@ -116,54 +227,10 @@ export const ReviewerDashboardPage: React.FC = () => {
       {/* ── صندوق المهام والإجراءات المطلوبة منك الآن (Action Inbox) ── */}
       <ActionRequiredInbox
         title="المهام والإجراءات المطلوبة منك الآن"
-        description="هذه الطلبات مقدمة من موظفي قسمك وتتطلب مراجعتك واعتمادك الفني للانتقال إلى المدير التنفيذي للاعتماد."
-        roleName={`رئيس قسم (${user?.department?.name || 'عام'})`}
+        description="الطلبات، عروض الأسعار، وأذونات الاستلام التي تتطلب مراجعتك واعتمادك الفني والميداني."
+        roleName={`المراجع الفني / رئيس القسم (${user?.department?.name || 'عام'})`}
         onItemActionComplete={() => fetchRequests(true)}
-        items={requests
-          .filter((r) => r.status === 'SUBMITTED' || r.status === 'UNDER_REVIEW')
-          .map((req) => ({
-            id: req.id,
-            rawId: req.id,
-            type: 'PR',
-            code: req.request_number,
-            title: req.items?.[0]?.item_description || req.justification || 'طلب شراء جديد',
-            subtitle: req.justification || undefined,
-            department: req.department?.name,
-            requester: req.requester?.name,
-            amount: req.total_estimated_cost ? Number(req.total_estimated_cost) : undefined,
-            urgency: req.priority === 'HIGH' ? ('CRITICAL' as const) : ('NORMAL' as const),
-            reason: req.status === 'SUBMITTED' ? 'طلب جديد مقدم بانتظار مراجعتك واعتمادك الفني' : 'طلب قيد المراجعة الفنية',
-            actionUrl: hasPermission('purchase_request.review') ? `/reviewer/requests/${req.id}/review` : `/reviewer/requests/${req.id}`,
-            actionLabel: req.status === 'SUBMITTED' ? 'مراجعة وتعديل الطلب' : 'استكمال المراجعة',
-            timeAgo: req.created_at ? req.created_at.slice(0, 10) : undefined,
-            request_type: req.request_type,
-            date_needed: req.date_needed || undefined,
-            priority: req.priority,
-            parcel_number: req.items?.[0]?.item_reference || undefined,
-            region: req.items?.[0]?.region || undefined,
-            items_count: req.items?.length || 0,
-            items_list: req.items?.map((it) => ({
-              description: it.item_description || it.item?.name || 'صنف',
-              quantity: it.quantity,
-              uom: it.uom,
-              parcel: it.item_reference,
-              region: it.region,
-            })),
-            onDirectApprove: hasPermission('purchase_request.review')
-              ? async (_item: any, comment?: string, siteEngineerUserId?: number | null) => {
-                  await approvePurchaseRequestApi(req.id, comment, siteEngineerUserId);
-                  await fetchRequests(true);
-                }
-              : undefined,
-            onDirectReject: hasPermission('purchase_request.review')
-              ? async (_item: any, reason: string) => {
-                  await rejectPurchaseRequestApi(req.id, reason);
-                  await fetchRequests(true);
-                }
-              : undefined,
-            directApproveLabel: 'اعتماد ونقل للمدير التنفيذي',
-            directRejectLabel: 'رفض الطلب',
-          }))}
+        items={reviewerActionItems}
       />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

@@ -6,6 +6,7 @@ import {
   approveGeneralManagerPurchaseRequestApi,
   rejectGeneralManagerPurchaseRequestApi,
 } from '../../api/generalManager';
+import { getPendingQuoteRequestsApi } from '../../api/purchaseQuotes';
 import { PurchaseOrder } from '../../types/purchaseOrder';
 import { PurchaseRequest } from '../../types/purchaseRequest';
 import { Button } from '../../components/ui/Button';
@@ -20,6 +21,7 @@ import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
 export const GeneralManagerDashboardPage: React.FC = () => {
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
+  const [quoteRequests, setQuoteRequests] = useState<PurchaseRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const today = getTodayInputDate();
   const defaultDateFrom = getDefaultDateFrom();
@@ -31,12 +33,14 @@ export const GeneralManagerDashboardPage: React.FC = () => {
   const loadData = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [posData, reqsData] = await Promise.all([
+      const [posData, reqsData, quotesData] = await Promise.all([
         getGeneralManagerPurchaseOrdersApi().catch(() => []),
         getGeneralManagerPurchaseRequestsApi().catch(() => []),
+        getPendingQuoteRequestsApi().catch(() => []),
       ]);
       setPos(posData);
       setRequests(reqsData);
+      setQuoteRequests(quotesData);
     } finally {
       if (!silent) setLoading(false);
     }
@@ -172,6 +176,35 @@ export const GeneralManagerDashboardPage: React.FC = () => {
             directApproveLabel: 'اعتماد تنفيذي نهائي',
             directRejectLabel: 'رفض الطلب',
           })),
+          // 2. Pending Executive Quote Decisions
+          ...quoteRequests
+            .filter((q) => q.status === 'PENDING_EXECUTIVE_QUOTE_DECISION')
+            .map((q) => ({
+              id: `quote-${q.id}`,
+              rawId: q.id,
+              type: 'QUOTE' as const,
+              code: q.request_number,
+              title: q.items?.[0]?.item_description || q.justification || 'عروض أسعار بانتظار الاعتماد التنفيذي',
+              subtitle: `${q.quotes?.length || 'عدة'} عروض أسعار تمت التوصية بها`,
+              department: q.department?.name,
+              requester: q.requester?.name,
+              amount: q.total_estimated_cost ? Number(q.total_estimated_cost) : undefined,
+              urgency: 'CRITICAL' as const,
+              reason: 'عروض أسعار موصى بها من القسم المختص بانتظار اعتماد الترسية التنفيذية',
+              actionUrl: `/general-manager/purchase-quotes`,
+              actionLabel: 'البت والاعتماد التنفيذي لعروض الأسعار',
+              timeAgo: q.created_at ? q.created_at.slice(0, 10) : undefined,
+              items_count: q.items?.length || 0,
+              items_list: q.items?.map((it) => ({
+                description: it.item_description || it.item?.name || 'صنف',
+                quantity: it.quantity,
+                uom: it.uom,
+                parcel: it.item_reference,
+                region: it.region,
+              })),
+            })),
+
+          // 3. Pending Purchase Orders for Executive Signature
           ...pos
             .filter((p) => (p.status as string) === 'PENDING_EXECUTIVE_APPROVAL' || (p.status as string) === 'APPROVED_BY_ACCOUNTING')
             .slice(0, 5)
