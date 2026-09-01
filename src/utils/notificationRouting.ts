@@ -160,7 +160,7 @@ export const isActionRequiredForUser = (
 
 /**
  * Intelligent Deep-Link Router for Notifications
- * Resolves the EXACT decision page for the current user's role.
+ * Resolves the EXACT decision page based on document type and user role.
  */
 export const resolveNotificationAction = (
   notification: Notification & { data?: any; target_url?: string },
@@ -182,7 +182,7 @@ export const resolveNotificationAction = (
     priority = 'HIGH';
   }
 
-  // Target URL override if specified directly by backend
+  // 1. Explicit Target URL override if specified directly by backend
   if (notification.target_url && notification.target_url !== '/' && notification.target_url !== '/notifications') {
     return {
       url: notification.target_url,
@@ -196,23 +196,52 @@ export const resolveNotificationAction = (
     };
   }
 
-  // 1. General Manager (المدير العام)
-  if (roleSlugs.includes('general_manager')) {
-    if (info.poId) {
+  // 2. Material Receipts & Goods Received Notes (أذونات الاستلام والفحص)
+  if (info.docType === 'RECEIPT' || info.receiptId || type.includes('receipt') || type.includes('grn') || type.includes('goods_received')) {
+    const receiptParam = info.receiptId ? `receipt_id=${info.receiptId}` : '';
+    if (roleSlugs.includes('accountant')) {
       return {
-        url: `/general-manager/purchase-orders/${info.poId}`,
-        actionLabel: 'اعتماد أمر الشراء',
-        icon: '📑',
-        badgeLabel: 'أمر شراء',
-        docType: 'PO',
+        url: info.receiptId ? `/accounting/supplier-payments?purchase_receipt_id=${info.receiptId}` : '/accounting/supplier-payments',
+        actionLabel: 'تسجيل الفاتورة وسداد المستحقات',
+        icon: '🧾',
+        badgeLabel: 'إذن استلام جاهز',
+        docType: 'RECEIPT',
         docNumber: info.docNumber,
         isActionable,
         priority,
       };
     }
-    if (type.includes('quote') || type.includes('recommendation') || info.quoteId) {
+    if (roleSlugs.includes('warehouse_keeper') && !roleSlugs.includes('site_engineer')) {
       return {
-        url: info.prId ? `/general-manager/purchase-quotes?open=${info.prId}` : '/general-manager/purchase-quotes',
+        url: receiptParam ? `/warehouse?${receiptParam}` : '/warehouse',
+        actionLabel: 'إذن فحص واستلام المستودع',
+        icon: '📦',
+        badgeLabel: 'استلام مستودع',
+        docType: 'RECEIPT',
+        docNumber: info.docNumber,
+        isActionable,
+        priority,
+      };
+    }
+    // Site Engineer / Reviewer / Others handling receipts
+    return {
+      url: receiptParam ? `/site-engineer?${receiptParam}` : '/site-engineer',
+      actionLabel: 'فحص واعتماد إذن الاستلام',
+      icon: '🚚',
+      badgeLabel: 'استلام موقع',
+      docType: 'RECEIPT',
+      docNumber: info.docNumber,
+      isActionable: true,
+      priority: 'HIGH',
+    };
+  }
+
+  // 3. Purchase Quotes (عروض الأسعار والترشيحات)
+  if (info.docType === 'QUOTE' || info.quoteId || type.includes('quote') || type.includes('recommendation') || title.includes('عروض أسعار') || message.includes('عروض أسعار')) {
+    const openParam = info.prId ? `?open=${info.prId}` : '';
+    if (roleSlugs.includes('general_manager')) {
+      return {
+        url: `/general-manager/purchase-quotes${openParam}`,
         actionLabel: 'البت في عروض الأسعار',
         icon: '⚖️',
         badgeLabel: 'عروض أسعار',
@@ -222,7 +251,141 @@ export const resolveNotificationAction = (
         priority,
       };
     }
-    if (info.prId) {
+    if (roleSlugs.includes('reviewer')) {
+      return {
+        url: `/reviewer/purchase-quotes${openParam}`,
+        actionLabel: 'ترشيح عرض السعر',
+        icon: '⚖️',
+        badgeLabel: 'عروض أسعار',
+        docType: 'QUOTE',
+        docNumber: info.docNumber,
+        isActionable,
+        priority,
+      };
+    }
+    if (roleSlugs.includes('accountant')) {
+      return {
+        url: `/accounting/purchase-quotes${openParam}`,
+        actionLabel: 'الرأي المالي في العروض',
+        icon: '⚖️',
+        badgeLabel: 'عروض أسعار',
+        docType: 'QUOTE',
+        docNumber: info.docNumber,
+        isActionable,
+        priority,
+      };
+    }
+    if (roleSlugs.includes('procurement_manager')) {
+      return {
+        url: info.quoteId && info.prId
+          ? `/procurement/purchase-orders/create?pr=${info.prId}&quote=${info.quoteId}`
+          : '/procurement',
+        actionLabel: 'إصدار أمر الشراء فوراً',
+        icon: '⚡',
+        badgeLabel: 'جاهز للإصدار',
+        docType: 'PO',
+        docNumber: info.docNumber,
+        isActionable,
+        priority,
+      };
+    }
+    return {
+      url: `/reviewer/purchase-quotes${openParam}`,
+      actionLabel: 'معاينة عروض الأسعار',
+      icon: '⚖️',
+      badgeLabel: 'عروض أسعار',
+      docType: 'QUOTE',
+      docNumber: info.docNumber,
+      isActionable,
+      priority,
+    };
+  }
+
+  // 4. Invoices and Supplier Payments (الفواتير وسداد الموردين)
+  if (info.docType === 'INVOICE' || info.invoiceId || type.includes('invoice')) {
+    return {
+      url: `/accounting/supplier-payments?invoice_id=${info.invoiceId || ''}`,
+      actionLabel: 'تسجيل ومطابقة الفاتورة',
+      icon: '💰',
+      badgeLabel: 'فاتورة مورد',
+      docType: 'INVOICE',
+      docNumber: info.docNumber,
+      isActionable,
+      priority,
+    };
+  }
+
+  if (info.docType === 'PAYMENT' || info.supplierId || type.includes('payment')) {
+    return {
+      url: `/accounting/supplier-accounts?supplier_id=${info.supplierId || ''}`,
+      actionLabel: 'كشف حساب وسداد الدفعة',
+      icon: '🏦',
+      badgeLabel: 'سداد دفعة',
+      docType: 'PAYMENT',
+      isActionable,
+      priority,
+    };
+  }
+
+  // 5. Purchase Orders (أوامر الشراء)
+  if (info.docType === 'PO' || info.poId || type.includes('purchase_order') || type.includes('po_')) {
+    const isReturned = type.includes('returned') || type.includes('rejected');
+    if (roleSlugs.includes('general_manager')) {
+      return {
+        url: info.poId ? `/general-manager/purchase-orders/${info.poId}` : '/general-manager/purchase-orders',
+        actionLabel: 'اعتماد أمر الشراء',
+        icon: '📑',
+        badgeLabel: 'أمر شراء',
+        docType: 'PO',
+        docNumber: info.docNumber,
+        isActionable,
+        priority,
+      };
+    }
+    if (roleSlugs.includes('accountant')) {
+      return {
+        url: info.poId ? `/accounting/purchase-orders/${info.poId}` : '/accounting/purchase-orders',
+        actionLabel: 'الاطلاع المالي على أمر الشراء',
+        icon: '💳',
+        badgeLabel: 'أمر شراء',
+        docType: 'PO',
+        docNumber: info.docNumber,
+        isActionable,
+        priority,
+      };
+    }
+    if (roleSlugs.includes('procurement_manager')) {
+      return {
+        url: info.poId
+          ? (isReturned ? `/procurement/purchase-orders/${info.poId}/edit` : `/procurement/purchase-orders/${info.poId}`)
+          : '/procurement',
+        actionLabel: isReturned ? 'تعديل أمر الشراء المعاد' : 'عرض وتعديل أمر الشراء',
+        icon: '📦',
+        badgeLabel: 'أمر شراء',
+        docType: 'PO',
+        docNumber: info.docNumber,
+        isActionable,
+        priority,
+      };
+    }
+    return {
+      url: info.poId ? `/purchase-orders/${info.poId}` : '/procurement',
+      actionLabel: 'عرض تفاصيل أمر الشراء',
+      icon: '📑',
+      badgeLabel: 'أمر شراء',
+      docType: 'PO',
+      docNumber: info.docNumber,
+      isActionable,
+      priority,
+    };
+  }
+
+  // 6. Purchase Requests (طلبات الشراء)
+  if (info.prId) {
+    const isReturned = type.includes('returned') || title.includes('إعادة للتعديل');
+    const isRejected = type.includes('rejected') || title.includes('مرفوض');
+
+    if (roleSlugs.includes('general_manager')) {
       return {
         url: `/general-manager/purchase-requests`,
         actionLabel: 'اتخاذ قرار في الطلب',
@@ -234,32 +397,8 @@ export const resolveNotificationAction = (
         priority,
       };
     }
-    return {
-      url: '/general-manager',
-      actionLabel: 'لوحة المدير العام',
-      icon: '👑',
-      badgeLabel: 'إدارة عامة',
-      docType: 'GENERAL',
-      isActionable,
-      priority,
-    };
-  }
 
-  // 2. Reviewer / Department Manager (رئيس القسم / المراجع)
-  if (roleSlugs.includes('reviewer')) {
-    if (type.includes('quote') || type.includes('recommendation')) {
-      return {
-        url: info.prId ? `/reviewer/purchase-quotes?open=${info.prId}` : '/reviewer/purchase-quotes',
-        actionLabel: 'ترشيح عرض السعر',
-        icon: '⚖️',
-        badgeLabel: 'عروض أسعار',
-        docType: 'QUOTE',
-        docNumber: info.docNumber,
-        isActionable,
-        priority,
-      };
-    }
-    if (info.prId) {
+    if (roleSlugs.includes('reviewer') && (type.includes('submitted') || type.includes('pending') || type.includes('review') || !roleSlugs.includes('employee'))) {
       return {
         url: `/reviewer/requests/${info.prId}`,
         actionLabel: 'مراجعة واعتماد الطلب',
@@ -271,45 +410,8 @@ export const resolveNotificationAction = (
         priority,
       };
     }
-    return {
-      url: '/reviewer/requests',
-      actionLabel: 'قائمة مراجعة الطلبات',
-      icon: '📋',
-      badgeLabel: 'مراجعة',
-      docType: 'PR',
-      isActionable,
-      priority,
-    };
-  }
 
-  // 3. Procurement Manager (مدير المشتريات)
-  if (roleSlugs.includes('procurement_manager')) {
-    if (info.poId) {
-      const isReturned = type.includes('returned') || type.includes('rejected');
-      return {
-        url: isReturned ? `/procurement/purchase-orders/${info.poId}/edit` : `/procurement/purchase-orders/${info.poId}`,
-        actionLabel: isReturned ? 'تعديل أمر الشراء المعاد' : 'عرض وتعديل أمر الشراء',
-        icon: '📦',
-        badgeLabel: 'أمر شراء',
-        docType: 'PO',
-        docNumber: info.docNumber,
-        isActionable,
-        priority,
-      };
-    }
-    if (info.quoteId && info.prId) {
-      return {
-        url: `/procurement/purchase-orders/create?pr=${info.prId}&quote=${info.quoteId}`,
-        actionLabel: 'إصدار أمر الشراء فوراً',
-        icon: '⚡',
-        badgeLabel: 'جاهز للإصدار',
-        docType: 'PO',
-        docNumber: info.docNumber,
-        isActionable,
-        priority,
-      };
-    }
-    if (type.includes('approved') && info.prId) {
+    if (roleSlugs.includes('procurement_manager') && type.includes('approved')) {
       return {
         url: `/procurement/purchase-orders/create?pr=${info.prId}`,
         actionLabel: 'إصدار أمر الشراء',
@@ -321,18 +423,46 @@ export const resolveNotificationAction = (
         priority,
       };
     }
-    if (info.prId) {
-      return {
-        url: `/procurement`,
-        actionLabel: 'طلب عروض أسعار / إصدار',
-        icon: '📋',
-        badgeLabel: 'المشتريات',
-        docType: 'PR',
-        docNumber: info.docNumber,
-        isActionable,
-        priority,
-      };
-    }
+
+    // Default Requester / Employee / Site Engineer PR
+    return {
+      url: isReturned ? `/employee/requests/${info.prId}/edit` : `/requests/${info.prId}`,
+      actionLabel: isReturned ? 'تعديل الطلب المعاد للتعديل' : (isRejected ? 'معاينة الطلب المرفوض' : 'عرض ومتابعة الطلب'),
+      icon: isReturned ? '✏️' : (isRejected ? '🚫' : '📋'),
+      badgeLabel: isReturned ? 'معاد للتعديل' : (isRejected ? 'طلب مرفوض' : 'طلبي'),
+      docType: 'PR',
+      docNumber: info.docNumber,
+      isActionable: isReturned,
+      priority: isReturned ? 'URGENT' : priority,
+    };
+  }
+
+  // 7. General Role Fallback
+  if (roleSlugs.includes('general_manager')) {
+    return {
+      url: '/general-manager',
+      actionLabel: 'لوحة المدير العام',
+      icon: '👑',
+      badgeLabel: 'إدارة عامة',
+      docType: 'GENERAL',
+      isActionable,
+      priority,
+    };
+  }
+
+  if (roleSlugs.includes('reviewer')) {
+    return {
+      url: '/reviewer/requests',
+      actionLabel: 'قائمة مراجعة الطلبات',
+      icon: '📋',
+      badgeLabel: 'مراجعة',
+      docType: 'PR',
+      isActionable,
+      priority,
+    };
+  }
+
+  if (roleSlugs.includes('procurement_manager')) {
     return {
       url: '/procurement',
       actionLabel: 'لوحة إدارة المشتريات',
@@ -344,68 +474,7 @@ export const resolveNotificationAction = (
     };
   }
 
-  // 4. Accountant (المحاسب المالي)
   if (roleSlugs.includes('accountant')) {
-    if (info.receiptId || type.includes('receipt') || type.includes('grn') || type.includes('goods_received')) {
-      const targetParam = info.receiptId ? `purchase_receipt_id=${info.receiptId}` : `purchase_order_id=${info.poId || ''}`;
-      return {
-        url: `/accounting/supplier-payments?${targetParam}`,
-        actionLabel: 'تسجيل الفاتورة وسداد المستحقات',
-        icon: '🧾',
-        badgeLabel: 'إذن استلام جاهز',
-        docType: 'RECEIPT',
-        docNumber: info.docNumber,
-        isActionable,
-        priority,
-      };
-    }
-    if (info.invoiceId || type.includes('invoice')) {
-      return {
-        url: `/accounting/supplier-payments?invoice_id=${info.invoiceId || ''}`,
-        actionLabel: 'تسجيل ومطابقة الفاتورة',
-        icon: '💰',
-        badgeLabel: 'فاتورة مورد',
-        docType: 'INVOICE',
-        docNumber: info.docNumber,
-        isActionable,
-        priority,
-      };
-    }
-    if (info.supplierId || type.includes('payment')) {
-      return {
-        url: `/accounting/supplier-accounts?supplier_id=${info.supplierId || ''}`,
-        actionLabel: 'كشف حساب وسداد الدفعة',
-        icon: '🏦',
-        badgeLabel: 'سداد دفعة',
-        docType: 'PAYMENT',
-        isActionable,
-        priority,
-      };
-    }
-    if (info.poId) {
-      return {
-        url: `/accounting/purchase-orders/${info.poId}`,
-        actionLabel: 'الاطلاع المالي على أمر الشراء',
-        icon: '💳',
-        badgeLabel: 'أمر شراء',
-        docType: 'PO',
-        docNumber: info.docNumber,
-        isActionable,
-        priority,
-      };
-    }
-    if (type.includes('quote') || type.includes('recommendation')) {
-      return {
-        url: info.prId ? `/accounting/purchase-quotes?open=${info.prId}` : '/accounting/purchase-quotes',
-        actionLabel: 'الرأي المالي في العروض',
-        icon: '⚖️',
-        badgeLabel: 'عروض أسعار',
-        docType: 'QUOTE',
-        docNumber: info.docNumber,
-        isActionable,
-        priority,
-      };
-    }
     return {
       url: '/accounting',
       actionLabel: 'لوحة الحسابات العامة',
@@ -417,33 +486,7 @@ export const resolveNotificationAction = (
     };
   }
 
-  // 5. Site Engineer (مهندس الموقع)
   if (roleSlugs.includes('site_engineer')) {
-    if (info.receiptId) {
-      return {
-        url: `/site-engineer?receipt_id=${info.receiptId}`,
-        actionLabel: 'فحص واستلام الموقع',
-        icon: '🚚',
-        badgeLabel: 'استلام موقع',
-        docType: 'RECEIPT',
-        docNumber: info.docNumber,
-        isActionable,
-        priority,
-      };
-    }
-    if (info.prId) {
-      const isReturned = type.includes('returned') || title.includes('إعادة للتعديل');
-      return {
-        url: isReturned ? `/employee/requests/${info.prId}/edit` : `/requests/${info.prId}`,
-        actionLabel: isReturned ? 'تعديل الطلب المعاد' : 'تفاصيل طلب الموقع',
-        icon: '📋',
-        badgeLabel: 'طلب موقع',
-        docType: 'PR',
-        docNumber: info.docNumber,
-        isActionable: isReturned,
-        priority,
-      };
-    }
     return {
       url: '/site-engineer',
       actionLabel: 'استلامات الموقع',
@@ -455,20 +498,7 @@ export const resolveNotificationAction = (
     };
   }
 
-  // 6. Warehouse Keeper (أمين المستودع)
   if (roleSlugs.includes('warehouse_keeper')) {
-    if (info.receiptId) {
-      return {
-        url: `/warehouse?receipt_id=${info.receiptId}`,
-        actionLabel: 'إذن فحص واستلام المستودع',
-        icon: '📦',
-        badgeLabel: 'استلام مستودع',
-        docType: 'RECEIPT',
-        docNumber: info.docNumber,
-        isActionable,
-        priority,
-      };
-    }
     return {
       url: '/warehouse',
       actionLabel: 'إدارة المخزن والمستودع',
@@ -477,22 +507,6 @@ export const resolveNotificationAction = (
       docType: 'RECEIPT',
       isActionable,
       priority,
-    };
-  }
-
-  // 7. Employee / Requester (الموظف / صاحب الطلب)
-  if (info.prId) {
-    const isReturned = type.includes('returned') || title.includes('إعادة للتعديل');
-    const isRejected = type.includes('rejected') || title.includes('مرفوض');
-    return {
-      url: isReturned ? `/employee/requests/${info.prId}/edit` : `/requests/${info.prId}`,
-      actionLabel: isReturned ? 'تعديل الطلب المعاد للتعديل' : (isRejected ? 'معاينة الطلب المرفوض' : 'عرض ومتابعة الطلب'),
-      icon: isReturned ? '✏️' : (isRejected ? '🚫' : '📋'),
-      badgeLabel: isReturned ? 'معاد للتعديل' : (isRejected ? 'طلب مرفوض' : 'طلبي'),
-      docType: 'PR',
-      docNumber: info.docNumber,
-      isActionable: isReturned,
-      priority: isReturned ? 'URGENT' : priority,
     };
   }
 
