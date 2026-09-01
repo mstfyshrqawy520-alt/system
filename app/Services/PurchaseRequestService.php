@@ -139,7 +139,7 @@ class PurchaseRequestService
                 'request_number' => $requestNumber,
                 'request_type' => $requestType,
                 'user_id' => $user->id,
-                'department_id' => $user->department_id,
+                'department_id' => $user->department_id ?? $targetDepartment->id,
                 'target_department_id' => $targetDepartment->id,
                 // Keep legacy reviewer_user_id populated with the department manager.
                 // The general manager is the final business approver for their own request;

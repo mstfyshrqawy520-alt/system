@@ -51,7 +51,7 @@ const mockItems: CatalogItemAdmin[] = [
         id: 1,
         sku: "SKU-MONITOR-27",
         name: "4K Display Monitor 27 Inch",
-        uom: "PCS",        category: { id: 10, name: "IT Equipment" },
+        uom: "PCS", category: { id: 10, name: "IT Equipment" },
         is_active: true,
     },
 ];
@@ -95,7 +95,7 @@ describe("Admin Frontend Feature Suite", () => {
 
         await waitFor(() => {
             expect(
-                screen.getByRole("heading", { name: /لوحة تحكم/i }),
+                screen.getByRole("heading", { name: "لوحة تحكم الإدارة" }),
             ).toBeInTheDocument();
         });
         expect(

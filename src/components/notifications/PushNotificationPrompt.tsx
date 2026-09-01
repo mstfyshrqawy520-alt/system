@@ -17,23 +17,22 @@ export const PushNotificationPrompt: React.FC<PushNotificationPromptProps> = ({
   variant = 'banner',
   onEnabled,
 }) => {
-  const [permission, setPermission] = useState<PushPermissionState>(() => getPushPermissionState());
+  const [permission, setPermission] = useState<PushPermissionState>('default');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [isSupported, setIsSupported] = useState<boolean>(() => getPushSupportStatus());
-  const [isConfigured, setIsConfigured] = useState<boolean>(() => isFirebaseConfigured());
+  const [isSupported, setIsSupported] = useState(true);
+  const [isConfigured, setIsConfigured] = useState(true);
 
   useEffect(() => {
-    const isSupp = getPushSupportStatus();
-    setIsSupported(isSupp);
+    setIsSupported(getPushSupportStatus());
     const perm = getPushPermissionState();
     setPermission(perm);
     setIsConfigured(isFirebaseConfigured());
 
-    if (isSupp && perm === 'granted') {
+    if (perm === 'granted') {
       // Automatically ensure FCM device token is registered and active in backend
-      void requestAndRegisterPushToken().catch(() => {});
+      void requestAndRegisterPushToken().catch(() => { });
     }
   }, []);
 
@@ -119,9 +118,8 @@ export const PushNotificationPrompt: React.FC<PushNotificationPromptProps> = ({
         </div>
 
         {message && (
-          <div className={`rounded-xl p-2.5 text-xs font-bold ${
-            isSuccess ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60' : 'bg-rose-950/80 text-rose-300 border border-rose-800/60'
-          }`}>
+          <div className={`rounded-xl p-2.5 text-xs font-bold ${isSuccess ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60' : 'bg-rose-950/80 text-rose-300 border border-rose-800/60'
+            }`}>
             {message}
           </div>
         )}
@@ -209,9 +207,8 @@ export const PushNotificationPrompt: React.FC<PushNotificationPromptProps> = ({
       </div>
 
       {message && (
-        <div className={`rounded-xl p-2.5 text-xs font-bold ${
-          isSuccess ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/60' : 'bg-rose-950/60 text-rose-300 border border-rose-800/60'
-        }`}>
+        <div className={`rounded-xl p-2.5 text-xs font-bold ${isSuccess ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/60' : 'bg-rose-950/60 text-rose-300 border border-rose-800/60'
+          }`}>
           {message}
         </div>
       )}

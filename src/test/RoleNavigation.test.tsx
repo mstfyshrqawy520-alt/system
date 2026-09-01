@@ -82,7 +82,7 @@ describe("Role-based navigation and redirect flow", () => {
         assertVisibleLinks([
             "لوحة الموظف",
             "طلباتي",
-            
+
             "الإشعارات",
             "الملف الشخصي",
         ]);
@@ -135,7 +135,7 @@ describe("Role-based navigation and redirect flow", () => {
         assertHiddenLinks([
             "لوحة الموظف",
             "طلباتي",
-            
+
             "لوحة المراجعة",
             "طلبات المراجعة",
             "لوحة المحاسبة",
@@ -158,11 +158,13 @@ describe("Role-based navigation and redirect flow", () => {
         assertHiddenLinks([
             "لوحة الموظف",
             "طلباتي",
+
             "لوحة المراجعة",
             "طلبات المراجعة",
             "لوحة المشتريات",
             "طلبات الشراء المعتمدة",
             "لوحة المدير العام",
+            "لوحة تحكم الإدارة",
         ]);
     });
 
@@ -180,7 +182,7 @@ describe("Role-based navigation and redirect flow", () => {
         assertHiddenLinks([
             "لوحة الموظف",
             "طلباتي",
-            
+
             "لوحة المراجعة",
             "طلبات المراجعة",
             "لوحة المشتريات",
@@ -209,12 +211,14 @@ describe("Role-based navigation and redirect flow", () => {
         assertHiddenLinks([
             "لوحة الموظف",
             "طلباتي",
+
             "لوحة المراجعة",
             "طلبات المراجعة",
             "لوحة المشتريات",
             "طلبات الشراء المعتمدة",
             "لوحة المحاسبة",
             "لوحة المدير العام",
+            "لوحة تحكم الإدارة",
         ]);
     });
 
@@ -224,7 +228,7 @@ describe("Role-based navigation and redirect flow", () => {
             [["reviewer"], "/reviewer"],
             [["procurement_manager"], "/procurement"],
             [["accountant"], "/accounting"],
-            [["general_manager"], "/general-manager"],
+            [["general_manager"], "/general-manager/purchase-requests"],
             [["admin"], "/admin"],
             [
                 [
@@ -283,11 +287,12 @@ describe("Role-based navigation and redirect flow", () => {
                                 }
                             />
                             <Route
-                                path="/general-manager"
+                                path="/general-manager/purchase-requests"
                                 element={
                                     <div data-testid="gm-requests-home">GM Requests Home</div>
                                 }
                             />
+
                             <Route
                                 path="/admin"
                                 element={
@@ -306,7 +311,8 @@ describe("Role-based navigation and redirect flow", () => {
                 "/reviewer": "reviewer-home",
                 "/procurement": "procurement-home",
                 "/accounting": "accounting-home",
-                "/general-manager": "gm-requests-home",
+                "/general-manager/purchase-requests": "gm-requests-home",
+
                 "/admin": "admin-home",
             };
 

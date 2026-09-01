@@ -95,7 +95,8 @@ const mockCatalogItems: CatalogItem[] = [
     id: 1,
     sku: 'LAP-001',
     name: 'Dell Latitude Laptop',
-    uom: 'PCS',  },
+    uom: 'PCS',
+  },
 ];
 
 describe('PurchaseRequestStatusBadge Component', () => {
@@ -124,8 +125,8 @@ describe('PurchaseRequestTable Component', () => {
         <AuthProvider>
           <PurchaseRequestTable
             requests={[]}
-            onOpenSubmitModal={() => {}}
-            onOpenDeleteModal={() => {}}
+            onOpenSubmitModal={() => { }}
+            onOpenDeleteModal={() => { }}
           />
         </AuthProvider>
       </BrowserRouter>
@@ -142,8 +143,8 @@ describe('PurchaseRequestTable Component', () => {
         <AuthProvider>
           <PurchaseRequestTable
             requests={[mockSubmittedRequest]}
-            onOpenSubmitModal={() => {}}
-            onOpenDeleteModal={() => {}}
+            onOpenSubmitModal={() => { }}
+            onOpenDeleteModal={() => { }}
           />
         </AuthProvider>
       </BrowserRouter>
@@ -161,8 +162,8 @@ describe('PurchaseRequestTable Component', () => {
         <AuthProvider>
           <PurchaseRequestTable
             requests={[mockApprovedRequest]}
-            onOpenSubmitModal={() => {}}
-            onOpenDeleteModal={() => {}}
+            onOpenSubmitModal={() => { }}
+            onOpenDeleteModal={() => { }}
           />
         </AuthProvider>
       </BrowserRouter>
@@ -177,8 +178,8 @@ describe('PurchaseRequestTable Component', () => {
         <AuthProvider>
           <PurchaseRequestTable
             requests={[mockDraftRequest, mockSubmittedRequest]}
-            onOpenSubmitModal={() => {}}
-            onOpenDeleteModal={() => {}}
+            onOpenSubmitModal={() => { }}
+            onOpenDeleteModal={() => { }}
           />
         </AuthProvider>
       </BrowserRouter>
@@ -262,7 +263,7 @@ describe('Employee Pages Integration', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getAllByText(/لوحة الموظف/i)[0]).toBeInTheDocument();
+      expect(screen.getByText(/لوحة الموظف/i)).toBeInTheDocument();
     });
     expect(screen.getAllByText('PR-2026-00010')[0]).toBeInTheDocument();
   });
@@ -315,7 +316,7 @@ describe('Employee Pages Integration', () => {
       </MemoryRouter>
     );
 
-    
+
     const departmentSelect = () => document.getElementById('pr-target-department') as HTMLSelectElement;
     await waitFor(() => {
       expect(departmentSelect().options).toHaveLength(2);

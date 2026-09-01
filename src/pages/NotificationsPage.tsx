@@ -193,7 +193,7 @@ export const NotificationsPage: React.FC = () => {
           setUnreadCount((prev) => Math.max(0, prev - 1));
           window.dispatchEvent(new CustomEvent('notifications-updated'));
         })
-        .catch(() => {});
+        .catch(() => { });
     }
 
     try {
@@ -228,7 +228,7 @@ export const NotificationsPage: React.FC = () => {
     });
 
     if (!notification.read_at) {
-      void markNotificationAsReadApi(notification.id).catch(() => {});
+      void markNotificationAsReadApi(notification.id).catch(() => { });
       setNotifications((prev) =>
         prev.map((n) => (n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n))
       );
@@ -387,6 +387,18 @@ export const NotificationsPage: React.FC = () => {
 
   const hasActiveFilters = quickFilter !== 'ALL' || searchQuery.trim().length > 0;
 
+  if (loading) {
+    return (
+      <div className="space-y-6" dir="rtl">
+        <div className="border-b border-slate-800 pb-4">
+          <div className="h-7 w-48 animate-pulse rounded-lg bg-slate-800" />
+          <div className="mt-3 h-4 w-72 animate-pulse rounded-lg bg-slate-800/70" />
+        </div>
+        <TableSkeleton rows={6} columns={3} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6" dir="rtl">
       {/* Page Header */}
@@ -430,33 +442,27 @@ export const NotificationsPage: React.FC = () => {
         </div>
       </div>
 
-      {loading ? (
-        <TableSkeleton rows={6} columns={3} />
-      ) : (
-        <>
-          {error && <ErrorMessage error={error} />}
+      {error && <ErrorMessage error={error} />}
 
-          {/* Push Notification Device Settings Prompt */}
-          <PushNotificationPrompt variant="card" />
+      {/* Push Notification Device Settings Prompt */}
+      <PushNotificationPrompt variant="card" />
 
-          {/* Summary KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {/* Summary KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <button
           type="button"
           onClick={() => updateTab('ACTION_REQUIRED')}
-          className={`p-4 rounded-2xl border text-right transition-all cursor-pointer ${
-            activeTab === 'ACTION_REQUIRED'
+          className={`p-4 rounded-2xl border text-right transition-all cursor-pointer ${activeTab === 'ACTION_REQUIRED'
               ? 'border-amber-500/80 bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-900 shadow-lg shadow-amber-950/30'
               : 'border-slate-800 bg-slate-900/70 hover:border-slate-700'
-          }`}
+            }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-amber-300">⚡ مطلوب إجراء مني</span>
-            <span className={`px-2.5 py-0.5 rounded-full text-xs font-black ${
-              tabLists.ACTION_REQUIRED.length > 0
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-black ${tabLists.ACTION_REQUIRED.length > 0
                 ? 'bg-amber-500 text-slate-950 animate-pulse font-black'
                 : 'bg-slate-800 text-slate-400'
-            }`}>
+              }`}>
               {tabLists.ACTION_REQUIRED.length}
             </span>
           </div>
@@ -466,11 +472,10 @@ export const NotificationsPage: React.FC = () => {
         <button
           type="button"
           onClick={() => updateTab('INFORMATIONAL')}
-          className={`p-4 rounded-2xl border text-right transition-all cursor-pointer ${
-            activeTab === 'INFORMATIONAL'
+          className={`p-4 rounded-2xl border text-right transition-all cursor-pointer ${activeTab === 'INFORMATIONAL'
               ? 'border-cyan-500/80 bg-gradient-to-br from-cyan-950/40 via-slate-900 to-slate-900 shadow-lg shadow-cyan-950/30'
               : 'border-slate-800 bg-slate-900/70 hover:border-slate-700'
-          }`}
+            }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-cyan-300">ℹ️ إشعارات للعلم</span>
@@ -484,11 +489,10 @@ export const NotificationsPage: React.FC = () => {
         <button
           type="button"
           onClick={() => updateTab('ARCHIVE')}
-          className={`p-4 rounded-2xl border text-right transition-all cursor-pointer ${
-            activeTab === 'ARCHIVE'
+          className={`p-4 rounded-2xl border text-right transition-all cursor-pointer ${activeTab === 'ARCHIVE'
               ? 'border-emerald-500/80 bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-900 shadow-lg shadow-emerald-950/30'
               : 'border-slate-800 bg-slate-900/70 hover:border-slate-700'
-          }`}
+            }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-emerald-300">📦 الأرشيف وسجل الإجراءات</span>
@@ -532,11 +536,10 @@ export const NotificationsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => updateQuickFilter('ALL')}
-              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                quickFilter === 'ALL'
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${quickFilter === 'ALL'
                   ? 'bg-slate-700 text-white shadow-sm'
                   : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
+                }`}
             >
               الكل ({filterCounts.ALL})
             </button>
@@ -544,11 +547,10 @@ export const NotificationsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => updateQuickFilter('UNREAD')}
-              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                quickFilter === 'UNREAD'
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${quickFilter === 'UNREAD'
                   ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/30'
                   : 'bg-slate-950 text-cyan-400 hover:text-cyan-300 border border-cyan-800/60'
-              }`}
+                }`}
             >
               <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
               <span>غير مقروء ({filterCounts.UNREAD})</span>
@@ -557,11 +559,10 @@ export const NotificationsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => updateQuickFilter('READ')}
-              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                quickFilter === 'READ'
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${quickFilter === 'READ'
                   ? 'bg-slate-600 text-white shadow-sm font-black'
                   : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
+                }`}
             >
               <span>✓ مقروء ({filterCounts.READ})</span>
             </button>
@@ -569,11 +570,10 @@ export const NotificationsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => updateQuickFilter('TODAY')}
-              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                quickFilter === 'TODAY'
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${quickFilter === 'TODAY'
                   ? 'bg-cyan-600 text-white shadow-sm'
                   : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
+                }`}
             >
               اليوم ({filterCounts.TODAY})
             </button>
@@ -581,11 +581,10 @@ export const NotificationsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => updateQuickFilter('LAST_10_DAYS')}
-              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                quickFilter === 'LAST_10_DAYS'
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${quickFilter === 'LAST_10_DAYS'
                   ? 'bg-cyan-600 text-white shadow-sm'
                   : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
+                }`}
             >
               آخر 10 أيام ({filterCounts.LAST_10_DAYS})
             </button>
@@ -593,11 +592,10 @@ export const NotificationsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => updateQuickFilter('NEEDS_ACTION')}
-              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                quickFilter === 'NEEDS_ACTION'
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${quickFilter === 'NEEDS_ACTION'
                   ? 'bg-amber-600 text-white shadow-sm'
                   : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
+                }`}
             >
               يحتاج إجراء ({filterCounts.NEEDS_ACTION})
             </button>
@@ -605,11 +603,10 @@ export const NotificationsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => updateQuickFilter('COMPLETED')}
-              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                quickFilter === 'COMPLETED'
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${quickFilter === 'COMPLETED'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
+                }`}
             >
               مكتمل ({filterCounts.COMPLETED})
             </button>
@@ -617,11 +614,10 @@ export const NotificationsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => updateQuickFilter('RETURNED')}
-              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                quickFilter === 'RETURNED'
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${quickFilter === 'RETURNED'
                   ? 'bg-rose-600 text-white shadow-sm'
                   : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
+                }`}
             >
               معاد للتعديل ({filterCounts.RETURNED})
             </button>
@@ -666,29 +662,27 @@ export const NotificationsPage: React.FC = () => {
             return (
               <Card
                 key={notification.id}
-                className={`p-4 sm:p-5 flex flex-col gap-3 transition-all border ${
-                  isUnread
+                className={`p-4 sm:p-5 flex flex-col gap-3 transition-all border ${isUnread
                     ? status === 'needs_action'
                       ? 'border-amber-500/90 bg-gradient-to-r from-amber-950/30 via-slate-900 to-amber-950/15 shadow-xl shadow-amber-950/30 ring-1 ring-amber-500/40'
                       : status === 'failed'
-                      ? 'border-rose-500/90 bg-gradient-to-r from-rose-950/30 via-slate-900 to-rose-950/15 shadow-xl shadow-rose-950/30 ring-1 ring-rose-500/40'
-                      : 'border-cyan-500/80 bg-gradient-to-r from-cyan-950/35 via-slate-900 to-cyan-950/15 shadow-xl shadow-cyan-950/40 ring-1 ring-cyan-500/35'
+                        ? 'border-rose-500/90 bg-gradient-to-r from-rose-950/30 via-slate-900 to-rose-950/15 shadow-xl shadow-rose-950/30 ring-1 ring-rose-500/40'
+                        : 'border-cyan-500/80 bg-gradient-to-r from-cyan-950/35 via-slate-900 to-cyan-950/15 shadow-xl shadow-cyan-950/40 ring-1 ring-cyan-500/35'
                     : 'border-slate-800/80 bg-slate-950/70 opacity-80 hover:opacity-100 hover:border-slate-700 hover:bg-slate-900/80'
-                }`}
+                  }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   {/* Icon & Details */}
                   <div className="flex items-start gap-3.5 min-w-0">
                     <div
-                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl border shadow-inner ${
-                        isUnread
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl border shadow-inner ${isUnread
                           ? status === 'needs_action'
                             ? 'bg-amber-500/25 text-amber-200 border-amber-400/60 shadow-amber-500/20'
                             : status === 'failed'
-                            ? 'bg-rose-500/25 text-rose-200 border-rose-400/60 shadow-rose-500/20'
-                            : 'bg-cyan-500/20 text-cyan-200 border-cyan-400/50 shadow-cyan-500/20'
+                              ? 'bg-rose-500/25 text-rose-200 border-rose-400/60 shadow-rose-500/20'
+                              : 'bg-cyan-500/20 text-cyan-200 border-cyan-400/50 shadow-cyan-500/20'
                           : 'bg-slate-800/90 text-slate-400 border-slate-700/60'
-                      }`}
+                        }`}
                     >
                       {action.icon}
                     </div>
@@ -700,11 +694,10 @@ export const NotificationsPage: React.FC = () => {
                         </h3>
 
                         {docInfo.docNumber && (
-                          <span className={`font-mono text-xs px-2 py-0.5 rounded-lg border font-black ${
-                            isUnread
+                          <span className={`font-mono text-xs px-2 py-0.5 rounded-lg border font-black ${isUnread
                               ? 'bg-cyan-950/80 border-cyan-700/80 text-cyan-300'
                               : 'bg-slate-800 border-slate-700 text-slate-400'
-                          }`}>
+                            }`}>
                             {docInfo.docNumber}
                           </span>
                         )}
@@ -746,11 +739,10 @@ export const NotificationsPage: React.FC = () => {
                       {/* Metadata row */}
                       <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-400 flex-wrap font-mono">
                         <span>{notification.created_at ? notification.created_at.slice(0, 16).replace('T', ' ') : ''}</span>
-                        <span className={`rounded px-1.5 py-0.5 border font-sans ${
-                          isUnread
+                        <span className={`rounded px-1.5 py-0.5 border font-sans ${isUnread
                             ? 'bg-slate-800/90 text-slate-300 border-slate-700'
                             : 'bg-slate-900 text-slate-500 border-slate-800'
-                        }`}>
+                          }`}>
                           {action.badgeLabel}
                         </span>
                         {actionState?.updatedAt && status === 'resolved' && (
@@ -839,10 +831,10 @@ export const NotificationsPage: React.FC = () => {
             {hasActiveFilters
               ? 'لا توجد نتائج مطابقة لشروط البحث والتصفية المحددة.'
               : activeTab === 'ACTION_REQUIRED'
-              ? 'رائع! لا توجد معاملات معلقة تتطلب إجراء منك حالياً.'
-              : activeTab === 'INFORMATIONAL'
-              ? 'لا توجد إشعارات إعلامية جديدة.'
-              : 'الأرشيف وسجل الإجراءات فارغ حالياً.'}
+                ? 'رائع! لا توجد معاملات معلقة تتطلب إجراء منك حالياً.'
+                : activeTab === 'INFORMATIONAL'
+                  ? 'لا توجد إشعارات إعلامية جديدة.'
+                  : 'الأرشيف وسجل الإجراءات فارغ حالياً.'}
           </h3>
           <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
             {hasActiveFilters
@@ -860,8 +852,6 @@ export const NotificationsPage: React.FC = () => {
             </Button>
           )}
         </div>
-      )}
-        </>
       )}
     </div>
   );
