@@ -72,12 +72,12 @@ class ReviewerPurchaseRequestService
     public function getReviewableRequests(User $user, array $filters = [], int $perPage = 200): LengthAwarePaginator
     {
         $query = PurchaseRequest::with([
-            'requester:id,name,email',
-            'department:id,name,code',
-            'targetDepartment.manager:id,name,email,department_id',
-            'targetDepartment.siteEngineer:id,name,email,department_id',
-            'assignedReviewer:id,name,email,department_id',
-            'items:id,purchase_request_id,item_id,item_description,quantity,uom,item_reference,region',
+            'requester.roles',
+            'department',
+            'targetDepartment.manager',
+            'targetDepartment.siteEngineer',
+            'assignedReviewer',
+            'items.item',
         ])
             ->where('status', '!=', 'DRAFT');
 
