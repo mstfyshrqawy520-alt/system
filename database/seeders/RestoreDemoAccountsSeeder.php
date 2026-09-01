@@ -6,16 +6,12 @@ use App\Models\Department;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Schema;
 
 class RestoreDemoAccountsSeeder extends Seeder
 {
     public function run(): void
     {
         $this->call(RolePermissionSeeder::class);
-
-        // Deactivate all old departments not in the official 5
-        Department::whereNotIn('code', ['EXECUTION', 'BUILDINGS', 'FINISHING', 'LICENSES', 'BUFFET'])->update(['is_active' => false]);
 
         $departments = [];
         foreach ([
@@ -25,7 +21,7 @@ class RestoreDemoAccountsSeeder extends Seeder
             'LICENSES' => 'التراخيص',
             'BUFFET' => 'البوفيه',
         ] as $code => $name) {
-            $departments[$code] = Department::withTrashed()->updateOrCreate(
+            $departments[$code] = Department::withTrashed()->firstOrCreate(
                 ['code' => $code],
                 ['name' => $name, 'is_active' => true]
             );
@@ -36,7 +32,7 @@ class RestoreDemoAccountsSeeder extends Seeder
 
         $roles = [];
         foreach (['employee', 'reviewer', 'procurement_manager', 'accountant', 'general_manager', 'admin', 'warehouse_keeper', 'site_engineer'] as $slug) {
-            $roles[$slug] = Role::where('slug', $slug)->firstOrFail();
+            $roles[$slug] = Role::where('slug', $slug)->first();
         }
 
         $users = [
@@ -61,30 +57,28 @@ class RestoreDemoAccountsSeeder extends Seeder
             ['banhawy@gmail.com', 'أيمن البنهاوي', 'site_engineer', 'EXECUTION'],
         ];
 
-        $activeEmails = array_column($users, 0);
-
-        Schema::disableForeignKeyConstraints();
-
-        // Nullify foreign keys pointing to legacy users in departments
-        Department::query()->update(['manager_user_id' => null, 'site_engineer_user_id' => null]);
-
-        User::withTrashed()->whereNotIn('email', $activeEmails)->where(function ($query) {
-            $query->where('email', 'like', '%@ashbiliya.local')
-                ->orWhereHas('roles', function ($q) {
-                    $q->whereIn('slug', ['site_engineer', 'reviewer', 'employee']);
-                });
-        })->forceDelete();
-
-        Schema::enableForeignKeyConstraints();
-
+        // Safely ensure default users exist without deleting or altering other users
         foreach ($users as [$email, $name, $role, $department]) {
-            $user = User::withTrashed()->updateOrCreate(
+            $user = User::withTrashed()->firstOrCreate(
                 ['email' => $email],
-                ['name' => $name, 'password' => '123456', 'department_id' => $departments[$department]->id, 'is_active' => true, 'deleted_at' => null]
+                [
+                    'name' => $name,
+                    'password' => '123456',
+                    'department_id' => $departments[$department]->id ?? null,
+                    'is_active' => true,
+                ]
             );
-            $user->roles()->sync([$roles[$role]->id]);
+
+            if ($user->trashed()) {
+                $user->restore();
+            }
+
+            if (isset($roles[$role]) && ! $user->roles()->where('slug', $role)->exists()) {
+                $user->roles()->syncWithoutDetaching([$roles[$role]->id]);
+            }
         }
 
+        // Set default managers only if not already assigned
         foreach ([
             'EXECUTION' => 'ayman@gmail.com',
             'BUILDINGS' => 'hatem@gmail.com',
@@ -92,9 +86,14 @@ class RestoreDemoAccountsSeeder extends Seeder
             'LICENSES' => 'mostafa@gmail.com',
             'BUFFET' => 'amr@gmail.com',
         ] as $department => $email) {
-            $managerId = User::where('email', $email)->value('id');
-            if ($managerId && isset($departments[$department])) {
-                $departments[$department]->update(['manager_user_id' => $managerId]);
+            if (isset($departments[$department])) {
+                $deptModel = Department::find($departments[$department]->id);
+                if ($deptModel && ! $deptModel->manager_user_id) {
+                    $managerId = User::where('email', $email)->value('id');
+                    if ($managerId) {
+                        $deptModel->update(['manager_user_id' => $managerId]);
+                    }
+                }
             }
         }
     }

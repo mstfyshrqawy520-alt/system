@@ -82,18 +82,7 @@ class DemoUserSeeder extends Seeder
 
         $activeEmails = array_column($users, 'email');
 
-        Schema::disableForeignKeyConstraints();
-
-        Department::query()->update(['manager_user_id' => null, 'site_engineer_user_id' => null]);
-
-        User::withTrashed()->whereNotIn('email', $activeEmails)->where(function ($query) {
-            $query->where('email', 'like', '%@ashbiliya.local')
-                ->orWhereHas('roles', function ($q) {
-                    $q->whereIn('slug', ['site_engineer', 'reviewer', 'employee']);
-                });
-        })->forceDelete();
-
-        Schema::enableForeignKeyConstraints();
+        // Ensure demo users exist without deleting other users
 
         foreach ($users as $userData) {
             $user = User::withTrashed()->updateOrCreate(
