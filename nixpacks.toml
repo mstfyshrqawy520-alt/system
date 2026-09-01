@@ -1,6 +1,11 @@
+providers = ['php', 'node']
+
+[phases.setup]
+nixPkgs = ['nodejs_20', 'php83', 'php83Packages.composer']
+
 [phases.build]
 cmds = [
-    'npm ci',
+    'npm install --include=dev',
     'npm run build',
     'cp -r dist/. public/'
 ]
