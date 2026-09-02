@@ -236,8 +236,15 @@ export const resolveNotificationAction = (
     };
   }
 
+  const isExplicitlyWithoutQuotes =
+    message.includes('بدون عروض') ||
+    title.includes('بدون عروض') ||
+    type.includes('direct') ||
+    type.includes('pending_accounting_approval') ||
+    type.includes('accounting_approval');
+
   // 3. Purchase Quotes (عروض الأسعار والترشيحات)
-  if (info.docType === 'QUOTE' || info.quoteId || type.includes('quote') || type.includes('recommendation') || title.includes('عروض أسعار') || message.includes('عروض أسعار')) {
+  if (!isExplicitlyWithoutQuotes && (info.docType === 'QUOTE' || info.quoteId || type.includes('quote') || type.includes('recommendation') || title.includes('عروض أسعار') || (message.includes('عروض أسعار') && !message.includes('بدون عروض')))) {
     const openParam = info.prId ? `?open=${info.prId}` : '';
     if (roleSlugs.includes('general_manager')) {
       return {
@@ -395,6 +402,19 @@ export const resolveNotificationAction = (
         docNumber: info.docNumber,
         isActionable,
         priority,
+      };
+    }
+
+    if (roleSlugs.includes('accountant')) {
+      return {
+        url: `/accounting/purchase-requests`,
+        actionLabel: 'مراجعة واعتماد الطلب المالي',
+        icon: '⚖️',
+        badgeLabel: 'طلب مباشر',
+        docType: 'PR',
+        docNumber: info.docNumber,
+        isActionable: true,
+        priority: 'HIGH',
       };
     }
 
