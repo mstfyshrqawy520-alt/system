@@ -472,7 +472,59 @@ export const SupplierPaymentsPage: React.FC = () => {
                   <span className="text-xs font-bold text-slate-200">🔍 البنود المستلمة ومطابقة الأسعار:</span>
                   <span className="text-[11px] text-slate-400">({invoiceReceipt.items.length} صنف مستلم)</span>
                 </div>
-                <div className="overflow-x-auto">
+                {/* Mobile-First Item Cards for phone screens */}
+                <div className="space-y-2.5 sm:hidden">
+                  {invoiceReceipt.items.map((item, idx) => {
+                    const poItem = item.purchase_order_item;
+                    const lineTotal = Number(item.received_quantity || 0) * Number(poItem?.unit_price || 0);
+                    return (
+                      <div
+                        key={item.id || idx}
+                        className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 space-y-2.5 shadow-sm text-xs"
+                      >
+                        <div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-2">
+                          <div className="font-bold text-slate-100 leading-snug">
+                            <span className="text-cyan-400 ml-1">#{idx + 1}</span>
+                            {poItem?.item_name || poItem?.item_description || '—'}
+                          </div>
+                          <span className="shrink-0 rounded-lg bg-emerald-950/80 border border-emerald-700/60 px-2.5 py-1 font-mono font-black text-emerald-300 text-xs">
+                            {money(lineTotal)}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-[11px]">
+                          <div className="rounded-lg bg-slate-950/90 border border-slate-800 px-2.5 py-1.5 flex items-center justify-between">
+                            <span className="text-slate-400">الكمية المستلمة:</span>
+                            <strong className="font-mono text-emerald-300 font-black">
+                              {item.received_quantity} {getUnitLabel(poItem?.uom)}
+                            </strong>
+                          </div>
+                          <div className="rounded-lg bg-slate-950/90 border border-slate-800 px-2.5 py-1.5 flex items-center justify-between">
+                            <span className="text-slate-400">السعر المعتمد:</span>
+                            <strong className="font-mono text-slate-200 font-bold">
+                              {money(poItem?.unit_price)}
+                            </strong>
+                          </div>
+                          <div className="rounded-lg bg-slate-950/90 border border-slate-800 px-2.5 py-1.5 flex items-center justify-between">
+                            <span className="text-slate-400">قطعة الأرض:</span>
+                            <strong className="font-mono text-cyan-300 font-bold">
+                              {poItem?.item_reference || '—'}
+                            </strong>
+                          </div>
+                          <div className="rounded-lg bg-slate-950/90 border border-slate-800 px-2.5 py-1.5 flex items-center justify-between">
+                            <span className="text-slate-400">المنطقة:</span>
+                            <strong className="text-amber-300 font-bold">
+                              {poItem?.region || '—'}
+                            </strong>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden sm:block overflow-x-auto">
                   <Table className="min-w-[650px] text-xs">
                     <TableHeader>
                       <TableRow className="border-slate-800">
