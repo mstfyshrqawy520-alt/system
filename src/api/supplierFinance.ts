@@ -39,6 +39,9 @@ export interface ApprovedReceipt {
   warehouse_submitted_at?: string | null;
   site_engineer_approved_at?: string | null;
   warehouse_notes?: string | null;
+  photo_path?: string | null;
+  photo_name?: string | null;
+  photo_url?: string | null;
   site_engineer_notes?: string | null;
   rejection_reason?: string | null;
   warehouse_keeper?: { id: number; name: string } | null;

@@ -25,10 +25,29 @@ class PurchaseReceipt extends Model
         'site_engineer_approved_at',
         'receiver_approved_at',
         'warehouse_notes',
+        'photo_path',
+        'photo_name',
+        'photo_size',
+        'photo_mime_type',
         'site_engineer_notes',
         'receiver_notes',
         'rejection_reason',
     ];
+
+    protected $appends = [
+        'photo_url',
+    ];
+
+    public function getPhotoUrlAttribute(): ?string
+    {
+        if (! $this->photo_path) {
+            return null;
+        }
+        if (filter_var($this->photo_path, FILTER_VALIDATE_URL)) {
+            return $this->photo_path;
+        }
+        return url("/api/v1/purchase-receipts/{$this->id}/photo");
+    }
 
     protected function casts(): array
     {

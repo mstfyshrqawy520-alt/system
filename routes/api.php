@@ -339,6 +339,9 @@ Route::middleware('auth:sanctum')->prefix('purchase-receipts')->group(function (
         ->middleware('permission:purchase_receipt.approve');
 });
 
+// Receipt direct photo stream (public/browser view)
+Route::get('/purchase-receipts/{id}/photo', [PurchaseReceiptController::class, 'viewPhoto']);
+
 // Quote direct file stream (public for browser PDF viewer)
 Route::get('/purchase-quotes/{id}/file', [PurchaseQuoteController::class, 'viewFile']);
 

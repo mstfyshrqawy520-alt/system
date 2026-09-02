@@ -54,6 +54,7 @@ export const SupplierPaymentsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [invoiceReceipt, setInvoiceReceipt] = useState<ApprovedReceipt | null>(null);
+  const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
   const [paymentAccount, setPaymentAccount] = useState<SupplierAccountSummary | null>(null);
   const [openingBalanceAccount, setOpeningBalanceAccount] = useState<SupplierAccountSummary | null>(null);
   const [openingBalanceForm, setOpeningBalanceForm] = useState<{ amount: number | string; notes: string }>({ amount: 0, notes: '' });
@@ -465,6 +466,36 @@ export const SupplierPaymentsPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Attached Photo from Warehouse Keeper (Weighbridge / Scale Photo) */}
+            {invoiceReceipt.photo_url && (
+              <div className="rounded-xl border border-cyan-500/50 bg-cyan-950/30 p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-xs sm:text-sm font-black text-cyan-200 flex items-center gap-2">
+                    <span>📷</span> صورة بون الميزان / استلام المخزن المرفقة:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewPhotoUrl(invoiceReceipt.photo_url!)}
+                    className="text-xs font-bold text-cyan-400 hover:text-cyan-300 underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>🔍</span> تكبير ومعاينة الصورة
+                  </button>
+                </div>
+                <div className="flex items-center gap-3 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                  <img
+                    src={invoiceReceipt.photo_url}
+                    alt="صورة بون الميزان"
+                    onClick={() => setPreviewPhotoUrl(invoiceReceipt.photo_url!)}
+                    className="h-16 w-16 sm:h-20 sm:w-20 rounded-lg object-cover border border-cyan-500/60 cursor-pointer hover:scale-105 transition-transform shrink-0"
+                  />
+                  <div className="text-xs space-y-1">
+                    <p className="font-bold text-slate-100">صورة وزنة الحديد / بون الميزان الفعلي المرفوعة من أمين المخزن</p>
+                    <p className="text-slate-400 text-[11px]">يمكنك تدقيق الوزن والأختام المسجلة بالصورة قبل اعتماد الفاتورة والصرف.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* 2. Items & Received Quantities Reference Table */}
             {invoiceReceipt.items && invoiceReceipt.items.length > 0 && (
               <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 space-y-2">
@@ -746,6 +777,50 @@ export const SupplierPaymentsPage: React.FC = () => {
       )}
 
       {paymentAccount && createPortal(<div className="modal-top-viewport fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/80 p-2 sm:p-4" role="dialog" aria-modal="true"><form onSubmit={submitPayment} className="max-h-[calc(100vh-1rem)] w-full max-w-xl space-y-5 overflow-y-auto rounded-2xl border border-cyan-800/70 bg-slate-900 p-4 shadow-2xl sm:max-h-[calc(100vh-3rem)] sm:p-5"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-black text-slate-100">تسجيل دفعة على حساب المورد</h2><p className="mt-1 text-xs text-slate-400">{paymentAccount.company_name} — الدفعة لا ترتبط بفاتورة محددة.</p></div><button type="button" onClick={() => setPaymentAccount(null)} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-2xl font-black text-slate-300 transition-colors hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-400" aria-label="إغلاق النافذة" title="إغلاق النافذة">×</button></div><div className="grid grid-cols-3 gap-2 rounded-xl border border-cyan-800/50 bg-cyan-950/20 p-3 text-center text-xs"><div><span className="text-slate-500">إجمالي الفواتير</span><strong className="mt-1 block font-mono text-cyan-200">{money(paymentAccount.total_invoiced)}</strong></div><div><span className="text-slate-500">إجمالي المدفوع</span><strong className="mt-1 block font-mono text-emerald-300">{money(paymentAccount.total_paid)}</strong></div><div><span className="text-slate-500">الرصيد المستحق</span><strong className="mt-1 block font-mono text-amber-300">{money(Math.max(paymentAccount.balance, 0))}</strong></div></div><div className="rounded-xl border border-amber-700/50 bg-amber-950/20 p-3 text-xs leading-6 text-amber-200">سيتم تسجيل المبلغ على حساب المورد وتوزيعه تلقائيًا على أقدم الفواتير المطابقة أولًا. إذا زاد المبلغ عن إجمالي المديونية، سيُسجل الفرق كرصيد دائن أو دفعة مقدمة.</div>{paymentModalError && (<div role="alert" className="rounded-xl border border-rose-600 bg-rose-950/80 p-3 text-xs font-bold text-rose-200">⚠️ {paymentModalError}</div>)}<div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><label className="text-xs font-bold text-slate-300">قيمة الدفعة (ج.م)<input type="number" step="0.01" min="0.01" required aria-invalid={Boolean(error && Number(paymentForm.amount) <= 0)} value={paymentForm.amount} onChange={event => { const value = event.target.value; const numericValue = Number(value); setPaymentForm({ ...paymentForm, amount: numericValue }); setError(value && numericValue <= 0 ? 'قيمة الدفعة يجب أن تكون رقماً أكبر من صفر.' : null); }} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" /></label><label className="text-xs font-bold text-slate-300">تاريخ الدفع<input type="date" required value={paymentForm.payment_date} onChange={event => setPaymentForm({ ...paymentForm, payment_date: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" /></label><label className="text-xs font-bold text-slate-300">طريقة الدفع<select value={paymentForm.payment_method} onChange={event => setPaymentForm({ ...paymentForm, payment_method: event.target.value as CreateSupplierPaymentPayload['payment_method'] })} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"><option value="BANK_TRANSFER">تحويل بنكي</option><option value="CASH">نقدي</option><option value="CHEQUE">شيك</option></select></label><label className="text-xs font-bold text-slate-300">رقم المرجع<input value={paymentForm.reference_number || ''} onChange={event => setPaymentForm({ ...paymentForm, reference_number: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" /></label></div><label className="block text-xs font-bold text-slate-300">ملاحظات<textarea value={paymentForm.notes || ''} onChange={event => setPaymentForm({ ...paymentForm, notes: event.target.value })} className="mt-1 min-h-20 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100" /></label><div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setPaymentAccount(null)}>إلغاء</Button><Button type="submit" variant="success" isLoading={saving}>تسجيل الدفعة على الحساب</Button></div></form></div>, document.body)}
+
+      {/* Full-Screen Image Preview Modal */}
+      {previewPhotoUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm animate-fade-in"
+          onClick={() => setPreviewPhotoUrl(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] w-full bg-slate-950 rounded-2xl border border-slate-700 p-2 overflow-hidden shadow-2xl flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-full flex items-center justify-between p-3 border-b border-slate-800 text-slate-100">
+              <span className="font-black text-sm flex items-center gap-2">
+                <span>📷</span> معاينة صورة بون الميزان / استلام المخزن المرفقة
+              </span>
+              <button
+                type="button"
+                onClick={() => setPreviewPhotoUrl(null)}
+                className="h-8 w-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-2 overflow-auto max-h-[75vh] flex items-center justify-center w-full">
+              <img
+                src={previewPhotoUrl}
+                alt="معاينة بون الميزان"
+                className="max-h-[70vh] max-w-full object-contain rounded-lg shadow-inner"
+              />
+            </div>
+            <div className="p-3 w-full border-t border-slate-800 text-center">
+              <a
+                href={previewPhotoUrl}
+                target="_blank"
+                rel="noreferrer"
+                download="receipt-scale-photo.jpg"
+                className="text-xs font-bold text-cyan-400 hover:underline inline-flex items-center gap-1.5"
+              >
+                <span>📥</span> فتح في نافذة مستقلة / تحميل الصورة
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

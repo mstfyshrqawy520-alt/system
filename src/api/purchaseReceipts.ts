@@ -40,6 +40,9 @@ export interface ReceiptRecord {
   received_at?: string | null;
   warehouse_submitted_at?: string | null;
   warehouse_notes?: string | null;
+  photo_path?: string | null;
+  photo_name?: string | null;
+  photo_url?: string | null;
   site_engineer_notes?: string | null;
   warehouse_keeper?: { id: number; name: string } | null;
   site_engineer?: { id: number; name: string } | null;
@@ -68,7 +71,13 @@ export const getPurchaseReceiptByIdApi = async (receiptId: number): Promise<Rece
 
 export const createPurchaseReceiptApi = async (
   purchaseOrderId: number,
-  payload: { received_at?: string; warehouse_notes?: string; items: Array<{ purchase_order_item_id: number; received_quantity: number; notes?: string }> },
+  payload: {
+    received_at?: string;
+    warehouse_notes?: string;
+    photo_base64?: string;
+    photo_name?: string;
+    items: Array<{ purchase_order_item_id: number; received_quantity: number; notes?: string }>;
+  },
 ): Promise<ReceiptRecord> =>
   (await apiClient.post<{ data: ReceiptRecord }>(`/purchase-receipts/purchase-orders/${purchaseOrderId}`, payload)).data.data;
 

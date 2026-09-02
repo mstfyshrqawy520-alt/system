@@ -29,11 +29,44 @@ class PurchaseReceiptController extends Controller
         $validated = $request->validate([
             'received_at' => ['nullable', 'date'],
             'warehouse_notes' => ['nullable', 'string', 'max:3000'],
+            'photo' => ['nullable', 'file', 'max:20480'], // max 20MB
+            'photo_base64' => ['nullable', 'string'],
+            'photo_name' => ['nullable', 'string', 'max:255'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.purchase_order_item_id' => ['required', 'integer', 'exists:purchase_order_items,id'],
             'items.*.received_quantity' => ['required', 'numeric', 'gte:0'],
             'items.*.notes' => ['nullable', 'string', 'max:1000'],
         ]);
+
+        $photoData = null;
+        if ($request->hasFile('photo')) {
+            $file = $request->file('photo');
+            $fileName = 'receipt_' . time() . '_' . \Illuminate\Support\Str::random(8) . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('receipts', $fileName, 'public');
+            $photoData = [
+                'path' => $path,
+                'name' => $file->getClientOriginalName(),
+                'size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+            ];
+        } elseif ($request->filled('photo_base64')) {
+            $base64 = $request->input('photo_base64');
+            if (preg_match('/^data:image\/(\w+);base64,/', $base64, $matches)) {
+                $ext = $matches[1];
+                $data = substr($base64, strpos($base64, ',') + 1);
+                $decoded = base64_decode($data);
+                if ($decoded !== false) {
+                    $fileName = 'receipt_' . time() . '_' . \Illuminate\Support\Str::random(8) . '.' . $ext;
+                    \Illuminate\Support\Facades\Storage::disk('public')->put('receipts/' . $fileName, $decoded);
+                    $photoData = [
+                        'path' => 'receipts/' . $fileName,
+                        'name' => $request->input('photo_name', $fileName),
+                        'size' => strlen($decoded),
+                        'mime_type' => 'image/' . $ext,
+                    ];
+                }
+            }
+        }
 
         $purchaseOrder = PurchaseOrder::findOrFail($purchaseOrderId);
         try {
@@ -43,12 +76,49 @@ class PurchaseReceiptController extends Controller
                 $validated['items'],
                 $validated['received_at'] ?? null,
                 $validated['warehouse_notes'] ?? null,
+                $photoData,
             );
         } catch (\RuntimeException $exception) {
             return response()->json(['message' => $exception->getMessage()], 409);
         }
 
         return response()->json(['message' => 'تم تسجيل الاستلام وإرساله إلى مهندس الموقع.', 'data' => $receipt], 201);
+    }
+
+    public function viewPhoto(string|int $id)
+    {
+        $receipt = PurchaseReceipt::findOrFail($id);
+        if (! $receipt->photo_path) {
+            abort(404, 'لا توجد صورة مرفقة لإذن الاستلام.');
+        }
+
+        $realPath = null;
+        $mime = $receipt->photo_mime_type ?: 'image/jpeg';
+
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($receipt->photo_path)) {
+            $realPath = \Illuminate\Support\Facades\Storage::disk('public')->path($receipt->photo_path);
+        } elseif (\Illuminate\Support\Facades\Storage::disk('local')->exists($receipt->photo_path)) {
+            $realPath = \Illuminate\Support\Facades\Storage::disk('local')->path($receipt->photo_path);
+        } elseif (file_exists(storage_path('app/public/' . $receipt->photo_path))) {
+            $realPath = storage_path('app/public/' . $receipt->photo_path);
+        } elseif (file_exists(public_path($receipt->photo_path))) {
+            $realPath = public_path($receipt->photo_path);
+        } elseif (file_exists(public_path('storage/' . $receipt->photo_path))) {
+            $realPath = public_path('storage/' . $receipt->photo_path);
+        }
+
+        if ($realPath && file_exists($realPath)) {
+            return response()->file($realPath, [
+                'Content-Type' => $mime,
+                'Content-Disposition' => 'inline; filename="' . ($receipt->photo_name ?: basename($realPath)) . '"',
+            ]);
+        }
+
+        if (filter_var($receipt->photo_path, FILTER_VALIDATE_URL)) {
+            return redirect()->away($receipt->photo_path);
+        }
+
+        abort(404, 'ملف الصورة غير موجود على الخادم.');
     }
 
     public function indexAssigned(Request $request)

@@ -30,11 +30,26 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<number, string>>({});
+  const [receiptPhotos, setReceiptPhotos] = useState<Record<number, { base64: string; name: string } | null>>({});
+  const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
   const [expandedArchiveId, setExpandedArchiveId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const handlePhotoCapture = (orderId: number, file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setError('يرجى اختيار ملف صورة صالح (JPG, PNG, WebP).');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      setReceiptPhotos((prev) => ({ ...prev, [orderId]: { base64, name: file.name } }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   const today = getTodayInputDate();
   const defaultDateFrom = getDefaultDateFrom();
@@ -155,7 +170,13 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
     setError(null);
     setSuccessMessage(null);
     try {
-      await createPurchaseReceiptApi(order.id, { items, warehouse_notes: notes[order.id] });
+      const photo = receiptPhotos[order.id];
+      await createPurchaseReceiptApi(order.id, { 
+        items, 
+        warehouse_notes: notes[order.id],
+        photo_base64: photo?.base64,
+        photo_name: photo?.name,
+      });
       setSuccessMessage(`تم تسجيل استلام أمر الشراء ${order.po_number} وإرساله لمهندس الموقع بنجاح!`);
       await load();
     } catch (err) {
@@ -493,6 +514,100 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                           />
                         </div>
 
+                        {/* Camera / Photo Attachment Component (Optional) */}
+                        <div className="rounded-2xl border-2 border-dashed border-cyan-500/50 bg-cyan-950/20 p-4 sm:p-5 space-y-3.5 shadow-md">
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <div className="flex items-center gap-2.5">
+                              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-300 text-2xl border border-cyan-500/40 shrink-0">
+                                📷
+                              </span>
+                              <div>
+                                <h5 className="text-sm sm:text-base font-black text-cyan-200 flex items-center gap-1.5">
+                                  <span>صورة وزنة الحديد / بون الميزان أو الاستلام الميداني</span>
+                                  <span className="text-xs font-bold text-amber-300 bg-amber-950/70 border border-amber-800/60 px-2 py-0.5 rounded-md">
+                                    (اختياري)
+                                  </span>
+                                </h5>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                  صورة للمستند الفعلي (بون الميزان / بوليصة الشحن) ستظهر لمهندس الموقع ولإدارة الحسابات.
+                                </p>
+                              </div>
+                            </div>
+                            {receiptPhotos[order.id] && (
+                              <button
+                                type="button"
+                                onClick={() => setReceiptPhotos((prev) => ({ ...prev, [order.id]: null }))}
+                                className="text-xs font-bold text-rose-400 hover:text-rose-300 bg-rose-950/80 border border-rose-800/80 px-3 py-1.5 rounded-xl cursor-pointer"
+                              >
+                                ✕ إلغاء / حذف الصورة
+                              </button>
+                            )}
+                          </div>
+
+                          {receiptPhotos[order.id] ? (
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-950/90 p-3.5 rounded-xl border border-cyan-500/50">
+                              <div
+                                onClick={() => setPreviewPhotoUrl(receiptPhotos[order.id]!.base64)}
+                                className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-xl overflow-hidden border-2 border-cyan-400 cursor-pointer group shrink-0 shadow-lg"
+                              >
+                                <img
+                                  src={receiptPhotos[order.id]!.base64}
+                                  alt="صورة الاستلام"
+                                  className="h-full w-full object-cover group-hover:scale-105 transition-transform"
+                                />
+                                <div className="absolute inset-0 bg-slate-950/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <span className="text-xs font-bold text-white bg-slate-900/90 px-2 py-1 rounded">🔍 تكبير</span>
+                                </div>
+                              </div>
+                              <div className="space-y-1.5 text-xs flex-1">
+                                <div className="font-bold text-slate-100 text-sm flex items-center gap-1.5">
+                                  <span className="text-emerald-400 font-black">✓</span>
+                                  <span>تم إرفاق الصورة بنجاح: {receiptPhotos[order.id]!.name}</span>
+                                </div>
+                                <p className="text-slate-300 text-xs">
+                                  سيتم إرسال هذه الصورة تلقائياً لمهندس الموقع لمطابقتها وللحسابات مع إذن الصرف.
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewPhotoUrl(receiptPhotos[order.id]!.base64)}
+                                  className="text-xs font-bold text-cyan-400 hover:text-cyan-300 underline inline-flex items-center gap-1 cursor-pointer pt-1"
+                                >
+                                  <span>👁️</span> معاينة الصورة بالحجم الكامل المكبر
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <label className="flex flex-col sm:flex-row items-center justify-center gap-3 p-4 rounded-xl border-2 border-dashed border-slate-700 hover:border-cyan-400 bg-slate-900/60 hover:bg-slate-900/90 cursor-pointer transition-all text-center sm:text-right">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-500/20 text-cyan-300 text-2xl border border-cyan-500/40">
+                                  📸
+                                </div>
+                                <div className="space-y-0.5 flex-1">
+                                  <span className="text-xs sm:text-sm font-black text-cyan-300 block">
+                                    اضغط هنا لفتح الكاميرا والتقاط صورة أو اختيار ملف من الهاتف
+                                  </span>
+                                  <span className="block text-[11px] text-slate-400">
+                                    التقاط فوري بالكاميرا أو اختيار صورة بون ميزان البسكول / وزنة الحديد (JPG, PNG)
+                                  </span>
+                                </div>
+                                <span className="rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 px-3.5 py-1.5 text-xs font-black shrink-0">
+                                  فتح الكاميرا 📷
+                                </span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  capture="environment"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handlePhotoCapture(order.id, file);
+                                  }}
+                                />
+                              </label>
+                            </div>
+                          )}
+                        </div>
+
                         {/* Big Submit Button */}
                         <div className="pt-3 border-t border-slate-800 space-y-2">
                           <Button
@@ -568,6 +683,54 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                           <div className="rounded-xl border border-amber-500/40 bg-amber-950/30 p-3 text-xs sm:text-sm text-amber-200">
                             <strong className="text-amber-400">ملاحظات أمين المخزن: </strong>
                             {receipt.warehouse_notes}
+                          </div>
+                        )}
+
+                        {/* Attached Photo Display for Site Engineer */}
+                        {receipt.photo_url && (
+                          <div className="rounded-2xl border-2 border-cyan-500/50 bg-cyan-950/25 p-4 space-y-3 shadow-md">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <span className="text-xs sm:text-sm font-black text-cyan-200 flex items-center gap-2">
+                                <span>📷</span> صورة فحص واستلام المخزن (بون الميزان / وزنة الحديد المرفقة):
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setPreviewPhotoUrl(receipt.photo_url!)}
+                                className="text-xs font-bold text-cyan-400 hover:text-cyan-300 underline inline-flex items-center gap-1 cursor-pointer"
+                              >
+                                <span>🔍</span> عرض بالحجم الكامل
+                              </button>
+                            </div>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3.5 bg-slate-950/90 p-3 rounded-xl border border-slate-800">
+                              <div
+                                onClick={() => setPreviewPhotoUrl(receipt.photo_url!)}
+                                className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-xl overflow-hidden border-2 border-cyan-400/80 cursor-pointer shrink-0 shadow-lg group"
+                              >
+                                <img
+                                  src={receipt.photo_url}
+                                  alt="صورة الاستلام الميداني"
+                                  className="h-full w-full object-cover group-hover:scale-105 transition-transform"
+                                />
+                                <div className="absolute inset-0 bg-slate-950/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <span className="text-xs font-bold text-white bg-slate-900/90 px-2 py-1 rounded">🔍 تكبير</span>
+                                </div>
+                              </div>
+                              <div className="text-xs space-y-1.5 flex-1">
+                                <p className="font-black text-slate-100 text-sm">
+                                  صورة موثقة بواسطة أمين المخزن أثناء استلام الشحنة
+                                </p>
+                                <p className="text-slate-300">
+                                  يمكنك مطابقة بون الميزان وأختام الحديد ومطابقتها هندسياً قبل تأكيد الاعتماد النهائي.
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewPhotoUrl(receipt.photo_url!)}
+                                  className="text-xs font-bold text-cyan-400 hover:underline cursor-pointer"
+                                >
+                                  اضغط هنا لمعاينة الصورة المكبرة ←
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -794,6 +957,31 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                     </div>
                   </div>
 
+                  {/* Photo in Archive View */}
+                  {receipt.photo_url && (
+                    <div className="rounded-xl border border-cyan-500/40 bg-cyan-950/20 p-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={receipt.photo_url}
+                          alt="صورة الاستلام"
+                          onClick={() => setPreviewPhotoUrl(receipt.photo_url!)}
+                          className="h-14 w-14 rounded-lg object-cover border border-cyan-500/60 cursor-pointer shrink-0 hover:scale-105 transition-transform"
+                        />
+                        <div className="text-xs">
+                          <p className="font-bold text-cyan-200">📷 مرفق صورة إذن الاستلام / بون الميزان</p>
+                          <p className="text-slate-400 text-[11px]">تم توثيق الصورة وحفظها مع سجل الاستلام.</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewPhotoUrl(receipt.photo_url!)}
+                        className="text-xs font-bold text-cyan-400 hover:underline shrink-0 cursor-pointer"
+                      >
+                        معاينة الصورة 🔍
+                      </button>
+                    </div>
+                  )}
+
                   {/* Expanded Items Cards in Archive */}
                   {isExpanded && (
                     <div className="space-y-3 pt-3 border-t border-slate-800 animate-fade-in">
@@ -859,6 +1047,50 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
               </p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Full-Screen Image Preview Modal */}
+      {previewPhotoUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm animate-fade-in"
+          onClick={() => setPreviewPhotoUrl(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] w-full bg-slate-950 rounded-2xl border border-slate-700 p-2 overflow-hidden shadow-2xl flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-full flex items-center justify-between p-3 border-b border-slate-800 text-slate-100">
+              <span className="font-black text-sm flex items-center gap-2">
+                <span>📷</span> معاينة صورة بون الميزان / استلام المخزن
+              </span>
+              <button
+                type="button"
+                onClick={() => setPreviewPhotoUrl(null)}
+                className="h-8 w-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-2 overflow-auto max-h-[75vh] flex items-center justify-center w-full">
+              <img
+                src={previewPhotoUrl}
+                alt="معاينة كاملة"
+                className="max-h-[70vh] max-w-full object-contain rounded-lg shadow-inner"
+              />
+            </div>
+            <div className="p-3 w-full border-t border-slate-800 text-center">
+              <a
+                href={previewPhotoUrl}
+                target="_blank"
+                rel="noreferrer"
+                download="receipt-photo.jpg"
+                className="text-xs font-bold text-cyan-400 hover:underline inline-flex items-center gap-1.5"
+              >
+                <span>📥</span> فتح في نافذة مستقلة / تحميل الصورة
+              </a>
+            </div>
+          </div>
         </div>
       )}
     </div>

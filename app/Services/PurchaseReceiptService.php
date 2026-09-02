@@ -56,8 +56,14 @@ class PurchaseReceiptService
         return $query->paginate($perPage);
     }
 
-    public function createByWarehouse(User $warehouseKeeper, PurchaseOrder $purchaseOrder, array $items, ?string $receivedAt = null, ?string $notes = null): PurchaseReceipt
-    {
+    public function createByWarehouse(
+        User $warehouseKeeper,
+        PurchaseOrder $purchaseOrder,
+        array $items,
+        ?string $receivedAt = null,
+        ?string $notes = null,
+        ?array $photoData = null
+    ): PurchaseReceipt {
         $purchaseOrder->loadMissing(['purchaseRequest', 'items']);
         $siteEngineerId = $purchaseOrder->purchaseRequest?->site_engineer_user_id;
 
@@ -76,7 +82,7 @@ class PurchaseReceiptService
             throw ValidationException::withMessages(['items' => ['يجب تسجيل الكمية المستلمة لكل بند في أمر الشراء.']]);
         }
 
-        return DB::transaction(function () use ($warehouseKeeper, $purchaseOrder, $items, $receivedAt, $notes, $siteEngineerId, $orderItems): PurchaseReceipt {
+        return DB::transaction(function () use ($warehouseKeeper, $purchaseOrder, $items, $receivedAt, $notes, $siteEngineerId, $orderItems, $photoData): PurchaseReceipt {
             $receipt = PurchaseReceipt::create([
                 'purchase_order_id' => $purchaseOrder->id,
                 'purchase_request_id' => $purchaseOrder->purchase_request_id,
@@ -87,6 +93,10 @@ class PurchaseReceiptService
                 'received_at' => $receivedAt ?: now()->toDateString(),
                 'warehouse_submitted_at' => now(),
                 'warehouse_notes' => $notes,
+                'photo_path' => $photoData['path'] ?? null,
+                'photo_name' => $photoData['name'] ?? null,
+                'photo_size' => $photoData['size'] ?? null,
+                'photo_mime_type' => $photoData['mime_type'] ?? null,
             ]);
 
             foreach ($items as $item) {
