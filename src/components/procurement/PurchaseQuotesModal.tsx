@@ -300,8 +300,40 @@ export const PurchaseQuotesModal: React.FC<PurchaseQuotesModalProps> = ({
               <div className="mt-1 font-bold text-slate-100">{request.priority || '—'}</div>
             </div>
           </div>
-          <div className="mt-4 overflow-x-auto rounded-lg border border-amber-800/40">
-            <table className="min-w-[760px] w-full text-right text-xs">
+          {/* Mobile-first Cards for phones */}
+          <div className="mt-4 space-y-2.5 sm:hidden">
+            {(request.items || []).map((item, idx) => (
+              <div
+                key={item.id || idx}
+                className="rounded-xl border border-amber-700/40 bg-slate-950/80 p-3.5 space-y-2 shadow-inner text-xs"
+              >
+                <div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-2">
+                  <div className="font-black text-slate-100 leading-snug">
+                    <span className="text-amber-400 ml-1">#{idx + 1}</span>
+                    {item.item_description || item.item?.name || '—'}
+                  </div>
+                  <span className="shrink-0 rounded-lg bg-amber-500/20 border border-amber-500/40 px-2.5 py-1 font-mono font-black text-amber-300 text-xs">
+                    {item.quantity} {getUnitLabel(item.uom)}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="rounded-lg bg-slate-900/90 border border-slate-800 px-2.5 py-1.5 flex items-center justify-between">
+                    <span className="text-slate-400">قطعة الأرض:</span>
+                    <strong className="font-mono text-cyan-300 font-bold">{item.item_reference || 'غير محدد'}</strong>
+                  </div>
+                  <div className="rounded-lg bg-slate-900/90 border border-slate-800 px-2.5 py-1.5 flex items-center justify-between">
+                    <span className="text-slate-400">المنطقة:</span>
+                    <strong className="text-slate-200 font-bold">{item.region || 'غير محددة'}</strong>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="mt-4 hidden sm:block overflow-x-auto rounded-lg border border-amber-800/40">
+            <table className="min-w-[600px] w-full text-right text-xs">
               <thead className="bg-slate-950/70 text-amber-100">
                 <tr>
                   <th className="px-3 py-2">الصنف</th>
@@ -317,7 +349,7 @@ export const PurchaseQuotesModal: React.FC<PurchaseQuotesModalProps> = ({
                     <td className="px-3 py-2 font-bold">{item.item_description || item.item?.name || '—'}</td>
                     <td className="px-3 py-2 font-mono text-cyan-300">{item.item_reference || 'غير مكتمل'}</td>
                     <td className="px-3 py-2">{item.region || 'غير مكتملة'}</td>
-                    <td className="px-3 py-2">{item.quantity || '—'}</td>
+                    <td className="px-3 py-2 font-mono font-bold text-amber-300">{item.quantity || '—'}</td>
                     <td className="px-3 py-2">{getUnitLabel(item.uom)}</td>
                   </tr>
                 ))}
