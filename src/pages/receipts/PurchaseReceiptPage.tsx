@@ -18,7 +18,6 @@ import {
   ReceiptRecord,
 } from '../../api/purchaseReceipts';
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
-import { LiveCameraModal } from '../../components/common/LiveCameraModal';
 
 type ReceiptMode = 'warehouse' | 'site';
 type ActiveTab = 'QUEUE' | 'ARCHIVE';
@@ -32,7 +31,6 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<number, string>>({});
   const [receiptPhotos, setReceiptPhotos] = useState<Record<number, { base64: string; name: string } | null>>({});
-  const [activeCameraOrderId, setActiveCameraOrderId] = useState<number | null>(null);
   const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
   const [expandedArchiveId, setExpandedArchiveId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -154,6 +152,22 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
       updated[`${order.id}-${item.id}`] = String(item.quantity);
     });
     setQuantities(updated);
+  };
+
+  const handlePhotoFile = (orderId: number, file: File) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      setReceiptPhotos((prev) => ({
+        ...prev,
+        [orderId]: {
+          base64,
+          name: file.name || `photo_${Date.now()}.jpg`,
+        },
+      }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const submitWarehouseReceipt = async (order: ReceiptPurchaseOrder) => {
@@ -580,11 +594,10 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                             </div>
                           ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                              {/* Option 1: Direct Live Camera Snapping */}
-                              <button
-                                type="button"
-                                onClick={() => setActiveCameraOrderId(order.id)}
-                                className="flex items-center justify-center gap-3 p-4 rounded-xl border-2 border-dashed border-cyan-500/70 hover:border-cyan-300 bg-cyan-950/40 hover:bg-cyan-950/70 cursor-pointer transition-all text-right group shadow-lg active:scale-98"
+                              {/* Option 1: Direct Native Camera Launch on Phone/Tablet */}
+                              <label
+                                htmlFor={`receipt-camera-capture-${order.id}`}
+                                className="flex items-center justify-center gap-3 p-4 rounded-xl border-2 border-dashed border-cyan-500/80 hover:border-cyan-300 bg-cyan-950/40 hover:bg-cyan-950/70 cursor-pointer transition-all text-right group shadow-lg active:scale-98"
                               >
                                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-300 text-2xl border border-cyan-500/40 group-hover:scale-110 transition-transform">
                                   📸
@@ -594,13 +607,28 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                                     فتح الكاميرا والتقاط صورة فورا
                                   </span>
                                   <span className="block text-[11px] text-slate-400">
-                                    تشغيل كاميرا الهاتف / الجهاز والتقاط بون الميزان
+                                    تشغيل كاميرا الهاتف مباشرة والتقاط بون الميزان
                                   </span>
                                 </div>
-                              </button>
+                                <input
+                                  id={`receipt-camera-capture-${order.id}`}
+                                  type="file"
+                                  accept="image/*"
+                                  capture="environment"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handlePhotoCapture(order.id, file);
+                                    e.target.value = '';
+                                  }}
+                                />
+                              </label>
 
                               {/* Option 2: Gallery / Files Picker */}
-                              <label className="flex items-center justify-center gap-3 p-4 rounded-xl border-2 border-dashed border-slate-700 hover:border-cyan-400 bg-slate-900/60 hover:bg-slate-900/90 cursor-pointer transition-all text-right group shadow-lg active:scale-98">
+                              <label
+                                htmlFor={`receipt-gallery-picker-${order.id}`}
+                                className="flex items-center justify-center gap-3 p-4 rounded-xl border-2 border-dashed border-slate-700 hover:border-cyan-400 bg-slate-900/60 hover:bg-slate-900/90 cursor-pointer transition-all text-right group shadow-lg active:scale-98"
+                              >
                                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 text-2xl border border-slate-700 group-hover:scale-110 transition-transform">
                                   📁
                                 </div>
@@ -613,12 +641,14 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                                   </span>
                                 </div>
                                 <input
+                                  id={`receipt-gallery-picker-${order.id}`}
                                   type="file"
                                   accept="image/*"
                                   className="hidden"
                                   onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) handlePhotoCapture(order.id, file);
+                                    e.target.value = '';
                                   }}
                                 />
                               </label>
@@ -1111,21 +1141,6 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
           </div>
         </div>
       )}
-
-      {/* Live Camera Viewfinder Modal */}
-      <LiveCameraModal
-        isOpen={activeCameraOrderId !== null}
-        onClose={() => setActiveCameraOrderId(null)}
-        onCapture={(base64, filename) => {
-          if (activeCameraOrderId !== null) {
-            setReceiptPhotos((prev) => ({
-              ...prev,
-              [activeCameraOrderId]: { base64, name: filename },
-            }));
-          }
-        }}
-        title="التقاط صورة بون الميزان / الاستلام بالكاميرا مباشرة"
-      />
     </div>
   );
 };
