@@ -426,67 +426,115 @@ export const UniversalReportsPage: React.FC = () => {
             </div>
 
             {report?.recent_purchase_orders?.length ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-[900px] w-full text-right text-xs">
-                  <thead className="bg-slate-900 text-slate-300">
-                    <tr>
-                      <th className="px-4 py-3">رقم الأمر</th>
-                      <th className="px-4 py-3">المورد</th>
-                      <th className="px-4 py-3">القسم المستفيد</th>
-                      <th className="px-4 py-3">الأصناف المطلوبة</th>
-                      <th className="px-4 py-3">الحالة</th>
-                      <th className="px-4 py-3">الإجمالي (ج.م)</th>
-                      <th className="px-4 py-3">تاريخ التحديث</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.recent_purchase_orders.map((po) => {
-                      const firstItem = po.items?.[0];
-                      const otherItemsCount = (po.items?.length || 0) - 1;
+              <>
+                {/* Mobile View: Cards */}
+                <div className="block md:hidden space-y-3">
+                  {report.recent_purchase_orders.map((po) => {
+                    const firstItem = po.items?.[0];
+                    const otherItemsCount = (po.items?.length || 0) - 1;
 
-                      return (
-                        <tr key={po.id} className="border-t border-slate-800 hover:bg-slate-900/40 text-slate-200">
-                          <td className="px-4 py-3 font-mono font-bold text-cyan-300 whitespace-nowrap">
-                            {po.po_number}
-                          </td>
-                          <td className="px-4 py-3 font-bold text-slate-100">
-                            {po.supplier_name || 'غير محدد'}
-                          </td>
-                          <td className="px-4 py-3 text-slate-300 whitespace-nowrap">
-                            {po.department_name || 'عام'}
-                          </td>
-                          <td className="px-4 py-3 max-w-[240px]">
-                            {firstItem ? (
-                              <div>
-                                <span className="font-bold text-slate-200 truncate block">
-                                  {firstItem.item_description}
-                                </span>
-                                <span className="text-[11px] text-amber-300 font-mono">
-                                  {firstItem.quantity} {getUnitLabel(firstItem.uom)}
-                                  {otherItemsCount > 0 && ` (+${otherItemsCount} بنود أخرى)`}
-                                </span>
-                              </div>
-                            ) : (
-                              '—'
-                            )}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-bold ${statusTone(po.status)}`}>
-                              {PURCHASE_ORDER_STATUS_LABELS[po.status] || po.status}
+                    return (
+                      <div key={po.id} className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <span className="font-mono font-bold text-cyan-300 text-xs block">
+                              {po.po_number}
                             </span>
-                          </td>
-                          <td className="px-4 py-3 font-mono font-bold text-emerald-300 whitespace-nowrap">
+                            <span className="font-bold text-slate-100 text-xs block mt-0.5">
+                              {po.supplier_name || 'غير محدد'}
+                            </span>
+                          </div>
+                          <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-bold shrink-0 ${statusTone(po.status)}`}>
+                            {PURCHASE_ORDER_STATUS_LABELS[po.status] || po.status}
+                          </span>
+                        </div>
+
+                        {firstItem && (
+                          <div className="bg-slate-950/70 rounded-lg p-2 border border-slate-800/80 text-xs space-y-0.5">
+                            <span className="text-slate-300 font-medium block">
+                              {firstItem.item_description}
+                            </span>
+                            <span className="text-[11px] text-amber-300 font-mono">
+                              {firstItem.quantity} {getUnitLabel(firstItem.uom)}
+                              {otherItemsCount > 0 && ` (+${otherItemsCount} بنود أخرى)`}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-800 text-slate-400">
+                          <span>{po.department_name || 'عام'}</span>
+                          <span className="font-mono font-bold text-emerald-300">
                             {formatCurrency(po.grand_total)} ج.م
-                          </td>
-                          <td className="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">
-                            {formatDate(po.updated_at)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop/Tablet View: Table */}
+                <div className="hidden md:block overflow-x-auto -mx-2 sm:mx-0">
+                  <table className="min-w-[850px] w-full text-right text-xs">
+                    <thead className="bg-slate-900 text-slate-300">
+                      <tr>
+                        <th className="px-4 py-3 whitespace-nowrap font-bold">رقم الأمر</th>
+                        <th className="px-4 py-3 whitespace-nowrap font-bold">المورد</th>
+                        <th className="px-4 py-3 whitespace-nowrap font-bold">القسم المستفيد</th>
+                        <th className="px-4 py-3 whitespace-nowrap font-bold">الأصناف المطلوبة</th>
+                        <th className="px-4 py-3 whitespace-nowrap font-bold">الحالة</th>
+                        <th className="px-4 py-3 whitespace-nowrap font-bold">الإجمالي (ج.م)</th>
+                        <th className="px-4 py-3 whitespace-nowrap font-bold">تاريخ التحديث</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.recent_purchase_orders.map((po) => {
+                        const firstItem = po.items?.[0];
+                        const otherItemsCount = (po.items?.length || 0) - 1;
+
+                        return (
+                          <tr key={po.id} className="border-t border-slate-800 hover:bg-slate-900/40 text-slate-200">
+                            <td className="px-4 py-3 font-mono font-bold text-cyan-300 whitespace-nowrap">
+                              {po.po_number}
+                            </td>
+                            <td className="px-4 py-3 font-bold text-slate-100 whitespace-nowrap">
+                              {po.supplier_name || 'غير محدد'}
+                            </td>
+                            <td className="px-4 py-3 text-slate-300 whitespace-nowrap">
+                              {po.department_name || 'عام'}
+                            </td>
+                            <td className="px-4 py-3 max-w-[240px]">
+                              {firstItem ? (
+                                <div>
+                                  <span className="font-bold text-slate-200 truncate block">
+                                    {firstItem.item_description}
+                                  </span>
+                                  <span className="text-[11px] text-amber-300 font-mono">
+                                    {firstItem.quantity} {getUnitLabel(firstItem.uom)}
+                                    {otherItemsCount > 0 && ` (+${otherItemsCount} بنود أخرى)`}
+                                  </span>
+                                </div>
+                              ) : (
+                                '—'
+                              )}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-bold ${statusTone(po.status)}`}>
+                                {PURCHASE_ORDER_STATUS_LABELS[po.status] || po.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 font-mono font-bold text-emerald-300 whitespace-nowrap">
+                              {formatCurrency(po.grand_total)} ج.م
+                            </td>
+                            <td className="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">
+                              {formatDate(po.updated_at)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             ) : (
               <EmptyState label="أوامر الشراء" />
             )}

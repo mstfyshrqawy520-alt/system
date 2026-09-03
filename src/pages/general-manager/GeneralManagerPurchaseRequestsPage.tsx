@@ -318,16 +318,16 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
             <table className="min-w-[950px] w-full text-right text-xs">
               <thead className="bg-slate-900 text-slate-300">
                 <tr>
-                  <th className="px-4 py-3">رقم الطلب</th>
-                  <th className="px-4 py-3">الصنف المطلوب والكمية</th>
-                  <th className="px-4 py-3">رقم قطعة الأرض</th>
-                  <th className="px-4 py-3">تاريخ الاحتياج</th>
-                  <th className="px-4 py-3">مقدم الطلب</th>
-                  <th className="px-4 py-3">القسم</th>
-                  <th className="px-4 py-3">المورد</th>
-                  <th className="px-4 py-3">الإجمالي التقديري</th>
-                  <th className="px-4 py-3">المراجع</th>
-                  <th className="px-4 py-3">الإجراء</th>
+                  <th className="px-4 py-3 whitespace-nowrap font-bold">رقم الطلب</th>
+                  <th className="px-4 py-3 whitespace-nowrap font-bold">الصنف المطلوب والكمية</th>
+                  <th className="px-4 py-3 whitespace-nowrap font-bold">رقم قطعة الأرض</th>
+                  <th className="px-4 py-3 whitespace-nowrap font-bold">تاريخ الاحتياج</th>
+                  <th className="px-4 py-3 whitespace-nowrap font-bold">مقدم الطلب</th>
+                  <th className="px-4 py-3 whitespace-nowrap font-bold">القسم</th>
+                  <th className="px-4 py-3 whitespace-nowrap font-bold">المورد</th>
+                  <th className="px-4 py-3 whitespace-nowrap font-bold">الإجمالي التقديري</th>
+                  <th className="px-4 py-3 whitespace-nowrap font-bold">المراجع</th>
+                  <th className="px-4 py-3 whitespace-nowrap font-bold">الإجراء</th>
                 </tr>
               </thead>
               <tbody>
@@ -613,13 +613,13 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                     <table className="min-w-[900px] w-full text-right text-xs">
                       <thead className="bg-slate-950 text-slate-300">
                         <tr>
-                          <th className="px-3 py-2.5">الحالة</th>
-                          <th className="px-3 py-2.5">الصنف</th>
-                          <th className="px-3 py-2.5">المواصفات</th>
-                          <th className="px-3 py-2.5">رقم القطعة</th>
-                          <th className="px-3 py-2.5">المنطقة</th>
-                          <th className="px-3 py-2.5">الكمية</th>
-                          <th className="px-3 py-2.5 text-center">التحكم بالبند</th>
+                          <th className="px-3 py-2.5 whitespace-nowrap font-bold">الحالة</th>
+                          <th className="px-3 py-2.5 whitespace-nowrap font-bold">الصنف</th>
+                          <th className="px-3 py-2.5 whitespace-nowrap font-bold">المواصفات</th>
+                          <th className="px-3 py-2.5 whitespace-nowrap font-bold">رقم القطعة</th>
+                          <th className="px-3 py-2.5 whitespace-nowrap font-bold">المنطقة</th>
+                          <th className="px-3 py-2.5 whitespace-nowrap font-bold">الكمية</th>
+                          <th className="px-3 py-2.5 whitespace-nowrap font-bold text-center">التحكم بالبند</th>
                         </tr>
                       </thead>
                       <tbody>
