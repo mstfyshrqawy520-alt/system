@@ -66,21 +66,6 @@ class PurchaseReceiptController extends Controller
         return response()->json(['message' => 'تم تسجيل الاستلام وإرساله إلى مهندس الموقع.', 'data' => $receipt], 201);
     }
 
-    public function viewPhoto(string|int $id)
-    {
-        $receipt = PurchaseReceipt::findOrFail($id);
-        if (! $receipt->photo_path) {
-            abort(404, 'لا توجد صورة مرفقة لإذن الاستلام.');
-        }
-
-        return \App\Services\StorageService::streamResponse(
-            $receipt->photo_path,
-            $receipt->photo_name,
-            $receipt->photo_mime_type ?: 'image/jpeg',
-            false
-        );
-    }
-
     public function indexAssigned(Request $request)
     {
         $receipts = PurchaseReceipt::with([
