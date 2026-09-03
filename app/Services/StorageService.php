@@ -55,22 +55,39 @@ class StorageService
      */
     public static function storeBase64(string $base64Data, string $directory = 'receipts', ?string $customName = null): ?array
     {
-        if (! preg_match('/^data:image\/(\w+);base64,/', $base64Data, $matches)) {
+        $extension = 'jpg';
+        $mimeType = 'image/jpeg';
+        $data = $base64Data;
+
+        if (str_contains($base64Data, ';base64,')) {
+            $parts = explode(';base64,', $base64Data, 2);
+            $meta = $parts[0];
+            $data = $parts[1] ?? '';
+
+            if (preg_match('/data:image\/([a-zA-Z0-9\+\-]+)/i', $meta, $matches)) {
+                $ext = strtolower($matches[1]);
+                if ($ext === 'jpeg' || $ext === 'pjpeg') {
+                    $extension = 'jpg';
+                    $mimeType = 'image/jpeg';
+                } elseif ($ext === 'png') {
+                    $extension = 'png';
+                    $mimeType = 'image/png';
+                } elseif ($ext === 'webp') {
+                    $extension = 'webp';
+                    $mimeType = 'image/webp';
+                } else {
+                    $extension = $ext;
+                    $mimeType = 'image/' . $ext;
+                }
+            }
+        }
+
+        $decoded = base64_decode($data);
+        if ($decoded === false || empty($decoded)) {
             return null;
         }
 
         $disk = self::disk();
-        $extension = strtolower($matches[1]);
-        if ($extension === 'jpeg') {
-            $extension = 'jpg';
-        }
-
-        $data = substr($base64Data, strpos($base64Data, ',') + 1);
-        $decoded = base64_decode($data);
-        if ($decoded === false) {
-            return null;
-        }
-
         $fileName = 'receipt_' . time() . '_' . Str::random(8) . '.' . $extension;
         $path = rtrim($directory, '/') . '/' . $fileName;
 
@@ -81,7 +98,7 @@ class StorageService
             'path' => $path,
             'name' => $customName ?: $fileName,
             'size' => strlen($decoded),
-            'mime_type' => 'image/' . ($extension === 'jpg' ? 'jpeg' : $extension),
+            'mime_type' => $mimeType,
             'url' => self::url($path, $disk),
         ];
     }
@@ -111,10 +128,6 @@ class StorageService
             } catch (\Throwable) {
                 // fallback to local API streaming route if URL generation fails
             }
-        }
-
-        if ($disk === 'public') {
-            return url('/storage/' . ltrim($path, '/'));
         }
 
         return null;

@@ -46,7 +46,11 @@ class PurchaseReceipt extends Model
         if (filter_var($this->photo_path, FILTER_VALIDATE_URL)) {
             return $this->photo_path;
         }
-        return \App\Services\StorageService::url($this->photo_path) ?: url("/api/v1/purchase-receipts/{$this->id}/photo");
+        $r2Url = env('CLOUDFLARE_R2_URL');
+        if ($r2Url) {
+            return rtrim($r2Url, '/') . '/' . ltrim($this->photo_path, '/');
+        }
+        return "/api/v1/purchase-receipts/{$this->id}/photo";
     }
 
     protected function casts(): array

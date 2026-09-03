@@ -16,6 +16,7 @@ import {
   updatePurchaseReceiptApi,
   ReceiptPurchaseOrder,
   ReceiptRecord,
+  getReceiptPhotoUrl,
 } from '../../api/purchaseReceipts';
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
 
@@ -735,7 +736,7 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                         )}
 
                         {/* Attached Photo Display for Site Engineer */}
-                        {receipt.photo_url && (
+                        {Boolean(receipt.photo_url || receipt.photo_path) && (
                           <div className="rounded-2xl border-2 border-cyan-500/50 bg-cyan-950/25 p-4 space-y-3 shadow-md">
                             <div className="flex items-center justify-between flex-wrap gap-2">
                               <span className="text-xs sm:text-sm font-black text-cyan-200 flex items-center gap-2">
@@ -743,7 +744,7 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                               </span>
                               <button
                                 type="button"
-                                onClick={() => setPreviewPhotoUrl(receipt.photo_url!)}
+                                onClick={() => setPreviewPhotoUrl(getReceiptPhotoUrl(receipt))}
                                 className="text-xs font-bold text-cyan-400 hover:text-cyan-300 underline inline-flex items-center gap-1 cursor-pointer"
                               >
                                 <span>🔍</span> عرض بالحجم الكامل
@@ -751,11 +752,11 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                             </div>
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3.5 bg-slate-950/90 p-3 rounded-xl border border-slate-800">
                               <div
-                                onClick={() => setPreviewPhotoUrl(receipt.photo_url!)}
+                                onClick={() => setPreviewPhotoUrl(getReceiptPhotoUrl(receipt))}
                                 className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-xl overflow-hidden border-2 border-cyan-400/80 cursor-pointer shrink-0 shadow-lg group"
                               >
                                 <img
-                                  src={receipt.photo_url}
+                                  src={getReceiptPhotoUrl(receipt)}
                                   alt="صورة الاستلام الميداني"
                                   className="h-full w-full object-cover group-hover:scale-105 transition-transform"
                                 />
@@ -772,7 +773,7 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                                 </p>
                                 <button
                                   type="button"
-                                  onClick={() => setPreviewPhotoUrl(receipt.photo_url!)}
+                                  onClick={() => setPreviewPhotoUrl(getReceiptPhotoUrl(receipt))}
                                   className="text-xs font-bold text-cyan-400 hover:underline cursor-pointer"
                                 >
                                   اضغط هنا لمعاينة الصورة المكبرة ←
@@ -1006,13 +1007,13 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                   </div>
 
                   {/* Photo in Archive View */}
-                  {receipt.photo_url && (
+                  {Boolean(receipt.photo_url || receipt.photo_path) && (
                     <div className="rounded-xl border border-cyan-500/40 bg-cyan-950/20 p-3 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <img
-                          src={receipt.photo_url}
+                          src={getReceiptPhotoUrl(receipt)}
                           alt="صورة الاستلام"
-                          onClick={() => setPreviewPhotoUrl(receipt.photo_url!)}
+                          onClick={() => setPreviewPhotoUrl(getReceiptPhotoUrl(receipt))}
                           className="h-14 w-14 rounded-lg object-cover border border-cyan-500/60 cursor-pointer shrink-0 hover:scale-105 transition-transform"
                         />
                         <div className="text-xs">
@@ -1022,7 +1023,7 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                       </div>
                       <button
                         type="button"
-                        onClick={() => setPreviewPhotoUrl(receipt.photo_url!)}
+                        onClick={() => setPreviewPhotoUrl(getReceiptPhotoUrl(receipt))}
                         className="text-xs font-bold text-cyan-400 hover:underline shrink-0 cursor-pointer"
                       >
                         معاينة الصورة 🔍

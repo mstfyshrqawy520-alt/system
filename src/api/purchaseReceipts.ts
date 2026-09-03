@@ -57,6 +57,29 @@ export interface ReceiptRecord {
   }>;
 }
 
+export const getReceiptPhotoUrl = (receipt?: { id?: number; photo_url?: string | null } | null): string => {
+  if (!receipt) return '';
+  if (receipt.photo_url) {
+    if (receipt.photo_url.startsWith('data:') || receipt.photo_url.startsWith('blob:')) {
+      return receipt.photo_url;
+    }
+    if (receipt.photo_url.startsWith('http://') || receipt.photo_url.startsWith('https://')) {
+      return receipt.photo_url;
+    }
+    if (receipt.photo_url.startsWith('/')) {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+      const rootHost = apiBase.replace(/\/api\/v1\/?$/, '');
+      return rootHost ? `${rootHost}${receipt.photo_url}` : receipt.photo_url;
+    }
+  }
+  if (receipt.id) {
+    const apiBase = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+    const cleanBase = apiBase.replace(/\/+$/, '');
+    return `${cleanBase}/purchase-receipts/${receipt.id}/photo`;
+  }
+  return receipt.photo_url || '';
+};
+
 export const getWarehouseReceiptQueueApi = async (): Promise<ReceiptPurchaseOrder[]> =>
   (await apiClient.get<{ data: ReceiptPurchaseOrder[] }>('/purchase-receipts/warehouse-queue')).data.data;
 

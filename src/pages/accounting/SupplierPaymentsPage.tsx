@@ -26,7 +26,7 @@ import { Card } from '../../components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/Table';
 import ErrorMessage from '../../components/ErrorMessage';
 import { parseApiError } from '../../utils/apiError';
-import { getPurchaseReceiptByIdApi } from '../../api/purchaseReceipts';
+import { getPurchaseReceiptByIdApi, getReceiptPhotoUrl } from '../../api/purchaseReceipts';
 import TableColumnFilters from '../../components/ui/TableColumnFilters';
 import { getDefaultDateFrom, getTodayInputDate } from '../../utils/dateFilters';
 import { getUnitLabel } from '../../utils/units';
@@ -467,7 +467,7 @@ export const SupplierPaymentsPage: React.FC = () => {
             </div>
 
             {/* Attached Photo from Warehouse Keeper (Weighbridge / Scale Photo) */}
-            {invoiceReceipt.photo_url && (
+            {Boolean(invoiceReceipt.photo_url || invoiceReceipt.photo_path) && (
               <div className="rounded-xl border border-cyan-500/50 bg-cyan-950/30 p-3.5 space-y-2.5">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="text-xs sm:text-sm font-black text-cyan-200 flex items-center gap-2">
@@ -475,7 +475,7 @@ export const SupplierPaymentsPage: React.FC = () => {
                   </span>
                   <button
                     type="button"
-                    onClick={() => setPreviewPhotoUrl(invoiceReceipt.photo_url!)}
+                    onClick={() => setPreviewPhotoUrl(getReceiptPhotoUrl(invoiceReceipt))}
                     className="text-xs font-bold text-cyan-400 hover:text-cyan-300 underline inline-flex items-center gap-1 cursor-pointer"
                   >
                     <span>🔍</span> تكبير ومعاينة الصورة
@@ -483,9 +483,9 @@ export const SupplierPaymentsPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-3 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
                   <img
-                    src={invoiceReceipt.photo_url}
+                    src={getReceiptPhotoUrl(invoiceReceipt)}
                     alt="صورة بون الميزان"
-                    onClick={() => setPreviewPhotoUrl(invoiceReceipt.photo_url!)}
+                    onClick={() => setPreviewPhotoUrl(getReceiptPhotoUrl(invoiceReceipt))}
                     className="h-16 w-16 sm:h-20 sm:w-20 rounded-lg object-cover border border-cyan-500/60 cursor-pointer hover:scale-105 transition-transform shrink-0"
                   />
                   <div className="text-xs space-y-1">
