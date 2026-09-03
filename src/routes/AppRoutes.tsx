@@ -162,9 +162,13 @@ export const AppRoutes: React.FC = () => {
                     <Route path="/general-manager/reports" element={<GeneralManagerReportsPage />} />
                 </Route>
 
-                {/* Direct alias routes */}
+                {/* Direct alias & shared routes */}
                 <Route path="/reports" element={<UniversalReportsPage />} />
+                <Route path="/purchase-quotes" element={<PurchaseQuotesDecisionPage mode="recommend" />} />
                 <Route path="/purchase-quotes/decision" element={<PurchaseQuotesDecisionPage mode="executive" />} />
+                <Route element={<RoleRoute allowedRoles={["accountant", "reviewer", "general_manager", "procurement_manager", "admin"]} />}>
+                    <Route path="/quotes" element={<PurchaseQuotesDecisionPage mode="recommend" />} />
+                </Route>
             </Route>
 
             {/* Root & Error Routes */}

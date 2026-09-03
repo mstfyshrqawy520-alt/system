@@ -202,7 +202,7 @@ export const AccountingDashboardPage: React.FC = () => {
             amount: q.total_estimated_cost ? Number(q.total_estimated_cost) : undefined,
             urgency: 'HIGH' as const,
             reason: 'عروض أسعار مسجلة بانتظار الرقابة والمراجعة المالية وترشيح الأسعار',
-            actionUrl: `/reviewer/purchase-quotes`,
+            actionUrl: `/accounting/purchase-quotes`,
             actionLabel: 'مراجعة عروض الأسعار والترشيح',
             timeAgo: q.created_at ? q.created_at.slice(0, 10) : undefined,
             created_at: q.created_at || undefined,
