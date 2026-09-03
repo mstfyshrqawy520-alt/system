@@ -46,7 +46,7 @@ class PurchaseReceipt extends Model
         if (filter_var($this->photo_path, FILTER_VALIDATE_URL)) {
             return $this->photo_path;
         }
-        return url("/api/v1/purchase-receipts/{$this->id}/photo");
+        return \App\Services\StorageService::url($this->photo_path) ?: url("/api/v1/purchase-receipts/{$this->id}/photo");
     }
 
     protected function casts(): array

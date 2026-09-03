@@ -145,70 +145,40 @@ class PurchaseQuoteController extends Controller
             );
         }
 
-        $realPath = null;
-        $mime = $quote->mime_type ?: 'application/pdf';
+        try {
+            return \App\Services\StorageService::streamResponse(
+                $quote->file_path,
+                $quote->file_name,
+                $quote->mime_type ?: 'application/pdf',
+                false
+            );
+        } catch (\Throwable) {
+            if (filter_var($quote->file_path, FILTER_VALIDATE_URL)) {
+                return redirect()->away($quote->file_path);
+            }
 
-        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($quote->file_path)) {
-            $realPath = \Illuminate\Support\Facades\Storage::disk('public')->path($quote->file_path);
-        } elseif (\Illuminate\Support\Facades\Storage::disk('local')->exists($quote->file_path)) {
-            $realPath = \Illuminate\Support\Facades\Storage::disk('local')->path($quote->file_path);
-        } elseif (file_exists(storage_path('app/public/' . $quote->file_path))) {
-            $realPath = storage_path('app/public/' . $quote->file_path);
-        } elseif (file_exists(storage_path('app/' . $quote->file_path))) {
-            $realPath = storage_path('app/' . $quote->file_path);
-        } elseif (file_exists(public_path($quote->file_path))) {
-            $realPath = public_path($quote->file_path);
-        } elseif (file_exists(public_path('storage/' . $quote->file_path))) {
-            $realPath = public_path('storage/' . $quote->file_path);
+            return response(
+                $this->renderMissingFileHtml($quote, 'تم تسجيل بيانات العرض بنجاح، لكن ملف الـ PDF الأصلي لم يتم العثور عليه على الخادم أو التخزين السحابي.'),
+                404,
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
         }
-
-        if ($realPath && file_exists($realPath)) {
-            $fileName = $quote->file_name ?: basename($realPath);
-            return response()->file($realPath, [
-                'Content-Type' => $mime,
-                'Content-Disposition' => 'inline; filename="' . $fileName . '"',
-            ]);
-        }
-
-        if (filter_var($quote->file_path, FILTER_VALIDATE_URL)) {
-            return redirect()->away($quote->file_path);
-        }
-
-        return response(
-            $this->renderMissingFileHtml($quote, 'تم تسجيل بيانات العرض بنجاح، لكن ملف الـ PDF الأصلي لم يتم العثور عليه على الخادم (ربما تم رفعه قبل تحديث الخادم أو تم حذفه أثناء إعادة النشر).'),
-            404,
-            ['Content-Type' => 'text/html; charset=UTF-8']
-        );
     }
 
     public function viewFileByName(string $filename)
     {
-        $realPath = null;
         $relativePath = 'quotes/' . $filename;
 
-        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($relativePath)) {
-            $realPath = \Illuminate\Support\Facades\Storage::disk('public')->path($relativePath);
-        } elseif (\Illuminate\Support\Facades\Storage::disk('local')->exists($relativePath)) {
-            $realPath = \Illuminate\Support\Facades\Storage::disk('local')->path($relativePath);
-        } elseif (file_exists(storage_path('app/public/' . $relativePath))) {
-            $realPath = storage_path('app/public/' . $relativePath);
-        } elseif (file_exists(storage_path('app/' . $relativePath))) {
-            $realPath = storage_path('app/' . $relativePath);
-        } elseif (file_exists(public_path($relativePath))) {
-            $realPath = public_path($relativePath);
-        } elseif (file_exists(public_path('storage/' . $relativePath))) {
-            $realPath = public_path('storage/' . $relativePath);
+        try {
+            return \App\Services\StorageService::streamResponse(
+                $relativePath,
+                $filename,
+                'application/pdf',
+                false
+            );
+        } catch (\Throwable) {
+            abort(404, 'ملف عرض السعر غير موجود.');
         }
-
-        if ($realPath && file_exists($realPath)) {
-            $mime = @mime_content_type($realPath) ?: 'application/pdf';
-            return response()->file($realPath, [
-                'Content-Type' => $mime,
-                'Content-Disposition' => 'inline; filename="' . $filename . '"',
-            ]);
-        }
-
-        abort(404, 'ملف عرض السعر غير موجود على الخادم.');
     }
 
     protected function renderMissingFileHtml(PurchaseRequestQuote $quote, string $reason): string

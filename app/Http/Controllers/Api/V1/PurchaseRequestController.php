@@ -305,16 +305,16 @@ class PurchaseRequestController extends Controller
         }
 
         $file = $request->file('file');
-        $path = $file->store("attachments/pr/{$id}", 'local');
+        $stored = \App\Services\StorageService::storeUploadedFile($file, "attachments/pr/{$id}");
 
         $attachment = Attachment::create([
             'attachable_type' => PurchaseRequest::class,
             'attachable_id' => $pr->id,
             'uploaded_by_user_id' => $request->user()->id,
-            'file_name' => $file->getClientOriginalName(),
-            'file_path' => $path,
-            'mime_type' => $file->getMimeType(),
-            'file_size' => $file->getSize(),
+            'file_name' => $stored['name'],
+            'file_path' => $stored['path'],
+            'mime_type' => $stored['mime_type'],
+            'file_size' => $stored['size'],
         ]);
 
         $attachment->load('uploadedBy');
@@ -353,7 +353,7 @@ class PurchaseRequestController extends Controller
             ->where('attachable_id', $pr->id)
             ->findOrFail((int) $attachmentId);
 
-        Storage::disk('local')->delete($attachment->file_path);
+        \App\Services\StorageService::delete($attachment->file_path);
         $attachment->delete();
 
         return response()->json(['message' => 'Attachment deleted successfully.']);
@@ -393,10 +393,11 @@ class PurchaseRequestController extends Controller
             ->where('attachable_id', $pr->id)
             ->findOrFail((int) $attachmentId);
 
-        if (! Storage::disk('local')->exists($attachment->file_path)) {
-            return response()->json(['message' => 'File not found on disk.'], 404);
-        }
-
-        return Storage::disk('local')->download($attachment->file_path, $attachment->file_name);
+        return \App\Services\StorageService::streamResponse(
+            $attachment->file_path,
+            $attachment->file_name,
+            $attachment->mime_type,
+            true
+        );
     }
 }

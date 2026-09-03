@@ -78,11 +78,11 @@ class PurchaseQuoteService
                 $mimeType = null;
 
                 if (isset($quote['file']) && $quote['file'] instanceof \Illuminate\Http\UploadedFile) {
-                    $uploaded = $quote['file'];
-                    $fileName = $uploaded->getClientOriginalName();
-                    $fileSize = $uploaded->getSize();
-                    $mimeType = $uploaded->getClientMimeType() ?: $uploaded->getMimeType();
-                    $filePath = $uploaded->store('quotes', 'public');
+                    $saved = \App\Services\StorageService::storeUploadedFile($quote['file'], 'quotes');
+                    $filePath = $saved['path'];
+                    $fileName = $saved['name'];
+                    $fileSize = $saved['size'];
+                    $mimeType = $saved['mime_type'];
                 } elseif (!empty($quote['file_path'])) {
                     $filePath = $quote['file_path'];
                     $fileName = $quote['file_name'] ?? basename($filePath);
