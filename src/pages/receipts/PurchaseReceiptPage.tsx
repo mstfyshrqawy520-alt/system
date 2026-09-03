@@ -18,6 +18,7 @@ import {
   ReceiptRecord,
 } from '../../api/purchaseReceipts';
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
+import { LiveCameraModal } from '../../components/common/LiveCameraModal';
 
 type ReceiptMode = 'warehouse' | 'site';
 type ActiveTab = 'QUEUE' | 'ARCHIVE';
@@ -31,6 +32,7 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<number, string>>({});
   const [receiptPhotos, setReceiptPhotos] = useState<Record<number, { base64: string; name: string } | null>>({});
+  const [activeCameraOrderId, setActiveCameraOrderId] = useState<number | null>(null);
   const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
   const [expandedArchiveId, setExpandedArchiveId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -577,26 +579,42 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                               </div>
                             </div>
                           ) : (
-                            <div>
-                              <label className="flex flex-col sm:flex-row items-center justify-center gap-3 p-4 rounded-xl border-2 border-dashed border-slate-700 hover:border-cyan-400 bg-slate-900/60 hover:bg-slate-900/90 cursor-pointer transition-all text-center sm:text-right">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-500/20 text-cyan-300 text-2xl border border-cyan-500/40">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                              {/* Option 1: Direct Live Camera Snapping */}
+                              <button
+                                type="button"
+                                onClick={() => setActiveCameraOrderId(order.id)}
+                                className="flex items-center justify-center gap-3 p-4 rounded-xl border-2 border-dashed border-cyan-500/70 hover:border-cyan-300 bg-cyan-950/40 hover:bg-cyan-950/70 cursor-pointer transition-all text-right group shadow-lg active:scale-98"
+                              >
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-300 text-2xl border border-cyan-500/40 group-hover:scale-110 transition-transform">
                                   📸
                                 </div>
                                 <div className="space-y-0.5 flex-1">
-                                  <span className="text-xs sm:text-sm font-black text-cyan-300 block">
-                                    اضغط هنا لفتح الكاميرا والتقاط صورة أو اختيار ملف من الهاتف
+                                  <span className="text-xs sm:text-sm font-black text-cyan-200 group-hover:text-cyan-100 block">
+                                    فتح الكاميرا والتقاط صورة فورا
                                   </span>
                                   <span className="block text-[11px] text-slate-400">
-                                    التقاط فوري بالكاميرا أو اختيار صورة بون ميزان البسكول / وزنة الحديد (JPG, PNG)
+                                    تشغيل كاميرا الهاتف / الجهاز والتقاط بون الميزان
                                   </span>
                                 </div>
-                                <span className="rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 px-3.5 py-1.5 text-xs font-black shrink-0">
-                                  فتح الكاميرا 📷
-                                </span>
+                              </button>
+
+                              {/* Option 2: Gallery / Files Picker */}
+                              <label className="flex items-center justify-center gap-3 p-4 rounded-xl border-2 border-dashed border-slate-700 hover:border-cyan-400 bg-slate-900/60 hover:bg-slate-900/90 cursor-pointer transition-all text-right group shadow-lg active:scale-98">
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 text-2xl border border-slate-700 group-hover:scale-110 transition-transform">
+                                  📁
+                                </div>
+                                <div className="space-y-0.5 flex-1">
+                                  <span className="text-xs sm:text-sm font-black text-slate-200 group-hover:text-cyan-300 block">
+                                    اختيار صورة من المعرض أو الملفات
+                                  </span>
+                                  <span className="block text-[11px] text-slate-400">
+                                    تحميل صورة محفوظة مسبقاً (JPG, PNG)
+                                  </span>
+                                </div>
                                 <input
                                   type="file"
                                   accept="image/*"
-                                  capture="environment"
                                   className="hidden"
                                   onChange={(e) => {
                                     const file = e.target.files?.[0];
@@ -1093,6 +1111,21 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
           </div>
         </div>
       )}
+
+      {/* Live Camera Viewfinder Modal */}
+      <LiveCameraModal
+        isOpen={activeCameraOrderId !== null}
+        onClose={() => setActiveCameraOrderId(null)}
+        onCapture={(base64, filename) => {
+          if (activeCameraOrderId !== null) {
+            setReceiptPhotos((prev) => ({
+              ...prev,
+              [activeCameraOrderId]: { base64, name: filename },
+            }));
+          }
+        }}
+        title="التقاط صورة بون الميزان / الاستلام بالكاميرا مباشرة"
+      />
     </div>
   );
 };
