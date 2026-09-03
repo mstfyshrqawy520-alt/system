@@ -411,7 +411,229 @@ export const SupplierPaymentsPage: React.FC = () => {
         {!filteredInvoices.length && <div className="py-8 text-center text-sm text-slate-500">{invoices.length ? 'لا توجد نتائج مطابقة للفلاتر الحالية.' : 'لا توجد فواتير مسجلة في الأرشيف حتى الآن.'}</div>}
       </Card>
 
-      {documentPreview && createPortal(<div className="modal-top-viewport fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/85 p-2 sm:p-4" role="dialog" aria-modal="true"><div className="max-h-[calc(100vh-1rem)] w-full max-w-6xl space-y-5 overflow-y-auto rounded-2xl border border-cyan-800/70 bg-slate-900 p-4 shadow-2xl sm:max-h-[calc(100vh-2rem)] sm:p-5"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-black text-slate-100">مراجعة أمر الشراء وإذن الاستلام</h2><p className="mt-1 text-xs text-slate-400">المستندان مرتبطان بنفس الطلب ويمكنك مراجعتهما قبل إنشاء فاتورة المورد.</p></div><button type="button" onClick={() => setDocumentPreview(null)} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-2xl font-black text-slate-300 transition-colors hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-400" aria-label="إغلاق النافذة" title="إغلاق النافذة">×</button></div><div className="grid grid-cols-1 gap-4 lg:grid-cols-2"><div className="rounded-xl border border-cyan-800/60 bg-cyan-950/20 p-4"><h3 className="text-sm font-black text-cyan-200">أمر الشراء</h3><div className="mt-3 grid grid-cols-2 gap-3 text-xs"><div><span className="text-slate-400 font-medium">الرقم</span><p className="mt-1 font-mono font-bold text-cyan-300">{documentPreview.purchase_order?.po_number || `PO #${documentPreview.purchase_order_id}`}</p></div><div><span className="text-slate-400 font-medium">المورد</span><p className="mt-1 font-bold text-slate-100">{documentPreview.purchase_order?.supplier?.company_name || '—'}</p></div><div><span className="text-slate-400 font-medium">الإجمالي</span><p className="mt-1 font-mono font-bold text-emerald-300">{money(documentPreview.purchase_order?.grand_total)}</p></div><div><span className="text-slate-400 font-medium">حالة الأمر</span><p className="mt-1 font-bold text-slate-100">{documentPreview.purchase_order?.status || '—'}</p></div></div></div><div className="rounded-xl border border-amber-800/60 bg-amber-950/20 p-4"><h3 className="text-sm font-black text-amber-200">إذن الاستلام</h3><div className="mt-3 grid grid-cols-2 gap-3 text-xs"><div><span className="text-slate-400 font-medium">الرقم</span><p className="mt-1 font-mono font-bold text-amber-300">{documentPreview.receipt_number}</p></div><div><span className="text-slate-400 font-medium">الحالة</span><p className="mt-1 font-bold text-slate-100">{documentPreview.status}</p></div><div><span className="text-slate-400 font-medium">تاريخ الاستلام</span><p className="mt-1 font-mono font-bold text-slate-100">{cleanDate(documentPreview.received_at)}</p></div><div><span className="text-slate-400 font-medium">اعتماد الموقع</span><p className="mt-1 font-mono font-bold text-slate-100">{cleanDate(documentPreview.site_engineer_approved_at)}</p></div></div></div></div><div className="grid grid-cols-1 gap-4 lg:grid-cols-3"><div className="rounded-xl border border-slate-700 bg-slate-950/80 p-4"><h3 className="text-sm font-black text-slate-100 border-b border-slate-800 pb-2">بيانات دورة الطلب</h3><div className="mt-3 space-y-2 text-xs"><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">رقم طلب الشراء:</span><strong className="font-mono text-cyan-300 font-bold">{documentPreview.purchase_order?.purchase_request?.request_number || '—'}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">مقدم الطلب:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.purchase_request?.requester?.name || '—'}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">القسم:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.purchase_request?.department?.name || '—'}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">المراجع:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.purchase_request?.assigned_reviewer?.name || '—'}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">مهندس الموقع:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.purchase_request?.site_engineer?.name || documentPreview.site_engineer?.name || '—'}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">تاريخ الاحتياج:</span><strong className="font-mono text-amber-300 font-bold">{cleanDate(documentPreview.purchase_order?.purchase_request?.date_needed)}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">ملاحظات الطلب:</span><strong className="text-slate-200 font-bold">{documentPreview.purchase_order?.purchase_request?.notes || '—'}</strong></div></div></div><div className="rounded-xl border border-cyan-800/50 bg-slate-950/80 p-4"><h3 className="text-sm font-black text-cyan-200 border-b border-slate-800 pb-2">بيانات أمر الشراء المالية والتجارية</h3><div className="mt-3 space-y-2 text-xs"><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">أنشأه:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.created_by?.name || '—'}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">راجعته الحسابات:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.accounting_reviewer?.name || '—'}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">العملة:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.currency || 'EGP'}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">الإجمالي قبل الإضافات:</span><strong className="font-mono text-emerald-300 font-bold">{money(documentPreview.purchase_order?.subtotal)}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">شروط الدفع:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.payment_terms || '—'}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">شروط التوريد:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.delivery_terms || '—'}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">تاريخ التوريد المتوقع:</span><strong className="font-mono text-amber-300 font-bold">{cleanDate(documentPreview.purchase_order?.delivery_date)}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">ملاحظات مالية:</span><strong className="text-slate-200 font-bold">{documentPreview.purchase_order?.financial_notes || '—'}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">ملاحظات الأمر:</span><strong className="text-slate-200 font-bold">{documentPreview.purchase_order?.notes || '—'}</strong></div></div></div><div className="rounded-xl border border-amber-800/50 bg-slate-950/80 p-4"><h3 className="text-sm font-black text-amber-200 border-b border-slate-800 pb-2">بيانات الاستلام والتوريد</h3><div className="mt-3 space-y-2 text-xs"><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">أمين المخزن:</span><strong className="text-slate-100 font-bold">{documentPreview.warehouse_keeper?.name || '—'}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">وقت إرسال الاستلام:</span><strong className="font-mono text-slate-100 font-bold">{cleanDate(documentPreview.warehouse_submitted_at)}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">ملاحظات المخزن:</span><strong className="text-slate-200 font-bold">{documentPreview.warehouse_notes || '—'}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">مهندس الموقع:</span><strong className="text-slate-100 font-bold">{documentPreview.site_engineer?.name || '—'}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">وقت اعتماد الموقع:</span><strong className="font-mono text-slate-100 font-bold">{cleanDate(documentPreview.site_engineer_approved_at)}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">ملاحظات مهندس الموقع:</span><strong className="text-slate-200 font-bold">{documentPreview.site_engineer_notes || '—'}</strong></div><div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">سبب الرفض:</span><strong className="text-slate-200 font-bold">{documentPreview.rejection_reason || '—'}</strong></div></div></div></div><div className="rounded-xl border border-slate-700 bg-slate-950/50 p-4"><h3 className="mb-3 text-sm font-black text-slate-100">تفاصيل البنود في المستندين</h3><div className="hidden min-w-0 md:block overflow-x-auto"><Table className="min-w-[850px]"><TableHeader><TableRow><TableHead className="whitespace-nowrap">اسم الصنف</TableHead><TableHead className="whitespace-nowrap">رقم القطعة</TableHead><TableHead className="whitespace-nowrap">المنطقة</TableHead><TableHead className="whitespace-nowrap">الكمية المطلوبة (PR)</TableHead><TableHead className="whitespace-nowrap">كمية أمر الشراء (PO)</TableHead><TableHead className="whitespace-nowrap">الكمية المستلمة</TableHead><TableHead className="whitespace-nowrap">الوحدة</TableHead><TableHead className="whitespace-nowrap">سعر الوحدة</TableHead><TableHead className="whitespace-nowrap">إجمالي البند</TableHead><TableHead className="whitespace-nowrap">المواصفات والملاحظات</TableHead></TableRow></TableHeader><TableBody>{(documentPreview.items || []).map((item) => { const poItem = item.purchase_order_item; return <TableRow key={item.id}><TableCell className="font-bold text-slate-100">{poItem?.item_name || poItem?.item_description || '—'}</TableCell><TableCell className="font-mono font-bold text-cyan-300">{poItem?.item_reference || '—'}</TableCell><TableCell className="text-slate-200">{poItem?.region || '—'}</TableCell><TableCell className="font-mono font-bold text-slate-200">{poItem?.pr_item?.quantity ?? '—'}</TableCell><TableCell className="font-mono font-bold text-cyan-200">{item.ordered_quantity}</TableCell><TableCell className="font-mono font-black text-emerald-300">{item.received_quantity}</TableCell><TableCell className="font-bold text-slate-200">{getUnitLabel(poItem?.uom)}</TableCell><TableCell className="font-mono font-bold text-slate-200">{money(poItem?.unit_price)}</TableCell><TableCell className="font-mono font-black text-emerald-300">{money(Number(item.received_quantity || 0) * Number(poItem?.unit_price || 0))}</TableCell><TableCell className="max-w-xs whitespace-normal text-xs text-slate-300"><div>مواصفات: {poItem?.specifications || poItem?.pr_item?.specifications || '—'}</div><div>ملاحظات: {item.notes || poItem?.pr_item?.notes || '—'}</div></TableCell></TableRow>; })}</TableBody></Table></div><div className="space-y-3 md:hidden">{(documentPreview.items || []).map((item, idx) => { const poItem = item.purchase_order_item; const lineTotal = Number(item.received_quantity || 0) * Number(poItem?.unit_price || 0); return <article key={`mobile-preview-item-${item.id}`} className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 space-y-3"><div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-2"><div className="min-w-0"><span className="inline-block rounded bg-cyan-950 px-2 py-0.5 font-mono text-[10px] font-bold text-cyan-300 border border-cyan-800/60 mb-1">بند {idx + 1}</span><h4 className="font-bold text-slate-100 text-xs truncate">{poItem?.item_name || poItem?.item_description || '—'}</h4></div><span className="shrink-0 rounded bg-slate-800 px-2 py-0.5 text-[11px] text-slate-300 font-bold">{getUnitLabel(poItem?.uom)}</span></div><div className="grid grid-cols-2 gap-2 text-xs"><div><span className="text-slate-400 font-bold block text-[10px]">رقم القطعة</span><strong className="font-mono text-cyan-300">{poItem?.item_reference || '—'}</strong></div><div><span className="text-slate-400 font-bold block text-[10px]">المنطقة</span><strong className="text-slate-100 font-bold">{poItem?.region || '—'}</strong></div></div><div className="grid grid-cols-3 gap-1.5 rounded-lg bg-slate-950/80 p-2.5 text-center text-xs border border-slate-800/60"><div><span className="text-[10px] text-slate-400 font-bold block">الكمية المطلوبة (PR)</span><strong className="font-mono text-slate-100 font-bold">{poItem?.pr_item?.quantity ?? '—'}</strong></div><div><span className="text-[10px] text-slate-400 font-bold block">كمية أمر الشراء (PO)</span><strong className="font-mono text-cyan-300 font-bold">{item.ordered_quantity}</strong></div><div><span className="text-[10px] text-slate-400 font-bold block">الكمية المستلمة</span><strong className="font-mono text-emerald-400 font-black">{item.received_quantity}</strong></div></div><div className="flex items-center justify-between text-xs pt-1 border-t border-slate-800/60"><div><span className="text-slate-400 font-bold text-[10px]">سعر الوحدة: </span><span className="font-mono text-slate-200 font-bold">{money(poItem?.unit_price)}</span></div><div><span className="text-slate-400 font-bold text-[10px]">الإجمالي: </span><strong className="font-mono text-emerald-400 font-black">{money(lineTotal)}</strong></div></div>{(poItem?.specifications || item.notes) && <div className="text-[11px] text-slate-300 bg-slate-950/50 rounded-lg p-2 space-y-1">{poItem?.specifications && <div><span className="text-slate-400 font-bold">المواصفات: </span>{poItem.specifications}</div>}{item.notes && <div><span className="text-slate-400 font-bold">الملاحظات: </span>{item.notes}</div>}</div>}</article>; })}</div></div><div className="flex flex-col-reverse sm:flex-row justify-end gap-2"><Button type="button" variant="secondary" className="min-h-10 text-xs" onClick={() => setDocumentPreview(null)}>إغلاق</Button><Button type="button" variant="primary" className="min-h-10 text-xs font-bold" onClick={() => { const receipt = documentPreview; setDocumentPreview(null); openInvoiceForm(receipt); }}>تسجيل فاتورة المورد</Button></div></div></div>, document.body)}
+      {documentPreview && createPortal(
+        <div className="modal-top-viewport fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/85 p-2 sm:p-4" role="dialog" aria-modal="true">
+          <div className="max-h-[calc(100vh-1rem)] w-full max-w-6xl space-y-5 overflow-y-auto rounded-2xl border border-cyan-800/70 bg-slate-900 p-4 shadow-2xl sm:max-h-[calc(100vh-2rem)] sm:p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-black text-slate-100">مراجعة أمر الشراء وإذن الاستلام</h2>
+                <p className="mt-1 text-xs text-slate-400">المستندان مرتبطان بنفس الطلب ويمكنك مراجعتهما قبل إنشاء فاتورة المورد.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDocumentPreview(null)}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-2xl font-black text-slate-300 transition-colors hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                aria-label="إغلاق النافذة"
+                title="إغلاق النافذة"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Top Cards: PO & Receipt Headers */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="rounded-xl border border-cyan-800/60 bg-cyan-950/20 p-4">
+                <h3 className="text-sm font-black text-cyan-200">أمر الشراء</h3>
+                <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                  <div><span className="text-slate-400 font-medium">الرقم</span><p className="mt-1 font-mono font-bold text-cyan-300">{documentPreview.purchase_order?.po_number || `PO #${documentPreview.purchase_order_id}`}</p></div>
+                  <div><span className="text-slate-400 font-medium">المورد</span><p className="mt-1 font-bold text-slate-100">{documentPreview.purchase_order?.supplier?.company_name || '—'}</p></div>
+                  <div><span className="text-slate-400 font-medium">الإجمالي</span><p className="mt-1 font-mono font-bold text-emerald-300">{money(documentPreview.purchase_order?.grand_total)}</p></div>
+                  <div><span className="text-slate-400 font-medium">حالة الأمر</span><p className="mt-1 font-bold text-slate-100">{documentPreview.purchase_order?.status || '—'}</p></div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-amber-800/60 bg-amber-950/20 p-4">
+                <h3 className="text-sm font-black text-amber-200">إذن الاستلام</h3>
+                <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                  <div><span className="text-slate-400 font-medium">الرقم</span><p className="mt-1 font-mono font-bold text-amber-300">{documentPreview.receipt_number}</p></div>
+                  <div><span className="text-slate-400 font-medium">الحالة</span><p className="mt-1 font-bold text-slate-100">{documentPreview.status}</p></div>
+                  <div><span className="text-slate-400 font-medium">تاريخ الاستلام</span><p className="mt-1 font-mono font-bold text-slate-100">{cleanDate(documentPreview.received_at)}</p></div>
+                  <div><span className="text-slate-400 font-medium">اعتماد الموقع</span><p className="mt-1 font-mono font-bold text-slate-100">{cleanDate(documentPreview.site_engineer_approved_at)}</p></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Attached Photo from Warehouse Keeper in Document Preview */}
+            {Boolean(documentPreview.photo_url || documentPreview.photo_path) && (
+              <div className="rounded-xl border-2 border-cyan-500/60 bg-cyan-950/30 p-4 space-y-3 shadow-lg">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-xs sm:text-sm font-black text-cyan-200 flex items-center gap-2">
+                    <span>📷</span> صورة فحص واستلام المخزن المرفقة (بون الميزان / وزنة الحديد):
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewPhotoUrl(getReceiptPhotoUrl(documentPreview))}
+                    className="text-xs font-bold text-cyan-400 hover:text-cyan-300 underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>🔍</span> تكبير ومعاينة الصورة بالحجم الكامل
+                  </button>
+                </div>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-slate-950/90 p-3 rounded-xl border border-slate-800">
+                  <img
+                    src={getReceiptPhotoUrl(documentPreview)}
+                    alt="صورة بون الميزان"
+                    onClick={() => setPreviewPhotoUrl(getReceiptPhotoUrl(documentPreview))}
+                    className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl object-cover border-2 border-cyan-500/70 cursor-pointer hover:scale-105 transition-transform shrink-0 shadow-md"
+                  />
+                  <div className="text-xs space-y-1.5 flex-1">
+                    <p className="font-bold text-slate-100 text-sm">صورة وزنة الحديد / بون الميزان الفعلي الموثق من أمين المخزن</p>
+                    <p className="text-slate-300">
+                      يمكنك مراجعة الأوزان والأختام المطبوعة على بون الميزان ومطابقتها قبل تسجيل فاتورة المورد والصرف.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewPhotoUrl(getReceiptPhotoUrl(documentPreview))}
+                      className="text-xs font-bold text-cyan-400 hover:underline cursor-pointer"
+                    >
+                      اضغط هنا لمعاينة الصورة المكبرة ←
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 3 Detail Columns */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <div className="rounded-xl border border-slate-700 bg-slate-950/80 p-4">
+                <h3 className="text-sm font-black text-slate-100 border-b border-slate-800 pb-2">بيانات دورة الطلب</h3>
+                <div className="mt-3 space-y-2 text-xs">
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">رقم طلب الشراء:</span><strong className="font-mono text-cyan-300 font-bold">{documentPreview.purchase_order?.purchase_request?.request_number || '—'}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">مقدم الطلب:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.purchase_request?.requester?.name || '—'}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">القسم:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.purchase_request?.department?.name || '—'}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">المراجع:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.purchase_request?.assigned_reviewer?.name || '—'}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">مهندس الموقع:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.purchase_request?.site_engineer?.name || documentPreview.site_engineer?.name || '—'}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">تاريخ الاحتياج:</span><strong className="font-mono text-amber-300 font-bold">{cleanDate(documentPreview.purchase_order?.purchase_request?.date_needed)}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">ملاحظات الطلب:</span><strong className="text-slate-200 font-bold">{documentPreview.purchase_order?.purchase_request?.notes || '—'}</strong></div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-cyan-800/50 bg-slate-950/80 p-4">
+                <h3 className="text-sm font-black text-cyan-200 border-b border-slate-800 pb-2">بيانات أمر الشراء المالية والتجارية</h3>
+                <div className="mt-3 space-y-2 text-xs">
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">أنشأه:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.created_by?.name || '—'}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">راجعته الحسابات:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.accounting_reviewer?.name || '—'}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">العملة:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.currency || 'EGP'}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">الإجمالي قبل الإضافات:</span><strong className="font-mono text-emerald-300 font-bold">{money(documentPreview.purchase_order?.subtotal)}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">شروط الدفع:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.payment_terms || '—'}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">شروط التوريد:</span><strong className="text-slate-100 font-bold">{documentPreview.purchase_order?.delivery_terms || '—'}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">تاريخ التوريد المتوقع:</span><strong className="font-mono text-amber-300 font-bold">{cleanDate(documentPreview.purchase_order?.delivery_date)}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">ملاحظات مالية:</span><strong className="text-slate-200 font-bold">{documentPreview.purchase_order?.financial_notes || '—'}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">ملاحظات الأمر:</span><strong className="text-slate-200 font-bold">{documentPreview.purchase_order?.notes || '—'}</strong></div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-amber-800/50 bg-slate-950/80 p-4">
+                <h3 className="text-sm font-black text-amber-200 border-b border-slate-800 pb-2">بيانات الاستلام والتوريد</h3>
+                <div className="mt-3 space-y-2 text-xs">
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">أمين المخزن:</span><strong className="text-slate-100 font-bold">{documentPreview.warehouse_keeper?.name || '—'}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">وقت إرسال الاستلام:</span><strong className="font-mono text-slate-100 font-bold">{cleanDate(documentPreview.warehouse_submitted_at)}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">ملاحظات المخزن:</span><strong className="text-slate-200 font-bold">{documentPreview.warehouse_notes || '—'}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">مهندس الموقع:</span><strong className="text-slate-100 font-bold">{documentPreview.site_engineer?.name || '—'}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">وقت اعتماد الموقع:</span><strong className="font-mono text-slate-100 font-bold">{cleanDate(documentPreview.site_engineer_approved_at)}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">ملاحظات مهندس الموقع:</span><strong className="text-slate-200 font-bold">{documentPreview.site_engineer_notes || '—'}</strong></div>
+                  <div className="flex justify-between items-center bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800"><span className="text-slate-300 font-bold">سبب الرفض:</span><strong className="text-slate-200 font-bold">{documentPreview.rejection_reason || '—'}</strong></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Items Table */}
+            <div className="rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+              <h3 className="mb-3 text-sm font-black text-slate-100">تفاصيل البنود في المستندين</h3>
+              <div className="hidden min-w-0 md:block overflow-x-auto">
+                <Table className="min-w-[850px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="whitespace-nowrap">اسم الصنف</TableHead>
+                      <TableHead className="whitespace-nowrap">رقم القطعة</TableHead>
+                      <TableHead className="whitespace-nowrap">المنطقة</TableHead>
+                      <TableHead className="whitespace-nowrap">الكمية المطلوبة (PR)</TableHead>
+                      <TableHead className="whitespace-nowrap">كمية أمر الشراء (PO)</TableHead>
+                      <TableHead className="whitespace-nowrap">الكمية المستلمة</TableHead>
+                      <TableHead className="whitespace-nowrap">الوحدة</TableHead>
+                      <TableHead className="whitespace-nowrap">سعر الوحدة</TableHead>
+                      <TableHead className="whitespace-nowrap">إجمالي البند</TableHead>
+                      <TableHead className="whitespace-nowrap">المواصفات والملاحظات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(documentPreview.items || []).map((item) => {
+                      const poItem = item.purchase_order_item;
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-bold text-slate-100">{poItem?.item_name || poItem?.item_description || '—'}</TableCell>
+                          <TableCell className="font-mono font-bold text-cyan-300">{poItem?.item_reference || '—'}</TableCell>
+                          <TableCell className="text-slate-200">{poItem?.region || '—'}</TableCell>
+                          <TableCell className="font-mono font-bold text-slate-200">{poItem?.pr_item?.quantity ?? '—'}</TableCell>
+                          <TableCell className="font-mono font-bold text-cyan-200">{item.ordered_quantity}</TableCell>
+                          <TableCell className="font-mono font-black text-emerald-300">{item.received_quantity}</TableCell>
+                          <TableCell className="font-bold text-slate-200">{getUnitLabel(poItem?.uom)}</TableCell>
+                          <TableCell className="font-mono font-bold text-slate-200">{money(poItem?.unit_price)}</TableCell>
+                          <TableCell className="font-mono font-black text-emerald-300">{money(Number(item.received_quantity || 0) * Number(poItem?.unit_price || 0))}</TableCell>
+                          <TableCell className="max-w-xs whitespace-normal text-xs text-slate-300">
+                            <div>مواصفات: {poItem?.specifications || poItem?.pr_item?.specifications || '—'}</div>
+                            <div>ملاحظات: {item.notes || poItem?.pr_item?.notes || '—'}</div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="space-y-3 md:hidden">
+                {(documentPreview.items || []).map((item, idx) => {
+                  const poItem = item.purchase_order_item;
+                  const lineTotal = Number(item.received_quantity || 0) * Number(poItem?.unit_price || 0);
+                  return (
+                    <article key={`mobile-preview-item-${item.id}`} className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 space-y-3">
+                      <div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-2">
+                        <div className="min-w-0">
+                          <span className="inline-block rounded bg-cyan-950 px-2 py-0.5 font-mono text-[10px] font-bold text-cyan-300 border border-cyan-800/60 mb-1">بند {idx + 1}</span>
+                          <h4 className="font-bold text-slate-100 text-xs truncate">{poItem?.item_name || poItem?.item_description || '—'}</h4>
+                        </div>
+                        <span className="shrink-0 rounded bg-slate-800 px-2 py-0.5 text-[11px] text-slate-300 font-bold">{getUnitLabel(poItem?.uom)}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div><span className="text-slate-400 font-bold block text-[10px]">رقم القطعة</span><strong className="font-mono text-cyan-300">{poItem?.item_reference || '—'}</strong></div>
+                        <div><span className="text-slate-400 font-bold block text-[10px]">المنطقة</span><strong className="text-slate-100 font-bold">{poItem?.region || '—'}</strong></div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1.5 rounded-lg bg-slate-950/80 p-2.5 text-center text-xs border border-slate-800/60">
+                        <div><span className="text-[10px] text-slate-400 font-bold block">الكمية المطلوبة (PR)</span><strong className="font-mono text-slate-100 font-bold">{poItem?.pr_item?.quantity ?? '—'}</strong></div>
+                        <div><span className="text-[10px] text-slate-400 font-bold block">كمية أمر الشراء (PO)</span><strong className="font-mono text-cyan-300 font-bold">{item.ordered_quantity}</strong></div>
+                        <div><span className="text-[10px] text-slate-400 font-bold block">الكمية المستلمة</span><strong className="font-mono text-emerald-400 font-black">{item.received_quantity}</strong></div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-800/60">
+                        <div><span className="text-slate-400 font-bold text-[10px]">سعر الوحدة: </span><span className="font-mono text-slate-200 font-bold">{money(poItem?.unit_price)}</span></div>
+                        <div><span className="text-slate-400 font-bold text-[10px]">الإجمالي: </span><strong className="font-mono text-emerald-400 font-black">{money(lineTotal)}</strong></div>
+                      </div>
+                      {(poItem?.specifications || item.notes) && (
+                        <div className="text-[11px] text-slate-300 bg-slate-950/50 rounded-lg p-2 space-y-1">
+                          {poItem?.specifications && <div><span className="text-slate-400 font-bold">المواصفات: </span>{poItem.specifications}</div>}
+                          {item.notes && <div><span className="text-slate-400 font-bold">الملاحظات: </span>{item.notes}</div>}
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
+              <Button type="button" variant="secondary" className="min-h-10 text-xs" onClick={() => setDocumentPreview(null)}>إغلاق</Button>
+              <Button
+                type="button"
+                variant="primary"
+                className="min-h-10 text-xs font-bold"
+                onClick={() => {
+                  const receipt = documentPreview;
+                  setDocumentPreview(null);
+                  openInvoiceForm(receipt);
+                }}
+              >
+                تسجيل فاتورة المورد
+              </Button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {invoiceReceipt && createPortal(
         <div className="modal-top-viewport fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/85 p-2 sm:p-4" role="dialog" aria-modal="true">
