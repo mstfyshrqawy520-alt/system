@@ -218,4 +218,28 @@ class PurchaseReceiptController extends Controller
             'data' => $receipt,
         ], 201);
     }
+
+    public function viewPhoto(string|int $id)
+    {
+        $receipt = PurchaseReceipt::findOrFail((int) $id);
+
+        if (! $receipt->photo_path) {
+            abort(404, 'لم يتم إرفاق صورة لهذا الإذن.');
+        }
+
+        if (filter_var($receipt->photo_path, FILTER_VALIDATE_URL)) {
+            return redirect()->away($receipt->photo_path);
+        }
+
+        try {
+            return \App\Services\StorageService::streamResponse(
+                $receipt->photo_path,
+                $receipt->photo_name ?: "receipt_{$receipt->id}.jpg",
+                $receipt->photo_mime_type ?: 'image/jpeg',
+                false
+            );
+        } catch (\Throwable) {
+            abort(404, 'الصورة غير موجودة أو تعذر تحميلها.');
+        }
+    }
 }
