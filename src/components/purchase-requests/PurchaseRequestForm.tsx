@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import ErrorMessage from '../ErrorMessage';
 import LoadingSpinner from '../LoadingSpinner';
 import { getCatalogItemsApi } from '../../api/catalog';
-import { getPurchaseRequestDepartmentOptionsApi } from '../../api/purchaseRequests';
+import { getPurchaseRequestDepartmentOptionsApi, getSiteEngineerReceiverOptionsApi } from '../../api/purchaseRequests';
 import { ApiError } from '../../types/api';
 import {
   CatalogItem,
@@ -14,6 +14,7 @@ import {
   PurchaseRequestPriority,
   PurchaseRequestType,
   DepartmentOption,
+  SiteEngineerReceiverOption,
 } from '../../types/purchaseRequest';
 import { parseApiError } from '../../utils/apiError';
 import { Button } from '../ui/Button';
@@ -96,8 +97,31 @@ export const PurchaseRequestForm: React.FC<Props> = ({
     void fetchDepartments();
   }, []);
 
+  const [siteEngineerUserId, setSiteEngineerUserId] = useState<number | ''>(
+    initialData?.site_engineer?.id || ''
+  );
+  const [siteEngineers, setSiteEngineers] = useState<SiteEngineerReceiverOption[]>([]);
+  const [otherUsers, setOtherUsers] = useState<SiteEngineerReceiverOption[]>([]);
+  const [isLoadingReceivers, setIsLoadingReceivers] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isGeneralManager) {
+      setIsLoadingReceivers(true);
+      getSiteEngineerReceiverOptionsApi()
+        .then((res) => {
+          setSiteEngineers(res.site_engineers || []);
+          setOtherUsers(res.other_users || []);
+        })
+        .catch(() => {})
+        .finally(() => setIsLoadingReceivers(false));
+    }
+  }, [isGeneralManager]);
+
   useEffect(() => {
     setTargetDepartmentId(initialData?.target_department_id || initialData?.department?.id || '');
+    if (initialData?.site_engineer?.id) {
+      setSiteEngineerUserId(initialData.site_engineer.id);
+    }
     const today = getTodayDateInputValue();
     if (initialData?.date_needed) {
       setDateNeeded(initialData.date_needed < today ? today : initialData.date_needed);
@@ -209,6 +233,10 @@ export const PurchaseRequestForm: React.FC<Props> = ({
       nextFieldErrors.dateNeeded = 'تاريخ الاحتياج لا يمكن أن يكون في الماضي. اختر اليوم أو تاريخًا قادمًا.';
     }
 
+    if (isGeneralManager && !isOffice && !siteEngineerUserId) {
+      nextFieldErrors.siteEngineer = 'يجب على المدير التنفيذي تحديد مسؤول الاستلام / مهندس الموقع قبل الحفظ.';
+    }
+
     if (items.length === 0) {
       setError({ message: 'يجب إضافة عنصر واحد على الأقل.', status: 422 });
       return;
@@ -231,7 +259,7 @@ export const PurchaseRequestForm: React.FC<Props> = ({
         Object.entries(nextFieldErrors).map(([field, message]) => [field, [message]]),
       );
       setError({
-        message: nextFieldErrors.targetDepartment || Object.values(nextFieldErrors)[0] || 'راجع الحقول المحددة باللون الأحمر ثم أعد المحاولة.',
+        message: nextFieldErrors.targetDepartment || nextFieldErrors.siteEngineer || Object.values(nextFieldErrors)[0] || 'راجع الحقول المحددة باللون الأحمر ثم أعد المحاولة.',
         status: 422,
         errors: normalizedFieldErrors,
       });
@@ -242,6 +270,7 @@ export const PurchaseRequestForm: React.FC<Props> = ({
       await onSubmit({
         request_type: requestType,
         target_department_id: Number(targetDepartmentId),
+        site_engineer_user_id: isOffice ? undefined : (siteEngineerUserId ? Number(siteEngineerUserId) : undefined),
         priority,
         date_needed: dateNeeded || undefined,
         notes: notes.trim() || undefined,
@@ -402,11 +431,61 @@ export const PurchaseRequestForm: React.FC<Props> = ({
                  selectedDepartment?.code === 'BUFFET' ? 'أ. عمرو' : 'غير معين');
               return selectedDepartment ? (
                 <p className="mt-1 text-[11px] text-slate-400">
-                  مدير القسم المستهدف (المراجع): <strong className="text-slate-200">{managerName}</strong>
+                  مدير القسم المستهدف (المراجع): <strong className="text-slate-200">{isGeneralManager ? 'مسار المدير العام (تجاوز المراجع)' : managerName}</strong>
                 </p>
               ) : null;
             })()}
           </FormField>
+
+          {isGeneralManager && requestType !== 'OFFICE_SUPPLIES' && (
+            <div className="md:col-span-2 rounded-xl border border-emerald-700/60 bg-emerald-950/30 p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-emerald-400 font-black flex items-center gap-1.5 text-xs">
+                  <span>👷</span> مسؤول استلام الموقع / مهندس الاستلام (اختيار المدير التنفيذي) <span className="text-rose-400">*</span>
+                </span>
+                <span className="text-[10px] text-emerald-300 font-bold bg-emerald-950/90 px-2 py-0.5 rounded border border-emerald-600/50">
+                  إرسال مباشر للمشتريات
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                طالما أن طلب الشراء صادر من المدير التنفيذي فلن يمر على مراجع قسم، لذلك أنت الوحيد المخول بتحديد مهندس الموقع أو مسؤول الاستلام الذي سيتولى فحص واستلام الأصناف:
+              </p>
+              {isLoadingReceivers ? (
+                <div className="text-xs text-slate-400 py-1 font-bold">جاري تحميل قائمة المهندسين والمستلمين...</div>
+              ) : (
+                <Select
+                  id="pr-form-site-engineer"
+                  value={siteEngineerUserId || ''}
+                  onChange={(e) => setSiteEngineerUserId(e.target.value ? Number(e.target.value) : '')}
+                  error={Boolean(fieldErrors.siteEngineer)}
+                  className="font-bold text-slate-100 bg-slate-900 border-emerald-600/70 focus:border-emerald-400"
+                >
+                  <option value="" disabled>-- اختر مهندس الموقع أو مسؤول الاستلام المعتمد --</option>
+                  {siteEngineers.length > 0 && (
+                    <optgroup label="👷 مهندسو الموقع الأساسيون">
+                      {siteEngineers.map((eng) => (
+                        <option key={`edit-gm-se-${eng.id}`} value={eng.id}>
+                          {eng.name} {eng.department_name ? `(${eng.department_name})` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {otherUsers.length > 0 && (
+                    <optgroup label="👥 مستخدمو النظام الآخرون (تفويض أي دور)">
+                      {otherUsers.map((u) => (
+                        <option key={`edit-gm-oth-${u.id}`} value={u.id}>
+                          {u.name} — {u.role_name || 'مستخدم'} {u.department_name ? `(${u.department_name})` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </Select>
+              )}
+              {fieldErrors.siteEngineer && (
+                <p className="text-[11px] font-bold text-rose-300 mt-1">⚠️ {fieldErrors.siteEngineer}</p>
+              )}
+            </div>
+          )}
 
           <FormField label="درجة الأولوية">
             <Select

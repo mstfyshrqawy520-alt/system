@@ -6,6 +6,7 @@ import { FormField, Input, Select, Textarea } from '../../components/ui/FormFiel
 import {
   createPurchaseRequestApi,
   getPurchaseRequestDepartmentOptionsApi,
+  getSiteEngineerReceiverOptionsApi,
   submitPurchaseRequestApi,
   updatePurchaseRequestApi,
 } from '../../api/purchaseRequests';
@@ -17,6 +18,7 @@ import {
   PurchaseRequestItemFormInput,
   PurchaseRequestPriority,
   PurchaseRequestType,
+  SiteEngineerReceiverOption,
   PR_TYPE_LABELS,
 } from '../../types/purchaseRequest';
 import { getUnitLabel, getUnitOptions } from '../../utils/units';
@@ -101,6 +103,9 @@ const validateRequest = (
     targetManager: !isGeneralManager && data.target_department_id && targetDepartment && !targetDepartment.manager && !['EXECUTION', 'BUILDINGS', 'FINISHING', 'LICENSES', 'BUFFET'].includes(targetDepartment?.code || '')
       ? 'القسم المستهدف لا يوجد له مدير قسم معين. اطلب من مدير النظام تعيين مدير للقسم أولًا.'
       : undefined,
+    targetSiteEngineer: isGeneralManager && !isOffice && !data.site_engineer_user_id
+      ? 'طالما أن الطلب صادر من المدير التنفيذي ولا يمر على مراجع، يجب تحديد مهندس الموقع أو مسؤول الاستلام.'
+      : undefined,
     dateNeeded: !data.date_needed
       ? 'حدد تاريخ الاحتياج.'
       : data.date_needed < today
@@ -111,13 +116,20 @@ const validateRequest = (
 };
 
 const hasValidationErrors = (validation: ValidationResult): boolean =>
-  Boolean(validation.targetDepartment || validation.targetManager || validation.dateNeeded || Object.keys(validation.items).length);
+  Boolean(
+    validation.targetDepartment ||
+    validation.targetManager ||
+    validation.targetSiteEngineer ||
+    validation.dateNeeded ||
+    Object.keys(validation.items).length
+  );
 
 const normalizeRequestData = (data: CreatePurchaseRequestPayload): CreatePurchaseRequestPayload => {
   const isOffice = (data.request_type || 'PROJECT') === 'OFFICE_SUPPLIES';
   return {
     ...data,
     request_type: data.request_type || 'PROJECT',
+    site_engineer_user_id: isOffice ? undefined : data.site_engineer_user_id,
     notes: data.notes?.trim(),
     items: data.items.map((item) => ({
       ...item,
@@ -137,6 +149,9 @@ const CreatePurchaseRequestPage: React.FC = () => {
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<DepartmentOption[]>([]);
   const [departmentLoading, setDepartmentLoading] = useState(true);
+  const [siteEngineers, setSiteEngineers] = useState<SiteEngineerReceiverOption[]>([]);
+  const [otherUsers, setOtherUsers] = useState<SiteEngineerReceiverOption[]>([]);
+  const [isLoadingReceivers, setIsLoadingReceivers] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
@@ -210,6 +225,20 @@ const CreatePurchaseRequestPage: React.FC = () => {
 
     return () => { cancelled = true; };
   }, []);
+
+  // Load receiver options for General Manager / Executive Director
+  useEffect(() => {
+    if (isGeneralManager) {
+      setIsLoadingReceivers(true);
+      getSiteEngineerReceiverOptionsApi()
+        .then((res) => {
+          setSiteEngineers(res.site_engineers || []);
+          setOtherUsers(res.other_users || []);
+        })
+        .catch(() => {})
+        .finally(() => setIsLoadingReceivers(false));
+    }
+  }, [isGeneralManager]);
 
   const departmentSelectOptions = useMemo(() => {
     return departmentOptions.map((d) => ({
@@ -306,13 +335,15 @@ const CreatePurchaseRequestPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       const draft = await ensureServerDraft();
-      await submitPurchaseRequestApi(draft.id);
+      await submitPurchaseRequestApi(draft.id, {
+        site_engineer_user_id: data.site_engineer_user_id || undefined,
+      });
       window.localStorage.removeItem(DRAFT_STORAGE_KEY);
       emitAppDataUpdated();
       navigate(`/requests/${draft.id}`, {
         state: {
           message: isGeneralManager
-            ? 'تم إرسال طلب الشراء مباشرة إلى مدير المشتريات بنجاح.'
+            ? 'تم إرسال طلب الشراء مباشرة إلى مدير المشتريات بنجاح بعد تحديد مسؤول الاستلام.'
             : 'تم إرسال طلب الشراء للمراجعة بنجاح.',
         },
       });
@@ -465,14 +496,19 @@ const CreatePurchaseRequestPage: React.FC = () => {
             <Select
               id="pr-target-department"
               value={data.target_department_id || ''}
-              onChange={(e) =>
+              onChange={(e) => {
+                const deptId = e.target.value ? Number(e.target.value) : undefined;
+                const selectedDept = departmentOptions.find((d) => d.id === deptId);
                 setData({
                   ...data,
-                  target_department_id: e.target.value ? Number(e.target.value) : undefined,
+                  target_department_id: deptId,
                   reviewer_user_id: undefined,
-                  site_engineer_user_id: undefined,
-                })
-              }
+                  site_engineer_user_id:
+                    isGeneralManager && !isOffice && !data.site_engineer_user_id && selectedDept?.site_engineer?.id
+                      ? selectedDept.site_engineer.id
+                      : data.site_engineer_user_id,
+                });
+              }}
               disabled={departmentLoading || departmentOptions.length === 0}
               error={Boolean(showValidation && validation.targetDepartment)}
               className="font-bold text-slate-100 bg-slate-950 border-slate-700"
@@ -520,7 +556,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
               <span className="text-slate-500 text-[10px]">مدير القسم المستهدف (المراجع):</span>
               <div className="font-bold text-slate-200 mt-0.5">
                 {isGeneralManager
-                  ? 'مسار المدير العام المباشر'
+                  ? 'مسار المدير العام المباشر (تجاوز المراجع)'
                   : targetDepartment.manager?.name ||
                     (targetDepartment.code === 'EXECUTION' ? 'م. أيمن ماهر' :
                      targetDepartment.code === 'BUILDINGS' ? 'المهندس حاتم' :
@@ -536,6 +572,58 @@ const CreatePurchaseRequestPage: React.FC = () => {
                   <span>📦</span> آلية الاستلام:
                 </span>
                 <div className="font-bold text-slate-200 mt-0.5">مقدم الطلب يستلم مباشرة بمقر الشركة</div>
+              </div>
+            ) : isGeneralManager ? (
+              <div className="rounded-xl border border-emerald-700/60 bg-emerald-950/30 p-3.5 sm:col-span-2 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-emerald-400 font-black flex items-center gap-1.5 text-xs">
+                    <span>👷</span> تحديد مهندس الموقع / مسؤول الاستلام (اختيار المدير التنفيذي) <span className="text-rose-400">*</span>
+                  </span>
+                  <span className="text-[10px] text-emerald-300 font-bold bg-emerald-950/90 px-2 py-0.5 rounded border border-emerald-600/50">
+                    بديل خطوة المراجع — إرسال مباشر للمشتريات
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  طالما أن طلب الشراء صادر من المدير التنفيذي فلن يمر على مراجع قسم، لذلك يتعين عليك تحديد مهندس الموقع أو مسؤول الاستلام الذي سيتولى فحص واستلام المواد قبل إرسال الطلب للمشتريات:
+                </p>
+                {isLoadingReceivers ? (
+                  <div className="text-xs text-slate-400 py-1 font-bold">جاري تحميل قائمة المهندسين والمستلمين...</div>
+                ) : (
+                  <Select
+                    id="pr-site-engineer"
+                    value={data.site_engineer_user_id || ''}
+                    onChange={(e) =>
+                      setData({
+                        ...data,
+                        site_engineer_user_id: e.target.value ? Number(e.target.value) : undefined,
+                      })
+                    }
+                    className="font-bold text-slate-100 bg-slate-900 border-emerald-600/70 focus:border-emerald-400"
+                  >
+                    <option value="" disabled>-- اختر مهندس الموقع أو مسؤول الاستلام المعتمد --</option>
+                    {siteEngineers.length > 0 && (
+                      <optgroup label="👷 مهندسو الموقع الأساسيون">
+                        {siteEngineers.map((eng) => (
+                          <option key={`gm-se-${eng.id}`} value={eng.id}>
+                            {eng.name} {eng.department_name ? `(${eng.department_name})` : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {otherUsers.length > 0 && (
+                      <optgroup label="👥 مستخدمو النظام الآخرون (تفويض أي دور)">
+                        {otherUsers.map((u) => (
+                          <option key={`gm-oth-${u.id}`} value={u.id}>
+                            {u.name} — {u.role_name || 'مستخدم'} {u.department_name ? `(${u.department_name})` : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </Select>
+                )}
+                {showValidation && validation.targetSiteEngineer && (
+                  <p className="text-[11px] font-bold text-rose-300 mt-1">⚠️ {validation.targetSiteEngineer}</p>
+                )}
               </div>
             ) : (
               <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-2.5">

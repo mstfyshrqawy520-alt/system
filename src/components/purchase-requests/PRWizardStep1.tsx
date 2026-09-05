@@ -158,6 +158,16 @@ export const PRWizardStep1: React.FC<Props> = ({
                 لا يتطلب مهندس موقع. فور إصدار أمر الشراء وتوريد الأصناف، ستظهر لك إمكانية تأكيد الاستلام مباشرة من شاشتك.
               </p>
             </div>
+          ) : isGeneralManager ? (
+            <div className="rounded-lg border border-emerald-800/60 bg-emerald-950/30 p-3">
+              <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                <span>👷</span> مسؤول استلام الموقع
+              </span>
+              <div className="mt-1 font-bold text-slate-100">يحدده المدير التنفيذي حصراً</div>
+              <p className="mt-1 text-[10px] text-emerald-300/80 leading-relaxed">
+                بما أن الطلب يتجاوز المراجع، يقوم المدير التنفيذي باختيار مهندس الموقع أو مسؤول الاستلام قبل الإرسال للمشتريات.
+              </p>
+            </div>
           ) : (
             <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
               <span className="text-slate-400 font-bold flex items-center gap-1.5">

@@ -228,6 +228,9 @@ class PurchaseRequestService
                     $updateFields[$field] = is_string($data[$field]) ? trim($data[$field]) : $data[$field];
                 }
             }
+            if (array_key_exists('site_engineer_user_id', $data)) {
+                $updateFields['site_engineer_user_id'] = $isOffice ? null : (!empty($data['site_engineer_user_id']) ? (int) $data['site_engineer_user_id'] : null);
+            }
             if (array_key_exists('date_needed', $data)) {
                 $updateFields['date_needed'] = $this->normalizeNeededDate($data['date_needed']);
             }
@@ -309,7 +312,7 @@ class PurchaseRequestService
     /**
      * Submit a draft Purchase Request for review.
      */
-    public function submitRequest(User $user, PurchaseRequest $request): PurchaseRequest
+    public function submitRequest(User $user, PurchaseRequest $request, ?int $siteEngineerUserId = null): PurchaseRequest
     {
         if ($request->status !== 'DRAFT') {
             throw new \RuntimeException('Only draft purchase requests can be submitted.');
@@ -321,7 +324,7 @@ class PurchaseRequestService
             ]);
         }
 
-        return DB::transaction(function () use ($user, $request) {
+        return DB::transaction(function () use ($user, $request, $siteEngineerUserId) {
             // إعادة تحميل الطلب مع قفل الصف لمنع الإرسال المزدوج أو انتقالين متزامنين من المسودة.
             $request = PurchaseRequest::query()->whereKey($request->id)->lockForUpdate()->firstOrFail();
             if ($request->status !== 'DRAFT') {
@@ -337,11 +340,29 @@ class PurchaseRequestService
                 ? 'PENDING_PROCUREMENT_APPROVAL'
                 : ($canSkipReviewer ? 'PENDING_EXECUTIVE_APPROVAL' : 'SUBMITTED');
 
+            $assignedSiteEngineerId = $request->site_engineer_user_id;
+            if ($siteEngineerUserId) {
+                $assignedSiteEngineerId = $siteEngineerUserId;
+            }
+
+            // إذا كان مقدم الطلب هو المدير التنفيذي وطلب مشروعات/موقع، يجب تحديد مسؤول الاستلام قبل الإرسال للمشتريات
+            if ($isExecutiveRequester && $request->request_type !== 'OFFICE_SUPPLIES') {
+                if (!$assignedSiteEngineerId && $request->targetDepartment?->site_engineer_user_id) {
+                    $assignedSiteEngineerId = $request->targetDepartment->site_engineer_user_id;
+                }
+                if (!$assignedSiteEngineerId) {
+                    throw ValidationException::withMessages([
+                        'site_engineer_user_id' => ['طالما أن طلب الشراء صادر من المدير التنفيذي ولا يمر على مراجع، يجب تحديد مهندس الموقع أو مسؤول الاستلام قبل إرسال الطلب إلى المشتريات.'],
+                    ]);
+                }
+            }
+
             $request->update([
                 'status' => $nextStatus,
                 'date_needed' => $normalizedNeededDate,
                 'submitted_at' => now(),
                 'reviewer_user_id' => $isExecutiveRequester ? null : $request->reviewer_user_id,
+                'site_engineer_user_id' => $request->request_type === 'OFFICE_SUPPLIES' ? null : $assignedSiteEngineerId,
             ]);
 
             AuditLog::create([

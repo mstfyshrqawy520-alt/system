@@ -270,7 +270,12 @@ class PurchaseRequestController extends Controller
             ], 409);
         }
 
-        $submittedPr = $this->purchaseRequestService->submitRequest($request->user(), $pr);
+        $siteEngineerUserId = $request->input('site_engineer_user_id');
+        $submittedPr = $this->purchaseRequestService->submitRequest(
+            $request->user(),
+            $pr,
+            $siteEngineerUserId ? (int) $siteEngineerUserId : null
+        );
 
         return response()->json([
             'message' => 'Purchase request submitted successfully.',

@@ -288,6 +288,16 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
           </div>
         </div>
         <div>
+          <div className="text-[10px] text-slate-400 font-semibold">مسؤول الاستلام / مهندس الموقع</div>
+          <div className="font-bold text-slate-200 mt-1">
+            {isOffice
+              ? 'مقدم الطلب (استلام مكتبي مباشر)'
+              : requestData.site_engineer?.name
+                ? `${requestData.site_engineer.name}${requestData.is_general_manager_requester ? ' (اختيار المدير التنفيذي)' : ''}`
+                : 'يحدده المراجع عند الاعتماد'}
+          </div>
+        </div>
+        <div className="col-span-2 md:col-span-4">
           <div className="text-[10px] text-slate-400 font-semibold">ملاحظات</div>
           <div className="font-bold text-slate-200 mt-1">{requestData.notes || '-'}</div>
         </div>

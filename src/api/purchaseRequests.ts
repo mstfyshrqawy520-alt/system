@@ -57,9 +57,13 @@ export const deletePurchaseRequestApi = async (id: number): Promise<void> => {
   await apiClient.delete(`/purchase-requests/${id}`);
 };
 
-export const submitPurchaseRequestApi = async (id: number): Promise<PurchaseRequest> => {
+export const submitPurchaseRequestApi = async (
+  id: number,
+  payload?: { site_engineer_user_id?: number | null }
+): Promise<PurchaseRequest> => {
   const response = await apiClient.post<{ message: string; data: PurchaseRequest }>(
-    `/purchase-requests/${id}/submit`
+    `/purchase-requests/${id}/submit`,
+    payload
   );
   return response.data.data;
 };
