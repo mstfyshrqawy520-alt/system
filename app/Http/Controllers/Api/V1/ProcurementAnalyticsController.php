@@ -30,20 +30,19 @@ class ProcurementAnalyticsController extends Controller
         $period = (string) $request->query('period', '90');
         $status = $request->query('status');
 
-        $cacheKey = 'procurement:analytics:v2:' . $period . ':' . ($status ?: 'all');
+        [$startDate, $endDate, $dateLabel] = $this->resolveDateRange($request);
+
+        $cacheKey = 'procurement:analytics:v4:' . md5(json_encode($request->all()));
 
         if (Cache::has($cacheKey)) {
-
             return response()->json(Cache::get($cacheKey));
-
         }
-        $cutoff = $this->resolveCutoffDate($period);
 
-        // الاستعلام الأساسي للتحليلات يقرأ الحقول التجميعية فقط؛ العلاقات التفصيلية
-        // تُحمّل لآخر الأوامر المعروضة فقط، وليس لكل أوامر الفترة.
+        // الاستعلام الأساسي للتحليلات يقرأ الحقول التجميعية وفق النطاق الزمني المحدد
         $basePurchaseOrderQuery = PurchaseOrder::query()
             ->select(['id', 'po_number', 'purchase_request_id', 'supplier_id', 'created_by_user_id', 'status', 'grand_total', 'delivery_status', 'delivery_date', 'actual_delivery_date', 'created_at', 'updated_at'])
-            ->when($cutoff !== null, fn ($query) => $query->where('created_at', '>=', $cutoff));
+            ->when($startDate !== null, fn ($query) => $query->where('created_at', '>=', $startDate))
+            ->when($endDate !== null, fn ($query) => $query->where('created_at', '<=', $endDate));
 
         $filteredPurchaseOrderQuery = clone $basePurchaseOrderQuery;
         if (is_string($status) && in_array($status, self::ORDER_STATUSES, true)) {
@@ -52,8 +51,8 @@ class ProcurementAnalyticsController extends Controller
 
         $filteredPurchaseOrders = $filteredPurchaseOrderQuery
             ->with(['purchaseRequest.department', 'supplier', 'createdBy.department', 'items'])
-            ->orderByDesc('updated_at')
-            ->limit(10)
+            ->orderByDesc('created_at')
+            ->limit(500)
             ->get();
 
         $approvedRequestQuery = PurchaseRequest::query()
@@ -62,16 +61,18 @@ class ProcurementAnalyticsController extends Controller
             ->whereDoesntHave('purchaseOrders', function ($query): void {
                 $query->whereNotIn('status', ['REJECTED']);
             })
-            ->when($cutoff !== null, fn ($query) => $query->where('created_at', '>=', $cutoff));
+            ->when($startDate !== null, fn ($query) => $query->where('created_at', '>=', $startDate))
+            ->when($endDate !== null, fn ($query) => $query->where('created_at', '<=', $endDate));
 
         $approvedRequests = $approvedRequestQuery
             ->orderByDesc('updated_at')
-            ->limit(8)
+            ->limit(10)
             ->get();
 
         $basePurchaseRequestQuery = PurchaseRequest::query()
             ->select(['id', 'status', 'created_at'])
-            ->when($cutoff !== null, fn ($query) => $query->where('created_at', '>=', $cutoff));
+            ->when($startDate !== null, fn ($query) => $query->where('created_at', '>=', $startDate))
+            ->when($endDate !== null, fn ($query) => $query->where('created_at', '<=', $endDate));
 
         $orderTotals = (clone $basePurchaseOrderQuery)
             ->select([])
@@ -146,7 +147,8 @@ class ProcurementAnalyticsController extends Controller
         $departmentMetrics = DB::table('purchase_orders as po')
             ->leftJoin('purchase_requests as pr', 'pr.id', '=', 'po.purchase_request_id')
             ->leftJoin('users as creator', 'creator.id', '=', 'po.created_by_user_id')
-            ->when($cutoff !== null, fn ($query) => $query->where('po.created_at', '>=', $cutoff))
+            ->when($startDate !== null, fn ($query) => $query->where('po.created_at', '>=', $startDate))
+            ->when($endDate !== null, fn ($query) => $query->where('po.created_at', '<=', $endDate))
             ->selectRaw('COALESCE(pr.department_id, creator.department_id, 0) as department_id, COUNT(*) as row_count, COALESCE(SUM(po.grand_total), 0) as total_value')
             ->groupByRaw('COALESCE(pr.department_id, creator.department_id, 0)')
             ->get();
@@ -183,7 +185,8 @@ class ProcurementAnalyticsController extends Controller
             : 'TIMESTAMPDIFF(HOUR, pr.submitted_at, po.created_at)';
         $averagePoCycleDays = (float) (DB::table('purchase_orders as po')
             ->join('purchase_requests as pr', 'pr.id', '=', 'po.purchase_request_id')
-            ->when($cutoff !== null, fn ($query) => $query->where('po.created_at', '>=', $cutoff))
+            ->when($startDate !== null, fn ($query) => $query->where('po.created_at', '>=', $startDate))
+            ->when($endDate !== null, fn ($query) => $query->where('po.created_at', '<=', $endDate))
             ->whereNotNull('pr.submitted_at')
             ->whereNotNull('po.created_at')
             ->selectRaw("AVG(CASE WHEN {$cycleHoursExpression} < 0 THEN 0 ELSE {$cycleHoursExpression} END) / 24 as average_cycle_days")
@@ -210,6 +213,9 @@ class ProcurementAnalyticsController extends Controller
             'filters' => [
                 'period' => $period,
                 'status' => is_string($status) && in_array($status, self::ORDER_STATUSES, true) ? $status : null,
+                'date_label' => $dateLabel,
+                'start_date' => $startDate?->toIso8601String(),
+                'end_date' => $endDate?->toIso8601String(),
             ],
             'metrics' => [
                 'purchase_requests_count' => $purchaseRequestCount,
@@ -241,6 +247,7 @@ class ProcurementAnalyticsController extends Controller
             'request_status_breakdown' => $requestStatusBreakdown,
             'delivery_breakdown' => $deliveryBreakdown,
             'supplier_breakdown' => $supplierBreakdown,
+            'department_breakdown' => $departmentBreakdown,
             'recent_purchase_orders' => $filteredPurchaseOrders->map(function (PurchaseOrder $po) {
                 return [
                     'id' => $po->id,
@@ -248,25 +255,29 @@ class ProcurementAnalyticsController extends Controller
                     'status' => $po->status,
                     'grand_total' => number_format((float) $po->grand_total, 2, '.', ''),
                     'supplier_name' => $po->supplier?->company_name ?? 'غير محدد',
+                    'supplier_phone' => $po->supplier?->phone ?? null,
+                    'payment_terms' => $po->supplier?->payment_terms ?? null,
                     'request_number' => $po->purchaseRequest?->request_number ?? 'مباشر',
                     'department_name' => $po->purchaseRequest?->department?->name ?? $po->createdBy?->department?->name ?? 'غير محدد',
+                    'created_at' => $po->created_at?->toIso8601String(),
+                    'updated_at' => $po->updated_at?->toIso8601String(),
                     'items' => $po->items->map(fn ($item) => [
                         'id' => $item->id,
                         'item_description' => $item->item_description,
                         'item_reference' => $item->item_reference,
                         'region' => $item->region,
-                        'quantity' => $item->quantity,
+                        'quantity' => (float) $item->quantity,
                         'uom' => $item->uom,
-                        'grand_total' => $item->line_total,
+                        'unit_price' => number_format((float) ($item->unit_price ?? 0), 2, '.', ''),
+                        'line_total' => number_format((float) ($item->line_total ?? $item->grand_total ?? 0), 2, '.', ''),
+                        'grand_total' => number_format((float) ($item->line_total ?? $item->grand_total ?? 0), 2, '.', ''),
                     ])->values(),
-                    'updated_at' => $po->updated_at?->toIso8601String(),
                 ];
             })->values(),
             'recent_purchase_requests' => $approvedRequests->map(function (PurchaseRequest $requestModel) {
                 return [
                     'id' => $requestModel->id,
                     'request_number' => $requestModel->request_number,
-                    
                     'status' => $requestModel->status,
                     'requester_name' => $requestModel->requester?->name,
                     'department_name' => $requestModel->department?->name,
@@ -274,18 +285,63 @@ class ProcurementAnalyticsController extends Controller
                 ];
             })->values(),
         ];
-        Cache::put($cacheKey, $payload, now()->addSeconds(15));
+        Cache::put($cacheKey, $payload, now()->addSeconds(10));
         return response()->json($payload);
     }
 
-    private function resolveCutoffDate(string $period): ?\Carbon\CarbonImmutable
+    /**
+     * @return array{0: ?\Carbon\CarbonImmutable, 1: ?\Carbon\CarbonImmutable, 2: string}
+     */
+    private function resolveDateRange(Request $request): array
     {
+        $period = (string) $request->query('period', '90');
+        $date = $request->query('date');
+        $fromDate = $request->query('from_date');
+        $toDate = $request->query('to_date');
+        $month = $request->query('month');
+        $year = $request->query('year');
+
+        if (!empty($date)) {
+            try {
+                $d = \Carbon\CarbonImmutable::parse($date);
+                return [$d->startOfDay(), $d->endOfDay(), 'تقرير يومي: ' . $d->format('Y-m-d')];
+            } catch (\Throwable) {}
+        }
+
+        if (!empty($fromDate) || !empty($toDate)) {
+            $start = !empty($fromDate) ? \Carbon\CarbonImmutable::parse($fromDate)->startOfDay() : null;
+            $end = !empty($toDate) ? \Carbon\CarbonImmutable::parse($toDate)->endOfDay() : null;
+            return [$start, $end, 'فترة مخصصة'];
+        }
+
+        if (!empty($month)) {
+            $y = !empty($year) ? (int) $year : (int) now()->year;
+            $m = (int) $month;
+            $d = \Carbon\CarbonImmutable::create($y, $m, 1);
+            return [$d->startOfMonth(), $d->endOfMonth(), 'تقرير شهري: ' . $d->format('Y-m')];
+        }
+
+        if ($period === 'today' || $period === 'day' || $period === '1') {
+            return [now()->startOfDay()->toImmutable(), now()->endOfDay()->toImmutable(), 'تقرير اليوم (' . now()->format('Y-m-d') . ')'];
+        }
+
+        if ($period === 'yesterday') {
+            return [now()->subDay()->startOfDay()->toImmutable(), now()->subDay()->endOfDay()->toImmutable(), 'تقرير أمس (' . now()->subDay()->format('Y-m-d') . ')'];
+        }
+
+        if ($period === 'this_month' || $period === 'month') {
+            return [now()->startOfMonth()->toImmutable(), now()->endOfMonth()->toImmutable(), 'تقرير الشهر الحالي (' . now()->format('Y-m') . ')'];
+        }
+
+        if ($period === 'last_month') {
+            return [now()->subMonth()->startOfMonth()->toImmutable(), now()->subMonth()->endOfMonth()->toImmutable(), 'تقرير الشهر السابق (' . now()->subMonth()->format('Y-m') . ')'];
+        }
+
         if ($period === 'all') {
-            return null;
+            return [null, null, 'جميع الفترات'];
         }
 
         $days = max(1, (int) $period);
-
-        return now()->subDays($days)->startOfDay()->toImmutable();
+        return [now()->subDays($days)->startOfDay()->toImmutable(), now()->endOfDay()->toImmutable(), "آخر {$days} يوم"];
     }
 }

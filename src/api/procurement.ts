@@ -2,10 +2,23 @@ import apiClient, { cachedGetData, invalidateCachedGet } from './client';
 import { PurchaseRequest } from '../types/purchaseRequest';
 import { PurchaseOrder } from '../types/purchaseOrder';
 
+export interface ProcurementAnalyticsFilterParams {
+  period?: string;
+  status?: string;
+  date?: string;
+  month?: string | number;
+  year?: string | number;
+  from_date?: string;
+  to_date?: string;
+}
+
 export interface ProcurementAnalyticsResponse {
   filters: {
     period: string;
     status: string | null;
+    date_label?: string;
+    start_date?: string | null;
+    end_date?: string | null;
   };
   metrics: {
     purchase_requests_count?: number;
@@ -66,8 +79,12 @@ export interface ProcurementAnalyticsResponse {
     status: string;
     grand_total: string;
     supplier_name: string | null;
+    supplier_phone?: string | null;
+    payment_terms?: string | null;
     request_number: string | null;
     department_name: string | null;
+    created_at?: string;
+    updated_at: string;
     items: Array<{
       id: number;
       item_description: string;
@@ -75,9 +92,10 @@ export interface ProcurementAnalyticsResponse {
       region?: string | null;
       quantity?: string | number;
       uom?: string | null;
+      unit_price?: string | number | null;
+      line_total?: string | number | null;
       grand_total?: string | number | null;
     }>;
-    updated_at: string;
   }>;
   recent_purchase_requests: Array<{
     id: number;
@@ -211,9 +229,20 @@ export const createPurchaseQuotesApi = async (
   return (await apiClient.post<{ data: PurchaseRequest }>(`/procurement/purchase-requests/${id}/quotes`, { quotes })).data.data;
 };
 
-export const getProcurementAnalyticsApi = async (period: string = '90', status?: string) => {
+export const getProcurementAnalyticsApi = async (
+  period: string = '90',
+  status?: string,
+  extraParams?: Partial<ProcurementAnalyticsFilterParams>
+) => {
   const params: Record<string, string> = { period };
   if (status) params.status = status;
+  if (extraParams) {
+    Object.entries(extraParams).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') {
+        params[k] = String(v);
+      }
+    });
+  }
   return (await apiClient.get<ProcurementAnalyticsResponse>('/procurement/analytics', { params })).data;
 };
 
