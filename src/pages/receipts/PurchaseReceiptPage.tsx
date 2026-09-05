@@ -20,6 +20,105 @@ import {
 } from '../../api/purchaseReceipts';
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
 
+interface ReceiptColorTheme {
+  border: string;
+  cardBg: string;
+  headerBg: string;
+  badgeBg: string;
+  badgeText: string;
+  badgeBorder: string;
+  accentText: string;
+  itemBorder: string;
+  inputBorder: string;
+  colorTitle: string;
+  icon: string;
+}
+
+const RECEIPT_COLOR_PALETTES: ReceiptColorTheme[] = [
+  {
+    border: 'border-emerald-500/90 shadow-emerald-950/60',
+    cardBg: 'bg-gradient-to-b from-emerald-950/40 via-slate-900 to-slate-950',
+    headerBg: 'bg-emerald-950/70 border-emerald-700/70',
+    badgeBg: 'bg-emerald-500',
+    badgeText: 'text-slate-950',
+    badgeBorder: 'border-emerald-400',
+    accentText: 'text-emerald-400',
+    itemBorder: 'border-emerald-500/50 bg-emerald-950/20',
+    inputBorder: 'border-emerald-400 focus:ring-emerald-400',
+    colorTitle: 'الإذن الأخضر',
+    icon: '🟢',
+  },
+  {
+    border: 'border-blue-500/90 shadow-blue-950/60',
+    cardBg: 'bg-gradient-to-b from-blue-950/40 via-slate-900 to-slate-950',
+    headerBg: 'bg-blue-950/70 border-blue-700/70',
+    badgeBg: 'bg-blue-500',
+    badgeText: 'text-white',
+    badgeBorder: 'border-blue-400',
+    accentText: 'text-blue-400',
+    itemBorder: 'border-blue-500/50 bg-blue-950/20',
+    inputBorder: 'border-blue-400 focus:ring-blue-400',
+    colorTitle: 'الإذن الأزرق',
+    icon: '🔵',
+  },
+  {
+    border: 'border-amber-500/90 shadow-amber-950/60',
+    cardBg: 'bg-gradient-to-b from-amber-950/40 via-slate-900 to-slate-950',
+    headerBg: 'bg-amber-950/70 border-amber-700/70',
+    badgeBg: 'bg-amber-500',
+    badgeText: 'text-slate-950',
+    badgeBorder: 'border-amber-400',
+    accentText: 'text-amber-400',
+    itemBorder: 'border-amber-500/50 bg-amber-950/20',
+    inputBorder: 'border-amber-400 focus:ring-amber-400',
+    colorTitle: 'الإذن البرتقالي',
+    icon: '🟠',
+  },
+  {
+    border: 'border-purple-500/90 shadow-purple-950/60',
+    cardBg: 'bg-gradient-to-b from-purple-950/40 via-slate-900 to-slate-950',
+    headerBg: 'bg-purple-950/70 border-purple-700/70',
+    badgeBg: 'bg-purple-500',
+    badgeText: 'text-white',
+    badgeBorder: 'border-purple-400',
+    accentText: 'text-purple-400',
+    itemBorder: 'border-purple-500/50 bg-purple-950/20',
+    inputBorder: 'border-purple-400 focus:ring-purple-400',
+    colorTitle: 'الإذن البنفسجي',
+    icon: '🟣',
+  },
+  {
+    border: 'border-rose-500/90 shadow-rose-950/60',
+    cardBg: 'bg-gradient-to-b from-rose-950/40 via-slate-900 to-slate-950',
+    headerBg: 'bg-rose-950/70 border-rose-700/70',
+    badgeBg: 'bg-rose-500',
+    badgeText: 'text-white',
+    badgeBorder: 'border-rose-400',
+    accentText: 'text-rose-400',
+    itemBorder: 'border-rose-500/50 bg-rose-950/20',
+    inputBorder: 'border-rose-400 focus:ring-rose-400',
+    colorTitle: 'الإذن الوردي',
+    icon: '🔴',
+  },
+  {
+    border: 'border-teal-500/90 shadow-teal-950/60',
+    cardBg: 'bg-gradient-to-b from-teal-950/40 via-slate-900 to-slate-950',
+    headerBg: 'bg-teal-950/70 border-teal-700/70',
+    badgeBg: 'bg-teal-500',
+    badgeText: 'text-slate-950',
+    badgeBorder: 'border-teal-400',
+    accentText: 'text-teal-400',
+    itemBorder: 'border-teal-500/50 bg-teal-950/20',
+    inputBorder: 'border-teal-400 focus:ring-teal-400',
+    colorTitle: 'الإذن الفيروزي',
+    icon: '🟩',
+  },
+];
+
+const getReceiptTheme = (index: number): ReceiptColorTheme => {
+  return RECEIPT_COLOR_PALETTES[index % RECEIPT_COLOR_PALETTES.length];
+};
+
 type ReceiptMode = 'warehouse' | 'site';
 type ActiveTab = 'QUEUE' | 'ARCHIVE';
 
@@ -371,147 +470,197 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
       {activeTab === 'QUEUE' && (
         <>
           {mode === 'warehouse' ? (
-            /* Warehouse Keeper Pending Orders Queue */
+            /* Warehouse Keeper Pending Orders Queue - Ultra Simple Color-Coded Interface */
             visibleOrders.length > 0 ? (
-              <div className="space-y-6">
-                {visibleOrders.map((order) => {
+              <div className="space-y-8">
+                {visibleOrders.map((order, orderIdx) => {
                   const isSavingThis = saving === order.id;
+                  const theme = getReceiptTheme(orderIdx);
 
                   return (
-                    <Card key={order.id} className="p-4 sm:p-6 space-y-5 border-2 border-amber-500/50 bg-slate-900/95 shadow-2xl rounded-2xl">
-                      {/* Header Card with PO info */}
-                      <div className="space-y-3 border-b border-slate-800 pb-4">
+                    <div
+                      key={order.id}
+                      className={`p-5 sm:p-7 space-y-6 border-3 ${theme.border} ${theme.cardBg} shadow-2xl rounded-3xl transition-all`}
+                    >
+                      {/* 1. Header: Big Distinct Color Ribbon & Supplier Info */}
+                      <div className={`rounded-2xl border-2 ${theme.headerBg} p-4 sm:p-5 space-y-4`}>
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div className="flex items-center gap-2.5 flex-wrap">
-                            <span className="font-mono text-base sm:text-lg font-black text-cyan-300 bg-cyan-950 border border-cyan-700 px-3.5 py-1.5 rounded-xl shadow-inner">
-                              {order.po_number}
+                            <span className={`px-4 py-1.5 rounded-xl font-black text-sm sm:text-base border-2 ${theme.badgeBg} ${theme.badgeText} ${theme.badgeBorder} shadow-md flex items-center gap-1.5`}>
+                              <span>{theme.icon}</span>
+                              <span>{theme.colorTitle}</span>
                             </span>
+
+                            <span className="font-mono text-base sm:text-lg font-black text-white bg-slate-950 border border-slate-700 px-3.5 py-1.5 rounded-xl shadow-inner">
+                              أمر شراء #{order.po_number}
+                            </span>
+
                             {order.purchase_request && (
-                              <span className="text-xs sm:text-sm font-bold text-slate-200 bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg">
-                                طلب #{order.purchase_request.request_number}
+                              <span className="text-xs sm:text-sm font-bold text-slate-300 bg-slate-900 border border-slate-700 px-3 py-1 rounded-lg">
+                                طلب توريد #{order.purchase_request.request_number}
                               </span>
                             )}
                           </div>
+
+                          {/* Quick 1-Click Fill All Button */}
                           <button
                             type="button"
                             onClick={() => setAllReceivedFull(order)}
-                            className="text-xs sm:text-sm font-black text-cyan-400 hover:text-cyan-300 bg-cyan-950/60 border border-cyan-800/80 px-3 py-1.5 rounded-xl transition-all hover:bg-cyan-900/80 cursor-pointer flex items-center gap-1.5"
+                            className="text-xs sm:text-sm font-black text-emerald-300 hover:text-white bg-emerald-950/80 hover:bg-emerald-900 border-2 border-emerald-500/80 px-4 py-2 rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-2"
                           >
-                            <span>🔄</span> إعادة ضبط كافة الكميات للمطلوب
+                            <span>⚡</span>
+                            <span>استلمت كافة البضاعة بالكامل (ضغطة واحدة)</span>
                           </button>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs sm:text-sm pt-1">
-                          <div className="flex items-center gap-2 text-slate-200 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
-                            <span className="text-base">🏢</span>
+                        {/* Large Clear Info Callouts */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm sm:text-base pt-1">
+                          <div className="flex items-center gap-3 text-slate-100 bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
+                            <span className="text-3xl shrink-0">🏢</span>
                             <div>
-                              <span className="text-slate-400 block text-[11px]">المورد:</span>
-                              <span className="font-bold text-slate-100">{order.supplier?.company_name || 'مورد غير محدد'}</span>
+                              <span className="text-slate-400 block text-xs font-bold">المورد صاحب البضاعة:</span>
+                              <span className="font-black text-base sm:text-lg text-white block mt-0.5">
+                                {order.supplier?.company_name || 'مورد غير محدد'}
+                              </span>
                             </div>
                           </div>
 
-                          {order.purchase_request?.site_engineer && (
-                            <div className="flex items-center gap-2 text-emerald-300 bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-800/50">
-                              <span className="text-base">👷</span>
-                              <div>
-                                <span className="text-emerald-400/80 block text-[11px]">مهندس الموقع المسؤول:</span>
-                                <span className="font-bold">{order.purchase_request.site_engineer.name}</span>
-                              </div>
+                          <div className="flex items-center gap-3 text-slate-100 bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
+                            <span className="text-3xl shrink-0">📍</span>
+                            <div>
+                              <span className="text-slate-400 block text-xs font-bold">المشروع / موقع التوريد:</span>
+                              <span className="font-black text-base sm:text-lg text-cyan-300 block mt-0.5">
+                                {order.purchase_request?.project_name || order.purchase_request?.department?.name || 'المخزن الرئيسي'}
+                              </span>
                             </div>
-                          )}
+                          </div>
                         </div>
                       </div>
 
-                      {/* Items List as Touch-Friendly High-Contrast Cards */}
+                      {/* 2. Items List: Ultra Simple Big Visual Cards */}
                       <div className="space-y-4">
-                        <h4 className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-2">
-                          <span>📦</span> بنود أمر الشراء والكميات المستلمة ({order.items?.length || 0} بنود):
-                        </h4>
+                        <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                          <h4 className="text-sm sm:text-base font-black text-slate-100 flex items-center gap-2">
+                            <span>📦</span>
+                            <span>الأصناف المطلوب استلامها في هذا الإذن ({order.items?.length || 0} صنف):</span>
+                          </h4>
+                        </div>
 
-                        <div className="space-y-3.5">
+                        <div className="space-y-4">
                           {(order.items || []).map((item, idx) => {
                             const key = `${order.id}-${item.id}`;
                             const val = quantities[key] ?? String(item.quantity);
+                            const numVal = parseFloat(val) || 0;
+                            const isFull = numVal === item.quantity;
 
                             return (
                               <div
                                 key={item.id}
-                                className="rounded-2xl border-2 border-slate-700/80 bg-slate-950/90 p-4 sm:p-5 space-y-3.5 shadow-lg"
+                                className={`rounded-2xl border-2 ${theme.itemBorder} bg-slate-950/90 p-4 sm:p-5 space-y-4 shadow-xl`}
                               >
-                                {/* Item Title & Index */}
+                                {/* Item Title & Number */}
                                 <div className="flex items-start justify-between gap-3">
                                   <div className="space-y-1 flex-1">
                                     <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-300 font-black text-sm border border-cyan-500/40 shrink-0">
-                                        #{idx + 1}
+                                      <span className={`flex h-8 w-8 items-center justify-center rounded-xl ${theme.badgeBg} ${theme.badgeText} font-black text-base shrink-0 shadow-md`}>
+                                        {idx + 1}
                                       </span>
-                                      <h4 className="text-base sm:text-lg font-black text-slate-50 tracking-wide">
+                                      <h4 className="text-base sm:text-xl font-black text-white">
                                         {item.item_description || item.item?.name}
                                       </h4>
                                     </div>
                                     {item.specifications && (
-                                      <p className="text-xs sm:text-sm text-slate-400 leading-relaxed pr-9">
-                                        المواصفات: {item.specifications}
+                                      <p className="text-xs sm:text-sm text-slate-300 leading-relaxed pr-10">
+                                        المواصفات: <strong className="text-slate-100">{item.specifications}</strong>
                                       </p>
                                     )}
                                   </div>
                                 </div>
 
-                                {/* Tags: Land parcel & Region */}
-                                <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm">
-                                  {(item.item_reference || item.pr_item?.item_reference) && (
-                                    <span className="inline-flex items-center gap-1.5 font-mono text-cyan-200 bg-cyan-950 border border-cyan-700/80 px-3 py-1 rounded-xl font-black">
-                                      <span>🏷️</span> قطعة الأرض: {item.item_reference || item.pr_item?.item_reference}
-                                    </span>
-                                  )}
-                                  {(item.region || item.pr_item?.region) && (
-                                    <span className="inline-flex items-center gap-1.5 text-amber-200 bg-amber-950 border border-amber-700/80 px-3 py-1 rounded-xl font-black">
-                                      <span>📍</span> المنطقة: {item.region || item.pr_item?.region}
-                                    </span>
-                                  )}
-                                </div>
-
                                 {/* Quantities Comparison Grid */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                                  {/* Box 1: Required in PO */}
-                                  <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3.5 flex flex-col justify-between space-y-1">
-                                    <span className="text-xs font-bold text-slate-400">الكمية المطلوبة بأمر الشراء:</span>
-                                    <div className="font-mono text-lg sm:text-xl font-black text-slate-100 flex items-baseline gap-1.5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                                  {/* Required Box */}
+                                  <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 flex flex-col justify-between space-y-1">
+                                    <span className="text-xs font-bold text-slate-400">الكمية المطلوبة في أمر الشراء:</span>
+                                    <div className="font-mono text-xl sm:text-2xl font-black text-white flex items-baseline gap-2 mt-1">
                                       <span>{item.quantity}</span>
-                                      <span className="text-sm font-bold text-slate-400">{getUnitLabel(item.uom || '')}</span>
+                                      <span className="text-base font-bold text-slate-300">{getUnitLabel(item.uom || '')}</span>
                                     </div>
                                   </div>
 
-                                  {/* Box 2: Received Quantity (Editable, Big Input) */}
-                                  <div className="rounded-xl border-2 border-emerald-500/70 bg-emerald-950/30 p-3.5 space-y-1.5 shadow-inner">
-                                    <label className="text-xs font-black text-emerald-300 flex items-center justify-between">
-                                      <span>الكمية المستلمة فعلياً بالمخزن:</span>
-                                      <span className="text-[11px] font-normal text-emerald-400/80">(جاهزة للتعديل)</span>
+                                  {/* Received Quantity Box (Large and Easy to Tap) */}
+                                  <div className="rounded-2xl border-2 border-emerald-500 bg-emerald-950/40 p-4 space-y-2 shadow-inner">
+                                    <label className="text-xs sm:text-sm font-black text-emerald-300 flex items-center justify-between">
+                                      <span>الكمية التي استلمتها فعلياً:</span>
+                                      {isFull && (
+                                        <span className="text-xs font-black text-emerald-400 bg-emerald-950 border border-emerald-500/60 px-2 py-0.5 rounded-full">
+                                          ✓ كاملة
+                                        </span>
+                                      )}
                                     </label>
+
                                     <div className="flex items-center gap-2">
+                                      {/* Quick Minus Button */}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const next = Math.max(0, numVal - 1);
+                                          setQuantities({ ...quantities, [key]: String(next) });
+                                        }}
+                                        className="h-12 w-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-xl flex items-center justify-center shrink-0 border border-slate-700 active:scale-95 cursor-pointer"
+                                        title="إنقاص واحد"
+                                      >
+                                        -
+                                      </button>
+
                                       <input
                                         type="number"
                                         min="0"
                                         step="any"
                                         value={val}
                                         onChange={(e) => setQuantities({ ...quantities, [key]: e.target.value })}
-                                        className="w-full rounded-xl border-2 border-emerald-400 bg-slate-950 px-3.5 py-2 text-lg sm:text-xl text-emerald-300 font-black focus:ring-2 focus:ring-emerald-400 focus:outline-none shadow-inner"
+                                        className="w-full rounded-xl border-2 border-emerald-400 bg-slate-950 px-3.5 py-2.5 text-xl sm:text-2xl text-emerald-300 font-black text-center focus:ring-2 focus:ring-emerald-400 focus:outline-none shadow-inner"
                                       />
+
+                                      {/* Quick Plus Button */}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const next = numVal + 1;
+                                          setQuantities({ ...quantities, [key]: String(next) });
+                                        }}
+                                        className="h-12 w-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-xl flex items-center justify-center shrink-0 border border-slate-700 active:scale-95 cursor-pointer"
+                                        title="زيادة واحد"
+                                      >
+                                        +
+                                      </button>
+
                                       <span className="text-sm sm:text-base font-black text-emerald-300 shrink-0 px-1">
                                         {getUnitLabel(item.uom || '')}
                                       </span>
                                     </div>
+
+                                    {/* Quick full match button */}
+                                    {!isFull && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setQuantities({ ...quantities, [key]: String(item.quantity) })}
+                                        className="text-xs font-bold text-emerald-300 hover:text-white underline cursor-pointer pt-0.5 inline-block"
+                                      >
+                                        ← ضبط على الكمية المطلوبة بالكامل ({item.quantity} {getUnitLabel(item.uom || '')})
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
 
-                                {/* Item Notes */}
-                                <div className="space-y-1 pt-1">
+                                {/* Simple Notes */}
+                                <div className="pt-1">
                                   <input
                                     type="text"
-                                    placeholder="ملاحظات حالة الصنف إن وجدت (اختياري)..."
+                                    placeholder="أي ملاحظة على هذا الصنف (اختياري)..."
                                     value={itemNotes[key] || ''}
                                     onChange={(e) => setItemNotes({ ...itemNotes, [key]: e.target.value })}
-                                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs sm:text-sm text-slate-200 focus:border-cyan-400 focus:outline-none"
+                                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs sm:text-sm text-slate-200 focus:border-cyan-400 focus:outline-none"
                                   />
                                 </div>
                               </div>
@@ -531,22 +680,22 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                           />
                         </div>
 
-                        {/* Camera / Photo Attachment Component (Optional) */}
-                        <div className="rounded-2xl border-2 border-dashed border-cyan-500/50 bg-cyan-950/20 p-4 sm:p-5 space-y-3.5 shadow-md">
+                        {/* 3. Camera / Photo Attachment (Ultra Simple Big Button) */}
+                        <div className="rounded-2xl border-2 border-dashed border-cyan-500/70 bg-cyan-950/30 p-4 sm:p-5 space-y-4 shadow-lg">
                           <div className="flex items-center justify-between flex-wrap gap-2">
-                            <div className="flex items-center gap-2.5">
-                              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-300 text-2xl border border-cyan-500/40 shrink-0">
+                            <div className="flex items-center gap-3">
+                              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/20 text-cyan-300 text-3xl border border-cyan-500/40 shrink-0">
                                 📷
                               </span>
                               <div>
-                                <h5 className="text-sm sm:text-base font-black text-cyan-200 flex items-center gap-1.5">
-                                  <span>صورة وزنة الحديد / بون الميزان أو الاستلام الميداني</span>
-                                  <span className="text-xs font-bold text-amber-300 bg-amber-950/70 border border-amber-800/60 px-2 py-0.5 rounded-md">
+                                <h5 className="text-sm sm:text-base font-black text-cyan-200 flex items-center gap-2">
+                                  <span>تصوير بون الميزان أو وزنة الحديد / بوليصة الاستلام</span>
+                                  <span className="text-xs font-bold text-amber-300 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-md">
                                     (اختياري)
                                   </span>
                                 </h5>
-                                <p className="text-xs text-slate-400 mt-0.5">
-                                  صورة للمستند الفعلي (بون الميزان / بوليصة الشحن) ستظهر لمهندس الموقع ولإدارة الحسابات.
+                                <p className="text-xs text-slate-300 mt-0.5">
+                                  التقط صورة واضحة بالكاميرا ليراها مهندس الموقع والمحاسب مباشرة مع إذن الصرف.
                                 </p>
                               </div>
                             </div>
@@ -554,18 +703,18 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                               <button
                                 type="button"
                                 onClick={() => setReceiptPhotos((prev) => ({ ...prev, [order.id]: null }))}
-                                className="text-xs font-bold text-rose-400 hover:text-rose-300 bg-rose-950/80 border border-rose-800/80 px-3 py-1.5 rounded-xl cursor-pointer"
+                                className="text-xs font-bold text-rose-300 hover:text-white bg-rose-950/90 border border-rose-700 px-3.5 py-1.5 rounded-xl cursor-pointer shadow-md"
                               >
-                                ✕ إلغاء / حذف الصورة
+                                ✕ حذف الصورة وإعادة التصوير
                               </button>
                             )}
                           </div>
 
                           {receiptPhotos[order.id] ? (
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-950/90 p-3.5 rounded-xl border border-cyan-500/50">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-950 p-4 rounded-2xl border-2 border-emerald-500/80 shadow-xl">
                               <div
                                 onClick={() => setPreviewPhotoUrl(receiptPhotos[order.id]!.base64)}
-                                className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-xl overflow-hidden border-2 border-cyan-400 cursor-pointer group shrink-0 shadow-lg"
+                                className="relative h-28 w-28 sm:h-32 sm:w-32 rounded-2xl overflow-hidden border-2 border-emerald-400 cursor-pointer group shrink-0 shadow-lg"
                               >
                                 <img
                                   src={receiptPhotos[order.id]!.base64}
@@ -573,42 +722,42 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                                   className="h-full w-full object-cover group-hover:scale-105 transition-transform"
                                 />
                                 <div className="absolute inset-0 bg-slate-950/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <span className="text-xs font-bold text-white bg-slate-900/90 px-2 py-1 rounded">🔍 تكبير</span>
+                                  <span className="text-xs font-black text-white bg-slate-900/90 px-2.5 py-1 rounded-lg">🔍 تكبير</span>
                                 </div>
                               </div>
-                              <div className="space-y-1.5 text-xs flex-1">
-                                <div className="font-bold text-slate-100 text-sm flex items-center gap-1.5">
-                                  <span className="text-emerald-400 font-black">✓</span>
-                                  <span>تم إرفاق الصورة بنجاح: {receiptPhotos[order.id]!.name}</span>
+                              <div className="space-y-2 text-xs flex-1">
+                                <div className="font-black text-emerald-400 text-base flex items-center gap-2">
+                                  <span>✅</span>
+                                  <span>تم التقاط صورة بون الميزان بنجاح!</span>
                                 </div>
-                                <p className="text-slate-300 text-xs">
-                                  سيتم إرسال هذه الصورة تلقائياً لمهندس الموقع لمطابقتها وللحسابات مع إذن الصرف.
+                                <p className="text-slate-300 text-xs sm:text-sm">
+                                  الملف: {receiptPhotos[order.id]!.name}
                                 </p>
                                 <button
                                   type="button"
                                   onClick={() => setPreviewPhotoUrl(receiptPhotos[order.id]!.base64)}
-                                  className="text-xs font-bold text-cyan-400 hover:text-cyan-300 underline inline-flex items-center gap-1 cursor-pointer pt-1"
+                                  className="text-xs sm:text-sm font-black text-cyan-400 hover:text-cyan-300 underline inline-flex items-center gap-1 cursor-pointer pt-1"
                                 >
-                                  <span>👁️</span> معاينة الصورة بالحجم الكامل المكبر
+                                  <span>👁️</span> اضغط هنا لمعاينة الصورة بالحجم الكامل المكبر
                                 </button>
                               </div>
                             </div>
                           ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
                               {/* Option 1: Direct Native Camera Launch on Phone/Tablet */}
                               <label
                                 htmlFor={`receipt-camera-capture-${order.id}`}
-                                className="flex items-center justify-center gap-3 p-4 rounded-xl border-2 border-dashed border-cyan-500/80 hover:border-cyan-300 bg-cyan-950/40 hover:bg-cyan-950/70 cursor-pointer transition-all text-right group shadow-lg active:scale-98"
+                                className="flex items-center justify-center gap-3.5 p-4 sm:p-5 rounded-2xl border-2 border-cyan-400 hover:border-cyan-300 bg-cyan-950/60 hover:bg-cyan-900/70 cursor-pointer transition-all text-right group shadow-lg active:scale-98"
                               >
-                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-300 text-2xl border border-cyan-500/40 group-hover:scale-110 transition-transform">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-500/20 text-cyan-300 text-3xl border border-cyan-400 group-hover:scale-110 transition-transform">
                                   📸
                                 </div>
-                                <div className="space-y-0.5 flex-1">
-                                  <span className="text-xs sm:text-sm font-black text-cyan-200 group-hover:text-cyan-100 block">
-                                    فتح الكاميرا والتقاط صورة فورا
+                                <div className="space-y-1 flex-1">
+                                  <span className="text-sm sm:text-base font-black text-cyan-100 group-hover:text-white block">
+                                    فتح الكاميرا والتقاط صورة الميزان فوراً
                                   </span>
-                                  <span className="block text-[11px] text-slate-400">
-                                    تشغيل كاميرا الهاتف مباشرة والتقاط بون الميزان
+                                  <span className="block text-xs text-slate-300">
+                                    تشغيل كاميرا الهاتف مباشرة وتصوير الورقة
                                   </span>
                                 </div>
                                 <input
@@ -628,17 +777,17 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                               {/* Option 2: Gallery / Files Picker */}
                               <label
                                 htmlFor={`receipt-gallery-picker-${order.id}`}
-                                className="flex items-center justify-center gap-3 p-4 rounded-xl border-2 border-dashed border-slate-700 hover:border-cyan-400 bg-slate-900/60 hover:bg-slate-900/90 cursor-pointer transition-all text-right group shadow-lg active:scale-98"
+                                className="flex items-center justify-center gap-3.5 p-4 sm:p-5 rounded-2xl border-2 border-slate-700 hover:border-cyan-400 bg-slate-900/80 hover:bg-slate-900 cursor-pointer transition-all text-right group shadow-lg active:scale-98"
                               >
-                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 text-2xl border border-slate-700 group-hover:scale-110 transition-transform">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-800 text-slate-300 text-3xl border border-slate-700 group-hover:scale-110 transition-transform">
                                   📁
                                 </div>
-                                <div className="space-y-0.5 flex-1">
-                                  <span className="text-xs sm:text-sm font-black text-slate-200 group-hover:text-cyan-300 block">
-                                    اختيار صورة من المعرض أو الملفات
+                                <div className="space-y-1 flex-1">
+                                  <span className="text-sm sm:text-base font-black text-slate-200 group-hover:text-cyan-300 block">
+                                    اختيار صورة من الهاتف أو الملفات
                                   </span>
-                                  <span className="block text-[11px] text-slate-400">
-                                    تحميل صورة محفوظة مسبقاً (JPG, PNG)
+                                  <span className="block text-xs text-slate-400">
+                                    تحميل صورة تم التقاطها مسبقاً
                                   </span>
                                 </div>
                                 <input
@@ -657,23 +806,24 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                           )}
                         </div>
 
-                        {/* Big Submit Button */}
-                        <div className="pt-3 border-t border-slate-800 space-y-2">
+                        {/* 4. Giant Confirm & Submit Button */}
+                        <div className="pt-4 border-t border-slate-800 space-y-2">
                           <Button
                             variant="success"
                             size="lg"
                             isLoading={isSavingThis}
                             onClick={() => submitWarehouseReceipt(order)}
-                            className="w-full font-black text-base sm:text-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 py-3.5 rounded-2xl shadow-xl shadow-emerald-950/60 flex items-center justify-center gap-2"
+                            className="w-full font-black text-base sm:text-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 py-4 rounded-2xl shadow-2xl shadow-emerald-950/80 flex items-center justify-center gap-3 cursor-pointer active:scale-98 transition-all"
                           >
-                            <span>✓</span> اعتماد واستلام المواد وإرسالها لمهندس الموقع
+                            <span className="text-2xl">✅</span>
+                            <span>تأكيد وحفظ استلام البضاعة (أمر #{order.po_number}) وإرسالها للمهندس</span>
                           </Button>
-                          <p className="text-center text-xs text-slate-400">
-                            💡 بمجرد الضغط على الزر، سيتم حفظ إذن الاستلام فوراً وإرساله لمهندس الموقع لاعتماده.
+                          <p className="text-center text-xs sm:text-sm font-bold text-slate-400">
+                            💡 ضغطة واحدة لحفظ إذن الاستلام فوراً وإشعار مهندس الموقع لاعتماده.
                           </p>
                         </div>
                       </div>
-                    </Card>
+                    </div>
                   );
                 })}
               </div>
