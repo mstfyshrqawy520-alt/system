@@ -17,10 +17,16 @@ import {
   requestAndRegisterPushToken,
 } from '../../services/pushNotificationService';
 import { formatTime12h } from '../../utils/dateTime';
+import {
+  isNotificationSoundEnabled,
+  setNotificationSoundEnabled,
+  playNotificationSound,
+} from '../../utils/notificationSound';
 
 export const NotificationBell: React.FC = () => {
   const { user } = useAuth();
   const [count, setCount] = useState<number>(0);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => isNotificationSoundEnabled());
   const [recentNotifications, setRecentNotifications] = useState<Notification[]>([]);
   const [latestToast, setLatestToast] = useState<Notification | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -102,6 +108,9 @@ export const NotificationBell: React.FC = () => {
         (notification.type || '').includes('rejected') ||
         (notification.type || '').includes('failed');
 
+      // Play custom notification chime
+      void playNotificationSound(shouldShowToast ? 'urgent' : 'default');
+
       if (shouldShowToast) {
         setLatestToast(notification);
 
@@ -129,6 +138,7 @@ export const NotificationBell: React.FC = () => {
     // Foreground FCM listener
     const unsubscribeFcm = onForegroundMessage((payload) => {
       if (!mounted) return;
+      void playNotificationSound('default');
       if (dropdownOpenRef.current) {
         void fetchNotificationsList();
       } else {
@@ -323,6 +333,28 @@ export const NotificationBell: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Sound Mute/Unmute Toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !soundEnabled;
+                  setSoundEnabled(next);
+                  setNotificationSoundEnabled(next);
+                  if (next) {
+                    void playNotificationSound('success');
+                  }
+                }}
+                className={`flex items-center gap-1 rounded-lg border px-1.5 py-1 text-xs font-bold transition-colors cursor-pointer ${
+                  soundEnabled
+                    ? 'border-cyan-700/60 bg-cyan-950/40 text-cyan-300 hover:bg-cyan-900/60'
+                    : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+                title={soundEnabled ? 'صوت الإشعارات مفعّل (انقر للكتم أو التجربة)' : 'صوت الإشعارات مكتوم (انقر للتفعيل)'}
+              >
+                <span className="text-xs">{soundEnabled ? '🔔' : '🔕'}</span>
+                <span className="text-[10px] hidden sm:inline">{soundEnabled ? 'صوت' : 'صامت'}</span>
+              </button>
+
               {count > 0 && (
                 <button
                   type="button"

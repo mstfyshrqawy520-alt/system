@@ -22,6 +22,11 @@ import {
   NotificationActionRoute,
 } from '../utils/notificationRouting';
 import { formatDateTime12h } from '../utils/dateTime';
+import {
+  playNotificationSound,
+  isNotificationSoundEnabled,
+  setNotificationSoundEnabled,
+} from '../utils/notificationSound';
 
 export type QuickFilterKey = 'ALL' | 'UNREAD' | 'READ' | 'TODAY' | 'LAST_10_DAYS' | 'NEEDS_ACTION' | 'COMPLETED' | 'RETURNED';
 
@@ -44,6 +49,7 @@ export const NotificationsPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [markingAll, setMarkingAll] = useState<boolean>(false);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => isNotificationSoundEnabled());
   const [actionStates, setActionStates] = useState<Record<number, StoredActionState>>({});
   const [executingId, setExecutingId] = useState<number | null>(null);
 
@@ -421,6 +427,27 @@ export const NotificationsPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => {
+              const next = !soundEnabled;
+              setSoundEnabled(next);
+              setNotificationSoundEnabled(next);
+              if (next) {
+                void playNotificationSound('success');
+              }
+            }}
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              soundEnabled
+                ? 'border-cyan-500/60 bg-cyan-950/40 text-cyan-300 hover:bg-cyan-900/60 shadow-xs'
+                : 'border-slate-700 bg-slate-900 text-slate-400 hover:text-slate-200'
+            }`}
+            title={soundEnabled ? 'صوت الإشعارات مفعّل (انقر للكتم أو اختبار الصوت)' : 'صوت الإشعارات مكتوم (انقر للتفعيل)'}
+          >
+            <span>{soundEnabled ? '🔔' : '🔕'}</span>
+            <span>{soundEnabled ? 'تجربة الصوت' : 'الصوت مكتوم'}</span>
+          </button>
+
           {unreadCount > 0 && (
             <Button
               variant="outline"
