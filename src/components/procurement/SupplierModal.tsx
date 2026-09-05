@@ -119,7 +119,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({ supplier, isOpen, 
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">كود المورد</label>
               <input
@@ -128,6 +128,16 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({ supplier, isOpen, 
                 value={code}
                 onChange={e => setCode(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">مسؤول التواصل / المندوب</label>
+              <input
+                type="text"
+                placeholder="مثال: أحمد جمال"
+                value={contactName}
+                onChange={e => setContactName(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
               />
             </div>
           </div>
