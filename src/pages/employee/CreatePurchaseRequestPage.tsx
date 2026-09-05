@@ -25,6 +25,7 @@ import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { useAuth } from '../../context/AuthContext';
 import { emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
 import { SearchableSelect } from '../../components/ui/FormField';
+import { PurchaseRequestItemsSummaryTable } from '../../components/purchase-requests/PurchaseRequestItemsSummaryTable';
 
 const UNIT_OPTIONS = getUnitOptions(['PCS', 'KG', 'TON', 'M', 'M2', 'M3', 'L', 'BAG', 'BOX', 'CARTON', 'SET', 'PAIR', 'UNIT', 'HOUR', 'DAY']);
 
@@ -596,6 +597,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
             return (
               <div
                 key={index}
+                id={`pr-item-card-${index}`}
                 className="rounded-xl border border-slate-800/90 bg-slate-950/60 p-4 space-y-3 transition-all hover:border-slate-700"
               >
                 <div className="flex items-center justify-between">
@@ -751,6 +753,21 @@ const CreatePurchaseRequestPage: React.FC = () => {
           + إضافة صنف أو مادة أخرى للطلب
         </Button>
       </Card>
+
+      {/* Real-time Items Summary Table (similar to quotes table) */}
+      <PurchaseRequestItemsSummaryTable
+        items={data.items}
+        requestType={data.request_type}
+        onRemoveItem={data.items.length > 1 ? removeItem : undefined}
+        onScrollToItem={(index) => {
+          const el = document.getElementById(`pr-item-card-${index}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('ring-2', 'ring-cyan-400');
+            setTimeout(() => el.classList.remove('ring-2', 'ring-cyan-400'), 1500);
+          }
+        }}
+      />
 
       {/* Bottom Submit & Action Bar */}
       <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 shadow-2xl backdrop-blur-sm">

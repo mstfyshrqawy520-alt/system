@@ -21,6 +21,7 @@ import { Card } from '../ui/Card';
 import { FormField, Input, Select, Textarea, SearchableSelect } from '../ui/FormField';
 import { getUnitLabel, getUnitOptions } from '../../utils/units';
 import { useAuth } from '../../context/AuthContext';
+import { PurchaseRequestItemsSummaryTable } from './PurchaseRequestItemsSummaryTable';
 
 const UNIT_OPTIONS = getUnitOptions(['PCS', 'KG', 'TON', 'M', 'M2', 'M3', 'L', 'BAG', 'BOX', 'CARTON', 'SET', 'PAIR', 'UNIT', 'HOUR', 'DAY']);
 
@@ -465,6 +466,7 @@ export const PurchaseRequestForm: React.FC<Props> = ({
           {items.map((item, index) => (
             <div
               key={index}
+              id={`pr-form-item-${index}`}
               className="relative space-y-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3 transition-all sm:p-4"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -588,6 +590,21 @@ export const PurchaseRequestForm: React.FC<Props> = ({
           ))}
         </div>
       </Card>
+
+      {/* Real-time Items Summary Table (similar to quotes table) */}
+      <PurchaseRequestItemsSummaryTable
+        items={items}
+        requestType={requestType}
+        onRemoveItem={items.length > 1 ? handleRemoveItem : undefined}
+        onScrollToItem={(index) => {
+          const el = document.getElementById(`pr-form-item-${index}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('ring-2', 'ring-cyan-400');
+            setTimeout(() => el.classList.remove('ring-2', 'ring-cyan-400'), 1500);
+          }
+        }}
+      />
 
       {/* Form الإجراءات */}
       <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
