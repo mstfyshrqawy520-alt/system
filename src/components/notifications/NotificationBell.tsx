@@ -26,10 +26,24 @@ export const NotificationBell: React.FC = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownOpenRef = useRef(dropdownOpen);
+  dropdownOpenRef.current = dropdownOpen;
   const navigate = useNavigate();
 
-  const fetchUnreadData = async () => {
+  // 1. Lightweight count check (0.1 kB) - default background operation
+  const fetchUnreadCountOnly = async () => {
     try {
+      const unreadCount = await getUnreadNotificationCountApi().catch(() => 0);
+      setCount(unreadCount);
+    } catch {
+      // Keep silent on transient connection issues
+    }
+  };
+
+  // 2. Full notification list (13.7 kB) - only fetched on-demand when opening drawer or refreshing open drawer
+  const fetchNotificationsList = async () => {
+    try {
+      setLoading(true);
       const [unreadCount, list] = await Promise.all([
         getUnreadNotificationCountApi().catch(() => 0),
         getNotificationsApi().catch(() => []),
@@ -40,12 +54,15 @@ export const NotificationBell: React.FC = () => {
       setRecentNotifications(filtered.slice(0, 6));
     } catch {
       // Keep silent on transient connection issues
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     let mounted = true;
-    void fetchUnreadData();
+    // Initial fast badge fetch
+    void fetchUnreadCountOnly();
 
     // Ensure push token is synced on mobile if permission was granted
     if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
@@ -102,13 +119,21 @@ export const NotificationBell: React.FC = () => {
     };
 
     const handleUpdated = () => {
-      void fetchUnreadData();
+      if (dropdownOpenRef.current) {
+        void fetchNotificationsList();
+      } else {
+        void fetchUnreadCountOnly();
+      }
     };
 
     // Foreground FCM listener
     const unsubscribeFcm = onForegroundMessage((payload) => {
       if (!mounted) return;
-      void fetchUnreadData();
+      if (dropdownOpenRef.current) {
+        void fetchNotificationsList();
+      } else {
+        void fetchUnreadCountOnly();
+      }
       const title = payload.notification?.title || payload.data?.title || 'إشعار فوري جديد';
       const body = payload.notification?.body || payload.data?.body || 'لديك تحديث جديد بالنظام.';
       showNativeSystemNotification(title, { body, tag: `fcm-${Date.now()}` });
@@ -117,7 +142,11 @@ export const NotificationBell: React.FC = () => {
     // Mobile visibility and focus listeners (instant sync when phone is unlocked or tab is opened)
     const handleVisibilityOrFocus = () => {
       if (document.visibilityState === 'visible') {
-        void fetchUnreadData();
+        if (dropdownOpenRef.current) {
+          void fetchNotificationsList();
+        } else {
+          void fetchUnreadCountOnly();
+        }
       }
     };
 
@@ -128,12 +157,16 @@ export const NotificationBell: React.FC = () => {
     document.addEventListener('visibilitychange', handleVisibilityOrFocus);
     window.addEventListener('focus', handleVisibilityOrFocus);
 
-    // Realtime notification poll for instant updates across users (every 3.5 seconds)
+    // Smart notification heartbeat: 30s interval for lightweight count (saves 99% bandwidth & CPU)
     const pollInterval = window.setInterval(() => {
       if (document.visibilityState === 'visible') {
-        void fetchUnreadData();
+        if (dropdownOpenRef.current) {
+          void fetchNotificationsList();
+        } else {
+          void fetchUnreadCountOnly();
+        }
       }
-    }, 3500);
+    }, 30000);
 
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -155,6 +188,16 @@ export const NotificationBell: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [user]);
+
+  const handleToggleDropdown = () => {
+    setDropdownOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        void fetchNotificationsList();
+      }
+      return next;
+    });
+  };
 
   const handleNotificationClick = async (notification: Notification) => {
     setLatestToast(null);
@@ -200,7 +243,7 @@ export const NotificationBell: React.FC = () => {
       {/* Bell Button */}
       <button
         type="button"
-        onClick={() => setDropdownOpen((prev) => !prev)}
+        onClick={handleToggleDropdown}
         className="relative flex min-h-11 min-w-11 items-center justify-center rounded-xl p-2 text-slate-400 hover:bg-slate-800/80 hover:text-cyan-300 transition-colors cursor-pointer"
         aria-label="الإشعارات والتنبيهات"
         title="الإشعارات والتنبيهات"

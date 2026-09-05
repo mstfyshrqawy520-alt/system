@@ -22,7 +22,7 @@ export const useRealtimeRefresh = (
     enabled?: boolean;
   } = {}
 ) => {
-  const { intervalMs = 3500, enabled = true } = options;
+  const { intervalMs = 30000, enabled = true } = options;
   const refreshRef = useRef(refreshFn);
   refreshRef.current = refreshFn;
 
