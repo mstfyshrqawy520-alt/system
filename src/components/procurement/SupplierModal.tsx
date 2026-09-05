@@ -94,7 +94,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({ supplier, isOpen, 
         
         <div className="bg-slate-800/90 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
           <h2 className="text-base font-bold text-slate-100">
-            {supplier ? `تعديل بيانيات المورد - ${supplier.company_name}` : 'إضافة مورد جديد للنظام'}
+            {supplier ? `تعديل بيانات المورد - ${supplier.company_name}` : 'إضافة مورد جديد للنظام'}
           </h2>
           <button type="button" onClick={onClose} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-900/60 text-2xl font-black leading-none text-slate-300 hover:border-cyan-400 hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/70" aria-label="إغلاق النافذة" title="إغلاق النافذة">
             ×
