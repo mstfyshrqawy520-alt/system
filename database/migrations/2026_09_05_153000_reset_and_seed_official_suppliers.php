@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use App\Models\Supplier;
 
 return new class extends Migration
 {
@@ -23,12 +22,11 @@ return new class extends Migration
         }
 
         if (Schema::hasTable('suppliers')) {
-            // Delete all existing suppliers
             DB::table('suppliers')->delete();
         }
 
-        // 2. Insert the 29 official suppliers
-        $suppliers = [
+        // 2. Prepare 29 official suppliers
+        $rawSuppliers = [
             // ==========================================
             // 1. قطاع الحديد
             // ==========================================
@@ -38,11 +36,7 @@ return new class extends Migration
                 'phone' => '01001160664',
                 'address' => 'المصانع',
                 'payment_terms' => 'توريد: كل الاماكن ماعدا الفردوس',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: حديد | أماكن التوريد: كل الاماكن ماعدا الفردوس',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'الحاج / مبروك رسلان',
@@ -50,11 +44,7 @@ return new class extends Migration
                 'phone' => '01040505519',
                 'address' => 'الفردوس',
                 'payment_terms' => 'توريد: الفردوس . وباقى الاماكن',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: حديد | أماكن التوريد: الفردوس . وباقى الاماكن',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'حسان',
@@ -62,11 +52,7 @@ return new class extends Migration
                 'phone' => '01280221172',
                 'address' => 'المصانع',
                 'payment_terms' => 'توريد: كل الاماكن ماعدا الفردوس',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: حديد | أماكن التوريد: كل الاماكن ماعدا الفردوس',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             // ==========================================
@@ -78,11 +64,7 @@ return new class extends Migration
                 'phone' => '01222413901',
                 'address' => 'م 35',
                 'payment_terms' => null,
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: أسمنت',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'أ . محمد النمس',
@@ -90,11 +72,7 @@ return new class extends Migration
                 'phone' => '01017726484',
                 'address' => 'م 29',
                 'payment_terms' => null,
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: أسمنت',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'محمود عرب النخيل 4&5',
@@ -102,11 +80,7 @@ return new class extends Migration
                 'phone' => '01221700310',
                 'address' => 'عرب النخيل 4 & 5',
                 'payment_terms' => 'توريد: النخيل 4 & 5',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: أسمنت | أماكن التوريد: النخيل 4 & 5',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             // ==========================================
@@ -118,11 +92,7 @@ return new class extends Migration
                 'phone' => null,
                 'address' => null,
                 'payment_terms' => 'توريد: الفردوس 1 & الزيتون 4&6',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: الفردوس 1 & الزيتون 4&6',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'سيف',
@@ -130,11 +100,7 @@ return new class extends Migration
                 'phone' => null,
                 'address' => null,
                 'payment_terms' => 'توريد: الفردوس 2',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: الفردوس 2',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'محمود سلطان',
@@ -142,11 +108,7 @@ return new class extends Migration
                 'phone' => null,
                 'address' => null,
                 'payment_terms' => 'توريد: الفردوس 2',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: الفردوس 2',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'أبو مهند',
@@ -154,11 +116,7 @@ return new class extends Migration
                 'phone' => null,
                 'address' => null,
                 'payment_terms' => 'توريد: الفردوس 3',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: الفردوس 3',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'جمعة',
@@ -166,11 +124,7 @@ return new class extends Migration
                 'phone' => null,
                 'address' => null,
                 'payment_terms' => 'توريد: الفردوس 3',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: الفردوس 3',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'الحاج عطية',
@@ -178,11 +132,7 @@ return new class extends Migration
                 'phone' => null,
                 'address' => null,
                 'payment_terms' => 'توريد: النخيل 1& 2',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: النخيل 1& 2',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'محجوب',
@@ -190,11 +140,7 @@ return new class extends Migration
                 'phone' => null,
                 'address' => null,
                 'payment_terms' => 'توريد: النخيل 3 & 6',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: النخيل 3 & 6',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'مهدى',
@@ -202,11 +148,7 @@ return new class extends Migration
                 'phone' => null,
                 'address' => null,
                 'payment_terms' => 'توريد: النخيل 3 & 6',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: النخيل 3 & 6',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'أبو أدم 1',
@@ -214,11 +156,7 @@ return new class extends Migration
                 'phone' => '01221700310',
                 'address' => null,
                 'payment_terms' => 'توريد: النخيل 4 & 5',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: النخيل 4 & 5',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'محاسب أحمد 1',
@@ -226,11 +164,7 @@ return new class extends Migration
                 'phone' => null,
                 'address' => null,
                 'payment_terms' => 'توريد: النرجس 1',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: النرجس 1',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'محاسب أحمد 2',
@@ -238,11 +172,7 @@ return new class extends Migration
                 'phone' => null,
                 'address' => null,
                 'payment_terms' => 'توريد: النرجس 4',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: النرجس 4',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'أبو مازن',
@@ -250,11 +180,7 @@ return new class extends Migration
                 'phone' => null,
                 'address' => null,
                 'payment_terms' => 'توريد: النرجس 6',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: النرجس 6',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'حنفى',
@@ -262,11 +188,7 @@ return new class extends Migration
                 'phone' => null,
                 'address' => null,
                 'payment_terms' => 'توريد: النرجس 7',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: النرجس 7',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'محمود',
@@ -274,11 +196,7 @@ return new class extends Migration
                 'phone' => null,
                 'address' => null,
                 'payment_terms' => 'توريد: الزيتون 1 & 2',
-                'opening_balance' => 0.00,
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: الزيتون 1 & 2',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'طلبة',
@@ -287,9 +205,6 @@ return new class extends Migration
                 'address' => null,
                 'payment_terms' => 'توريد: الزيتون 3 & 5',
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: الزيتون 3 & 5',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'باهر',
@@ -298,9 +213,6 @@ return new class extends Migration
                 'address' => null,
                 'payment_terms' => 'توريد: الكوثر 1',
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: الكوثر 1',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'أبو مالك 2',
@@ -309,9 +221,6 @@ return new class extends Migration
                 'address' => null,
                 'payment_terms' => 'توريد: الكوثر 6',
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: الكوثر 6',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'سعيد',
@@ -320,9 +229,6 @@ return new class extends Migration
                 'address' => null,
                 'payment_terms' => 'توريد: الكوثر 4',
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: الكوثر 4',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'أبو أدم 2',
@@ -331,9 +237,6 @@ return new class extends Migration
                 'address' => null,
                 'payment_terms' => 'توريد: الكوثر 5',
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: الكوثر 5',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'عبد الرحمن',
@@ -342,9 +245,6 @@ return new class extends Migration
                 'address' => null,
                 'payment_terms' => 'توريد: باقى 29 & 21 & 22',
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: باقى 29 & 21 & 22',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'محمد النمس',
@@ -353,9 +253,6 @@ return new class extends Migration
                 'address' => null,
                 'payment_terms' => 'توريد: جزء فى ال 29',
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: جزء فى ال 29',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'أبو عدى',
@@ -364,9 +261,6 @@ return new class extends Migration
                 'address' => null,
                 'payment_terms' => 'توريد: 35',
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: 35',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'company_name' => 'حامد',
@@ -375,13 +269,29 @@ return new class extends Migration
                 'address' => null,
                 'payment_terms' => 'توريد: 36',
                 'opening_balance_notes' => 'النشاط: سن ورمل | أماكن التوريد: 36',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
         ];
 
-        DB::table('suppliers')->insert($suppliers);
+        $now = now();
+        $normalizedSuppliers = array_map(function ($s) use ($now) {
+            return [
+                'company_name' => $s['company_name'],
+                'contact_name' => $s['contact_name'] ?? null,
+                'email' => $s['email'] ?? null,
+                'phone' => $s['phone'] ?? null,
+                'address' => $s['address'] ?? null,
+                'payment_terms' => $s['payment_terms'] ?? null,
+                'opening_balance' => 0.00,
+                'opening_balance_notes' => $s['opening_balance_notes'] ?? null,
+                'is_active' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }, $rawSuppliers);
+
+        foreach ($normalizedSuppliers as $supplier) {
+            DB::table('suppliers')->insert($supplier);
+        }
 
         Schema::enableForeignKeyConstraints();
     }
