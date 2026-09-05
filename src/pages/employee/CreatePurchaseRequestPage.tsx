@@ -276,6 +276,18 @@ const CreatePurchaseRequestPage: React.FC = () => {
     setData({ ...data, items: [...data.items, emptyItem()] });
   };
 
+  const duplicateItem = (index: number) => {
+    const itemToClone = data.items[index];
+    if (!itemToClone) return;
+    const cloned: PurchaseRequestItemFormInput = {
+      ...itemToClone,
+      quantity: 1,
+    };
+    const newItems = [...data.items];
+    newItems.splice(index + 1, 0, cloned);
+    setData({ ...data, items: newItems });
+  };
+
   const removeItem = (index: number) => {
     if (data.items.length <= 1) return;
     setData({ ...data, items: data.items.filter((_, i) => i !== index) });
@@ -363,28 +375,80 @@ const CreatePurchaseRequestPage: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 pb-12" dir="rtl">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-4">
-        <div>
-          <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-cyan-400">
-            <span>{isGeneralManager ? 'المدير العام' : 'منشئ الطلب'}</span>
-            <span className="text-slate-600">/</span>
-            <span>طلب شراء جديد</span>
+    <div className="mx-auto max-w-6xl space-y-6 pb-24" dir="rtl">
+      {/* Sticky Action Header on Scroll */}
+      <div className="sticky top-2 z-40 rounded-2xl border border-slate-700/80 bg-slate-950/90 p-3.5 shadow-2xl backdrop-blur-md transition-all">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-cyan-500/40 text-xl shadow-inner">
+              ✍️
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-black text-slate-100">
+                  {isGeneralManager ? 'طلب شراء تنفيذي جديد' : 'إنشاء وإرسال طلب شراء'}
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-900 border border-slate-700 text-slate-300">
+                  <span className={`h-2 w-2 rounded-full ${requestHasErrors ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}`} />
+                  {requestHasErrors ? 'بانتظار استكمال الحقول' : 'جاهز للإرسال الفوري'}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-0.5">
+                <span>📦 البنود: <strong className="text-cyan-300">{data.items.length} صنف</strong></span>
+                <span className="text-slate-600">•</span>
+                <span>
+                  النوع: <strong className={isOffice ? 'text-indigo-300' : 'text-amber-300'}>
+                    {isOffice ? '🏢 مكتبي' : '🏗️ مشروع/موقع'}
+                  </strong>
+                </span>
+                {draftMessage && (
+                  <>
+                    <span className="text-slate-600">•</span>
+                    <span className="text-emerald-400 font-bold flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      {draftMessage}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
-          <h1 className="text-xl font-black text-slate-100 flex items-center gap-2">
-            <span>✍️</span> إنشاء وإرسال طلب شراء
-          </h1>
-          <p className="mt-1 text-xs text-slate-400">
-            اختر نوع الطلب، وأدخل بيانات المواد المطلوبة، ثم اضغط على إرسال الطلب مباشرة لبدء دورة الاعتماد.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link to="/requests">
-            <Button type="button" variant="secondary" size="sm">
-              ← أرشيف طلباتي
+
+          <div className="flex items-center gap-2">
+            <Link to="/requests">
+              <Button type="button" variant="secondary" size="sm" className="text-xs">
+                ← أرشيف طلباتي
+              </Button>
+            </Link>
+
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={handleSaveDraft}
+              disabled={isSubmitting || isSavingDraft}
+              isLoading={isSavingDraft}
+              className="text-xs border-slate-700 hover:border-slate-500"
+            >
+              💾 مسودة
             </Button>
-          </Link>
+
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => void handleSubmit()}
+              disabled={isSubmitting || isSavingDraft}
+              isLoading={isSubmitting}
+              className={`text-xs px-4 font-bold shadow-lg transition-all ${
+                requestHasErrors
+                  ? 'bg-cyan-700 hover:bg-cyan-600 border-cyan-600/50'
+                  : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 border-emerald-500 text-white shadow-emerald-950/40 ring-2 ring-emerald-500/30 animate-pulse'
+              }`}
+            >
+              🚀 {isGeneralManager ? 'إرسال مباشر للمشتريات' : 'إرسال الطلب فوراً'}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -660,186 +724,303 @@ const CreatePurchaseRequestPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Card 2: Items List */}
-      <Card className="space-y-4 border-slate-800 bg-slate-900/90 p-5 sm:p-6 shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      {/* Card 2: Items List - Compact Spreadsheet Table */}
+      <Card className="space-y-4 border-slate-800 bg-slate-900/90 p-4 sm:p-6 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
           <div>
-            <h2 className="text-sm font-black text-slate-100 flex items-center gap-2">
-              <span className="text-cyan-400">📦</span> 2. بنود ومواد الطلب ({data.items.length})
-            </h2>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              {isOffice
-                ? 'أدخل الأصناف المكتبية، الكميات المطلوبة، ومكان الاستلام الداخلي.'
-                : 'أدخل الأصناف، أرقام قطع الأراضي، المناطق، والكميات المطلوبة.'}
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-black text-slate-100 flex items-center gap-2">
+                <span className="text-cyan-400">📦</span> 2. جدول إدخال البنود والمواد السريع
+              </h2>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-800/60 text-cyan-300">
+                {data.items.length} {data.items.length === 1 ? 'بند' : 'بنود'}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">
+              إدخال أفقي سريع بنمط جدول إكسيل (Compact Spreadsheet) مع تكرار وإضافة الأصناف بنقرة واحدة.
             </p>
           </div>
-          <Button type="button" variant="secondary" size="sm" onClick={addItem} className="text-xs">
-            + إضافة صنف آخر
-          </Button>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={addItem}
+              className="text-xs bg-cyan-600 hover:bg-cyan-500 border-cyan-500 font-bold px-3 py-1.5 flex items-center gap-1.5 shadow-md shadow-cyan-950/40"
+            >
+              <span>+</span> إضافة صنف جديد
+            </Button>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          {data.items.map((item, index) => {
-            const itemErr = showValidation ? validation.items[index] : undefined;
+        {/* Quick Picks for Common Items */}
+        <div className="flex flex-wrap items-center gap-1.5 text-xs bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/70">
+          <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 ml-1">
+            <span>⚡</span> أصناف شائعة:
+          </span>
+          {isOffice ? (
+            <>
+              {['ورق تصوير A4 80 جم', 'أقلام جاف أزرق', 'حبر طابعة HP أسود', 'ملفات بلاستيك دوسيه', 'ضيافة وبوفيه'].map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() => {
+                    const lastIdx = data.items.length - 1;
+                    if (lastIdx >= 0 && !data.items[lastIdx].item_description.trim()) {
+                      updateItem(lastIdx, { item_description: chip });
+                    } else {
+                      setData({ ...data, items: [...data.items, { ...emptyItem(), item_description: chip }] });
+                    }
+                  }}
+                  className="text-[11px] px-2.5 py-1 rounded-lg bg-indigo-950/60 border border-indigo-800/50 text-indigo-300 hover:bg-indigo-900/60 hover:text-white transition-all font-medium"
+                >
+                  + {chip}
+                </button>
+              ))}
+            </>
+          ) : (
+            <>
+              {['حديد تسليح 16 مم', 'حديد تسليح 12 مم', 'أسمنت بورتلاندي عادي', 'خرسانة جاهزة عيار 350', 'طوب أسمنتي مصمت', 'رمل ناعم'].map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() => {
+                    const lastIdx = data.items.length - 1;
+                    if (lastIdx >= 0 && !data.items[lastIdx].item_description.trim()) {
+                      updateItem(lastIdx, { item_description: chip });
+                    } else {
+                      setData({ ...data, items: [...data.items, { ...emptyItem(), item_description: chip }] });
+                    }
+                  }}
+                  className="text-[11px] px-2.5 py-1 rounded-lg bg-amber-950/60 border border-amber-800/50 text-amber-300 hover:bg-amber-900/60 hover:text-white transition-all font-medium"
+                >
+                  + {chip}
+                </button>
+              ))}
+            </>
+          )}
+        </div>
 
-            return (
-              <div
-                key={index}
-                id={`pr-item-card-${index}`}
-                className="rounded-xl border border-slate-800/90 bg-slate-950/60 p-4 space-y-3 transition-all hover:border-slate-700"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-xs font-black text-cyan-300">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cyan-950 border border-cyan-700 text-[10px]">
-                      {index + 1}
-                    </span>
-                    {item.item_description || `بند جديد رقم ${index + 1}`}
-                  </span>
-
-                  {data.items.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeItem(index)}
-                      className="text-xs font-bold text-rose-400 hover:text-rose-300 px-2 py-1 rounded hover:bg-rose-950/40 transition-colors"
-                      title="حذف هذا البند"
-                    >
-                      🗑️ حذف البند
-                    </button>
-                  )}
-                </div>
-
-                {catalogItems.length > 0 && (
-                  <div className="text-xs">
-                    <label className="block text-[11px] font-bold text-slate-400 mb-1">
-                      اختيار سريع من دليل الأصناف (اختياري)
-                    </label>
-                    <SearchableSelect
-                      options={catalogSelectOptions}
-                      value={item.item_id || ''}
-                      onChange={(val) => handleCatalogSelect(index, val ? Number(val) : '')}
-                      clearable
-                      onClear={() => handleCatalogSelect(index, '')}
-                      placeholder="-- ابحث في كتالوج الأصناف... --"
-                      searchPlaceholder="ابحث باسم الصنف أو الكود..."
-                      emptyMessage="لا يوجد صنف بهذا الاسم في الكتالوج"
-                    />
-                  </div>
+        {/* Compact Spreadsheet Table Container */}
+        <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60 shadow-inner">
+          <table className="w-full text-right text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-slate-800 bg-slate-900/90 text-slate-400 text-[11px] font-bold">
+                <th className="p-3 w-10 text-center">م</th>
+                <th className="p-3 min-w-[200px]">
+                  وصف الصنف / المادة <span className="text-rose-400">*</span>
+                </th>
+                <th className="p-3 min-w-[130px]">
+                  {isOffice ? 'مكان الاستلام' : 'رقم القطعة *'}
+                </th>
+                {!isOffice && (
+                  <th className="p-3 min-w-[130px]">
+                    المنطقة <span className="text-rose-400">*</span>
+                  </th>
                 )}
+                <th className="p-3 w-24">
+                  الكمية <span className="text-rose-400">*</span>
+                </th>
+                <th className="p-3 w-28">الوحدة</th>
+                <th className="p-3 min-w-[160px]">المواصفات الفنية</th>
+                <th className="p-3 w-20 text-center">إجراءات</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {data.items.map((item, index) => {
+                const itemErr = validation.items[index];
+                const hasItemError = Boolean(itemErr && (itemErr.description || itemErr.reference || itemErr.region || itemErr.quantity));
 
-                <div className={`grid grid-cols-1 gap-3 ${isOffice ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
-                  <div className={isOffice ? 'sm:col-span-1' : 'sm:col-span-1'}>
-                    <FormField label="وصف الصنف / المادة" required error={itemErr?.description}>
-                      <Input
-                        type="text"
-                        value={item.item_description}
-                        onChange={(e) => updateItem(index, { item_description: e.target.value })}
-                        placeholder={isOffice ? 'مثال: طابعة ليزر ملونة / كرتونة ورق A4 / أقلام...' : 'مثال: حديد تسليح 16مم، خرسانة جاهزة...'}
-                        error={Boolean(itemErr?.description)}
-                      />
-                    </FormField>
-                  </div>
+                return (
+                  <tr
+                    key={index}
+                    id={`pr-item-card-${index}`}
+                    className={`transition-colors hover:bg-slate-900/50 ${
+                      hasItemError && showValidation ? 'bg-rose-950/20' : index % 2 === 0 ? 'bg-slate-950/30' : 'bg-slate-900/20'
+                    }`}
+                  >
+                    {/* Index */}
+                    <td className="p-2.5 text-center font-mono font-bold text-slate-400">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-cyan-300">
+                        {index + 1}
+                      </span>
+                    </td>
 
-                  {isOffice ? (
-                    <div>
-                      <FormField label="مكتب / مكان الاستلام الداخلي (اختياري)">
-                        <Input
+                    {/* Item Description */}
+                    <td className="p-2.5 align-top">
+                      <div className="space-y-1">
+                        <input
+                          type="text"
+                          value={item.item_description}
+                          onChange={(e) => updateItem(index, { item_description: e.target.value })}
+                          placeholder={isOffice ? 'مثال: ورق A4 80جم، حبر HP...' : 'مثال: حديد تسليح، خرسانة...'}
+                          className={`w-full rounded-lg bg-slate-900 border px-2.5 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 ${
+                            itemErr?.description && (showValidation || item.item_description.length > 0)
+                              ? 'border-rose-500/80 focus:ring-rose-500'
+                              : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/40'
+                          }`}
+                        />
+                        {itemErr?.description && showValidation && (
+                          <span className="text-[10px] text-rose-400 block font-semibold leading-tight">
+                            ⚠️ {itemErr.description}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Item Reference (Plot # or Office Room) */}
+                    <td className="p-2.5 align-top">
+                      <div className="space-y-1">
+                        <input
                           type="text"
                           value={item.item_reference || ''}
                           onChange={(e) => {
-                            updateItem(index, {
-                              item_reference: e.target.value,
-                              region: e.target.value || 'مقر الشركة',
-                            });
+                            if (isOffice) {
+                              updateItem(index, { item_reference: e.target.value, region: e.target.value || 'مقر الشركة' });
+                            } else {
+                              updateItem(index, { item_reference: e.target.value });
+                            }
                           }}
-                          placeholder="افتراضي: مقر الشركة / مكتب مقدم الطلب"
+                          placeholder={isOffice ? 'مقر الشركة' : 'مثال: 256 أو A-14'}
+                          className={`w-full rounded-lg bg-slate-900 border px-2.5 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 ${
+                            !isOffice && itemErr?.reference && (showValidation || (item.item_reference && item.item_reference.length > 0))
+                              ? 'border-rose-500/80 focus:ring-rose-500'
+                              : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/40'
+                          }`}
                         />
-                      </FormField>
-                    </div>
-                  ) : (
-                    <>
-                      <div>
-                        <FormField label="رقم قطعة الأرض" required error={itemErr?.reference}>
-                          <Input
-                            type="text"
-                            value={item.item_reference || ''}
-                            onChange={(e) => updateItem(index, { item_reference: e.target.value })}
-                            placeholder="مثال: 256 أو A-14"
-                            error={Boolean(itemErr?.reference)}
-                          />
-                        </FormField>
+                        {!isOffice && itemErr?.reference && showValidation && (
+                          <span className="text-[10px] text-rose-400 block font-semibold leading-tight">
+                            ⚠️ {itemErr.reference}
+                          </span>
+                        )}
                       </div>
+                    </td>
 
-                      <div>
-                        <FormField label="المنطقة" required error={itemErr?.region}>
-                          <Input
+                    {/* Region (Projects only) */}
+                    {!isOffice && (
+                      <td className="p-2.5 align-top">
+                        <div className="space-y-1">
+                          <input
                             type="text"
                             value={item.region || ''}
                             onChange={(e) => updateItem(index, { region: e.target.value })}
-                            placeholder="مثال: المنطقة السابعة..."
-                            error={Boolean(itemErr?.region)}
+                            placeholder="مثال: المنطقة السابعة"
+                            className={`w-full rounded-lg bg-slate-900 border px-2.5 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 ${
+                              itemErr?.region && (showValidation || (item.region && item.region.length > 0))
+                                ? 'border-rose-500/80 focus:ring-rose-500'
+                                : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/40'
+                            }`}
                           />
-                        </FormField>
+                          {itemErr?.region && showValidation && (
+                            <span className="text-[10px] text-rose-400 block font-semibold leading-tight">
+                              ⚠️ {itemErr.region}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    )}
+
+                    {/* Quantity */}
+                    <td className="p-2.5 align-top">
+                      <div className="space-y-1">
+                        <input
+                          type="number"
+                          min="0.01"
+                          step="any"
+                          value={item.quantity === 0 ? '' : (item.quantity ?? '')}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => updateItem(index, { quantity: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
+                          placeholder="1"
+                          className={`w-full text-center font-mono font-bold rounded-lg bg-slate-900 border px-2 py-1.5 text-xs text-amber-300 placeholder-slate-500 focus:outline-none focus:ring-1 ${
+                            itemErr?.quantity && showValidation
+                              ? 'border-rose-500/80 focus:ring-rose-500'
+                              : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/40'
+                          }`}
+                        />
+                        {itemErr?.quantity && showValidation && (
+                          <span className="text-[10px] text-rose-400 block font-semibold text-center leading-tight">
+                            ⚠️ خطأ
+                          </span>
+                        )}
                       </div>
-                    </>
-                  )}
-                </div>
+                    </td>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <div>
-                    <FormField label="الكمية المطلوبة" required error={itemErr?.quantity}>
-                      <Input
-                        type="number"
-                        min="0.01"
-                        step="any"
-                        value={item.quantity === 0 ? '' : (item.quantity ?? '')}
-                        onFocus={(e) => e.target.select()}
-                        onChange={(e) => updateItem(index, { quantity: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
-                        placeholder="1"
-                        error={Boolean(itemErr?.quantity)}
-                      />
-                    </FormField>
-                  </div>
-
-                  <div>
-                    <FormField label="وحدة القياس">
-                      <Select
+                    {/* Unit */}
+                    <td className="p-2.5 align-top">
+                      <select
                         value={item.uom}
                         onChange={(e) => updateItem(index, { uom: e.target.value })}
+                        className="w-full rounded-lg bg-slate-900 border border-slate-800 px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
                       >
                         {UNIT_OPTIONS.map((opt) => (
                           <option key={opt.value} value={opt.value}>
                             {opt.label}
                           </option>
                         ))}
-                      </Select>
-                    </FormField>
-                  </div>
+                      </select>
+                    </td>
 
-                  <div>
-                    <FormField label="المواصفات الفنية (اختياري)">
-                      <Input
+                    {/* Specifications */}
+                    <td className="p-2.5 align-top">
+                      <input
                         type="text"
                         value={item.specifications || ''}
                         onChange={(e) => updateItem(index, { specifications: e.target.value })}
-                        placeholder="مثال: ماركة HP، دقة الطباعة، أبعاد..."
+                        placeholder="ماركة، دقة، أبعاد..."
+                        className="w-full rounded-lg bg-slate-900 border border-slate-800 px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
                       />
-                    </FormField>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="p-2.5 align-top text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => duplicateItem(index)}
+                          className="p-1.5 text-slate-400 hover:text-cyan-300 hover:bg-slate-800/80 rounded-lg transition-colors"
+                          title="نسخ وتكرار هذا البند بنفس البيانات"
+                        >
+                          📋
+                        </button>
+                        {data.items.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeItem(index)}
+                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors"
+                            title="حذف هذا البند"
+                          >
+                            🗑️
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
 
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={addItem}
-          className="w-full py-2.5 border-dashed border-slate-700 hover:border-cyan-500/70"
-        >
-          + إضافة صنف أو مادة أخرى للطلب
-        </Button>
+        {/* Quick add bottom bar */}
+        <div className="flex items-center justify-between pt-1">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={addItem}
+            className="text-xs border-dashed border-slate-700 hover:border-cyan-500/70 hover:text-cyan-300 px-4 py-2"
+          >
+            + إضافة سطر صنف آخر (Add Row)
+          </Button>
+
+          <div className="text-[11px] text-slate-400 font-mono">
+            إجمالي الأصناف: <strong className="text-cyan-300 font-bold">{data.items.length}</strong> | إجمالي الكميات:{' '}
+            <strong className="text-amber-300 font-bold">
+              {data.items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0)}
+            </strong>
+          </div>
+        </div>
       </Card>
 
       {/* Real-time Items Summary Table (similar to quotes table) */}
