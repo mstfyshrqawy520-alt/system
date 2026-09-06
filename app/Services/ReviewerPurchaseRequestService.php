@@ -208,7 +208,7 @@ class ReviewerPurchaseRequestService
                 throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.');
             }
 
-            $allowedFields = ['priority', 'date_needed', 'notes'];
+            $allowedFields = ['priority', 'date_needed', 'notes', 'parcel_reference', 'region', 'land_parcel_id'];
             $updateFields = [];
 
             foreach ($allowedFields as $field) {
@@ -234,6 +234,13 @@ class ReviewerPurchaseRequestService
 
             if (! empty($updateFields)) {
                 $pr->update($updateFields);
+
+                if (isset($updateFields['parcel_reference']) || isset($updateFields['region'])) {
+                    $pr->items()->update([
+                        'item_reference' => $pr->parcel_reference,
+                        'region' => $pr->region,
+                    ]);
+                }
             }
 
             return $pr->fresh(['requester', 'department', 'targetDepartment.manager', 'targetDepartment.siteEngineer', 'assignedReviewer', 'siteEngineer', 'items.item', 'approvalHistory.actor']);
@@ -273,7 +280,8 @@ class ReviewerPurchaseRequestService
             [$itemReference, $region] = $this->requireReferenceFields(
                 array_key_exists('item_reference', $data) ? $data['item_reference'] : $prItem->item_reference,
                 array_key_exists('region', $data) ? $data['region'] : $prItem->region,
-                'item'
+                'item',
+                $pr->isOfficeRequest()
             );
 
             $trackFields = [
@@ -335,10 +343,13 @@ class ReviewerPurchaseRequestService
             }
 
             $qty = (float) $data['quantity'];
+            $itemReference = !empty($data['item_reference']) ? $data['item_reference'] : $pr->parcel_reference;
+            $region = !empty($data['region']) ? $data['region'] : $pr->region;
             [$itemReference, $region] = $this->requireReferenceFields(
-                $data['item_reference'] ?? null,
-                $data['region'] ?? null,
-                'item'
+                $itemReference,
+                $region,
+                'item',
+                $pr->isOfficeRequest()
             );
 
             $newItem = $pr->items()->create([
@@ -549,10 +560,17 @@ class ReviewerPurchaseRequestService
     /**
      * Validate and normalize fields required for item traceability.
      */
-    private function requireReferenceFields($itemReference, $region, string $key): array
+    private function requireReferenceFields($itemReference, $region, string $key, bool $isOffice = false): array
     {
         $itemReference = trim((string) ($itemReference ?? ''));
         $region = trim((string) ($region ?? ''));
+
+        if ($isOffice) {
+            if ($itemReference === '') $itemReference = 'مقر الشركة';
+            if ($region === '') $region = 'إداري / المقر الرئيسي';
+            return [$itemReference, $region];
+        }
+
         $errors = [];
 
         if ($itemReference === '') {

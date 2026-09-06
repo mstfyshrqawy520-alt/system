@@ -5,6 +5,8 @@ import { getUnitLabel } from '../../utils/units';
 interface Props {
   items: PurchaseRequestItemFormInput[];
   requestType?: PurchaseRequestType;
+  parcelReference?: string;
+  region?: string;
   onRemoveItem?: (index: number) => void;
   onScrollToItem?: (index: number) => void;
   className?: string;
@@ -13,6 +15,8 @@ interface Props {
 export const PurchaseRequestItemsSummaryTable: React.FC<Props> = ({
   items,
   requestType = 'PROJECT',
+  parcelReference,
+  region,
   onRemoveItem,
   onScrollToItem,
   className = '',
@@ -27,8 +31,10 @@ export const PurchaseRequestItemsSummaryTable: React.FC<Props> = ({
   const validItemsCount = items.filter((item) => {
     const hasDesc = Boolean(item.item_description?.trim());
     const hasQty = (Number(item.quantity) || 0) > 0;
+    const effParcel = item.item_reference?.trim() || parcelReference?.trim();
+    const effRegion = item.region?.trim() || region?.trim();
     if (isOffice) return hasDesc && hasQty;
-    return hasDesc && hasQty && Boolean(item.item_reference?.trim()) && Boolean(item.region?.trim());
+    return hasDesc && hasQty && Boolean(effParcel) && Boolean(effRegion);
   }).length;
 
   const isAllValid = totalItemsCount > 0 && validItemsCount === totalItemsCount;
@@ -93,10 +99,12 @@ export const PurchaseRequestItemsSummaryTable: React.FC<Props> = ({
           {/* ========================================================= */}
           <div className="space-y-3 block md:hidden">
             {items.map((item, index) => {
+              const effParcel = item.item_reference?.trim() || parcelReference?.trim();
+              const effRegion = item.region?.trim() || region?.trim();
               const isItemValid =
                 Boolean(item.item_description?.trim()) &&
                 (Number(item.quantity) || 0) > 0 &&
-                (isOffice || (Boolean(item.item_reference?.trim()) && Boolean(item.region?.trim())));
+                (isOffice || (Boolean(effParcel) && Boolean(effRegion)));
 
               return (
                 <div
@@ -148,8 +156,8 @@ export const PurchaseRequestItemsSummaryTable: React.FC<Props> = ({
                         {isOffice ? 'مكان الاستلام' : 'قطعة الأرض'}
                       </span>
                       <strong className="font-mono text-cyan-300 font-bold truncate mt-0.5">
-                        {item.item_reference?.trim()
-                          ? item.item_reference
+                        {effParcel
+                          ? effParcel
                           : isOffice
                           ? 'مقر الشركة'
                           : '⚠️ غير محدد'}
@@ -159,8 +167,8 @@ export const PurchaseRequestItemsSummaryTable: React.FC<Props> = ({
                     <div className="rounded-lg bg-slate-900/90 border border-slate-800 px-2.5 py-1.5 flex flex-col">
                       <span className="text-[10px] text-slate-400">المنطقة</span>
                       <strong className="text-slate-200 font-medium truncate mt-0.5">
-                        {item.region?.trim()
-                          ? item.region
+                        {effRegion
+                          ? effRegion
                           : isOffice
                           ? 'إداري'
                           : '⚠️ غير محددة'}
@@ -227,10 +235,12 @@ export const PurchaseRequestItemsSummaryTable: React.FC<Props> = ({
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-slate-200">
                 {items.map((item, index) => {
+                  const effParcel = item.item_reference?.trim() || parcelReference?.trim();
+                  const effRegion = item.region?.trim() || region?.trim();
                   const isItemValid =
                     Boolean(item.item_description?.trim()) &&
                     (Number(item.quantity) || 0) > 0 &&
-                    (isOffice || (Boolean(item.item_reference?.trim()) && Boolean(item.region?.trim())));
+                    (isOffice || (Boolean(effParcel) && Boolean(effRegion)));
 
                   return (
                     <tr
@@ -266,9 +276,9 @@ export const PurchaseRequestItemsSummaryTable: React.FC<Props> = ({
 
                       {/* Reference / Parcel */}
                       <td className="px-3 py-2.5 whitespace-nowrap">
-                        {item.item_reference?.trim() ? (
+                        {effParcel ? (
                           <span className="inline-block rounded-md bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.5 font-mono text-cyan-300 font-bold text-[11px]">
-                            {item.item_reference}
+                            {effParcel}
                           </span>
                         ) : isOffice ? (
                           <span className="text-slate-400 text-[11px]">مقر الشركة</span>
@@ -279,8 +289,8 @@ export const PurchaseRequestItemsSummaryTable: React.FC<Props> = ({
 
                       {/* Region */}
                       <td className="px-3 py-2.5 whitespace-nowrap">
-                        {item.region?.trim() ? (
-                          <span className="text-slate-300 font-medium">{item.region}</span>
+                        {effRegion ? (
+                          <span className="text-slate-300 font-medium">{effRegion}</span>
                         ) : isOffice ? (
                           <span className="text-slate-400 text-[11px]">إداري</span>
                         ) : (

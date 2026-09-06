@@ -5,6 +5,7 @@ import ErrorMessage from '../ErrorMessage';
 import LoadingSpinner from '../LoadingSpinner';
 import { getCatalogItemsApi } from '../../api/catalog';
 import { getPurchaseRequestDepartmentOptionsApi, getSiteEngineerReceiverOptionsApi } from '../../api/purchaseRequests';
+import { getLandParcelsApi, LandParcel } from '../../api/supplierFinance';
 import { ApiError } from '../../types/api';
 import {
   CatalogItem,
@@ -52,6 +53,16 @@ export const PurchaseRequestForm: React.FC<Props> = ({
   const [requestType, setRequestType] = useState<PurchaseRequestType>(initialData?.request_type || 'PROJECT');
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState<boolean>(true);
+  const [landParcels, setLandParcels] = useState<LandParcel[]>([]);
+  const [parcelReference, setParcelReference] = useState<string>(
+    initialData?.parcel_reference || initialData?.items?.[0]?.item_reference || ''
+  );
+  const [region, setRegion] = useState<string>(
+    initialData?.region || initialData?.items?.[0]?.region || ''
+  );
+  const [landParcelId, setLandParcelId] = useState<number | ''>(
+    initialData?.land_parcel_id || ''
+  );
   const [departmentOptions, setDepartmentOptions] = useState<DepartmentOption[]>([]);
   const [isLoadingDepartments, setIsLoadingDepartments] = useState<boolean>(true);
 
@@ -66,7 +77,7 @@ export const PurchaseRequestForm: React.FC<Props> = ({
   const [items, setItems] = useState<PurchaseRequestItemFormInput[]>([]);
   const [error, setError] = useState<ApiError | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const isDirty = !initialData && Boolean(targetDepartmentId || notes.trim() || items.some((item) => item.item_description.trim() || item.item_reference?.trim() || item.region?.trim() || Number(item.quantity) !== 1));
+  const isDirty = !initialData && Boolean(targetDepartmentId || parcelReference.trim() || region.trim() || notes.trim() || items.some((item) => item.item_description.trim() || Number(item.quantity) !== 1));
   useUnsavedChangesWarning(isDirty && !isSubmitting);
 
   useEffect(() => {
@@ -118,9 +129,20 @@ export const PurchaseRequestForm: React.FC<Props> = ({
   }, [isGeneralManager]);
 
   useEffect(() => {
+    getLandParcelsApi()
+      .then((data) => setLandParcels(data))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     setTargetDepartmentId(initialData?.target_department_id || initialData?.department?.id || '');
     if (initialData?.site_engineer?.id) {
       setSiteEngineerUserId(initialData.site_engineer.id);
+    }
+    if (initialData) {
+      setParcelReference(initialData.parcel_reference || initialData.items?.[0]?.item_reference || '');
+      setRegion(initialData.region || initialData.items?.[0]?.region || '');
+      setLandParcelId(initialData.land_parcel_id || '');
     }
     const today = getTodayDateInputValue();
     if (initialData?.date_needed) {
@@ -237,6 +259,15 @@ export const PurchaseRequestForm: React.FC<Props> = ({
       nextFieldErrors.siteEngineer = 'يجب على المدير التنفيذي تحديد مسؤول الاستلام / مهندس الموقع قبل الحفظ.';
     }
 
+    if (!isOffice) {
+      if (!parcelReference.trim()) {
+        nextFieldErrors.parcelReference = 'رقم قطعة الأرض مطلوب للطلب.';
+      }
+      if (!region.trim()) {
+        nextFieldErrors.region = 'المنطقة مطلوبة للطلب.';
+      }
+    }
+
     if (items.length === 0) {
       setError({ message: 'يجب إضافة عنصر واحد على الأقل.', status: 422 });
       return;
@@ -245,10 +276,6 @@ export const PurchaseRequestForm: React.FC<Props> = ({
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       if (!item.item_description.trim()) nextFieldErrors[`item_${i}_description`] = 'اكتب وصف الصنف المطلوب.';
-      if (!isOffice) {
-        if (!item.item_reference?.trim()) nextFieldErrors[`item_${i}_reference`] = 'رقم قطعة الأرض مطلوب.';
-        if (!item.region?.trim()) nextFieldErrors[`item_${i}_region`] = 'المنطقة مطلوبة.';
-      }
       const qty = typeof item.quantity === 'number' ? item.quantity : parseFloat(String(item.quantity));
       if (!Number.isFinite(qty) || qty <= 0) nextFieldErrors[`item_${i}_quantity`] = 'أدخل كمية أكبر من صفر.';
     }
@@ -259,16 +286,22 @@ export const PurchaseRequestForm: React.FC<Props> = ({
         Object.entries(nextFieldErrors).map(([field, message]) => [field, [message]]),
       );
       setError({
-        message: nextFieldErrors.targetDepartment || nextFieldErrors.siteEngineer || Object.values(nextFieldErrors)[0] || 'راجع الحقول المحددة باللون الأحمر ثم أعد المحاولة.',
+        message: nextFieldErrors.targetDepartment || nextFieldErrors.siteEngineer || nextFieldErrors.parcelReference || nextFieldErrors.region || Object.values(nextFieldErrors)[0] || 'راجع الحقول المحددة باللون الأحمر ثم أعد المحاولة.',
         status: 422,
         errors: normalizedFieldErrors,
       });
       return;
     }
 
+    const defaultParcel = isOffice ? 'مقر الشركة' : parcelReference.trim();
+    const defaultRegion = isOffice ? 'إداري / المقر الرئيسي' : region.trim();
+
     try {
       await onSubmit({
         request_type: requestType,
+        parcel_reference: defaultParcel,
+        region: defaultRegion,
+        land_parcel_id: !isOffice && landParcelId ? Number(landParcelId) : undefined,
         target_department_id: Number(targetDepartmentId),
         site_engineer_user_id: isOffice ? undefined : (siteEngineerUserId ? Number(siteEngineerUserId) : undefined),
         priority,
@@ -277,8 +310,8 @@ export const PurchaseRequestForm: React.FC<Props> = ({
         items: items.map((item) => ({
           ...item,
           item_description: item.item_description.trim(),
-          item_reference: item.item_reference?.trim() || (isOffice ? 'مقر الشركة' : undefined),
-          region: item.region?.trim() || (isOffice ? 'إداري / المقر الرئيسي' : undefined),
+          item_reference: defaultParcel,
+          region: defaultRegion,
           specifications: item.specifications?.trim(),
           notes: item.notes?.trim(),
           quantity: typeof item.quantity === 'string' ? Number(item.quantity) : item.quantity,
@@ -487,6 +520,98 @@ export const PurchaseRequestForm: React.FC<Props> = ({
             </div>
           )}
 
+          {/* Project Land Parcel & Region Selection (Single per PR) */}
+          {requestType !== 'OFFICE_SUPPLIES' && (
+            <div className="rounded-xl border border-amber-800/60 bg-amber-950/20 p-4 space-y-4 md:col-span-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-800/40 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🏗️</span>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-black text-amber-300">
+                      تحديد قطعة الأرض والمنطقة للطلب
+                    </h3>
+                    <p className="text-[11px] text-amber-200/70">
+                      طلب الشراء يخص قطعة أرض واحدة ومنطقة واحدة تسري على جميع بنود الطلب
+                    </p>
+                  </div>
+                </div>
+                {landParcels.length > 0 && (
+                  <span className="text-[10px] bg-amber-950 px-2 py-0.5 rounded-full border border-amber-700/60 text-amber-300 font-bold self-start sm:self-auto">
+                    {landParcels.length} قطعة أرض مسجلة متاحة
+                  </span>
+                )}
+              </div>
+
+              {/* Quick Select from Registered Land Parcels */}
+              {landParcels.length > 0 && (
+                <FormField label="اختيار سريع من قطع الأراضي المسجلة (اختياري)">
+                  <Select
+                    value={landParcelId || ''}
+                    onChange={(e) => {
+                      const selectedId = Number(e.target.value);
+                      const selectedParcel = landParcels.find((p) => p.id === selectedId);
+                      if (selectedParcel) {
+                        setLandParcelId(selectedParcel.id);
+                        setParcelReference(selectedParcel.parcel_reference);
+                        setRegion(selectedParcel.region);
+                      } else {
+                        setLandParcelId('');
+                      }
+                    }}
+                    className="bg-slate-950 border-amber-800/60 text-slate-100 font-semibold"
+                  >
+                    <option value="">-- اختر قطعة مسجلة للتعبئة الفورية أو أدخل يدويًا أدناه --</option>
+                    {landParcels.map((parcel) => (
+                      <option key={parcel.id} value={parcel.id}>
+                        🏷️ {parcel.parcel_reference} — {parcel.region}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+              )}
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField
+                  label="رقم قطعة الأرض"
+                  required
+                  error={fieldErrors.parcelReference}
+                >
+                  <Input
+                    id="pr-form-parcel-reference"
+                    type="text"
+                    value={parcelReference}
+                    onChange={(e) => {
+                      setParcelReference(e.target.value);
+                      const matched = landParcels.find(
+                        (p) => p.id === Number(landParcelId) && p.parcel_reference === e.target.value
+                      );
+                      if (!matched) setLandParcelId('');
+                    }}
+                    placeholder="مثال: قطعة 256 أو A-14"
+                    error={Boolean(fieldErrors.parcelReference)}
+                    className="font-mono font-bold text-amber-200"
+                  />
+                </FormField>
+
+                <FormField
+                  label="المنطقة"
+                  required
+                  error={fieldErrors.region}
+                >
+                  <Input
+                    id="pr-form-region"
+                    type="text"
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value)}
+                    placeholder="مثال: المنطقة السابعة أو التجمع الخامس"
+                    error={Boolean(fieldErrors.region)}
+                    className="font-bold text-slate-100"
+                  />
+                </FormField>
+              </div>
+            </div>
+          )}
+
           <FormField label="درجة الأولوية">
             <Select
               value={priority}
@@ -527,7 +652,7 @@ export const PurchaseRequestForm: React.FC<Props> = ({
               <span>📦</span> بنود وأصناف الطلب
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              {requestType === 'OFFICE_SUPPLIES' ? 'حدد المواد المكتبية المطلوبة والمواصفات والكميات.' : 'حدد المواد المطلوبة والمواصفات الفنية مع رقم قطعة الأرض والمنطقة.'}
+              {requestType === 'OFFICE_SUPPLIES' ? 'حدد المواد المكتبية المطلوبة والمواصفات والكميات.' : 'حدد المواد المطلوبة والمواصفات الفنية والكميات.'}
             </p>
           </div>
           <Button
@@ -540,6 +665,29 @@ export const PurchaseRequestForm: React.FC<Props> = ({
             + إضافة عنصر جديد
           </Button>
         </div>
+
+        {/* Plot & Region Summary Bar for items */}
+        {requestType !== 'OFFICE_SUPPLIES' && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-gradient-to-r from-amber-950/50 via-slate-900/80 to-amber-950/40 p-3 rounded-xl border border-amber-800/60 shadow-inner text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-base">🏗️</span>
+              <div>
+                <span className="text-slate-400">قطعة الأرض المحددة للطلب: </span>
+                <span className="font-mono font-black text-amber-300 bg-amber-950 px-2.5 py-0.5 rounded-md border border-amber-600/50 shadow-sm">
+                  {parcelReference || 'لم تُحدد بعد (يرجى إدخالها بالقسم أعلاه)'}
+                </span>
+                <span className="text-slate-500 mx-2">•</span>
+                <span className="text-slate-400">المنطقة: </span>
+                <span className="font-bold text-slate-100">
+                  {region || 'لم تُحدد بعد'}
+                </span>
+              </div>
+            </div>
+            <span className="text-[11px] font-bold text-amber-400/90 bg-amber-950/80 px-2.5 py-1 rounded-lg border border-amber-700/50 self-start sm:self-auto">
+              ✓ تسري وتورث تلقائيًا لجميع البنود أدناه
+            </span>
+          </div>
+        )}
 
         <div className="space-y-3">
           {items.map((item, index) => (
@@ -580,7 +728,7 @@ export const PurchaseRequestForm: React.FC<Props> = ({
                   />
                 </FormField>
 
-                <div className="md:col-span-2">
+                <div className={requestType === 'OFFICE_SUPPLIES' ? "md:col-span-1" : "md:col-span-2"}>
                   <FormField label="الصنف" required error={fieldErrors[`item_${index}_description`]} >
                     <Input
                       type="text"
@@ -593,7 +741,7 @@ export const PurchaseRequestForm: React.FC<Props> = ({
                   </FormField>
                 </div>
 
-                {requestType === 'OFFICE_SUPPLIES' ? (
+                {requestType === 'OFFICE_SUPPLIES' && (
                   <FormField label="مكتب / مكان الاستلام الداخلي (اختياري)">
                     <Input
                       type="text"
@@ -605,31 +753,6 @@ export const PurchaseRequestForm: React.FC<Props> = ({
                       placeholder="افتراضي: مقر الشركة / مكتب مقدم الطلب"
                     />
                   </FormField>
-                ) : (
-                  <>
-                    <FormField label="رقم قطعة الأرض" required error={fieldErrors[`item_${index}_reference`]} >
-                      <Input
-                        type="text"
-                        required
-                        error={Boolean(fieldErrors[`item_${index}_reference`])}
-                        value={item.item_reference || ''}
-                        onChange={(e) => handleItemChange(index, 'item_reference', e.target.value)}
-                        placeholder="أدخل رقم قطعة الأرض"
-                        dir="ltr"
-                      />
-                    </FormField>
-
-                    <FormField label="المنطقة" required error={fieldErrors[`item_${index}_region`]} >
-                      <Input
-                        type="text"
-                        required
-                        error={Boolean(fieldErrors[`item_${index}_region`])}
-                        value={item.region || ''}
-                        onChange={(e) => handleItemChange(index, 'region', e.target.value)}
-                        placeholder="أدخل اسم المنطقة"
-                      />
-                    </FormField>
-                  </>
                 )}
 
                 <FormField label="الكمية المطلوبة" required error={fieldErrors[`item_${index}_quantity`]} >
@@ -674,6 +797,8 @@ export const PurchaseRequestForm: React.FC<Props> = ({
       <PurchaseRequestItemsSummaryTable
         items={items}
         requestType={requestType}
+        parcelReference={parcelReference}
+        region={region}
         onRemoveItem={items.length > 1 ? handleRemoveItem : undefined}
         onScrollToItem={(index) => {
           const el = document.getElementById(`pr-form-item-${index}`);

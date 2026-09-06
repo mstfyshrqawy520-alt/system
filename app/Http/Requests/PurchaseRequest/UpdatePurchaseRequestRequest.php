@@ -16,6 +16,9 @@ class UpdatePurchaseRequestRequest extends FormRequest
     {
         return [
             'request_type' => ['nullable', 'string', 'in:PROJECT,OFFICE_SUPPLIES'],
+            'parcel_reference' => ['nullable', 'string', 'max:100'],
+            'region' => ['nullable', 'string', 'max:150'],
+            'land_parcel_id' => ['nullable', 'integer', 'exists:land_parcels,id'],
             'target_department_id' => ['sometimes', 'integer', 'exists:departments,id'],
             'site_engineer_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'priority' => ['nullable', 'string', 'in:LOW,NORMAL,HIGH,URGENT'],

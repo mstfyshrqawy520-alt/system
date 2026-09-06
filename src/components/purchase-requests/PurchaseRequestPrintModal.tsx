@@ -71,8 +71,14 @@ export const PurchaseRequestPrintModal: React.FC<PurchaseRequestPrintModalProps>
                 <div className="text-2xl font-black">طلب شراء</div>
                 <div className="mt-1 text-xs font-bold">شركة اشبيلية</div>
               </div>
-              <div className="text-left text-sm font-bold">
+              <div className="text-left text-sm font-bold space-y-1">
                 <div>رقم الطلب: <span className="font-mono font-normal">{pr.request_number}</span></div>
+                {pr.request_type !== 'OFFICE_SUPPLIES' && (
+                  <>
+                    <div>قطعة الأرض: <span className="font-mono font-normal">{pr.parcel_reference || pr.items?.[0]?.item_reference || '—'}</span></div>
+                    <div>المنطقة: <span className="font-normal">{pr.region || pr.items?.[0]?.region || '—'}</span></div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -92,8 +98,8 @@ export const PurchaseRequestPrintModal: React.FC<PurchaseRequestPrintModalProps>
                 {(pr.items || []).map((item, index) => (
                   <tr key={item.id || index} className="h-6">
                     <td className="border border-slate-900 p-2 text-center">{index + 1}</td>
-                    <td className="border border-slate-900 p-2 font-mono">{item.item_reference || '—'}</td>
-                    <td className="border border-slate-900 p-2">{item.region || '—'}</td>
+                    <td className="border border-slate-900 p-2 font-mono">{item.item_reference || pr.parcel_reference || '—'}</td>
+                    <td className="border border-slate-900 p-2">{item.region || pr.region || '—'}</td>
                     <td className="border border-slate-900 p-2 font-bold">{item.item_description}</td>
                     <td className="border border-slate-900 p-2 text-center">{getUnitLabel(item.uom)}</td>
                     <td className="border border-slate-900 p-2 text-center">{item.quantity}</td>

@@ -47,6 +47,9 @@ class PurchaseRequest extends Model
     protected $fillable = [
         'request_number',
         'request_type',
+        'parcel_reference',
+        'region',
+        'land_parcel_id',
         'user_id',
         'department_id',
         'target_department_id',
@@ -64,6 +67,11 @@ class PurchaseRequest extends Model
         'return_reason',
         'submitted_at',
     ];
+
+    public function landParcel(): BelongsTo
+    {
+        return $this->belongsTo(LandParcel::class, 'land_parcel_id');
+    }
 
     public function isOfficeRequest(): bool
     {

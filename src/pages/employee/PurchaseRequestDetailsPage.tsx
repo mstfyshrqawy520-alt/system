@@ -297,6 +297,22 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
                 : 'يحدده المراجع عند الاعتماد'}
           </div>
         </div>
+        {!isOffice && (
+          <>
+            <div>
+              <div className="text-[10px] text-amber-400 font-semibold">رقم قطعة الأرض</div>
+              <div className="font-bold text-amber-300 font-mono mt-1">
+                {requestData.parcel_reference || requestData.items?.[0]?.item_reference || 'غير محدد'}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-amber-400 font-semibold">المنطقة</div>
+              <div className="font-bold text-slate-200 mt-1">
+                {requestData.region || requestData.items?.[0]?.region || 'غير محدد'}
+              </div>
+            </div>
+          </>
+        )}
         <div className="col-span-2 md:col-span-4">
           <div className="text-[10px] text-slate-400 font-semibold">ملاحظات</div>
           <div className="font-bold text-slate-200 mt-1">{requestData.notes || '-'}</div>
@@ -329,8 +345,8 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
               {requestData.items?.map((item, index) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-bold font-mono text-slate-400">{index + 1}</TableCell>
-                  <TableCell className="font-mono text-slate-300">{item.item_reference || (isOffice ? 'مقر الشركة' : '—')}</TableCell>
-                  {!isOffice && <TableCell className="text-slate-300">{item.region || '—'}</TableCell>}
+                  <TableCell className="font-mono text-slate-300">{item.item_reference || requestData.parcel_reference || (isOffice ? 'مقر الشركة' : '—')}</TableCell>
+                  {!isOffice && <TableCell className="text-slate-300">{item.region || requestData.region || '—'}</TableCell>}
                   <TableCell className="font-bold text-slate-100">{item.item_description}</TableCell>
                   <TableCell className="font-bold font-mono text-slate-200">
                     {parseFloat(item.quantity).toLocaleString()}

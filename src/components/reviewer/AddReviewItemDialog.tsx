@@ -12,6 +12,8 @@ const UNIT_OPTIONS = getUnitOptions(['PCS', 'KG', 'TON', 'M', 'M2', 'M3', 'L', '
 interface Props {
   isOpen: boolean;
   isAdding: boolean;
+  defaultParcelReference?: string;
+  defaultRegion?: string;
   onConfirm: (payload: ReviewItemPayload) => void;
   onCancel: () => void;
 }
@@ -19,14 +21,16 @@ interface Props {
 export const AddReviewItemDialog: React.FC<Props> = ({
   isOpen,
   isAdding,
+  defaultParcelReference = '',
+  defaultRegion = '',
   onConfirm,
   onCancel,
 }) => {
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
   const [itemId, setItemId] = useState<number | null>(null);
   const [description, setDescription] = useState('');
-  const [itemReference, setItemReference] = useState('');
-  const [region, setRegion] = useState('');
+  const [itemReference, setItemReference] = useState(defaultParcelReference);
+  const [region, setRegion] = useState(defaultRegion);
   const [quantity, setQuantity] = useState<number>(1);
   const [uom, setUom] = useState('PCS');
   const [specifications, setSpecifications] = useState('');
@@ -35,11 +39,13 @@ export const AddReviewItemDialog: React.FC<Props> = ({
 
   useEffect(() => {
     if (isOpen) {
+      setItemReference(defaultParcelReference);
+      setRegion(defaultRegion);
       getCatalogItemsApi()
         .then((data) => setCatalogItems(data))
         .catch((err) => console.error('Failed to load catalog', err));
     }
-  }, [isOpen]);
+  }, [isOpen, defaultParcelReference, defaultRegion]);
 
   const handleCatalogSelect = (idStr: string) => {
     const id = idStr ? parseInt(idStr, 10) : null;

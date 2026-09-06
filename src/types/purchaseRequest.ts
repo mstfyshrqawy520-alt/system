@@ -191,6 +191,14 @@ export interface PurchaseRequest {
   id: number;
   request_number: string;
   request_type?: PurchaseRequestType;
+  parcel_reference?: string | null;
+  region?: string | null;
+  land_parcel_id?: number | null;
+  land_parcel?: {
+    id: number;
+    parcel_reference: string;
+    region: string;
+  } | null;
   justification?: string | null;
   status: PurchaseRequestStatus;
   procurement_route?: 'UNDECIDED' | 'DIRECT' | 'QUOTES' | string;
@@ -282,6 +290,9 @@ export interface PurchaseRequestItemFormInput {
 
 export interface CreatePurchaseRequestPayload {
   request_type?: PurchaseRequestType;
+  parcel_reference?: string;
+  region?: string;
+  land_parcel_id?: number | null;
   target_department_id?: number;
   // Legacy fields are retained for old drafts and API compatibility; new UI resolves them from the department.
   reviewer_user_id?: number;
@@ -295,6 +306,9 @@ export interface CreatePurchaseRequestPayload {
 
 export interface UpdatePurchaseRequestPayload {
   request_type?: PurchaseRequestType;
+  parcel_reference?: string;
+  region?: string;
+  land_parcel_id?: number | null;
   target_department_id?: number;
   priority?: PurchaseRequestPriority;
   date_needed?: string;

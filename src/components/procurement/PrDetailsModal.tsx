@@ -48,6 +48,12 @@ export const PrDetailsModal: React.FC<PrDetailsModalProps> = ({ pr, isOpen, onCl
               <div className="flex justify-between gap-3"><span className="text-slate-400">الحالة:</span><span className="font-bold text-cyan-200">{PR_STATUS_LABELS[pr.status] || pr.status}</span></div>
               <div className="flex justify-between gap-3"><span className="text-slate-400">مهندس الموقع:</span><span className="text-slate-200">{pr.site_engineer?.name || '—'}</span></div>
               <div className="flex justify-between gap-3"><span className="text-amber-400 font-semibold">تاريخ الاحتياج:</span><span className="font-mono font-bold text-amber-300">{pr.date_needed || 'غير محدد'}</span></div>
+              {pr.request_type !== 'OFFICE_SUPPLIES' && (
+                <>
+                  <div className="flex justify-between gap-3"><span className="text-amber-400 font-semibold">قطعة الأرض:</span><span className="font-mono font-bold text-amber-300">{pr.parcel_reference || pr.items?.[0]?.item_reference || '—'}</span></div>
+                  <div className="flex justify-between gap-3"><span className="text-amber-400 font-semibold">المنطقة:</span><span className="font-semibold text-slate-200">{pr.region || pr.items?.[0]?.region || '—'}</span></div>
+                </>
+              )}
               {isDirect && (
                 <div className="flex justify-between gap-3">
                   <span className="text-slate-400">المورد:</span>
@@ -84,8 +90,8 @@ export const PrDetailsModal: React.FC<PrDetailsModalProps> = ({ pr, isOpen, onCl
                 {pr.items?.map((item, idx) => (
                   <tr key={item.id || idx}>
                     <td className="p-2 text-slate-400 font-mono">{idx + 1}</td>
-                    <td className="p-2 text-slate-300 font-mono">{item.item_reference || '—'}</td>
-                    <td className="p-2 text-slate-300">{item.region || '—'}</td>
+                    <td className="p-2 text-slate-300 font-mono">{item.item_reference || pr.parcel_reference || '—'}</td>
+                    <td className="p-2 text-slate-300">{item.region || pr.region || '—'}</td>
                     <td className="p-2 text-slate-200 font-medium">{item.item_description}</td>
                     {isDirect && (
                       <td className="p-2 text-emerald-300 text-xs font-semibold">

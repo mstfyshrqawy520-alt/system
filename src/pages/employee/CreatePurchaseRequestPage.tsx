@@ -11,6 +11,7 @@ import {
   updatePurchaseRequestApi,
 } from '../../api/purchaseRequests';
 import { getCatalogItemsApi } from '../../api/catalog';
+import { getLandParcelsApi, LandParcel } from '../../api/supplierFinance';
 import {
   CatalogItem,
   CreatePurchaseRequestPayload,
@@ -53,6 +54,9 @@ const emptyItem = (): PurchaseRequestItemFormInput => ({
 
 const getInitialData = (): CreatePurchaseRequestPayload => ({
   request_type: 'PROJECT',
+  parcel_reference: '',
+  region: '',
+  land_parcel_id: undefined,
   target_department_id: undefined,
   priority: 'NORMAL',
   reviewer_user_id: undefined,
@@ -64,8 +68,6 @@ const getInitialData = (): CreatePurchaseRequestPayload => ({
 
 type ItemErrors = Record<number, {
   description?: string;
-  reference?: string;
-  region?: string;
   quantity?: string;
 }>;
 
@@ -74,6 +76,8 @@ type ValidationResult = {
   targetManager?: string;
   targetSiteEngineer?: string;
   dateNeeded?: string;
+  parcelReference?: string;
+  region?: string;
   items: ItemErrors;
 };
 
@@ -88,10 +92,6 @@ const validateRequest = (
   data.items.forEach((item, index) => {
     const errors: ItemErrors[number] = {};
     if (!item.item_description.trim()) errors.description = 'اكتب وصف الصنف المطلوب.';
-    if (!isOffice) {
-      if (!item.item_reference?.trim()) errors.reference = 'رقم قطعة الأرض مطلوب.';
-      if (!item.region?.trim()) errors.region = 'المنطقة مطلوبة.';
-    }
     if (Number(item.quantity) <= 0 || Number.isNaN(Number(item.quantity))) errors.quantity = 'أدخل كمية أكبر من صفر.';
     if (Object.keys(errors).length) itemErrors[index] = errors;
   });
@@ -111,6 +111,12 @@ const validateRequest = (
       : data.date_needed < today
         ? 'تاريخ الاحتياج لا يمكن أن يكون في الماضي. اختر اليوم أو تاريخًا قادمًا.'
         : undefined,
+    parcelReference: !isOffice && !data.parcel_reference?.trim()
+      ? 'رقم قطعة الأرض مطلوب للطلب.'
+      : undefined,
+    region: !isOffice && !data.region?.trim()
+      ? 'المنطقة مطلوبة للطلب.'
+      : undefined,
     items: itemErrors,
   };
 };
@@ -121,21 +127,29 @@ const hasValidationErrors = (validation: ValidationResult): boolean =>
     validation.targetManager ||
     validation.targetSiteEngineer ||
     validation.dateNeeded ||
+    validation.parcelReference ||
+    validation.region ||
     Object.keys(validation.items).length
   );
 
 const normalizeRequestData = (data: CreatePurchaseRequestPayload): CreatePurchaseRequestPayload => {
   const isOffice = (data.request_type || 'PROJECT') === 'OFFICE_SUPPLIES';
+  const defaultParcel = isOffice ? 'مقر الشركة' : (data.parcel_reference?.trim() || '');
+  const defaultRegion = isOffice ? 'إداري / المقر الرئيسي' : (data.region?.trim() || '');
+
   return {
     ...data,
     request_type: data.request_type || 'PROJECT',
+    parcel_reference: defaultParcel,
+    region: defaultRegion,
+    land_parcel_id: isOffice ? undefined : data.land_parcel_id,
     site_engineer_user_id: isOffice ? undefined : data.site_engineer_user_id,
     notes: data.notes?.trim(),
     items: data.items.map((item) => ({
       ...item,
       item_description: item.item_description.trim(),
-      item_reference: item.item_reference?.trim() || (isOffice ? 'مقر الشركة' : undefined),
-      region: item.region?.trim() || (isOffice ? 'إداري / المقر الرئيسي' : undefined),
+      item_reference: defaultParcel,
+      region: defaultRegion,
       specifications: item.specifications?.trim(),
     })),
   };
@@ -146,6 +160,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
   const { hasRole } = useAuth();
   const isGeneralManager = hasRole('general_manager');
   const [data, setData] = useState<CreatePurchaseRequestPayload>(() => getInitialData());
+  const [landParcels, setLandParcels] = useState<LandParcel[]>([]);
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<DepartmentOption[]>([]);
   const [departmentLoading, setDepartmentLoading] = useState(true);
@@ -220,6 +235,14 @@ const CreatePurchaseRequestPage: React.FC = () => {
     getCatalogItemsApi()
       .then((items) => {
         if (!cancelled) setCatalogItems(items);
+      })
+      .catch(() => {});
+
+    getLandParcelsApi()
+      .then((parcels) => {
+        if (!cancelled && Array.isArray(parcels)) {
+          setLandParcels(parcels.filter((p) => p.is_active));
+        }
       })
       .catch(() => {});
 
@@ -698,6 +721,112 @@ const CreatePurchaseRequestPage: React.FC = () => {
           </div>
         )}
 
+        {/* Project Land Parcel & Region Selection (Single per PR) */}
+        {!isOffice && (
+          <div className="rounded-xl border border-amber-800/60 bg-amber-950/20 p-4 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-800/40 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🏗️</span>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-black text-amber-300">
+                    تحديد قطعة الأرض والمنطقة للطلب
+                  </h3>
+                  <p className="text-[11px] text-amber-200/70">
+                    طلب الشراء يخص قطعة أرض واحدة ومنطقة واحدة تسري على جميع بنود الطلب
+                  </p>
+                </div>
+              </div>
+              {landParcels.length > 0 && (
+                <span className="text-[10px] bg-amber-950 px-2 py-0.5 rounded-full border border-amber-700/60 text-amber-300 font-bold self-start sm:self-auto">
+                  {landParcels.length} قطعة أرض مسجلة متاحة
+                </span>
+              )}
+            </div>
+
+            {/* Quick Select from Registered Land Parcels */}
+            {landParcels.length > 0 && (
+              <FormField label="اختيار سريع من قطع الأراضي المسجلة (اختياري)">
+                <Select
+                  value={data.land_parcel_id || ''}
+                  onChange={(e) => {
+                    const selectedId = Number(e.target.value);
+                    const selectedParcel = landParcels.find((p) => p.id === selectedId);
+                    if (selectedParcel) {
+                      setData({
+                        ...data,
+                        land_parcel_id: selectedParcel.id,
+                        parcel_reference: selectedParcel.parcel_reference,
+                        region: selectedParcel.region,
+                      });
+                    } else {
+                      setData({
+                        ...data,
+                        land_parcel_id: undefined,
+                      });
+                    }
+                  }}
+                  className="bg-slate-950 border-amber-800/60 text-slate-100 font-semibold"
+                >
+                  <option value="">-- اختر قطعة مسجلة للتعبئة الفورية أو أدخل يدويًا أدناه --</option>
+                  {landParcels.map((parcel) => (
+                    <option key={parcel.id} value={parcel.id}>
+                      🏷️ {parcel.parcel_reference} — {parcel.region}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+            )}
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField
+                label="رقم قطعة الأرض"
+                required
+                error={showValidation ? validation.parcelReference : undefined}
+              >
+                <Input
+                  id="pr-parcel-reference"
+                  type="text"
+                  value={data.parcel_reference || ''}
+                  onChange={(e) =>
+                    setData({
+                      ...data,
+                      parcel_reference: e.target.value,
+                      land_parcel_id:
+                        landParcels.find(
+                          (p) => p.id === data.land_parcel_id && p.parcel_reference === e.target.value
+                        )?.id || undefined,
+                    })
+                  }
+                  placeholder="مثال: قطعة 256 أو A-14"
+                  error={Boolean(showValidation && validation.parcelReference)}
+                  className="font-mono font-bold text-amber-200"
+                />
+              </FormField>
+
+              <FormField
+                label="المنطقة"
+                required
+                error={showValidation ? validation.region : undefined}
+              >
+                <Input
+                  id="pr-region"
+                  type="text"
+                  value={data.region || ''}
+                  onChange={(e) =>
+                    setData({
+                      ...data,
+                      region: e.target.value,
+                    })
+                  }
+                  placeholder="مثال: المنطقة السابعة أو التجمع الخامس"
+                  error={Boolean(showValidation && validation.region)}
+                  className="font-bold text-slate-100"
+                />
+              </FormField>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="الأولوية">
             <Select
@@ -802,35 +931,50 @@ const CreatePurchaseRequestPage: React.FC = () => {
           )}
         </div>
 
+        {/* Plot & Region Summary Bar for items */}
+        {!isOffice && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-gradient-to-r from-amber-950/50 via-slate-900/80 to-amber-950/40 p-3 rounded-xl border border-amber-800/60 shadow-inner text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-base">🏗️</span>
+              <div>
+                <span className="text-slate-400">قطعة الأرض المحددة للطلب: </span>
+                <span className="font-mono font-black text-amber-300 bg-amber-950 px-2.5 py-0.5 rounded-md border border-amber-600/50 shadow-sm">
+                  {data.parcel_reference || 'لم تُحدد بعد (يرجى إدخالها بالقسم 1 أعلاه)'}
+                </span>
+                <span className="text-slate-500 mx-2">•</span>
+                <span className="text-slate-400">المنطقة: </span>
+                <span className="font-bold text-slate-100">
+                  {data.region || 'لم تُحدد بعد'}
+                </span>
+              </div>
+            </div>
+            <span className="text-[11px] font-bold text-amber-400/90 bg-amber-950/80 px-2.5 py-1 rounded-lg border border-amber-700/50 self-start sm:self-auto">
+              ✓ تسري وتورث تلقائيًا لجميع البنود أدناه
+            </span>
+          </div>
+        )}
+
         {/* Compact Spreadsheet Table Container */}
         <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60 shadow-inner">
           <table className="w-full text-right text-xs border-collapse">
             <thead>
               <tr className="border-b border-slate-800 bg-slate-900/90 text-slate-400 text-[11px] font-bold">
                 <th className="p-3 w-10 text-center">م</th>
-                <th className="p-3 min-w-[200px]">
+                <th className="p-3 min-w-[280px]">
                   وصف الصنف / المادة <span className="text-rose-400">*</span>
                 </th>
-                <th className="p-3 min-w-[130px]">
-                  {isOffice ? 'مكان الاستلام' : 'رقم القطعة *'}
-                </th>
-                {!isOffice && (
-                  <th className="p-3 min-w-[130px]">
-                    المنطقة <span className="text-rose-400">*</span>
-                  </th>
-                )}
-                <th className="p-3 w-24">
+                <th className="p-3 w-28">
                   الكمية <span className="text-rose-400">*</span>
                 </th>
-                <th className="p-3 w-28">الوحدة</th>
-                <th className="p-3 min-w-[160px]">المواصفات الفنية</th>
-                <th className="p-3 w-20 text-center">إجراءات</th>
+                <th className="p-3 w-32">الوحدة</th>
+                <th className="p-3 min-w-[200px]">المواصفات الفنية</th>
+                <th className="p-3 w-24 text-center">إجراءات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {data.items.map((item, index) => {
                 const itemErr = validation.items[index];
-                const hasItemError = Boolean(itemErr && (itemErr.description || itemErr.reference || itemErr.region || itemErr.quantity));
+                const hasItemError = Boolean(itemErr && (itemErr.description || itemErr.quantity));
 
                 return (
                   <tr
@@ -868,58 +1012,6 @@ const CreatePurchaseRequestPage: React.FC = () => {
                         )}
                       </div>
                     </td>
-
-                    {/* Item Reference (Plot # or Office Room) */}
-                    <td className="p-2.5 align-top">
-                      <div className="space-y-1">
-                        <input
-                          type="text"
-                          value={item.item_reference || ''}
-                          onChange={(e) => {
-                            if (isOffice) {
-                              updateItem(index, { item_reference: e.target.value, region: e.target.value || 'مقر الشركة' });
-                            } else {
-                              updateItem(index, { item_reference: e.target.value });
-                            }
-                          }}
-                          placeholder={isOffice ? 'مقر الشركة' : 'مثال: 256 أو A-14'}
-                          className={`w-full rounded-lg bg-slate-900 border px-2.5 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 ${
-                            !isOffice && itemErr?.reference && (showValidation || (item.item_reference && item.item_reference.length > 0))
-                              ? 'border-rose-500/80 focus:ring-rose-500'
-                              : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/40'
-                          }`}
-                        />
-                        {!isOffice && itemErr?.reference && showValidation && (
-                          <span className="text-[10px] text-rose-400 block font-semibold leading-tight">
-                            ⚠️ {itemErr.reference}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Region (Projects only) */}
-                    {!isOffice && (
-                      <td className="p-2.5 align-top">
-                        <div className="space-y-1">
-                          <input
-                            type="text"
-                            value={item.region || ''}
-                            onChange={(e) => updateItem(index, { region: e.target.value })}
-                            placeholder="مثال: المنطقة السابعة"
-                            className={`w-full rounded-lg bg-slate-900 border px-2.5 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 ${
-                              itemErr?.region && (showValidation || (item.region && item.region.length > 0))
-                                ? 'border-rose-500/80 focus:ring-rose-500'
-                                : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/40'
-                            }`}
-                          />
-                          {itemErr?.region && showValidation && (
-                            <span className="text-[10px] text-rose-400 block font-semibold leading-tight">
-                              ⚠️ {itemErr.region}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    )}
 
                     {/* Quantity */}
                     <td className="p-2.5 align-top">
@@ -1027,6 +1119,8 @@ const CreatePurchaseRequestPage: React.FC = () => {
       <PurchaseRequestItemsSummaryTable
         items={data.items}
         requestType={data.request_type}
+        parcelReference={data.parcel_reference}
+        region={data.region}
         onRemoveItem={data.items.length > 1 ? removeItem : undefined}
         onScrollToItem={(index) => {
           const el = document.getElementById(`pr-item-card-${index}`);

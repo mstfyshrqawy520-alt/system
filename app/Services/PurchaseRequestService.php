@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AuditLog;
 use Carbon\Carbon;
 use App\Models\Department;
+use App\Models\LandParcel;
 use App\Models\PurchaseRequest;
 use App\Models\PurchaseRequestItem;
 use App\Models\User;
@@ -31,13 +32,20 @@ class PurchaseRequestService
      * Normalize request line items without calculating any estimated price.
      * Supplier prices are entered later in the official quote stage.
      */
-    public function normalizeItems(array $items, bool $isOffice = false): array
+    public function normalizeItems(array $items, bool $isOffice = false, ?string $defaultParcel = null, ?string $defaultRegion = null): array
     {
         $normalizedItems = [];
 
         foreach ($items as $index => $item) {
             $itemReference = trim((string) ($item['item_reference'] ?? ''));
             $region = trim((string) ($item['region'] ?? ''));
+
+            if ($itemReference === '' && $defaultParcel !== null && trim($defaultParcel) !== '') {
+                $itemReference = trim($defaultParcel);
+            }
+            if ($region === '' && $defaultRegion !== null && trim($defaultRegion) !== '') {
+                $region = trim($defaultRegion);
+            }
 
             if ($isOffice) {
                 if ($itemReference === '') {
@@ -97,7 +105,54 @@ class PurchaseRequestService
         return DB::transaction(function () use ($user, $data) {
             $requestType = ($data['request_type'] ?? 'PROJECT') === 'OFFICE_SUPPLIES' ? 'OFFICE_SUPPLIES' : 'PROJECT';
             $isOffice = $requestType === 'OFFICE_SUPPLIES';
-            $normalizedItems = $this->normalizeItems($data['items'] ?? [], $isOffice);
+
+            $parcelReference = trim((string) ($data['parcel_reference'] ?? ''));
+            $region = trim((string) ($data['region'] ?? ''));
+            $landParcelId = !empty($data['land_parcel_id']) ? (int) $data['land_parcel_id'] : null;
+
+            if ($landParcelId && ($parcelReference === '' || $region === '')) {
+                $lp = LandParcel::find($landParcelId);
+                if ($lp) {
+                    if ($parcelReference === '') $parcelReference = $lp->parcel_reference;
+                    if ($region === '') $region = $lp->region;
+                }
+            }
+
+            if ($isOffice) {
+                if ($parcelReference === '') {
+                    $parcelReference = 'مقر الشركة';
+                }
+                if ($region === '') {
+                    $region = 'إداري / المقر الرئيسي';
+                }
+            } else {
+                if ($parcelReference === '' && !empty($data['items'][0]['item_reference'])) {
+                    $parcelReference = trim((string) $data['items'][0]['item_reference']);
+                }
+                if ($region === '' && !empty($data['items'][0]['region'])) {
+                    $region = trim((string) $data['items'][0]['region']);
+                }
+
+                if ($parcelReference === '' || $region === '') {
+                    $errors = [];
+                    if ($parcelReference === '') {
+                        $errors['parcel_reference'] = ['رقم قطعة الأرض مطلوب للطلب ولا يمكن أن يكون فارغًا.'];
+                    }
+                    if ($region === '') {
+                        $errors['region'] = ['المنطقة مطلوبة للطلب ولا يمكن أن تكون فارغة.'];
+                    }
+                    throw ValidationException::withMessages($errors);
+                }
+
+                if (! $landParcelId) {
+                    $existingLp = LandParcel::where('parcel_reference', $parcelReference)->where('region', $region)->first();
+                    if ($existingLp) {
+                        $landParcelId = $existingLp->id;
+                    }
+                }
+            }
+
+            $normalizedItems = $this->normalizeItems($data['items'] ?? [], $isOffice, $parcelReference, $region);
             $requestNumber = $this->generateRequestNumber();
             $targetDepartmentId = (int) ($data['target_department_id'] ?? $user->department_id);
             $targetDepartment = Department::with(['manager', 'siteEngineer'])->find($targetDepartmentId);
@@ -138,6 +193,9 @@ class PurchaseRequestService
             $pr = PurchaseRequest::create([
                 'request_number' => $requestNumber,
                 'request_type' => $requestType,
+                'parcel_reference' => $parcelReference,
+                'region' => $region,
+                'land_parcel_id' => $landParcelId,
                 'user_id' => $user->id,
                 'department_id' => $user->department_id ?? $targetDepartment->id,
                 'target_department_id' => $targetDepartment->id,
@@ -173,11 +231,13 @@ class PurchaseRequestService
                 'new_value' => json_encode([
                     'request_number' => $pr->request_number,
                     'request_type' => $pr->request_type,
+                    'parcel_reference' => $pr->parcel_reference,
+                    'region' => $pr->region,
                     'status' => 'DRAFT',
                 ], JSON_UNESCAPED_UNICODE),
             ]);
 
-            return $pr->load(['requester.roles', 'requester:id,name,email,department_id', 'department:id,name,code', 'assignedReviewer:id,name,email,department_id', 'siteEngineer:id,name,email,department_id', 'items.item']);
+            return $pr->load(['requester.roles', 'requester:id,name,email,department_id', 'department:id,name,code', 'assignedReviewer:id,name,email,department_id', 'siteEngineer:id,name,email,department_id', 'landParcel', 'items.item']);
         });
     }
 
@@ -199,7 +259,67 @@ class PurchaseRequestService
             $requestType = $data['request_type'] ?? $lockedRequest->request_type ?? 'PROJECT';
             $isOffice = $requestType === 'OFFICE_SUPPLIES';
 
+            $parcelProvided = array_key_exists('parcel_reference', $data);
+            $regionProvided = array_key_exists('region', $data);
+            $itemsProvided = array_key_exists('items', $data);
+
+            $parcelReference = $parcelProvided
+                ? trim((string) $data['parcel_reference'])
+                : (string) ($lockedRequest->parcel_reference ?? $lockedRequest->items()->first()?->item_reference ?? '');
+
+            $region = $regionProvided
+                ? trim((string) $data['region'])
+                : (string) ($lockedRequest->region ?? $lockedRequest->items()->first()?->region ?? '');
+
+            $landParcelId = array_key_exists('land_parcel_id', $data)
+                ? (!empty($data['land_parcel_id']) ? (int) $data['land_parcel_id'] : null)
+                : $lockedRequest->land_parcel_id;
+
+            if ($landParcelId && ($parcelReference === '' || $region === '')) {
+                $lp = LandParcel::find($landParcelId);
+                if ($lp) {
+                    if ($parcelReference === '') $parcelReference = $lp->parcel_reference;
+                    if ($region === '') $region = $lp->region;
+                }
+            }
+
+            if ($isOffice) {
+                $parcelReference = $parcelReference !== '' ? $parcelReference : 'مقر الشركة';
+                $region = $region !== '' ? $region : 'إداري / المقر الرئيسي';
+            } else {
+                if ($parcelReference === '' && !empty($data['items'][0]['item_reference'])) {
+                    $parcelReference = trim((string) $data['items'][0]['item_reference']);
+                }
+                if ($region === '' && !empty($data['items'][0]['region'])) {
+                    $region = trim((string) $data['items'][0]['region']);
+                }
+
+                if (($parcelProvided || $regionProvided || $itemsProvided) && ($parcelReference === '' || $region === '')) {
+                    $errors = [];
+                    if ($parcelReference === '') $errors['parcel_reference'] = ['رقم قطعة الأرض مطلوب للطلب ولا يمكن أن يكون فارغًا.'];
+                    if ($region === '') $errors['region'] = ['المنطقة مطلوبة للطلب ولا يمكن أن تكون فارغة.'];
+                    throw ValidationException::withMessages($errors);
+                }
+
+                if ($parcelReference !== '' && $region !== '' && ! $landParcelId) {
+                    $existingLp = LandParcel::where('parcel_reference', $parcelReference)->where('region', $region)->first();
+                    if ($existingLp) {
+                        $landParcelId = $existingLp->id;
+                    }
+                }
+            }
+
             $updateFields = [];
+            if ($parcelReference !== '') {
+                $updateFields['parcel_reference'] = $parcelReference;
+            }
+            if ($region !== '') {
+                $updateFields['region'] = $region;
+            }
+            if ($landParcelId !== null) {
+                $updateFields['land_parcel_id'] = $landParcelId;
+            }
+
             if (array_key_exists('request_type', $data)) {
                 $updateFields['request_type'] = $requestType;
             }
@@ -236,7 +356,7 @@ class PurchaseRequestService
             }
 
             if (array_key_exists('items', $data)) {
-                $normalizedItems = $this->normalizeItems($data['items'], $isOffice);
+                $normalizedItems = $this->normalizeItems($data['items'], $isOffice, $parcelReference, $region);
 
                 // Re-create items
                 $request->items()->delete();
@@ -252,11 +372,17 @@ class PurchaseRequestService
                         'notes' => $itemData['notes'] ?? null,
                     ]);
                 }
+            } else {
+                // Keep existing items in sync if parcel/region changed
+                $request->items()->update([
+                    'item_reference' => $parcelReference,
+                    'region' => $region,
+                ]);
             }
 
             $request->update($updateFields);
 
-            return $request->fresh(['requester.roles', 'requester:id,name,email,department_id', 'department:id,name,code', 'targetDepartment.manager:id,name,email,department_id', 'targetDepartment.siteEngineer:id,name,email,department_id', 'assignedReviewer:id,name,email,department_id', 'siteEngineer:id,name,email,department_id', 'items.item']);
+            return $request->fresh(['requester.roles', 'requester:id,name,email,department_id', 'department:id,name,code', 'targetDepartment.manager:id,name,email,department_id', 'targetDepartment.siteEngineer:id,name,email,department_id', 'assignedReviewer:id,name,email,department_id', 'siteEngineer:id,name,email,department_id', 'landParcel', 'items.item']);
         });
     }
 
