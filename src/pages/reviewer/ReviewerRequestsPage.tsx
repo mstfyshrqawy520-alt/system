@@ -13,6 +13,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { usePersistedState } from '../../hooks/usePersistedState';
 import { getDefaultDateFrom, getTodayInputDate, isDefaultTodayRange } from '../../utils/dateFilters';
 import { getUnitLabel } from '../../utils/units';
+import { getSummaryParcels, getSummaryRegions, getSummaryQuantities } from '../../utils/formatRequestSummary';
 
 const INITIAL_FILTERS: ReviewerRequestFilters = {
   request_number: '',
@@ -252,7 +253,9 @@ export const ReviewerRequestsPage: React.FC = () => {
                 : itemNames.length === 1
                   ? itemNames[0]
                   : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
-              const quantitiesDisplay = request.items?.map((item) => `${item.quantity} ${getUnitLabel(item.uom)}`).join('، ') || '—';
+              const parcelsDisplay = getSummaryParcels(request);
+              const regionsDisplay = getSummaryRegions(request);
+              const quantitiesInfo = getSummaryQuantities(request.items);
 
               const canQuickApprove = (request.status === 'SUBMITTED' || request.status === 'UNDER_REVIEW') && hasPermission('purchase_request.approve');
 
@@ -264,9 +267,16 @@ export const ReviewerRequestsPage: React.FC = () => {
                   <TableCell className="font-semibold text-slate-100 max-w-[200px] truncate">
                     <span title={itemNames.join('، ')}>{itemsDisplay}</span>
                   </TableCell>
-                  <TableCell className="font-mono text-cyan-300">{request.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || '—'}</TableCell>
-                  <TableCell>{request.items?.map((item) => item.region).filter(Boolean).join('، ') || '—'}</TableCell>
-                  <TableCell className="font-mono font-bold text-amber-300 whitespace-nowrap">{quantitiesDisplay}</TableCell>
+                  <TableCell className="font-mono text-cyan-300 whitespace-nowrap">{parcelsDisplay}</TableCell>
+                  <TableCell className="whitespace-nowrap">{regionsDisplay}</TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <div title={quantitiesInfo.tooltip}>
+                      <div className="font-mono font-bold text-amber-300">{quantitiesInfo.display}</div>
+                      {quantitiesInfo.subtext && (
+                        <div className="text-[10px] text-slate-400 font-normal leading-tight">{quantitiesInfo.subtext}</div>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="font-mono font-bold text-amber-300 whitespace-nowrap">{request.date_needed || '—'}</TableCell>
                   <TableCell>{priorityLabels[request.priority || 'NORMAL'] || request.priority || 'عادية'}</TableCell>
                   <TableCell className="whitespace-nowrap">{formatDate(request.created_at)}</TableCell>
@@ -304,7 +314,9 @@ export const ReviewerRequestsPage: React.FC = () => {
         <div className="space-y-3 md:hidden">
           {filteredRequests.map((request) => {
             const itemNames = request.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
-            const quantitiesDisplay = request.items?.map((item) => `${item.quantity} ${getUnitLabel(item.uom)}`).join('، ') || '—';
+            const parcelsDisplay = getSummaryParcels(request);
+            const regionsDisplay = getSummaryRegions(request);
+            const quantitiesInfo = getSummaryQuantities(request.items);
             const canQuickApprove = (request.status === 'SUBMITTED' || request.status === 'UNDER_REVIEW') && hasPermission('purchase_request.approve');
 
             return (
@@ -315,9 +327,17 @@ export const ReviewerRequestsPage: React.FC = () => {
                 </div>
                 <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
                   <div className="col-span-2"><dt className="text-slate-500">الصنف / المواد المطلوبة</dt><dd className="mt-1 font-bold text-cyan-200">{itemNames.join('، ') || 'غير محدد'}</dd></div>
-                  <div><dt className="text-slate-500">رقم قطعة الأرض</dt><dd className="mt-1 font-mono font-bold text-slate-200">{request.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || 'غير محدد'}</dd></div>
-                  <div><dt className="text-slate-500">الكمية / العدد</dt><dd className="mt-1 font-mono font-bold text-amber-300">{quantitiesDisplay}</dd></div>
-                  <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 font-bold text-slate-200">{request.items?.map((item) => item.region).filter(Boolean).join('، ') || 'غير محددة'}</dd></div>
+                  <div><dt className="text-slate-500">رقم قطعة الأرض</dt><dd className="mt-1 font-mono font-bold text-slate-200">{parcelsDisplay}</dd></div>
+                  <div>
+                    <dt className="text-slate-500">الكمية / العدد</dt>
+                    <dd className="mt-1" title={quantitiesInfo.tooltip}>
+                      <span className="font-mono font-bold text-amber-300">{quantitiesInfo.display}</span>
+                      {quantitiesInfo.subtext && (
+                        <span className="text-[10px] text-slate-400 block font-normal leading-tight">{quantitiesInfo.subtext}</span>
+                      )}
+                    </dd>
+                  </div>
+                  <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 font-bold text-slate-200">{regionsDisplay}</dd></div>
                   <div><dt className="text-slate-500">تاريخ الاحتياج</dt><dd className="mt-1 font-mono font-bold text-amber-300">{request.date_needed || 'غير محدد'}</dd></div>
                   <div><dt className="text-slate-500">مقدم الطلب</dt><dd className="mt-1 font-bold text-slate-200">{request.requester?.name || 'غير محدد'}</dd></div>
                   <div><dt className="text-slate-500">الأولوية</dt><dd className="mt-1 font-bold text-slate-200">{priorityLabels[request.priority || 'NORMAL'] || 'عادية'}</dd></div>

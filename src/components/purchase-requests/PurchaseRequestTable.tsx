@@ -7,6 +7,7 @@ import PurchaseRequestTimeline from '../procurement/PurchaseRequestTimeline';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/Table';
 import { Button } from '../ui/Button';
 import { getUnitLabel } from '../../utils/units';
+import { getSummaryParcels, getSummaryRegions, getSummaryQuantities } from '../../utils/formatRequestSummary';
 
 const REQUESTER_EDITABLE_STATUSES = ['DRAFT', 'SUBMITTED', 'UNDER_REVIEW'];
 const REQUESTER_DELETABLE_STATUSES = ['DRAFT'];
@@ -110,9 +111,9 @@ export const PurchaseRequestTable: React.FC<Props> = ({
             : itemNames.length === 1
               ? itemNames[0]
               : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
-          const parcelsDisplay = pr.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || '—';
-          const regionsDisplay = pr.items?.map((item) => item.region).filter(Boolean).join('، ') || (pr.request_type === 'OFFICE_SUPPLIES' ? 'مقر الشركة' : '—');
-          const quantitiesDisplay = pr.items?.map((item) => `${item.quantity} ${getUnitLabel(item.uom)}`).join('، ') || '—';
+          const parcelsDisplay = getSummaryParcels(pr);
+          const regionsDisplay = getSummaryRegions(pr);
+          const quantitiesInfo = getSummaryQuantities(pr.items);
 
           return (
             <TableRow key={pr.id}>
@@ -126,7 +127,14 @@ export const PurchaseRequestTable: React.FC<Props> = ({
               </TableCell>
               <TableCell className="font-mono text-cyan-300 text-xs whitespace-nowrap">{parcelsDisplay}</TableCell>
               <TableCell className="text-slate-300 text-xs whitespace-nowrap">{regionsDisplay}</TableCell>
-              <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">{quantitiesDisplay}</TableCell>
+              <TableCell className="text-xs whitespace-nowrap">
+                <div title={quantitiesInfo.tooltip}>
+                  <div className="font-mono font-bold text-amber-300">{quantitiesInfo.display}</div>
+                  {quantitiesInfo.subtext && (
+                    <div className="text-[10px] text-slate-400 font-normal leading-tight">{quantitiesInfo.subtext}</div>
+                  )}
+                </div>
+              </TableCell>
               <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">{pr.date_needed || '—'}</TableCell>
               <TableCell className="text-slate-400 text-xs">{formatRequestDate(pr.created_at)}</TableCell>
               <TableCell className="text-slate-300 text-xs">{getRequestType(pr)}</TableCell>
@@ -188,9 +196,9 @@ export const PurchaseRequestTable: React.FC<Props> = ({
           const canDelete = REQUESTER_DELETABLE_STATUSES.includes(pr.status) && hasPermission('purchase_request.edit_own');
           const canSubmit = isDraft && hasPermission('purchase_request.submit');
           const itemNames = pr.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
-          const parcelsDisplay = pr.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || '—';
-          const regionsDisplay = pr.items?.map((item) => item.region).filter(Boolean).join('، ') || (pr.request_type === 'OFFICE_SUPPLIES' ? 'مقر الشركة' : 'غير محددة');
-          const quantitiesDisplay = pr.items?.map((item) => `${item.quantity} ${getUnitLabel(item.uom)}`).join('، ') || '—';
+          const parcelsDisplay = getSummaryParcels(pr);
+          const regionsDisplay = getSummaryRegions(pr);
+          const quantitiesInfo = getSummaryQuantities(pr.items);
 
           return (
             <article key={`mobile-card-${pr.id}`} className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 space-y-3">
@@ -212,7 +220,15 @@ export const PurchaseRequestTable: React.FC<Props> = ({
               <dl className="mt-4 grid grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
                 <div><dt className="text-slate-500">رقم قطعة الأرض</dt><dd className="mt-1 font-mono font-bold text-slate-200">{parcelsDisplay}</dd></div>
                 <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 font-bold text-slate-200">{regionsDisplay}</dd></div>
-                <div><dt className="text-slate-500">الكمية / العدد</dt><dd className="mt-1 font-mono font-bold text-amber-300">{quantitiesDisplay}</dd></div>
+                <div>
+                  <dt className="text-slate-500">الكمية / العدد</dt>
+                  <dd className="mt-1" title={quantitiesInfo.tooltip}>
+                    <span className="font-mono font-bold text-amber-300">{quantitiesInfo.display}</span>
+                    {quantitiesInfo.subtext && (
+                      <span className="text-[10px] text-slate-400 block font-normal leading-tight">{quantitiesInfo.subtext}</span>
+                    )}
+                  </dd>
+                </div>
                 <div><dt className="text-slate-500">تاريخ الاحتياج</dt><dd className="mt-1 font-mono font-bold text-amber-300">{pr.date_needed || 'غير محدد'}</dd></div>
                 <div><dt className="text-slate-500">تاريخ الطلب</dt><dd className="mt-1 text-slate-300">{formatRequestDate(pr.created_at)}</dd></div>
                 <div><dt className="text-slate-500">نوع الطلب</dt><dd className="mt-1 font-bold text-slate-200">{getRequestType(pr)}</dd></div>

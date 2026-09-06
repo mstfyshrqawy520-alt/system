@@ -29,6 +29,7 @@ import DirectAccountingReviewModal from '../../components/procurement/DirectAcco
 import PurchaseQuotesModal from '../../components/procurement/PurchaseQuotesModal';
 import ProcurementCharts from '../../components/procurement/ProcurementCharts';
 import { getUnitLabel } from '../../utils/units';
+import { getSummaryParcels, getSummaryRegions, getSummaryQuantities } from '../../utils/formatRequestSummary';
 import { parseApiError } from '../../utils/apiError';
 import ErrorMessage from '../../components/ErrorMessage';
 import { TableSkeleton } from '../../components/ui/StateFeedback';
@@ -638,9 +639,9 @@ export const ProcurementManagerPage: React.FC = () => {
                   <TableRow><TableCell colSpan={15} className="py-10 text-center text-slate-400">{queueRows.length ? 'لم نجد طلبات مطابقة للفلاتر الحالية.' : 'لا توجد طلبات واردة للمشتريات ضمن الفترة المحددة.'}</TableCell></TableRow>
                 ) : filteredQueueRows.map(({ request, stage }) => {
                   const itemNames = request.items?.map((item) => item.item?.name || item.item_description).filter(Boolean).join('، ') || '—';
-                  const quantities = request.items?.map((item) => `${item.quantity || '—'} ${getUnitLabel(item.uom)}`).join('، ') || '—';
-                  const parcelReferences = request.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || '—';
-                  const regions = request.items?.map((item) => item.region).filter(Boolean).join('، ') || '—';
+                  const parcelsDisplay = getSummaryParcels(request);
+                  const regionsDisplay = getSummaryRegions(request);
+                  const quantitiesInfo = getSummaryQuantities(request.items);
                   const supplier = request.direct_supplier?.company_name || getSelectedQuote(request)?.supplier?.company_name || '—';
                   const stageClass = stage === 'PENDING_ROUTE' ? 'bg-cyan-400/15 text-cyan-300' : stage === 'QUOTE_SETUP' ? 'bg-amber-400/15 text-amber-300' : 'bg-emerald-400/15 text-emerald-300';
                   const route = request.procurement_route === 'DIRECT' ? 'شراء مباشر' : request.procurement_route === 'QUOTES' ? 'عروض أسعار' : 'لم يحدد';
@@ -651,9 +652,15 @@ export const ProcurementManagerPage: React.FC = () => {
                       <TableCell><span className="whitespace-nowrap font-bold text-slate-200">{route}</span></TableCell>
                       <TableCell>{request.department?.name || (request.requester as any)?.department?.name || request.target_department?.name || 'غير محدد'}</TableCell>
                       <TableCell className="font-bold text-cyan-300">{request.target_department?.name || request.department?.name || 'غير محدد'}</TableCell>
-                      <TableCell><div className="max-w-[230px] font-bold text-slate-100">{itemNames}</div><div className="mt-1 text-xs text-slate-400">{quantities}{request.items && request.items.length > 1 ? ` — ${request.items.length} بنود` : ''}</div></TableCell>
-                      <TableCell className="font-mono text-cyan-300">{parcelReferences}</TableCell>
-                      <TableCell>{regions}</TableCell>
+                      <TableCell>
+                        <div className="max-w-[230px] font-bold text-slate-100">{itemNames}</div>
+                        <div className="mt-1 text-xs text-amber-300 font-mono font-semibold" title={quantitiesInfo.tooltip}>
+                          {quantitiesInfo.display}
+                          {quantitiesInfo.subtext && <span className="text-[10px] text-slate-400 font-normal mr-1">{quantitiesInfo.subtext}</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-cyan-300 whitespace-nowrap">{parcelsDisplay}</TableCell>
+                      <TableCell className="whitespace-nowrap">{regionsDisplay}</TableCell>
                       <TableCell className="font-bold text-emerald-300">{supplier}</TableCell>
                       <TableCell className="font-mono font-bold text-amber-300 whitespace-nowrap">{request.date_needed || '—'}</TableCell>
                       <TableCell>{request.requester?.name || '—'}</TableCell>
@@ -683,9 +690,9 @@ export const ProcurementManagerPage: React.FC = () => {
               <div className="rounded-xl border border-dashed border-slate-700 px-3 py-8 text-center text-xs text-slate-400">{queueRows.length ? 'لم نجد طلبات مطابقة للفلاتر الحالية.' : 'لا توجد طلبات واردة للمشتريات ضمن الفترة المحددة.'}</div>
             ) : filteredQueueRows.map(({ request, stage }) => {
               const itemNames = request.items?.map((item) => item.item?.name || item.item_description).filter(Boolean).join('، ') || '—';
-              const quantities = request.items?.map((item) => `${item.quantity || '—'} ${getUnitLabel(item.uom)}`).join('، ') || '—';
-              const parcelReferences = request.items?.map((item) => item.item_reference).filter(Boolean).join('، ') || '—';
-              const regions = request.items?.map((item) => item.region).filter(Boolean).join('، ') || '—';
+              const parcelsDisplay = getSummaryParcels(request);
+              const regionsDisplay = getSummaryRegions(request);
+              const quantitiesInfo = getSummaryQuantities(request.items);
               const supplier = request.direct_supplier?.company_name || getSelectedQuote(request)?.supplier?.company_name || '—';
               const stageClass = stage === 'PENDING_ROUTE' ? 'bg-cyan-400/15 text-cyan-300' : stage === 'QUOTE_SETUP' ? 'bg-amber-400/15 text-amber-300' : 'bg-emerald-400/15 text-emerald-300';
               const route = request.procurement_route === 'DIRECT' ? 'شراء مباشر' : request.procurement_route === 'QUOTES' ? 'عروض أسعار' : 'لم يحدد';
@@ -706,9 +713,16 @@ export const ProcurementManagerPage: React.FC = () => {
                     <div><dt className="text-slate-500">القسم المستهدف</dt><dd className="mt-1 break-words font-bold text-cyan-300">{request.target_department?.name || request.department?.name || 'غير محدد'}</dd></div>
                     <div><dt className="text-slate-500">مقدم الطلب</dt><dd className="mt-1 break-words text-slate-200">{request.requester?.name || '—'}</dd></div>
                     <div><dt className="text-slate-500">رئيس القسم</dt><dd className="mt-1 break-words text-slate-200">{reviewerName(request, departments)}</dd></div>
-                    <div className="col-span-1 min-[420px]:col-span-2"><dt className="text-slate-500">الصنف والكمية</dt><dd className="mt-1 break-words font-bold text-slate-100">{itemNames}<span className="font-normal text-slate-400"> — {quantities}</span></dd></div>
-                    <div><dt className="text-slate-500">رقم قطعة الأرض</dt><dd className="mt-1 break-words font-mono text-cyan-300">{parcelReferences}</dd></div>
-                    <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 break-words text-slate-200">{regions}</dd></div>
+                    <div className="col-span-1 min-[420px]:col-span-2">
+                      <dt className="text-slate-500">الصنف والكمية</dt>
+                      <dd className="mt-1 break-words font-bold text-slate-100" title={quantitiesInfo.tooltip}>
+                        {itemNames}
+                        <span className="font-mono text-amber-300 font-bold mr-1.5"> — {quantitiesInfo.display}</span>
+                        {quantitiesInfo.subtext && <span className="text-[10px] text-slate-400 font-normal mr-1">{quantitiesInfo.subtext}</span>}
+                      </dd>
+                    </div>
+                    <div><dt className="text-slate-500">رقم قطعة الأرض</dt><dd className="mt-1 break-words font-mono text-cyan-300">{parcelsDisplay}</dd></div>
+                    <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 break-words text-slate-200">{regionsDisplay}</dd></div>
                     <div className="col-span-1 min-[420px]:col-span-2"><dt className="text-slate-500">المورد</dt><dd className="mt-1 break-words font-bold text-emerald-300">{supplier}</dd></div>
                   </dl>
                   <div className="mt-4 grid grid-cols-1 gap-2">

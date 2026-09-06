@@ -14,6 +14,7 @@ import PurchaseRequestStatusBadge from '../components/purchase-requests/Purchase
 import { getDefaultDateFrom, getTodayInputDate } from '../utils/dateFilters';
 import { useAuth } from '../context/AuthContext';
 import { getPrimaryRoleSlug } from '../routes/roleRouting';
+import { getSummaryParcels, getSummaryRegions } from '../utils/formatRequestSummary';
 
 const ACTION_LABELS: Record<string, string> = {
   CREATED: 'إنشاء',
@@ -225,8 +226,8 @@ export const RoleArchivePage: React.FC = () => {
                           ? itemNames[0]
                           : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
 
-                      const parcelRefs = (pr.items || []).map((i) => i.item_reference).filter(Boolean).join('، ') || '—';
-                      const regions = (pr.items || []).map((i) => i.region).filter(Boolean).join('، ') || '—';
+                      const parcelRefs = getSummaryParcels(pr);
+                      const regions = getSummaryRegions(pr);
 
                       return (
                         <TableRow key={pr.id}>
