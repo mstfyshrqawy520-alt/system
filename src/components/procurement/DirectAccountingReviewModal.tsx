@@ -230,24 +230,6 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2.5">
-            <span className="text-[11px] text-slate-400">تاريخ الحاجة</span>
-            <p className="mt-1 font-mono text-sm text-slate-100">{request.date_needed || 'غير محدد'}</p>
-          </div>
-          <div className="rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2.5">
-            <span className="text-[11px] text-slate-400">الأولوية</span>
-            <p className="mt-1 text-sm font-bold text-slate-100">{PR_PRIORITY_LABELS[request.priority] || request.priority}</p>
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-cyan-500/40 bg-cyan-950/15 p-3 text-xs leading-6 text-slate-300">
-          <p className="font-bold text-cyan-200">{isAccountingReview ? 'مراجعة الحسابات قبل إعادة الطلب للمشتريات' : 'إدخال البيانات المالية قبل الإرسال'}</p>
-          <p className="mt-1">{isAccountingReview
-            ? 'يمكن تعديل المورد لكل بند والكمية وسعر الوحدة والملاحظات. رقم قطعة الأرض والمنطقة ووصف الصنف ثابتة ولا يمكن تغييرها بعد إرسال الطلب. بعد الاعتماد يعود الطلب إلى مدير المشتريات لإنشاء أمر الشراء.'
-            : 'اختر المورد لكل بند وأدخل سعر الوحدة والكمية. يتم حساب إجمالي كل بند والإجمالي الكلي تلقائيًا، ثم تُحفظ هذه البيانات مع الطلب لتراجعها الحسابات.'}</p>
-        </div>
-
         {validationError && (
           <div role="alert" className="rounded-lg border border-rose-500/50 bg-rose-950/30 px-3 py-2.5 text-xs font-bold leading-6 text-rose-200">
             {validationError}
@@ -255,17 +237,33 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
         )}
 
         <div>
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-black text-slate-100">تفاصيل البنود والأسعار</h3>
-            <span className="text-xs text-slate-400">العملة: جنيه مصري (EGP)</span>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h3 className="text-sm font-black text-slate-100">تفاصيل البنود والأسعار</h3>
+              {(() => {
+                const parcel = (request.items && request.items[0]?.item_reference) || items[0]?.item_reference || '';
+                const region = (request.items && request.items[0]?.region) || items[0]?.region || '';
+                return (parcel || region) ? (
+                  <span className="text-xs font-bold bg-amber-950/50 text-amber-300 border border-amber-700/50 px-2.5 py-0.5 rounded-lg flex items-center gap-1.5 shadow-sm">
+                    <span>🏗️</span>
+                    <span>قطعة {parcel || '—'}</span>
+                    {region && (
+                      <>
+                        <span className="text-amber-500/70">•</span>
+                        <span>{region}</span>
+                      </>
+                    )}
+                  </span>
+                ) : null;
+              })()}
+            </div>
+            <span className="text-xs text-slate-400 font-medium">العملة: جنيه مصري (EGP)</span>
           </div>
           <div className="hidden overflow-x-auto rounded-lg border border-slate-700 sm:block">
             <table className="w-full border-collapse text-right text-xs">
               <thead className="bg-slate-950 text-cyan-200">
                 <tr>
                   <th className="border-b border-slate-700 px-3 py-3 text-center">#</th>
-                  <th className="border-b border-slate-700 px-3 py-3">رقم قطعة الأرض</th>
-                  <th className="border-b border-slate-700 px-3 py-3">المنطقة</th>
                   <th className="border-b border-slate-700 px-3 py-3">اسم الصنف</th>
                   <th className="border-b border-slate-700 px-3 py-3">المورد</th>
                   <th className="border-b border-slate-700 px-3 py-3 text-center">الكمية</th>
@@ -276,13 +274,11 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
               <tbody>
                 {items.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-3 py-8 text-center text-rose-300">لا توجد بنود مرتبطة بهذا الطلب لإدخال بياناتها المالية.</td>
+                    <td colSpan={6} className="px-3 py-8 text-center text-rose-300">لا توجد بنود مرتبطة بهذا الطلب لإدخال بياناتها المالية.</td>
                   </tr>
                 ) : items.map((item, index) => (
-                  <tr key={item.pr_item_id || index} className="bg-slate-900 even:bg-slate-950/70">
+                  <tr key={item.pr_item_id || index} className="bg-slate-900 even:bg-slate-950/70 hover:bg-slate-800/40 transition-colors">
                     <td className="border-t border-slate-800 px-3 py-3 text-center font-mono text-slate-400">{index + 1}</td>
-                    <td className="border-t border-slate-800 px-3 py-3 font-mono font-bold text-slate-200">{item.item_reference || '—'}</td>
-                    <td className="border-t border-slate-800 px-3 py-3 text-slate-300">{item.region || '—'}</td>
                     <td className="border-t border-slate-800 px-3 py-3 font-bold text-slate-100">{item.item_description || '—'}</td>
                     <td className="border-t border-slate-800 px-2 py-2">
                       <select
@@ -290,7 +286,7 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                         value={item.supplier_id}
                         onChange={(event) => updateItemSupplier(index, event.target.value)}
                         disabled={isSubmitting}
-                        className={`h-9 w-40 rounded-md border px-2 text-[11px] outline-none disabled:opacity-60 ${
+                        className={`h-9 w-44 rounded-md border px-2 text-[11px] outline-none disabled:opacity-60 ${
                           item.supplier_id
                             ? 'border-emerald-500/60 bg-[#0b1424] text-slate-100 focus:border-emerald-300'
                             : 'border-rose-500/60 bg-rose-950/20 text-rose-300 focus:border-rose-300'
@@ -305,18 +301,20 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                       </select>
                     </td>
                     <td className="border-t border-slate-800 px-3 py-2 text-center">
-                      <input
-                        aria-label={`كمية البند ${index + 1}`}
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        value={item.quantity ?? ''}
-                        onFocus={(event) => event.target.select()}
-                        onChange={(event) => updateItem(index, 'quantity', event.target.value)}
-                        disabled={isSubmitting}
-                        className="h-9 w-24 rounded-md border border-cyan-500/60 bg-[#0b1424] px-2 text-center font-mono text-xs text-slate-100 outline-none focus:border-cyan-300 disabled:opacity-60"
-                      />
-                      <span className="mr-1 text-[10px] text-slate-400">{getUnitLabel(item.uom)}</span>
+                      <div className="flex items-center justify-center gap-1.5">
+                        <input
+                          aria-label={`كمية البند ${index + 1}`}
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={item.quantity ?? ''}
+                          onFocus={(event) => event.target.select()}
+                          onChange={(event) => updateItem(index, 'quantity', event.target.value)}
+                          disabled={isSubmitting}
+                          className="h-9 w-24 rounded-md border border-cyan-500/60 bg-[#0b1424] px-2 text-center font-mono text-xs text-slate-100 outline-none focus:border-cyan-300 disabled:opacity-60"
+                        />
+                        <span className="text-[11px] font-bold text-amber-300">{getUnitLabel(item.uom)}</span>
+                      </div>
                     </td>
                     <td className="border-t border-slate-800 px-3 py-2 text-center">
                       <div className="flex items-center justify-center gap-1">
@@ -331,16 +329,18 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                           disabled={isSubmitting}
                           className="h-9 w-28 rounded-md border border-emerald-500/60 bg-[#0b1424] px-2 text-center font-mono text-xs text-slate-100 outline-none focus:border-emerald-300 disabled:opacity-60"
                         />
-                        <span className="text-[10px] text-slate-400">ج.م</span>
+                        <span className="text-[10px] text-slate-400 font-bold">ج.م</span>
                       </div>
                     </td>
-                    <td className="border-t border-slate-800 px-3 py-3 text-center font-mono font-black text-emerald-200">{formatAmount(lineTotal(item.quantity, item.unit_price))} ج.م</td>
+                    <td className="border-t border-slate-800 px-3 py-3 text-center font-mono font-black text-emerald-300 text-sm">
+                      {formatAmount(lineTotal(item.quantity, item.unit_price))} ج.م
+                    </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr className="bg-slate-950">
-                  <td colSpan={7} className="border-t border-cyan-500/50 px-3 py-4 text-left text-sm font-black text-slate-100">الإجمالي المالي للطلب:</td>
+                  <td colSpan={5} className="border-t border-cyan-500/50 px-3 py-4 text-left text-sm font-black text-slate-100">الإجمالي المالي للطلب:</td>
                   <td className="border-t border-cyan-500/50 px-3 py-4 text-center font-mono text-base font-black text-emerald-300">{formatAmount(grandTotal)} ج.م</td>
                 </tr>
               </tfoot>
@@ -355,17 +355,15 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
               </div>
             ) : items.map((item, index) => (
               <article key={`mobile-${item.pr_item_id || index}`} className="rounded-xl border border-slate-700 bg-slate-950/60 p-3">
-                <div className="flex items-start justify-between gap-3 border-b border-slate-800 pb-3">
+                <div className="flex items-start justify-between gap-3 border-b border-slate-800 pb-2">
                   <div className="min-w-0">
                     <p className="text-[10px] font-bold text-cyan-300">بند #{index + 1}</p>
-                    <p className="mt-1 break-words text-sm font-black text-slate-100">{item.item_description || 'بدون وصف'}</p>
+                    <p className="mt-0.5 break-words text-sm font-black text-slate-100">{item.item_description || 'بدون وصف'}</p>
                   </div>
-                  <p className="shrink-0 font-mono text-xs font-bold text-slate-300">{item.item_reference || '—'}</p>
+                  <span className="text-[11px] font-bold bg-amber-950/50 text-amber-300 border border-amber-800/50 px-2 py-0.5 rounded shrink-0">
+                    {getUnitLabel(item.uom)}
+                  </span>
                 </div>
-                <dl className="mt-3 grid grid-cols-1 gap-2 text-xs min-[420px]:grid-cols-2">
-                  <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 text-slate-200">{item.region || '—'}</dd></div>
-                  <div><dt className="text-slate-500">الوحدة</dt><dd className="mt-1 text-slate-200">{getUnitLabel(item.uom)}</dd></div>
-                </dl>
                 <label className="mt-3 block text-xs font-bold text-emerald-300">
                   المورد <span className="text-rose-400">*</span>
                   <select
@@ -389,7 +387,7 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                 </label>
                 <div className="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                   <label className="text-xs font-bold text-slate-300">
-                    الكمية
+                    الكمية ({getUnitLabel(item.uom)})
                     <input
                       aria-label={`كمية البند ${index + 1}`}
                       type="number"
@@ -418,7 +416,7 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                   </label>
                 </div>
                 <div className="mt-3 flex items-center justify-between rounded-lg border border-emerald-700/50 bg-emerald-950/20 px-3 py-2 text-xs">
-                  <span className="text-slate-400">إجمالي البند</span>
+                  <span className="text-slate-400 font-medium">إجمالي البند</span>
                   <strong className="font-mono text-sm text-emerald-200">{formatAmount(lineTotal(item.quantity, item.unit_price))} ج.م</strong>
                 </div>
               </article>
