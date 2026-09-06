@@ -178,7 +178,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
   const isDirty = useMemo(() => JSON.stringify(data) !== JSON.stringify(initialDataSnapshot), [data, initialDataSnapshot]);
   useUnsavedChangesWarning(isDirty && !isSubmitting);
 
-  // Restore local draft
+  // Restore local draft silently
   useEffect(() => {
     try {
       const todayStr = getTodayDateInputValue();
@@ -194,7 +194,6 @@ const CreatePurchaseRequestPage: React.FC = () => {
             date_needed: validDateNeeded,
             items: parsed.items,
           });
-          setDraftMessage('تم استعادة المسودة المحفوظة على هذا الجهاز.');
         }
       }
     } catch {
@@ -204,15 +203,14 @@ const CreatePurchaseRequestPage: React.FC = () => {
     }
   }, []);
 
-  // Auto-save local draft
+  // Auto-save local draft silently in the background
   useEffect(() => {
     if (!draftReady) return;
     const timer = window.setTimeout(() => {
       try {
         window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(data));
-        setDraftMessage('تم الحفظ تلقائيًا على هذا الجهاز.');
       } catch {
-        setDraftMessage(null);
+        // Ignore storage errors
       }
     }, 900);
     return () => window.clearTimeout(timer);
@@ -401,9 +399,9 @@ const CreatePurchaseRequestPage: React.FC = () => {
     <div className="mx-auto max-w-6xl space-y-6 pb-24" dir="rtl">
       {/* Sticky Action Header on Scroll */}
       <div className="sticky top-2 z-40 rounded-2xl border border-slate-700/80 bg-slate-950/90 p-3.5 shadow-2xl backdrop-blur-md transition-all">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-cyan-500/40 text-xl shadow-inner">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-cyan-500/40 text-xl shadow-inner shrink-0">
               ✍️
             </div>
             <div>
@@ -413,7 +411,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-900 border border-slate-700 text-slate-300">
                   <span className={`h-2 w-2 rounded-full ${requestHasErrors ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}`} />
-                  {requestHasErrors ? 'بانتظار استكمال الحقول' : 'جاهز للإرسال الفوري'}
+                  {requestHasErrors ? 'بانتظار استكمال الحقول' : 'جاهز للإرسال'}
                 </span>
               </div>
               <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-0.5">
@@ -424,15 +422,6 @@ const CreatePurchaseRequestPage: React.FC = () => {
                     {isOffice ? '🏢 مكتبي' : '🏗️ مشروع/موقع'}
                   </strong>
                 </span>
-                {draftMessage && (
-                  <>
-                    <span className="text-slate-600">•</span>
-                    <span className="text-emerald-400 font-bold flex items-center gap-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-                      {draftMessage}
-                    </span>
-                  </>
-                )}
               </div>
             </div>
           </div>
@@ -443,54 +432,9 @@ const CreatePurchaseRequestPage: React.FC = () => {
                 ← أرشيف طلباتي
               </Button>
             </Link>
-
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={handleSaveDraft}
-              disabled={isSubmitting || isSavingDraft}
-              isLoading={isSavingDraft}
-              className="text-xs border-slate-700 hover:border-slate-500"
-            >
-              💾 مسودة
-            </Button>
-
-            <Button
-              type="button"
-              variant="primary"
-              size="sm"
-              onClick={() => void handleSubmit()}
-              disabled={isSubmitting || isSavingDraft}
-              isLoading={isSubmitting}
-              className={`text-xs px-4 font-bold shadow-lg transition-all ${
-                requestHasErrors
-                  ? 'bg-cyan-700 hover:bg-cyan-600 border-cyan-600/50'
-                  : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 border-emerald-500 text-white shadow-emerald-950/40 ring-2 ring-emerald-500/30 animate-pulse'
-              }`}
-            >
-              🚀 {isGeneralManager ? 'إرسال مباشر للمشتريات' : 'إرسال الطلب فوراً'}
-            </Button>
           </div>
         </div>
       </div>
-
-      {/* Auto-save Draft Status Card */}
-      {draftMessage && (
-        <div className="flex items-center justify-between rounded-xl border border-emerald-800/60 bg-emerald-950/40 px-4 py-2.5 text-xs text-emerald-200 shadow-md animate-fade-in">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="font-bold">💾 {draftMessage}</span>
-          </div>
-          <button
-            type="button"
-            onClick={handleClearDraft}
-            className="text-[11px] font-bold text-slate-400 hover:text-rose-300 transition-colors underline underline-offset-4"
-          >
-            مسح المسودة والبدء من جديد
-          </button>
-        </div>
-      )}
 
       {error && (
         <div className="rounded-xl border border-rose-800/80 bg-rose-950/40 p-4 text-xs font-bold text-rose-200 shadow-lg" role="alert">
@@ -853,82 +797,27 @@ const CreatePurchaseRequestPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Card 2: Items List - Compact Spreadsheet Table */}
+      {/* Card 2: Items List */}
       <Card className="space-y-4 border-slate-800 bg-slate-900/90 p-4 sm:p-6 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-black text-slate-100 flex items-center gap-2">
-                <span className="text-cyan-400">📦</span> 2. جدول إدخال البنود والمواد السريع
-              </h2>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-800/60 text-cyan-300">
-                {data.items.length} {data.items.length === 1 ? 'بند' : 'بنود'}
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1">
-              إدخال أفقي سريع بنمط جدول إكسيل (Compact Spreadsheet) مع تكرار وإضافة الأصناف بنقرة واحدة.
-            </p>
+        <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-black text-slate-100 flex items-center gap-2">
+              <span className="text-cyan-400">📦</span> 2. بنود ومواد الطلب
+            </h2>
+            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-950 border border-cyan-800/60 text-cyan-300">
+              {data.items.length} {data.items.length === 1 ? 'بند' : 'بنود'}
+            </span>
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            <Button
-              type="button"
-              variant="primary"
-              size="sm"
-              onClick={addItem}
-              className="text-xs bg-cyan-600 hover:bg-cyan-500 border-cyan-500 font-bold px-3 py-1.5 flex items-center gap-1.5 shadow-md shadow-cyan-950/40"
-            >
-              <span>+</span> إضافة صنف جديد
-            </Button>
-          </div>
-        </div>
-
-        {/* Quick Picks for Common Items */}
-        <div className="flex flex-wrap items-center gap-1.5 text-xs bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/70">
-          <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 ml-1">
-            <span>⚡</span> أصناف شائعة:
-          </span>
-          {isOffice ? (
-            <>
-              {['ورق تصوير A4 80 جم', 'أقلام جاف أزرق', 'حبر طابعة HP أسود', 'ملفات بلاستيك دوسيه', 'ضيافة وبوفيه'].map((chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  onClick={() => {
-                    const lastIdx = data.items.length - 1;
-                    if (lastIdx >= 0 && !data.items[lastIdx].item_description.trim()) {
-                      updateItem(lastIdx, { item_description: chip });
-                    } else {
-                      setData({ ...data, items: [...data.items, { ...emptyItem(), item_description: chip }] });
-                    }
-                  }}
-                  className="text-[11px] px-2.5 py-1 rounded-lg bg-indigo-950/60 border border-indigo-800/50 text-indigo-300 hover:bg-indigo-900/60 hover:text-white transition-all font-medium"
-                >
-                  + {chip}
-                </button>
-              ))}
-            </>
-          ) : (
-            <>
-              {['حديد تسليح 16 مم', 'حديد تسليح 12 مم', 'أسمنت بورتلاندي عادي', 'خرسانة جاهزة عيار 350', 'طوب أسمنتي مصمت', 'رمل ناعم'].map((chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  onClick={() => {
-                    const lastIdx = data.items.length - 1;
-                    if (lastIdx >= 0 && !data.items[lastIdx].item_description.trim()) {
-                      updateItem(lastIdx, { item_description: chip });
-                    } else {
-                      setData({ ...data, items: [...data.items, { ...emptyItem(), item_description: chip }] });
-                    }
-                  }}
-                  className="text-[11px] px-2.5 py-1 rounded-lg bg-amber-950/60 border border-amber-800/50 text-amber-300 hover:bg-amber-900/60 hover:text-white transition-all font-medium"
-                >
-                  + {chip}
-                </button>
-              ))}
-            </>
-          )}
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={addItem}
+            className="text-xs bg-cyan-600 hover:bg-cyan-500 border-cyan-500 font-bold px-3 py-1.5 flex items-center gap-1.5 shadow-md shadow-cyan-950/40"
+          >
+            <span>+</span> إضافة صنف جديد
+          </Button>
         </div>
 
         {/* Plot & Region Summary Bar for items */}
@@ -1273,8 +1162,24 @@ const CreatePurchaseRequestPage: React.FC = () => {
 
       {/* Bottom Submit & Action Bar */}
       <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 shadow-2xl backdrop-blur-sm">
-        <div className="text-xs text-slate-400">
-          💡 عند الضغط على <strong>&quot;إرسال طلب الشراء فوراً&quot;</strong> سيتم حفظ الطلب وإرساله مباشرة لدورة الاعتماد.
+        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+          <span>
+            💡 عند الضغط على <strong>&quot;{isGeneralManager ? 'إرسال مباشر للمشتريات' : 'إرسال طلب الشراء فوراً'}&quot;</strong> سيتم حفظ الطلب وإرساله مباشرة لدورة الاعتماد.
+          </span>
+          {draftMessage && (
+            <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/60 px-2 py-0.5 rounded-md">
+              ✓ {draftMessage}
+            </span>
+          )}
+          {isDirty && (
+            <button
+              type="button"
+              onClick={handleClearDraft}
+              className="text-[11px] font-bold text-slate-400 hover:text-rose-300 underline underline-offset-4 transition-colors cursor-pointer"
+            >
+              مسح المسودة والبدء من جديد
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -1298,7 +1203,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
             isLoading={isSubmitting}
             className="px-6 shadow-lg shadow-cyan-600/30"
           >
-            🚀 إرسال طلب الشراء فوراً
+            🚀 {isGeneralManager ? 'إرسال مباشر للمشتريات' : 'إرسال طلب الشراء فوراً'}
           </Button>
         </div>
       </div>
