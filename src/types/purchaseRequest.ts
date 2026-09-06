@@ -204,6 +204,8 @@ export interface PurchaseRequest {
   procurement_route?: 'UNDECIDED' | 'DIRECT' | 'QUOTES' | string;
   direct_supplier_id?: number | null;
   target_department_id?: number | null;
+  reviewer_user_id?: number | null;
+  department_id?: number | null;
   direct_supplier?: { id: number; company_name: string; code?: string | null } | null;
   total_estimated_cost?: string | number | null;
   purchase_order_issued?: boolean;

@@ -56,7 +56,7 @@ const REVIEWER_EDITABLE_STATUSES = ['UNDER_REVIEW', 'PENDING_PROCUREMENT_APPROVA
 import { useRealtimeRefresh, emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
 
 export const ReviewerRequestsPage: React.FC = () => {
-  const { hasPermission } = useAuth();
+  const { user, hasPermission, hasRole } = useAuth();
   const [searchParams] = useSearchParams();
   const urlStatus = searchParams.get('status');
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
@@ -102,7 +102,20 @@ export const ReviewerRequestsPage: React.FC = () => {
     }
   };
 
-  const filteredRequests = requests.filter((request) => {
+  const userDeptId = user?.department_id ? Number(user.department_id) : null;
+  const isUserAdmin = hasRole('admin');
+
+  // Strictly scope requests to the reviewer's target department
+  const scopedRequests = requests.filter((r) => {
+    if (isUserAdmin) return true;
+    if (r.reviewer_user_id && Number(r.reviewer_user_id) === Number(user?.id)) return true;
+    if (r.target_department_id) {
+      return userDeptId !== null && Number(r.target_department_id) === userDeptId;
+    }
+    return userDeptId !== null && r.department_id && Number(r.department_id) === userDeptId;
+  });
+
+  const filteredRequests = scopedRequests.filter((request) => {
     if (activeFilter === 'ALL') return true;
     if (activeFilter === 'PENDING') return REVIEWER_PENDING_STATUSES.has(request.status);
     if (activeFilter === 'APPROVED') return REVIEWER_APPROVED_STATUSES.has(request.status);

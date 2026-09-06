@@ -23,6 +23,7 @@ export interface ActionInboxItem {
   title: string;
   subtitle?: string;
   department?: string;
+  target_department?: string;
   requester?: string;
   supplier?: string;
   amount?: number | string;
@@ -454,6 +455,15 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                           {item.department && (
                             <span className="text-slate-400 text-[11px]">({item.department})</span>
                           )}
+                        </div>
+                      )}
+
+                      {item.target_department && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-slate-500">🏢 القسم المستهدف:</span>
+                          <span className="px-2 py-0.5 rounded-md text-[11px] font-black bg-cyan-950/80 border border-cyan-700/60 text-cyan-300">
+                            {item.target_department}
+                          </span>
                         </div>
                       )}
 

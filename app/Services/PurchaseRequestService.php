@@ -171,6 +171,21 @@ class PurchaseRequestService
                     ->whereHas('roles', fn ($q) => $q->where('slug', 'reviewer'))
                     ->first();
             }
+            if (!$assignedManager) {
+                $emailMap = [
+                    'EXECUTION' => 'ayman@gmail.com',
+                    'BUILDINGS' => 'hatem@gmail.com',
+                    'FINISHING' => 'masoud@gmail.com',
+                    'LICENSES' => 'mostafa@gmail.com',
+                    'BUFFET' => 'amr@gmail.com',
+                ];
+                if (isset($emailMap[$targetDepartment->code])) {
+                    $assignedManager = User::where('email', $emailMap[$targetDepartment->code])->first();
+                }
+            }
+            if ($assignedManager && !$targetDepartment->manager_user_id) {
+                $targetDepartment->update(['manager_user_id' => $assignedManager->id]);
+            }
 
             // Backward compatibility for old clients/drafts that still send explicit assignments.
             if (!$assignedManager && !empty($data['reviewer_user_id'])) {
@@ -334,6 +349,21 @@ class PurchaseRequestService
                         ->where('is_active', true)
                         ->whereHas('roles', fn ($q) => $q->where('slug', 'reviewer'))
                         ->first();
+                }
+                if (!$assignedManager) {
+                    $emailMap = [
+                        'EXECUTION' => 'ayman@gmail.com',
+                        'BUILDINGS' => 'hatem@gmail.com',
+                        'FINISHING' => 'masoud@gmail.com',
+                        'LICENSES' => 'mostafa@gmail.com',
+                        'BUFFET' => 'amr@gmail.com',
+                    ];
+                    if (isset($emailMap[$targetDepartment->code])) {
+                        $assignedManager = User::where('email', $emailMap[$targetDepartment->code])->first();
+                    }
+                }
+                if ($assignedManager && !$targetDepartment->manager_user_id) {
+                    $targetDepartment->update(['manager_user_id' => $assignedManager->id]);
                 }
                 if (!$assignedManager && !$user->hasRole('general_manager')) {
                     throw ValidationException::withMessages(['target_department_id' => ['القسم المستهدف لا يحتوي على مدير قسم أو مراجع معين بعد.']]);

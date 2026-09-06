@@ -42,11 +42,28 @@ try {
       };
 
       self.registration.showNotification(notificationTitle, notificationOptions);
+
+      // Update app badge count when background notification arrives
+      if (self.navigator && self.navigator.setAppBadge) {
+        // We don't know the exact count, so just increment by showing a generic badge
+        self.navigator.setAppBadge().catch(() => {});
+      }
     });
   }
 } catch (error) {
   console.warn('Firebase background messaging initialization error.', error);
 }
+
+// ─── App Shell Cache for PWA Install Support ───
+const CACHE_NAME = 'ashbiliya-pwa-v1';
+const APP_SHELL_URLS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/icon-192x192.png',
+  '/icon-512x512.png',
+  '/eshbelia-logo.png',
+];
 
 // Fallback native push listener for mobile devices
 self.addEventListener('push', (event) => {
@@ -62,8 +79,8 @@ self.addEventListener('push', (event) => {
 
     const options = {
       body: body,
-      icon: '/eshbelia-logo.png',
-      badge: '/eshbelia-logo.png',
+      icon: '/icon-192x192.png',
+      badge: '/favicon-32x32.png',
       dir: 'rtl',
       lang: 'ar',
       vibrate: [200, 100, 200],
@@ -77,7 +94,12 @@ self.addEventListener('push', (event) => {
     };
 
     event.waitUntil(
-      self.registration.showNotification(title, options)
+      self.registration.showNotification(title, options).then(() => {
+        // Update badge on push
+        if (self.navigator && self.navigator.setAppBadge) {
+          self.navigator.setAppBadge().catch(() => {});
+        }
+      })
     );
   } catch (e) {
     // If not JSON, show text
@@ -86,7 +108,7 @@ self.addEventListener('push', (event) => {
       event.waitUntil(
         self.registration.showNotification('نظام المشتريات', {
           body: text,
-          icon: '/eshbelia-logo.png',
+          icon: '/icon-192x192.png',
           dir: 'rtl',
           lang: 'ar',
         })
@@ -115,10 +137,61 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
+// ─── Fetch handler (Network-First with App Shell fallback) ───
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // Only handle same-origin navigation and app shell requests
+  if (url.origin !== self.location.origin) return;
+
+  // For navigation requests, try network first then cache
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Cache the latest HTML for offline
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put('/', clone)).catch(() => {});
+          return response;
+        })
+        .catch(() => caches.match('/').then((cached) => cached || new Response('Offline', { status: 503 })))
+    );
+    return;
+  }
+
+  // For static assets (JS, CSS, images), try cache first then network
+  if (event.request.destination === 'script' || event.request.destination === 'style' || event.request.destination === 'image') {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone)).catch(() => {});
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+});
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(self.skipWaiting());
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(APP_SHELL_URLS))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    caches.keys()
+      .then((names) => Promise.all(
+        names.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name))
+      ))
+      .then(() => clients.claim())
+  );
 });
+

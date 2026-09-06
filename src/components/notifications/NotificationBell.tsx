@@ -36,6 +36,17 @@ export const NotificationBell: React.FC = () => {
   dropdownOpenRef.current = dropdownOpen;
   const navigate = useNavigate();
 
+  // ─── PWA Badge API: update app icon badge whenever unread count changes ───
+  useEffect(() => {
+    if ('setAppBadge' in navigator) {
+      if (count > 0) {
+        navigator.setAppBadge(count).catch(() => {});
+      } else {
+        navigator.clearAppBadge?.().catch(() => {});
+      }
+    }
+  }, [count]);
+
   // 1. Lightweight count check (0.1 kB) - default background operation
   const fetchUnreadCountOnly = async () => {
     try {

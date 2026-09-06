@@ -19,6 +19,7 @@ export const PushNotificationPrompt: React.FC<PushNotificationPromptProps> = ({
 }) => {
   const [permission, setPermission] = useState<PushPermissionState>('default');
   const [loading, setLoading] = useState(false);
+  const [testingPush, setTestingPush] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
@@ -58,8 +59,6 @@ export const PushNotificationPrompt: React.FC<PushNotificationPromptProps> = ({
       </div>
     );
   }
-
-  const [testingPush, setTestingPush] = useState(false);
 
   const handleTestPush = async () => {
     setTestingPush(true);

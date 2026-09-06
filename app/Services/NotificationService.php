@@ -35,9 +35,36 @@ class NotificationService
             if ($deptUsers->isNotEmpty()) {
                 return $deptUsers->values();
             }
+
+            // Check if department has a designated manager with permission
+            $dept = \App\Models\Department::find($departmentId);
+            if ($dept?->manager_user_id) {
+                $mgr = User::where('id', $dept->manager_user_id)->where('is_active', true)->first();
+                if ($mgr && $mgr->hasPermission($permissionSlug)) {
+                    return collect([$mgr]);
+                }
+            }
+
+            // Mapped official reviewer for the department
+            $emailMap = [
+                'EXECUTION' => 'ayman@gmail.com',
+                'BUILDINGS' => 'hatem@gmail.com',
+                'FINISHING' => 'masoud@gmail.com',
+                'LICENSES' => 'mostafa@gmail.com',
+                'BUFFET' => 'amr@gmail.com',
+            ];
+            if ($dept?->code && isset($emailMap[$dept->code])) {
+                $mappedUser = User::where('email', $emailMap[$dept->code])->where('is_active', true)->first();
+                if ($mappedUser && $mappedUser->hasPermission($permissionSlug)) {
+                    return collect([$mappedUser]);
+                }
+            }
+
+            // Strict isolation: Do not leak notifications to unrelated departments
+            return collect();
         }
 
-        // Fallback to global active users with permission
+        // Fallback to global active users with permission only when no specific department was requested
         return $query->get()
             ->filter(fn (User $u) => $u->hasPermission($permissionSlug))
             ->values();

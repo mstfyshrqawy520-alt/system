@@ -486,4 +486,49 @@ class ReviewerPurchaseRequestTest extends TestCase
         $outsideScope->assertJsonCount(0, 'data');
     }
 
+    public function test_requests_are_routed_strictly_to_target_department_and_hidden_from_requesting_department_reviewer(): void
+    {
+        // Employee belongs to IT Department ($this->itDept), but request is targeted to HR Department ($this->hrDept)
+        $targetedPr = PurchaseRequest::create([
+            'request_number' => 'PR-2026-99999',
+            'user_id' => $this->employee->id,
+            'department_id' => $this->itDept->id,
+            'target_department_id' => $this->hrDept->id,
+            'reviewer_user_id' => $this->hrReviewer->id,
+            'priority' => 'NORMAL',
+            'status' => 'SUBMITTED',
+            'total_estimated_cost' => 5000,
+        ]);
+
+        $targetedPr->items()->create([
+            'item_description' => 'مواد خاصة بقسم المباني',
+            'quantity' => 10,
+            'uom' => 'PCS',
+        ]);
+
+        // 1. Reviewer of requesting department (IT Reviewer) MUST NOT see this request
+        $itResponse = $this->actingAs($this->itReviewer, 'sanctum')
+            ->getJson('/api/v1/reviewer/purchase-requests');
+        $itResponse->assertOk();
+        $itIds = collect($itResponse->json('data'))->pluck('id')->all();
+        $this->assertNotContains($targetedPr->id, $itIds, 'Request targeted to HR must NOT appear in IT reviewer list.');
+
+        // IT Reviewer cannot access it directly (403)
+        $itDetailResponse = $this->actingAs($this->itReviewer, 'sanctum')
+            ->getJson("/api/v1/reviewer/purchase-requests/{$targetedPr->id}");
+        $itDetailResponse->assertStatus(403);
+
+        // 2. Reviewer of target department (HR Reviewer) MUST see this request
+        $hrResponse = $this->actingAs($this->hrReviewer, 'sanctum')
+            ->getJson('/api/v1/reviewer/purchase-requests');
+        $hrResponse->assertOk();
+        $hrIds = collect($hrResponse->json('data'))->pluck('id')->all();
+        $this->assertContains($targetedPr->id, $hrIds, 'Request targeted to HR MUST appear in HR reviewer list.');
+
+        // HR Reviewer can view it
+        $hrDetailResponse = $this->actingAs($this->hrReviewer, 'sanctum')
+            ->getJson("/api/v1/reviewer/purchase-requests/{$targetedPr->id}");
+        $hrDetailResponse->assertOk();
+        $this->assertSame($targetedPr->id, $hrDetailResponse->json('data.id'));
+    }
 }

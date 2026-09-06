@@ -34,7 +34,7 @@ const REVIEWER_APPROVED_STATUSES = new Set([
 ]);
 
 export const ReviewerDashboardPage: React.FC = () => {
-  const { user, hasPermission } = useAuth();
+  const { user, hasPermission, hasRole } = useAuth();
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
   const [assignedReceipts, setAssignedReceipts] = useState<ReceiptRecord[]>([]);
   const [quoteRequests, setQuoteRequests] = useState<PurchaseRequest[]>([]);
@@ -66,13 +66,29 @@ export const ReviewerDashboardPage: React.FC = () => {
 
   useRealtimeRefresh(() => fetchRequests(true));
 
-  const submittedCount = requests.filter((r) => r.status === 'SUBMITTED').length;
-  const underReviewCount = requests.filter((r) => r.status === 'UNDER_REVIEW').length;
-  const approvedCount = requests.filter((r) => REVIEWER_APPROVED_STATUSES.has(r.status)).length;
-  const rejectedCount = requests.filter((r) => r.status === 'REJECTED').length;
+  const userDeptId = user?.department_id ? Number(user.department_id) : null;
+  const isUserAdmin = hasRole('admin');
+
+  // Filter requests strictly to user's assigned scope / target department
+  const scopedRequests = requests.filter((r) => {
+    if (isUserAdmin) return true;
+    // Explicitly assigned to this reviewer
+    if (r.reviewer_user_id && Number(r.reviewer_user_id) === Number(user?.id)) return true;
+    // Targeted to this reviewer's department
+    if (r.target_department_id) {
+      return userDeptId !== null && Number(r.target_department_id) === userDeptId;
+    }
+    // Fallback only if no target_department_id is set
+    return userDeptId !== null && r.department_id && Number(r.department_id) === userDeptId;
+  });
+
+  const submittedCount = scopedRequests.filter((r) => r.status === 'SUBMITTED').length;
+  const underReviewCount = scopedRequests.filter((r) => r.status === 'UNDER_REVIEW').length;
+  const approvedCount = scopedRequests.filter((r) => REVIEWER_APPROVED_STATUSES.has(r.status)).length;
+  const rejectedCount = scopedRequests.filter((r) => r.status === 'REJECTED').length;
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED'>('ALL');
 
-  const filteredRequests = requests.filter((r) => {
+  const filteredRequests = scopedRequests.filter((r) => {
     if (activeFilter === 'ALL') return true;
     if (activeFilter === 'SUBMITTED') return r.status === 'SUBMITTED';
     if (activeFilter === 'UNDER_REVIEW') return r.status === 'UNDER_REVIEW';
@@ -98,7 +114,7 @@ export const ReviewerDashboardPage: React.FC = () => {
   }
 
   const reviewerActionItems: ActionInboxItem[] = [
-    ...requests
+    ...scopedRequests
       .filter((r) => r.status === 'SUBMITTED' || r.status === 'UNDER_REVIEW')
       .map((req) => ({
         id: `pr-${req.id}`,
@@ -108,6 +124,7 @@ export const ReviewerDashboardPage: React.FC = () => {
         title: req.justification || (req.request_type === 'OFFICE_SUPPLIES' ? 'طلب مستلزمات مكتبية' : 'طلب مواد مشروعات'),
         subtitle: req.justification ? (req.request_type === 'OFFICE_SUPPLIES' ? 'مستلزمات مكتبية' : 'مشتريات مواقع') : undefined,
         department: req.department?.name,
+        target_department: req.target_department?.name,
         requester: req.requester?.name,
         amount: req.total_estimated_cost ? Number(req.total_estimated_cost) : undefined,
         urgency: req.priority === 'HIGH' ? ('CRITICAL' as const) : ('NORMAL' as const),
