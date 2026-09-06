@@ -54,9 +54,6 @@ export const PurchaseRequestItemsSummaryTable: React.FC<Props> = ({
             <h3 className="text-sm sm:text-base font-black text-slate-100 leading-tight">
               جدول مراجعة وملخص البنود المضافة
             </h3>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              معاينة شاملة ومنظمة لجميع الأصناف والكميات المدخلة
-            </p>
           </div>
         </div>
 

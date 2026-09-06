@@ -514,12 +514,9 @@ const CreatePurchaseRequestPage: React.FC = () => {
       {/* Card 1: Basic Request Info */}
       <Card className="space-y-5 border-slate-800 bg-slate-900/90 p-5 sm:p-6 shadow-xl">
         <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-black text-slate-100 flex items-center gap-2">
-              <span className="text-cyan-400">📋</span> 1. بيانات الطلب والجهة المعالجة
-            </h2>
-            <p className="text-[11px] text-slate-400 mt-0.5">حدد القسم الذي سيعالج طلب الشراء وتاريخ الاحتياج والأولوية</p>
-          </div>
+          <h2 className="text-sm font-black text-slate-100 flex items-center gap-2">
+            <span className="text-cyan-400">📋</span> 1. بيانات الطلب والجهة المعالجة
+          </h2>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -675,9 +672,6 @@ const CreatePurchaseRequestPage: React.FC = () => {
                   <h3 className="text-xs sm:text-sm font-black text-amber-300">
                     تحديد قطعة الأرض والمنطقة للطلب
                   </h3>
-                  <p className="text-[11px] text-amber-200/70">
-                    طلب الشراء يخص قطعة أرض واحدة ومنطقة واحدة تسري على جميع بنود الطلب
-                  </p>
                 </div>
               </div>
               {landParcels.length > 0 && (
@@ -820,28 +814,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Plot & Region Summary Bar for items */}
-        {!isOffice && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-gradient-to-r from-amber-950/50 via-slate-900/80 to-amber-950/40 p-3 rounded-xl border border-amber-800/60 shadow-inner text-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-base">🏗️</span>
-              <div>
-                <span className="text-slate-400">قطعة الأرض المحددة للطلب: </span>
-                <span className="font-mono font-black text-amber-300 bg-amber-950 px-2.5 py-0.5 rounded-md border border-amber-600/50 shadow-sm">
-                  {data.parcel_reference || 'لم تُحدد بعد (يرجى إدخالها بالقسم 1 أعلاه)'}
-                </span>
-                <span className="text-slate-500 mx-2">•</span>
-                <span className="text-slate-400">المنطقة: </span>
-                <span className="font-bold text-slate-100">
-                  {data.region || 'لم تُحدد بعد'}
-                </span>
-              </div>
-            </div>
-            <span className="text-[11px] font-bold text-amber-400/90 bg-amber-950/80 px-2.5 py-1 rounded-lg border border-amber-700/50 self-start sm:self-auto">
-              ✓ تسري وتورث تلقائيًا لجميع البنود أدناه
-            </span>
-          </div>
-        )}
+
 
         {/* ========================================================= */}
         {/* 1. MOBILE VIEW (Touch-Friendly Responsive Cards)          */}
@@ -1163,9 +1136,6 @@ const CreatePurchaseRequestPage: React.FC = () => {
       {/* Bottom Submit & Action Bar */}
       <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 shadow-2xl backdrop-blur-sm">
         <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
-          <span>
-            💡 عند الضغط على <strong>&quot;{isGeneralManager ? 'إرسال مباشر للمشتريات' : 'إرسال طلب الشراء فوراً'}&quot;</strong> سيتم حفظ الطلب وإرساله مباشرة لدورة الاعتماد.
-          </span>
           {draftMessage && (
             <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/60 px-2 py-0.5 rounded-md">
               ✓ {draftMessage}

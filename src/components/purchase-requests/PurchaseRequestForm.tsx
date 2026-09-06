@@ -530,9 +530,6 @@ export const PurchaseRequestForm: React.FC<Props> = ({
                     <h3 className="text-xs sm:text-sm font-black text-amber-300">
                       تحديد قطعة الأرض والمنطقة للطلب
                     </h3>
-                    <p className="text-[11px] text-amber-200/70">
-                      طلب الشراء يخص قطعة أرض واحدة ومنطقة واحدة تسري على جميع بنود الطلب
-                    </p>
                   </div>
                 </div>
                 {landParcels.length > 0 && (
@@ -666,28 +663,7 @@ export const PurchaseRequestForm: React.FC<Props> = ({
           </Button>
         </div>
 
-        {/* Plot & Region Summary Bar for items */}
-        {requestType !== 'OFFICE_SUPPLIES' && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-gradient-to-r from-amber-950/50 via-slate-900/80 to-amber-950/40 p-3 rounded-xl border border-amber-800/60 shadow-inner text-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-base">🏗️</span>
-              <div>
-                <span className="text-slate-400">قطعة الأرض المحددة للطلب: </span>
-                <span className="font-mono font-black text-amber-300 bg-amber-950 px-2.5 py-0.5 rounded-md border border-amber-600/50 shadow-sm">
-                  {parcelReference || 'لم تُحدد بعد (يرجى إدخالها بالقسم أعلاه)'}
-                </span>
-                <span className="text-slate-500 mx-2">•</span>
-                <span className="text-slate-400">المنطقة: </span>
-                <span className="font-bold text-slate-100">
-                  {region || 'لم تُحدد بعد'}
-                </span>
-              </div>
-            </div>
-            <span className="text-[11px] font-bold text-amber-400/90 bg-amber-950/80 px-2.5 py-1 rounded-lg border border-amber-700/50 self-start sm:self-auto">
-              ✓ تسري وتورث تلقائيًا لجميع البنود أدناه
-            </span>
-          </div>
-        )}
+
 
         <div className="space-y-3">
           {items.map((item, index) => (
