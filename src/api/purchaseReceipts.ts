@@ -25,6 +25,8 @@ export interface ReceiptPurchaseOrder {
     request_number: string;
     created_at?: string | null;
     project_name?: string | null;
+    parcel_reference?: string | null;
+    region?: string | null;
     requester?: { id: number; name: string; email?: string } | null;
     department?: { id: number; name: string } | null;
     site_engineer?: { id: number; name: string } | null;

@@ -524,27 +524,65 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                         </div>
 
                         {/* Large Clear Info Callouts */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm sm:text-base pt-1">
-                          <div className="flex items-center gap-3 text-slate-100 bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
-                            <span className="text-3xl shrink-0">🏢</span>
-                            <div>
-                              <span className="text-slate-400 block text-xs font-bold">المورد صاحب البضاعة:</span>
-                              <span className="font-black text-base sm:text-lg text-white block mt-0.5">
-                                {order.supplier?.company_name || 'مورد غير محدد'}
-                              </span>
-                            </div>
-                          </div>
+                        {(() => {
+                          const orderParcel =
+                            order.purchase_request?.parcel_reference ||
+                            order.items?.find((i) => i.item_reference || i.pr_item?.item_reference)?.item_reference ||
+                            order.items?.find((i) => i.item_reference || i.pr_item?.item_reference)?.pr_item?.item_reference ||
+                            null;
 
-                          <div className="flex items-center gap-3 text-slate-100 bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
-                            <span className="text-3xl shrink-0">📍</span>
-                            <div>
-                              <span className="text-slate-400 block text-xs font-bold">المشروع / موقع التوريد:</span>
-                              <span className="font-black text-base sm:text-lg text-cyan-300 block mt-0.5">
-                                {order.purchase_request?.project_name || order.purchase_request?.department?.name || 'المخزن الرئيسي'}
-                              </span>
+                          const orderRegion =
+                            order.purchase_request?.region ||
+                            order.items?.find((i) => i.region || i.pr_item?.region)?.region ||
+                            order.items?.find((i) => i.region || i.pr_item?.region)?.pr_item?.region ||
+                            null;
+
+                          return (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm sm:text-base pt-1">
+                              <div className="flex items-center gap-3 text-slate-100 bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
+                                <span className="text-3xl shrink-0">🏢</span>
+                                <div>
+                                  <span className="text-slate-400 block text-xs font-bold">المورد صاحب البضاعة:</span>
+                                  <span className="font-black text-base sm:text-lg text-white block mt-0.5">
+                                    {order.supplier?.company_name || 'مورد غير محدد'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3 text-slate-100 bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
+                                <span className="text-3xl shrink-0">📍</span>
+                                <div>
+                                  <span className="text-slate-400 block text-xs font-bold">المشروع / موقع التوريد:</span>
+                                  <span className="font-black text-base sm:text-lg text-cyan-300 block mt-0.5">
+                                    {order.purchase_request?.project_name || order.purchase_request?.department?.name || 'المخزن الرئيسي'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Parcel Reference Callout */}
+                              <div className="flex items-center gap-3 text-slate-100 bg-slate-950/80 p-3.5 rounded-2xl border border-cyan-800/70 shadow-sm">
+                                <span className="text-3xl shrink-0">🏷️</span>
+                                <div>
+                                  <span className="text-cyan-400 block text-xs font-bold">رقم قطعة الأرض:</span>
+                                  <span className="font-mono font-black text-base sm:text-lg text-cyan-200 block mt-0.5">
+                                    {orderParcel || 'غير محددة'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Region Callout */}
+                              <div className="flex items-center gap-3 text-slate-100 bg-slate-950/80 p-3.5 rounded-2xl border border-amber-800/70 shadow-sm">
+                                <span className="text-3xl shrink-0">📍</span>
+                                <div>
+                                  <span className="text-amber-400 block text-xs font-bold">المنطقة الجغرافية:</span>
+                                  <span className="font-black text-base sm:text-lg text-amber-200 block mt-0.5">
+                                    {orderRegion || 'غير محددة'}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
+                          );
+                        })()}
                       </div>
 
                       {/* 2. Items List: Ultra Simple Big Visual Cards */}
@@ -561,6 +599,18 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                             const key = `${order.id}-${item.id}`;
                             const val = quantities[key] ?? '';
                             const numVal = parseFloat(val) || 0;
+
+                            const itemParcel =
+                              item.item_reference ||
+                              item.pr_item?.item_reference ||
+                              order.purchase_request?.parcel_reference ||
+                              null;
+
+                            const itemRegion =
+                              item.region ||
+                              item.pr_item?.region ||
+                              order.purchase_request?.region ||
+                              null;
 
                             return (
                               <div
@@ -585,6 +635,22 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                                     )}
                                   </div>
                                 </div>
+
+                                {/* Plot & Region Badges on Item */}
+                                {(itemParcel || itemRegion) && (
+                                  <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm">
+                                    {itemParcel && (
+                                      <span className="inline-flex items-center gap-1.5 font-mono text-cyan-200 bg-cyan-950 border border-cyan-700/80 px-3 py-1 rounded-xl font-black shadow-sm">
+                                        <span>🏷️</span> قطعة الأرض: {itemParcel}
+                                      </span>
+                                    )}
+                                    {itemRegion && (
+                                      <span className="inline-flex items-center gap-1.5 text-amber-200 bg-amber-950 border border-amber-700/80 px-3 py-1 rounded-xl font-black shadow-sm">
+                                        <span>📍</span> المنطقة: {itemRegion}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
 
                                 {/* Received Quantity Input Section (Blind Receiving: PO quantity hidden) */}
                                 <div className="rounded-2xl border-2 border-emerald-500/80 bg-emerald-950/30 p-4 sm:p-5 space-y-3 shadow-inner">
@@ -859,25 +925,61 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs sm:text-sm pt-1">
-                          <div className="flex items-center gap-2 text-slate-200 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
-                            <span className="text-base">🏢</span>
-                            <div>
-                              <span className="text-slate-400 block text-[11px]">المورد:</span>
-                              <span className="font-bold text-slate-100">{receipt.purchase_order?.supplier?.company_name || 'مورد غير محدد'}</span>
-                            </div>
-                          </div>
+                        {(() => {
+                          const receiptParcel =
+                            receipt.purchase_order?.purchase_request?.parcel_reference ||
+                            receipt.purchase_request?.parcel_reference ||
+                            receipt.items?.find((i) => i.purchase_order_item?.item_reference || i.purchase_order_item?.pr_item?.item_reference)?.purchase_order_item?.item_reference ||
+                            receipt.items?.find((i) => i.purchase_order_item?.item_reference || i.purchase_order_item?.pr_item?.item_reference)?.purchase_order_item?.pr_item?.item_reference ||
+                            null;
 
-                          {receipt.warehouse_keeper && (
-                            <div className="flex items-center gap-2 text-amber-300 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/50">
-                              <span className="text-base">📦</span>
-                              <div>
-                                <span className="text-amber-400/80 block text-[11px]">أمين المخزن:</span>
-                                <span className="font-bold">{receipt.warehouse_keeper.name}</span>
+                          const receiptRegion =
+                            receipt.purchase_order?.purchase_request?.region ||
+                            receipt.purchase_request?.region ||
+                            receipt.items?.find((i) => i.purchase_order_item?.region || i.purchase_order_item?.pr_item?.region)?.purchase_order_item?.region ||
+                            receipt.items?.find((i) => i.purchase_order_item?.region || i.purchase_order_item?.pr_item?.region)?.purchase_order_item?.pr_item?.region ||
+                            null;
+
+                          return (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs sm:text-sm pt-1">
+                              <div className="flex items-center gap-2 text-slate-200 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                                <span className="text-base">🏢</span>
+                                <div>
+                                  <span className="text-slate-400 block text-[11px]">المورد:</span>
+                                  <span className="font-bold text-slate-100">{receipt.purchase_order?.supplier?.company_name || 'مورد غير محدد'}</span>
+                                </div>
+                              </div>
+
+                              {receipt.warehouse_keeper && (
+                                <div className="flex items-center gap-2 text-amber-300 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/50">
+                                  <span className="text-base">📦</span>
+                                  <div>
+                                    <span className="text-amber-400/80 block text-[11px]">أمين المخزن:</span>
+                                    <span className="font-bold">{receipt.warehouse_keeper.name}</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Parcel Reference Callout */}
+                              <div className="flex items-center gap-2 text-cyan-200 bg-cyan-950/40 p-2.5 rounded-xl border border-cyan-800/50">
+                                <span className="text-base">🏷️</span>
+                                <div>
+                                  <span className="text-cyan-400/80 block text-[11px] font-bold">رقم قطعة الأرض:</span>
+                                  <span className="font-mono font-black text-cyan-300 text-xs sm:text-sm">{receiptParcel || 'غير محددة'}</span>
+                                </div>
+                              </div>
+
+                              {/* Region Callout */}
+                              <div className="flex items-center gap-2 text-amber-200 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/50">
+                                <span className="text-base">📍</span>
+                                <div>
+                                  <span className="text-amber-400/80 block text-[11px] font-bold">المنطقة:</span>
+                                  <span className="font-black text-amber-300 text-xs sm:text-sm">{receiptRegion || 'غير محددة'}</span>
+                                </div>
                               </div>
                             </div>
-                          )}
-                        </div>
+                          );
+                        })()}
 
                         {receipt.warehouse_notes && (
                           <div className="rounded-xl border border-amber-500/40 bg-amber-950/30 p-3 text-xs sm:text-sm text-amber-200">
@@ -965,14 +1067,14 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                                 </div>
 
                                 <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm">
-                                  {(item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference) && (
+                                  {(item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference || receipt.purchase_order?.purchase_request?.parcel_reference || receipt.purchase_request?.parcel_reference) && (
                                     <span className="inline-flex items-center gap-1.5 font-mono text-cyan-200 bg-cyan-950 border border-cyan-700/80 px-3 py-1 rounded-xl font-black">
-                                      <span>🏷️</span> قطعة الأرض: {item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference}
+                                      <span>🏷️</span> قطعة الأرض: {item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference || receipt.purchase_order?.purchase_request?.parcel_reference || receipt.purchase_request?.parcel_reference}
                                     </span>
                                   )}
-                                  {(item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region) && (
+                                  {(item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region || receipt.purchase_order?.purchase_request?.region || receipt.purchase_request?.region) && (
                                     <span className="inline-flex items-center gap-1.5 text-amber-200 bg-amber-950 border border-amber-700/80 px-3 py-1 rounded-xl font-black">
-                                      <span>📍</span> المنطقة: {item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region}
+                                      <span>📍</span> المنطقة: {item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region || receipt.purchase_order?.purchase_request?.region || receipt.purchase_request?.region}
                                     </span>
                                   )}
                                 </div>
@@ -1131,6 +1233,38 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                     </div>
                   </div>
 
+                  {/* Parcel Reference & Region Badges */}
+                  {(() => {
+                    const archiveParcel =
+                      receipt.purchase_order?.purchase_request?.parcel_reference ||
+                      receipt.purchase_request?.parcel_reference ||
+                      receipt.items?.find((i) => i.purchase_order_item?.item_reference || i.purchase_order_item?.pr_item?.item_reference)?.purchase_order_item?.item_reference ||
+                      receipt.items?.find((i) => i.purchase_order_item?.item_reference || i.purchase_order_item?.pr_item?.item_reference)?.purchase_order_item?.pr_item?.item_reference ||
+                      null;
+
+                    const archiveRegion =
+                      receipt.purchase_order?.purchase_request?.region ||
+                      receipt.purchase_request?.region ||
+                      receipt.items?.find((i) => i.purchase_order_item?.region || i.purchase_order_item?.pr_item?.region)?.purchase_order_item?.region ||
+                      receipt.items?.find((i) => i.purchase_order_item?.region || i.purchase_order_item?.pr_item?.region)?.purchase_order_item?.pr_item?.region ||
+                      null;
+
+                    return (archiveParcel || archiveRegion) ? (
+                      <div className="flex items-center gap-2 flex-wrap text-xs pt-1">
+                        {archiveParcel && (
+                          <span className="inline-flex items-center gap-1.5 font-mono text-cyan-200 bg-cyan-950/80 border border-cyan-800/60 px-3 py-1 rounded-xl font-bold">
+                            <span>🏷️</span> قطعة الأرض: {archiveParcel}
+                          </span>
+                        )}
+                        {archiveRegion && (
+                          <span className="inline-flex items-center gap-1.5 text-amber-200 bg-amber-950/80 border border-amber-800/60 px-3 py-1 rounded-xl font-bold">
+                            <span>📍</span> المنطقة: {archiveRegion}
+                          </span>
+                        )}
+                      </div>
+                    ) : null;
+                  })()}
+
                   {/* Audit Trail & Sign-offs Banner */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
                     <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3.5 space-y-1">
@@ -1210,14 +1344,14 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                             </div>
 
                             <div className="flex items-center gap-2 flex-wrap text-xs">
-                              {(item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference) && (
+                              {(item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference || receipt.purchase_order?.purchase_request?.parcel_reference || receipt.purchase_request?.parcel_reference) && (
                                 <span className="font-mono text-cyan-300 bg-cyan-950/80 border border-cyan-800/60 px-2.5 py-0.5 rounded-lg font-bold">
-                                  قطعة الأرض: {item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference}
+                                  قطعة الأرض: {item.purchase_order_item?.item_reference || item.purchase_order_item?.pr_item?.item_reference || receipt.purchase_order?.purchase_request?.parcel_reference || receipt.purchase_request?.parcel_reference}
                                 </span>
                               )}
-                              {(item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region) && (
+                              {(item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region || receipt.purchase_order?.purchase_request?.region || receipt.purchase_request?.region) && (
                                 <span className="text-amber-300 bg-amber-950/80 border border-amber-800/60 px-2.5 py-0.5 rounded-lg font-bold">
-                                  المنطقة: {item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region}
+                                  المنطقة: {item.purchase_order_item?.region || item.purchase_order_item?.pr_item?.region || receipt.purchase_order?.purchase_request?.region || receipt.purchase_request?.region}
                                 </span>
                               )}
                             </div>
