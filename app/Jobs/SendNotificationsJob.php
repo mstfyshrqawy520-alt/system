@@ -53,25 +53,92 @@ class SendNotificationsJob implements ShouldQueue
             );
         }
 
-        // Dispatch Web & Mobile FCM Push Notifications asynchronously after database storage
+        // Dispatch Web & Mobile FCM Push Notifications asynchronously with intelligent deep linking
         try {
             /** @var \App\Services\FcmService $fcmService */
             $fcmService = app(\App\Services\FcmService::class);
-            $fcmService->sendToUsers(
-                $this->recipientIds,
-                $this->title,
-                $this->message,
-                [
-                    'type' => $this->type,
-                    'notifiable_type' => get_class($this->notifiable),
-                    'notifiable_id' => $this->notifiable->getKey(),
-                    'url' => '/notifications',
-                ]
-            );
+
+            $users = \App\Models\User::with('roles')
+                ->whereIn('id', $this->recipientIds)
+                ->get();
+
+            foreach ($users as $user) {
+                $targetUrl = $this->resolveTargetUrlForUser($user);
+
+                $fcmService->sendToUser(
+                    $user,
+                    $this->title,
+                    $this->message,
+                    [
+                        'type' => $this->type,
+                        'notifiable_type' => get_class($this->notifiable),
+                        'notifiable_id' => $this->notifiable->getKey(),
+                        'purchase_request_id' => $this->notifiable instanceof \App\Models\PurchaseRequest ? $this->notifiable->id : null,
+                        'purchase_order_id' => $this->notifiable instanceof \App\Models\PurchaseOrder ? $this->notifiable->id : ($this->purchaseReceipt?->purchase_order_id ?? null),
+                        'purchase_receipt_id' => $this->purchaseReceipt?->id ?? ($this->notifiable instanceof \App\Models\PurchaseReceipt ? $this->notifiable->id : null),
+                        'url' => $targetUrl,
+                    ]
+                );
+            }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('SendNotificationsJob: FCM push delivery error', [
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Resolve the exact, role-tailored deep link URL for a recipient.
+     */
+    protected function resolveTargetUrlForUser(\App\Models\User $user): string
+    {
+        $id = $this->notifiable->getKey();
+
+        if ($this->notifiable instanceof \App\Models\PurchaseRequest) {
+            if ($user->hasRole('reviewer')) {
+                return "/reviewer/requests/{$id}";
+            }
+            if ($user->hasRole('general_manager')) {
+                return "/general-manager/purchase-requests?open={$id}";
+            }
+            if ($user->hasRole('accountant') && str_contains($this->type, 'accounting')) {
+                return "/accounting/purchase-requests";
+            }
+            if ($user->hasRole('procurement_manager')) {
+                return "/procurement/purchase-requests";
+            }
+            // Universal fallback accessible to all operational roles
+            return "/requests/{$id}";
+        }
+
+        if ($this->notifiable instanceof \App\Models\PurchaseOrder) {
+            if ($user->hasRole('procurement_manager')) {
+                return "/procurement/purchase-orders/{$id}";
+            }
+            if ($user->hasRole('general_manager')) {
+                return "/general-manager/purchase-orders/{$id}";
+            }
+            if ($user->hasRole('accountant')) {
+                return "/accounting/purchase-orders/{$id}";
+            }
+            return "/procurement/purchase-orders/{$id}";
+        }
+
+        if ($this->notifiable instanceof \App\Models\PurchaseReceipt || $this->purchaseReceipt !== null) {
+            $receiptId = $this->purchaseReceipt?->id ?? $id;
+            if ($user->hasRole('accountant')) {
+                return "/accounting/supplier-payments?purchase_receipt_id={$receiptId}";
+            }
+            if ($user->hasRole('warehouse_keeper') && ! $user->hasRole('site_engineer')) {
+                return "/warehouse?receipt_id={$receiptId}";
+            }
+            return "/site-engineer?receipt_id={$receiptId}";
+        }
+
+        if ($this->notifiable instanceof \App\Models\SupplierInvoice) {
+            return "/accounting/supplier-payments?invoice_id={$id}";
+        }
+
+        return "/notifications";
     }
 }

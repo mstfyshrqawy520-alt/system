@@ -27,6 +27,9 @@ import {
   isNotificationSoundEnabled,
   setNotificationSoundEnabled,
 } from '../utils/notificationSound';
+import type { PurchaseRequest } from '../types/purchaseRequest';
+import { getPurchaseRequestApi } from '../api/purchaseRequests';
+import { PrDetailsModal } from '../components/procurement/PrDetailsModal';
 
 export type QuickFilterKey = 'ALL' | 'UNREAD' | 'READ' | 'TODAY' | 'LAST_10_DAYS' | 'NEEDS_ACTION' | 'COMPLETED' | 'RETURNED';
 
@@ -52,6 +55,23 @@ export const NotificationsPage: React.FC = () => {
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => isNotificationSoundEnabled());
   const [actionStates, setActionStates] = useState<Record<number, StoredActionState>>({});
   const [executingId, setExecutingId] = useState<number | null>(null);
+  const [previewPr, setPreviewPr] = useState<PurchaseRequest | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoadingId, setPreviewLoadingId] = useState<number | null>(null);
+
+  const handleQuickPreview = async (e: React.MouseEvent, prId: number) => {
+    e.stopPropagation();
+    try {
+      setPreviewLoadingId(prId);
+      const prData = await getPurchaseRequestApi(prId);
+      setPreviewPr(prData);
+      setPreviewOpen(true);
+    } catch (err) {
+      console.error('Failed to load preview for PR', prId, err);
+    } finally {
+      setPreviewLoadingId(null);
+    }
+  };
 
   const storageKey = `ashbiliya_notif_states_${user?.id || 'guest'}`;
   const prefsStorageKey = `ashbiliya_notif_prefs_${user?.id || 'guest'}`;
@@ -783,7 +803,22 @@ export const NotificationsPage: React.FC = () => {
                   </div>
 
                   {/* Actions & Buttons */}
-                  <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0 sm:self-center">
+                  <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0 sm:self-center flex-wrap">
+                    {/* Quick Preview Button */}
+                    {Boolean(docInfo.prId) && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={(e) => handleQuickPreview(e, Number(docInfo.prId))}
+                        isLoading={previewLoadingId === Number(docInfo.prId)}
+                        disabled={previewLoadingId === Number(docInfo.prId)}
+                        className="text-xs font-bold border-cyan-800/80 bg-slate-800 text-cyan-300 hover:border-cyan-400 hover:bg-cyan-950/60"
+                        title="معاينة تفاصيل الطلب وبنوده في نافذة منبثقة سريعة دون مغادرة الصفحة"
+                      >
+                        <span>👁️ معاينة سريعة</span>
+                      </Button>
+                    )}
+
                     {status === 'failed' ? (
                       <Button
                         variant="danger"
@@ -880,6 +915,18 @@ export const NotificationsPage: React.FC = () => {
             </Button>
           )}
         </div>
+      )}
+
+      {/* Quick Preview Modal */}
+      {previewPr && (
+        <PrDetailsModal
+          pr={previewPr}
+          isOpen={previewOpen}
+          onClose={() => {
+            setPreviewOpen(false);
+            setPreviewPr(null);
+          }}
+        />
       )}
     </div>
   );

@@ -117,16 +117,19 @@ self.addEventListener('push', (event) => {
   }
 });
 
-// Push notification click handler - opens the window or focuses open tab
+// Push notification click handler - opens the window or focuses open tab with direct deep link
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || '/notifications';
+  const rawUrl = event.notification.data?.url || event.notification.data?.fcmOptions?.link || '/notifications';
+  const targetUrl = rawUrl.startsWith('http') ? rawUrl : new URL(rawUrl, self.location.origin).href;
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
       for (const client of windowClients) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.navigate(targetUrl);
+          if ('navigate' in client) {
+            client.navigate(targetUrl);
+          }
           return client.focus();
         }
       }

@@ -9,6 +9,9 @@ import {
   stopNotificationsRealtime,
 } from '../../api/notifications';
 import type { Notification } from '../../types/notification';
+import type { PurchaseRequest } from '../../types/purchaseRequest';
+import { getPurchaseRequestApi } from '../../api/purchaseRequests';
+import { PrDetailsModal } from '../procurement/PrDetailsModal';
 import { useAuth } from '../../context/AuthContext';
 import { resolveNotificationAction, isAllowedNotificationForUser } from '../../utils/notificationRouting';
 import {
@@ -31,6 +34,9 @@ export const NotificationBell: React.FC = () => {
   const [latestToast, setLatestToast] = useState<Notification | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [previewPr, setPreviewPr] = useState<PurchaseRequest | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoadingId, setPreviewLoadingId] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownOpenRef = useRef(dropdownOpen);
   dropdownOpenRef.current = dropdownOpen;
@@ -244,6 +250,20 @@ export const NotificationBell: React.FC = () => {
     navigate(url);
   };
 
+  const handleQuickPreview = async (e: React.MouseEvent, prId: number) => {
+    e.stopPropagation();
+    try {
+      setPreviewLoadingId(prId);
+      const prData = await getPurchaseRequestApi(prId);
+      setPreviewPr(prData);
+      setPreviewOpen(true);
+    } catch (err) {
+      console.error('Failed to load preview for PR', prId, err);
+    } finally {
+      setPreviewLoadingId(null);
+    }
+  };
+
   const handleMarkAllRead = async () => {
     if (count === 0) return;
     setLoading(true);
@@ -397,6 +417,7 @@ export const NotificationBell: React.FC = () => {
               recentNotifications.map((n) => {
                 const action = resolveNotificationAction(n, user);
                 const isUnread = !n.read_at;
+                const prId = n.data?.purchase_request_id || (n.notifiable_type?.includes('PurchaseRequest') ? n.notifiable_id : null);
 
                 return (
                   <div
@@ -438,7 +459,7 @@ export const NotificationBell: React.FC = () => {
                       {n.message}
                     </p>
 
-                    <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                         isUnread
                           ? 'bg-cyan-950/80 text-cyan-300 border-cyan-800/70'
@@ -446,12 +467,36 @@ export const NotificationBell: React.FC = () => {
                       }`}>
                         {action.badgeLabel}
                       </span>
-                      <span className={`text-xs font-bold flex items-center gap-1 group-hover:underline ${
-                        isUnread ? 'text-cyan-300' : 'text-slate-400'
-                      }`}>
-                        <span>{action.actionLabel}</span>
-                        <span>←</span>
-                      </span>
+                      
+                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        {/* Quick Preview Button */}
+                        {Boolean(prId) && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleQuickPreview(e, Number(prId))}
+                            disabled={previewLoadingId === Number(prId)}
+                            className="flex items-center gap-1 rounded-lg border border-cyan-800/70 bg-cyan-950/70 px-2 py-1 text-[10px] font-bold text-cyan-300 hover:border-cyan-400 hover:bg-cyan-900/80 transition-all cursor-pointer disabled:opacity-50"
+                            title="معاينة تفاصيل الطلب وبنوده مباشرة"
+                          >
+                            <span>👁️</span>
+                            <span>{previewLoadingId === Number(prId) ? 'جارٍ التحميل...' : 'معاينة سريعة'}</span>
+                          </button>
+                        )}
+
+                        {/* Direct Action Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleNotificationClick(n)}
+                          className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-black transition-all cursor-pointer ${
+                            isUnread
+                              ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-xs'
+                              : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                          }`}
+                        >
+                          <span>{action.actionLabel}</span>
+                          <span>←</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -486,6 +531,18 @@ export const NotificationBell: React.FC = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Quick Preview Modal */}
+      {previewPr && (
+        <PrDetailsModal
+          pr={previewPr}
+          isOpen={previewOpen}
+          onClose={() => {
+            setPreviewOpen(false);
+            setPreviewPr(null);
+          }}
+        />
       )}
     </div>
   );

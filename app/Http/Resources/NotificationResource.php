@@ -28,6 +28,15 @@ class NotificationResource extends JsonResource
             $data['purchase_receipt_id'] = $this->purchase_receipt_id;
         }
 
+        $targetUrl = null;
+        if ($this->notifiable_type === PurchaseRequest::class && $this->notifiable_id) {
+            $targetUrl = "/requests/{$this->notifiable_id}";
+        } elseif ($this->notifiable_type === PurchaseOrder::class && $this->notifiable_id) {
+            $targetUrl = "/procurement/purchase-orders/{$this->notifiable_id}";
+        } elseif ($this->purchase_receipt_id) {
+            $targetUrl = "/site-engineer?receipt_id={$this->purchase_receipt_id}";
+        }
+
         return [
             'id' => $this->id,
             'type' => $this->type,
@@ -36,6 +45,7 @@ class NotificationResource extends JsonResource
             'notifiable_type' => $this->notifiable_type,
             'notifiable_id' => $this->notifiable_id,
             'data' => $data,
+            'target_url' => $targetUrl,
             'read_at' => $this->read_at ? $this->read_at->toIso8601String() : null,
             'created_at' => $this->created_at ? $this->created_at->toIso8601String() : null,
         ];
