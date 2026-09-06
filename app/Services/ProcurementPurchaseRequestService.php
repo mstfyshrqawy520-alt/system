@@ -28,6 +28,7 @@ class ProcurementPurchaseRequestService
             'siteEngineer',
             'directSupplier',
             'items.item',
+            'items.supplier',
             'approvalHistory.actor',
         ])->withCount(['purchaseOrders as issued_purchase_orders_count' => function ($query) {
             $query->whereNotIn('status', ['REJECTED']);
@@ -54,6 +55,7 @@ class ProcurementPurchaseRequestService
             'assignedReviewer',
             'siteEngineer',
             'items.item',
+            'items.supplier',
             'quotes.supplier',
             'quotes.recommendations.user',
         ]);
@@ -111,6 +113,7 @@ class ProcurementPurchaseRequestService
             'siteEngineer',
             'directSupplier',
             'items.item',
+            'items.supplier',
             'selectedQuote.supplier',
             'quotes.supplier',
             'approvalHistory.actor',
@@ -195,7 +198,7 @@ class ProcurementPurchaseRequestService
                 'new_value' => 'PENDING_QUOTE_RECOMMENDATIONS',
             ]);
 
-            return $pr->fresh(['requester.roles', 'department', 'items.item', 'approvalHistory']);
+            return $pr->fresh(['requester.roles', 'department', 'items.item', 'items.supplier', 'approvalHistory']);
         });
     }
 
@@ -208,25 +211,19 @@ class ProcurementPurchaseRequestService
             throw new \RuntimeException('يمكن إرسال الطلب إلى الحسابات فقط من مرحلة اعتماد المشتريات.');
         }
 
-        $supplierId = (int) ($financialData['supplier_id'] ?? 0);
         $submittedItems = $financialData['items'] ?? [];
         $hasNotes = array_key_exists('notes', $financialData);
         $notes = $hasNotes ? (trim((string) ($financialData['notes'] ?? '')) ?: null) : null;
-        if ($supplierId <= 0) {
-            throw ValidationException::withMessages(['supplier_id' => ['يجب اختيار المورد قبل إرسال الطلب إلى الحسابات.']]);
-        }
+        // Legacy fallback: accept a top-level supplier_id for backward compatibility
+        $globalSupplierId = (int) ($financialData['supplier_id'] ?? 0);
         if (! is_array($submittedItems) || count($submittedItems) === 0) {
             throw ValidationException::withMessages(['items' => ['يجب إدخال البيانات المالية لبند واحد على الأقل قبل الإرسال.']]);
         }
 
-        return DB::transaction(function () use ($procurementManager, $request, $supplierId, $submittedItems, $hasNotes, $notes, $comment): PurchaseRequest {
+        return DB::transaction(function () use ($procurementManager, $request, $globalSupplierId, $submittedItems, $hasNotes, $notes, $comment): PurchaseRequest {
             $pr = PurchaseRequest::with('items')->where('id', $request->id)->lockForUpdate()->firstOrFail();
             if ($pr->status !== 'PENDING_PROCUREMENT_APPROVAL') {
                 throw new \RuntimeException('تم اتخاذ قرار بشأن طلب الشراء أو لم يعد بانتظار اعتماد المشتريات.');
-            }
-            $supplier = Supplier::whereKey($supplierId)->where('is_active', true)->first();
-            if (! $supplier) {
-                throw ValidationException::withMessages(['supplier_id' => ['المورد المختار غير موجود أو غير نشط.']]);
             }
 
             $requestItemsById = $pr->items->keyBy('id');
@@ -235,11 +232,18 @@ class ProcurementPurchaseRequestService
                 throw ValidationException::withMessages(['items' => ['يجب إدخال البيانات المالية لجميع بنود الطلب دون حذف أو إضافة بند.']]);
             }
 
+            // Validate and resolve per-item suppliers
+            $supplierIds = collect();
             $grandTotal = 0.0;
             foreach ($requestItemsById as $prItemId => $prItem) {
                 $input = $submittedById->get($prItemId);
                 $quantity = (float) ($input['quantity'] ?? 0);
                 $unitPrice = (float) ($input['unit_price'] ?? -1);
+                $itemSupplierId = (int) ($input['supplier_id'] ?? $globalSupplierId);
+
+                if ($itemSupplierId <= 0) {
+                    throw ValidationException::withMessages(["items.{$prItemId}.supplier_id" => ['يجب اختيار المورد لكل بند.']]);
+                }
                 if ($quantity <= 0 || $unitPrice < 0) {
                     throw ValidationException::withMessages([
                         "items.{$prItemId}.quantity" => ['الكمية يجب أن تكون أكبر من صفر.'],
@@ -247,14 +251,26 @@ class ProcurementPurchaseRequestService
                     ]);
                 }
 
+                $supplierIds->push($itemSupplierId);
                 $lineTotal = round($quantity * $unitPrice, 2);
                 $prItem->update([
+                    'supplier_id' => $itemSupplierId,
                     'quantity' => $quantity,
                     'estimated_unit_price' => $unitPrice,
                     'estimated_line_total' => $lineTotal,
                 ]);
                 $grandTotal += $lineTotal;
             }
+
+            // Validate all referenced suppliers exist and are active
+            $uniqueSupplierIds = $supplierIds->unique()->values()->all();
+            $activeCount = Supplier::whereIn('id', $uniqueSupplierIds)->where('is_active', true)->count();
+            if ($activeCount !== count($uniqueSupplierIds)) {
+                throw ValidationException::withMessages(['supplier_id' => ['أحد الموردين المختارين غير موجود أو غير نشط.']]);
+            }
+
+            // Use the first item's supplier as the PR-level direct_supplier_id for backward compatibility
+            $primarySupplierId = $uniqueSupplierIds[0] ?? null;
 
             $oldNotes = (string) ($pr->notes ?? '');
             if ($hasNotes && $oldNotes !== (string) ($notes ?? '')) {
@@ -272,7 +288,7 @@ class ProcurementPurchaseRequestService
             $pr->update([
                 'status' => 'PENDING_ACCOUNTING_APPROVAL',
                 'procurement_route' => 'DIRECT',
-                'direct_supplier_id' => $supplier->id,
+                'direct_supplier_id' => $primarySupplierId,
                 'total_estimated_cost' => round($grandTotal, 2),
                 ...($hasNotes ? ['notes' => $notes] : []),
             ]);
@@ -308,7 +324,7 @@ class ProcurementPurchaseRequestService
                     'from_state' => 'PENDING_PROCUREMENT_APPROVAL',
                     'to_state' => 'PENDING_ACCOUNTING_APPROVAL',
                     'actor_user_id' => $procurementManager->id,
-                    'metadata' => ['comment' => $comment, 'requires_quotes' => false, 'supplier_id' => $supplier->id, 'total_estimated_cost' => round($grandTotal, 2)],
+                    'metadata' => ['comment' => $comment, 'requires_quotes' => false, 'supplier_ids' => $uniqueSupplierIds, 'total_estimated_cost' => round($grandTotal, 2)],
                 ]
             );
 
@@ -321,7 +337,7 @@ class ProcurementPurchaseRequestService
                 $pr
             );
 
-            return $pr->fresh(['requester.roles', 'department', 'targetDepartment', 'directSupplier', 'assignedReviewer', 'siteEngineer', 'items.item', 'approvalHistory']);
+            return $pr->fresh(['requester.roles', 'department', 'targetDepartment', 'directSupplier', 'assignedReviewer', 'siteEngineer', 'items.item', 'items.supplier', 'approvalHistory']);
         });
     }
 
@@ -358,6 +374,7 @@ class ProcurementPurchaseRequestService
                 $unitPrice = (float) $item['unit_price'];
                 $pr->items()->create([
                     'item_id' => $item['item_id'] ?? null,
+                    'supplier_id' => $item['supplier_id'] ?? $data['supplier_id'] ?? null,
                     'item_description' => $item['item_description'],
                     'item_reference' => $item['item_reference'],
                     'region' => $item['region'],
@@ -417,6 +434,7 @@ class ProcurementPurchaseRequestService
                 'directSupplier',
                 'siteEngineer',
                 'items.item',
+                'items.supplier',
                 'approvalHistory.actor',
             ]);
         });
@@ -485,7 +503,7 @@ class ProcurementPurchaseRequestService
                 $pr
             );
 
-            return $pr->fresh(['requester.roles', 'department', 'items.item', 'approvalHistory']);
+            return $pr->fresh(['requester.roles', 'department', 'items.item', 'items.supplier', 'approvalHistory']);
         });
     }
 }

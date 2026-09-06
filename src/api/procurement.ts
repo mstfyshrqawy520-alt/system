@@ -182,9 +182,10 @@ export const getApprovedPurchaseRequestApi = async (id: number): Promise<Purchas
 
 /** Procurement Manager chooses quotes or direct accounting review. */
 export interface DirectAccountingFinancialData {
-  supplier_id: number;
+  supplier_id?: number;
   items: Array<{
     pr_item_id: number;
+    supplier_id: number;
     quantity: number;
     unit_price: number;
   }>;

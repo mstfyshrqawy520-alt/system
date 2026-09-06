@@ -18,6 +18,7 @@ interface DirectAccountingReviewModalProps {
 
 type EditableFinancialItem = {
   pr_item_id: number;
+  supplier_id: number | '';
   item_reference?: string | null;
   region?: string | null;
   item_description: string;
@@ -48,17 +49,21 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
   reviewMode = 'procurement',
 }) => {
   const isAccountingReview = reviewMode === 'accounting';
-  const [supplierId, setSupplierId] = useState<number | ''>('');
   const [items, setItems] = useState<EditableFinancialItem[]>([]);
   const [notes, setNotes] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  const activeSuppliers = useMemo(
+    () => suppliers.filter((supplier) => supplier.is_active),
+    [suppliers],
+  );
+
   useEffect(() => {
     if (!isOpen || !request) return;
 
-    setSupplierId(request.direct_supplier_id || request.direct_supplier?.id || '');
     setItems((request.items || []).map((item) => ({
       pr_item_id: item.id,
+      supplier_id: item.supplier_id || request.direct_supplier_id || request.direct_supplier?.id || '',
       item_reference: item.item_reference,
       region: item.region,
       item_description: item.item_description || item.item?.name || '',
@@ -75,6 +80,23 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
     [items],
   );
 
+  // Group items by supplier for the summary view
+  const supplierGroupSummary = useMemo(() => {
+    const groups = new Map<number | '', { name: string; total: number; count: number }>();
+    for (const item of items) {
+      const sid = item.supplier_id;
+      const existing = groups.get(sid);
+      const supplierName = sid ? activeSuppliers.find((s) => s.id === sid)?.company_name || `مورد #${sid}` : 'غير محدد';
+      if (existing) {
+        existing.total += lineTotal(item.quantity, item.unit_price);
+        existing.count += 1;
+      } else {
+        groups.set(sid, { name: supplierName, total: lineTotal(item.quantity, item.unit_price), count: 1 });
+      }
+    }
+    return Array.from(groups.entries()).map(([sid, data]) => ({ supplierId: sid, ...data }));
+  }, [items, activeSuppliers]);
+
   if (!isOpen || !request) return null;
 
   const updateItem = (index: number, field: 'quantity' | 'unit_price', value: string) => {
@@ -85,13 +107,26 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
     setValidationError(null);
   };
 
+  const updateItemSupplier = (index: number, value: string) => {
+    const parsedValue = value === '' ? '' as const : Number(value);
+    setItems((current) => current.map((item, itemIndex) => (
+      itemIndex === index ? { ...item, supplier_id: parsedValue } : item
+    )));
+    setValidationError(null);
+  };
+
+  const applySupplierToAll = (supplierId: number | '') => {
+    setItems((current) => current.map((item) => ({ ...item, supplier_id: supplierId })));
+    setValidationError(null);
+  };
+
   const handleConfirm = () => {
-    if (!supplierId) {
-      setValidationError('يجب اختيار المورد قبل إرسال الطلب إلى المشتريات.');
-      return;
-    }
     if (items.length === 0) {
       setValidationError('لا توجد بنود مالية مرتبطة بهذا الطلب.');
+      return;
+    }
+    if (items.some((item) => !item.supplier_id)) {
+      setValidationError('يجب اختيار المورد لكل بند من بنود الطلب.');
       return;
     }
     if (items.some((item) => !Number.isFinite(Number(item.quantity)) || Number(item.quantity) <= 0)) {
@@ -104,9 +139,9 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
     }
 
     onConfirm({
-      supplier_id: Number(supplierId),
       items: items.map((item) => ({
         pr_item_id: item.pr_item_id,
+        supplier_id: Number(item.supplier_id),
         quantity: Number(item.quantity),
         unit_price: Number(item.unit_price),
       })),
@@ -123,7 +158,7 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
       title={isAccountingReview ? `مراجعة وتعديل البيانات المالية — ${request.request_number}` : `إدخال البيانات المالية — ${request.request_number}`}
       subtitle={isAccountingReview
         ? 'راجع الحسابات الطلب كاملًا، وعدّل البيانات المالية والملاحظات عند الحاجة، ثم أعده إلى مدير المشتريات.'
-        : 'اختر المورد وأدخل الكميات والأسعار قبل إرسال الطلب المباشر إلى الحسابات للموافقة المالية.'}
+        : 'اختر المورد لكل بند وأدخل الكميات والأسعار قبل إرسال الطلب المباشر إلى الحسابات للموافقة المالية.'}
       size="xl"
       footer={(
         <>
@@ -166,26 +201,36 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <label className="rounded-lg border border-emerald-500/40 bg-emerald-950/20 p-3 text-xs font-bold text-slate-200">
-            المورد <span className="text-rose-400">*</span>
-            <select
-              value={supplierId}
-              onChange={(event) => {
-                setSupplierId(event.target.value ? Number(event.target.value) : '');
-                setValidationError(null);
-              }}
-              disabled={isSubmitting}
-              className="mt-2 h-10 w-full rounded-md border border-emerald-500/60 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-emerald-300 disabled:opacity-60"
-            >
-              <option value="">اختر المورد...</option>
-              {suppliers.filter((supplier) => supplier.is_active).map((supplier) => (
-                <option key={supplier.id} value={supplier.id}>
-                  {supplier.company_name}{supplier.code ? ` — ${supplier.code}` : ''}
-                </option>
-              ))}
-            </select>
-          </label>
+        {/* Quick supplier apply */}
+        <div className="rounded-lg border border-emerald-500/40 bg-emerald-950/20 p-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold text-emerald-200">تطبيق مورد واحد على جميع البنود</p>
+              <p className="mt-0.5 text-[10px] text-slate-400">اختر مورد لتطبيقه على كل البنود دفعة واحدة، أو اختر مورد مختلف لكل بند من الجدول أدناه</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                onChange={(event) => {
+                  if (event.target.value) {
+                    applySupplierToAll(Number(event.target.value));
+                    event.target.value = '';
+                  }
+                }}
+                disabled={isSubmitting}
+                className="h-9 w-64 rounded-md border border-emerald-500/60 bg-[#0b1424] px-2 text-xs text-slate-100 outline-none focus:border-emerald-300 disabled:opacity-60"
+              >
+                <option value="">تطبيق مورد على الكل...</option>
+                {activeSuppliers.map((supplier) => (
+                  <option key={supplier.id} value={supplier.id}>
+                    {supplier.company_name}{supplier.code ? ` — ${supplier.code}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2.5">
             <span className="text-[11px] text-slate-400">تاريخ الحاجة</span>
             <p className="mt-1 font-mono text-sm text-slate-100">{request.date_needed || 'غير محدد'}</p>
@@ -199,8 +244,8 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
         <div className="rounded-lg border border-cyan-500/40 bg-cyan-950/15 p-3 text-xs leading-6 text-slate-300">
           <p className="font-bold text-cyan-200">{isAccountingReview ? 'مراجعة الحسابات قبل إعادة الطلب للمشتريات' : 'إدخال البيانات المالية قبل الإرسال'}</p>
           <p className="mt-1">{isAccountingReview
-            ? 'يمكن تعديل المورد والكمية وسعر الوحدة والملاحظات. رقم قطعة الأرض والمنطقة ووصف الصنف ثابتة ولا يمكن تغييرها بعد إرسال الطلب. بعد الاعتماد يعود الطلب إلى مدير المشتريات لإنشاء أمر الشراء.'
-            : 'اختر المورد وأدخل سعر الوحدة والكمية لكل بند. يتم حساب إجمالي كل بند والإجمالي الكلي تلقائيًا، ثم تُحفظ هذه البيانات مع الطلب لتراجعها الحسابات.'}</p>
+            ? 'يمكن تعديل المورد لكل بند والكمية وسعر الوحدة والملاحظات. رقم قطعة الأرض والمنطقة ووصف الصنف ثابتة ولا يمكن تغييرها بعد إرسال الطلب. بعد الاعتماد يعود الطلب إلى مدير المشتريات لإنشاء أمر الشراء.'
+            : 'اختر المورد لكل بند وأدخل سعر الوحدة والكمية. يتم حساب إجمالي كل بند والإجمالي الكلي تلقائيًا، ثم تُحفظ هذه البيانات مع الطلب لتراجعها الحسابات.'}</p>
         </div>
 
         {validationError && (
@@ -222,6 +267,7 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                   <th className="border-b border-slate-700 px-3 py-3">رقم قطعة الأرض</th>
                   <th className="border-b border-slate-700 px-3 py-3">المنطقة</th>
                   <th className="border-b border-slate-700 px-3 py-3">اسم الصنف</th>
+                  <th className="border-b border-slate-700 px-3 py-3">المورد</th>
                   <th className="border-b border-slate-700 px-3 py-3 text-center">الكمية</th>
                   <th className="border-b border-slate-700 px-3 py-3 text-center">سعر الوحدة</th>
                   <th className="border-b border-slate-700 px-3 py-3 text-center">الإجمالي</th>
@@ -230,7 +276,7 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
               <tbody>
                 {items.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-3 py-8 text-center text-rose-300">لا توجد بنود مرتبطة بهذا الطلب لإدخال بياناتها المالية.</td>
+                    <td colSpan={8} className="px-3 py-8 text-center text-rose-300">لا توجد بنود مرتبطة بهذا الطلب لإدخال بياناتها المالية.</td>
                   </tr>
                 ) : items.map((item, index) => (
                   <tr key={item.pr_item_id || index} className="bg-slate-900 even:bg-slate-950/70">
@@ -238,6 +284,26 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                     <td className="border-t border-slate-800 px-3 py-3 font-mono font-bold text-slate-200">{item.item_reference || '—'}</td>
                     <td className="border-t border-slate-800 px-3 py-3 text-slate-300">{item.region || '—'}</td>
                     <td className="border-t border-slate-800 px-3 py-3 font-bold text-slate-100">{item.item_description || '—'}</td>
+                    <td className="border-t border-slate-800 px-2 py-2">
+                      <select
+                        aria-label={`مورد البند ${index + 1}`}
+                        value={item.supplier_id}
+                        onChange={(event) => updateItemSupplier(index, event.target.value)}
+                        disabled={isSubmitting}
+                        className={`h-9 w-40 rounded-md border px-2 text-[11px] outline-none disabled:opacity-60 ${
+                          item.supplier_id
+                            ? 'border-emerald-500/60 bg-[#0b1424] text-slate-100 focus:border-emerald-300'
+                            : 'border-rose-500/60 bg-rose-950/20 text-rose-300 focus:border-rose-300'
+                        }`}
+                      >
+                        <option value="">اختر المورد...</option>
+                        {activeSuppliers.map((supplier) => (
+                          <option key={supplier.id} value={supplier.id}>
+                            {supplier.company_name}{supplier.code ? ` — ${supplier.code}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
                     <td className="border-t border-slate-800 px-3 py-2 text-center">
                       <input
                         aria-label={`كمية البند ${index + 1}`}
@@ -274,13 +340,14 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
               </tbody>
               <tfoot>
                 <tr className="bg-slate-950">
-                  <td colSpan={6} className="border-t border-cyan-500/50 px-3 py-4 text-left text-sm font-black text-slate-100">الإجمالي المالي للطلب:</td>
+                  <td colSpan={7} className="border-t border-cyan-500/50 px-3 py-4 text-left text-sm font-black text-slate-100">الإجمالي المالي للطلب:</td>
                   <td className="border-t border-cyan-500/50 px-3 py-4 text-center font-mono text-base font-black text-emerald-300">{formatAmount(grandTotal)} ج.م</td>
                 </tr>
               </tfoot>
             </table>
           </div>
 
+          {/* Mobile cards */}
           <div className="space-y-3 sm:hidden">
             {items.length === 0 ? (
               <div className="rounded-xl border border-rose-800/60 bg-rose-950/20 px-3 py-6 text-center text-xs text-rose-200">
@@ -299,6 +366,27 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                   <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 text-slate-200">{item.region || '—'}</dd></div>
                   <div><dt className="text-slate-500">الوحدة</dt><dd className="mt-1 text-slate-200">{getUnitLabel(item.uom)}</dd></div>
                 </dl>
+                <label className="mt-3 block text-xs font-bold text-emerald-300">
+                  المورد <span className="text-rose-400">*</span>
+                  <select
+                    aria-label={`مورد البند ${index + 1}`}
+                    value={item.supplier_id}
+                    onChange={(event) => updateItemSupplier(index, event.target.value)}
+                    disabled={isSubmitting}
+                    className={`mt-1 min-h-11 w-full rounded-xl border px-3 py-2 text-sm outline-none disabled:opacity-60 ${
+                      item.supplier_id
+                        ? 'border-emerald-500/60 bg-[#0b1424] text-slate-100 focus:border-emerald-300'
+                        : 'border-rose-500/60 bg-rose-950/20 text-rose-300 focus:border-rose-300'
+                    }`}
+                  >
+                    <option value="">اختر المورد...</option>
+                    {activeSuppliers.map((supplier) => (
+                      <option key={supplier.id} value={supplier.id}>
+                        {supplier.company_name}{supplier.code ? ` — ${supplier.code}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <div className="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                   <label className="text-xs font-bold text-slate-300">
                     الكمية
@@ -342,6 +430,24 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
           </div>
         </div>
 
+        {/* Supplier summary */}
+        {supplierGroupSummary.length > 1 && (
+          <div className="rounded-lg border border-violet-500/40 bg-violet-950/15 p-3">
+            <p className="mb-2 text-xs font-bold text-violet-200">ملخص الموردين</p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {supplierGroupSummary.map((group) => (
+                <div key={String(group.supplierId)} className="flex items-center justify-between rounded-md border border-violet-500/30 bg-slate-950/60 px-3 py-2 text-xs">
+                  <div>
+                    <p className="font-bold text-slate-100">{group.name}</p>
+                    <p className="text-[10px] text-slate-400">{group.count} بند</p>
+                  </div>
+                  <p className="font-mono font-black text-emerald-200">{formatAmount(group.total)} ج.م</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <label className="block border-t border-slate-800 pt-4 text-xs font-bold text-slate-300">
           ملاحظات مالية وملاحظات المراجعة
           <textarea
@@ -359,4 +465,3 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
 };
 
 export default DirectAccountingReviewModal;
-

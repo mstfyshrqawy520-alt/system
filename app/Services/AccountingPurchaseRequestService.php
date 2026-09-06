@@ -27,6 +27,7 @@ class AccountingPurchaseRequestService
                 'assignedReviewer:id,name,email,department_id',
                 'siteEngineer:id,name,email,department_id',
                 'items.item',
+                'items.supplier',
                 'approvalHistory.actor',
             ])
             ->where('status', self::PENDING_STATUS)
@@ -182,18 +183,11 @@ class AccountingPurchaseRequestService
 
     private function applyFinancialData(User $accountant, PurchaseRequest $pr, array $financialData): float
     {
-        $supplierId = (int) ($financialData['supplier_id'] ?? 0);
         $submittedItems = $financialData['items'] ?? [];
-        if ($supplierId <= 0) {
-            throw ValidationException::withMessages(['financial_data.supplier_id' => ['يجب اختيار المورد قبل اعتماد الطلب.']]);
-        }
+        // Legacy fallback: accept a top-level supplier_id for backward compatibility
+        $globalSupplierId = (int) ($financialData['supplier_id'] ?? 0);
         if (! is_array($submittedItems) || count($submittedItems) === 0) {
             throw ValidationException::withMessages(['financial_data.items' => ['يجب إدخال البيانات المالية لجميع بنود الطلب قبل الاعتماد.']]);
-        }
-
-        $supplier = Supplier::query()->whereKey($supplierId)->where('is_active', true)->first();
-        if (! $supplier) {
-            throw ValidationException::withMessages(['financial_data.supplier_id' => ['المورد المختار غير موجود أو غير نشط.']]);
         }
 
         $requestItemsById = $pr->items->keyBy(fn ($item): string => (string) $item->id);
@@ -202,10 +196,16 @@ class AccountingPurchaseRequestService
             throw ValidationException::withMessages(['financial_data.items' => ['يجب إدخال البيانات المالية لجميع بنود الطلب دون حذف أو إضافة بند.']]);
         }
 
+        $supplierIds = collect();
         foreach ($requestItemsById as $prItemId => $prItem) {
             $input = $submittedById->get((string) $prItemId);
             $quantity = (float) ($input['quantity'] ?? 0);
             $unitPrice = (float) ($input['unit_price'] ?? -1);
+            $itemSupplierId = (int) ($input['supplier_id'] ?? $globalSupplierId);
+
+            if ($itemSupplierId <= 0) {
+                throw ValidationException::withMessages(["financial_data.items.{$prItemId}.supplier_id" => ['يجب اختيار المورد لكل بند.']]);
+            }
             if ($quantity <= 0) {
                 throw ValidationException::withMessages(["financial_data.items.{$prItemId}.quantity" => ['الكمية يجب أن تكون أكبر من صفر.']]);
             }
@@ -213,8 +213,10 @@ class AccountingPurchaseRequestService
                 throw ValidationException::withMessages(["financial_data.items.{$prItemId}.unit_price" => ['سعر الوحدة يجب أن يكون صفرًا أو أكبر.']]);
             }
 
+            $supplierIds->push($itemSupplierId);
+
             $lineTotal = round($quantity * $unitPrice, 2);
-            foreach (['quantity' => $quantity, 'estimated_unit_price' => $unitPrice, 'estimated_line_total' => $lineTotal] as $field => $newValue) {
+            foreach (['supplier_id' => $itemSupplierId, 'quantity' => $quantity, 'estimated_unit_price' => $unitPrice, 'estimated_line_total' => $lineTotal] as $field => $newValue) {
                 $oldValue = (string) ($prItem->{$field} ?? '');
                 if ($oldValue !== (string) $newValue) {
                     AuditLog::create([
@@ -229,24 +231,23 @@ class AccountingPurchaseRequestService
                 }
             }
             $prItem->update([
+                'supplier_id' => $itemSupplierId,
                 'quantity' => $quantity,
                 'estimated_unit_price' => $unitPrice,
                 'estimated_line_total' => $lineTotal,
             ]);
         }
 
-        $oldSupplierId = (string) ($pr->direct_supplier_id ?? '');
-        if ($oldSupplierId !== (string) $supplier->id) {
-            AuditLog::create([
-                'user_id' => $accountant->id,
-                'entity_type' => PurchaseRequest::class,
-                'entity_id' => $pr->id,
-                'action' => 'ACCOUNTING_FINANCIAL_DATA_UPDATED',
-                'field_name' => 'direct_supplier_id',
-                'old_value' => $oldSupplierId,
-                'new_value' => (string) $supplier->id,
-            ]);
+        // Validate all referenced suppliers exist and are active
+        $uniqueSupplierIds = $supplierIds->unique()->values()->all();
+        $activeCount = Supplier::whereIn('id', $uniqueSupplierIds)->where('is_active', true)->count();
+        if ($activeCount !== count($uniqueSupplierIds)) {
+            throw ValidationException::withMessages(['financial_data.supplier_id' => ['أحد الموردين المختارين غير موجود أو غير نشط.']]);
         }
+
+        // Use the first item's supplier as the PR-level direct_supplier_id for backward compatibility
+        $primarySupplierId = $uniqueSupplierIds[0] ?? null;
+
         if (array_key_exists('notes', $financialData)) {
             $oldNotes = (string) ($pr->notes ?? '');
             $newNotes = (string) ($financialData['notes'] ?? '');
@@ -263,7 +264,7 @@ class AccountingPurchaseRequestService
                 $pr->notes = $financialData['notes'] ?: null;
             }
         }
-        $pr->direct_supplier_id = $supplier->id;
+        $pr->direct_supplier_id = $primarySupplierId;
         $pr->save();
 
         return round($requestItemsById->reduce(function (float $total, $prItem) use ($submittedById): float {
@@ -289,6 +290,7 @@ class AccountingPurchaseRequestService
             'assignedReviewer',
             'siteEngineer',
             'items.item',
+            'items.supplier',
             'approvalHistory.actor',
         ]);
     }

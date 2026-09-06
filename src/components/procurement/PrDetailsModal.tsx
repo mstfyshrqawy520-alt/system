@@ -18,6 +18,14 @@ export const PrDetailsModal: React.FC<PrDetailsModalProps> = ({ pr, isOpen, onCl
   const estimatedTotal = pr.items?.reduce((sum, item) => sum + Number(item.estimated_line_total || (Number(item.quantity || 0) * Number(item.estimated_unit_price || 0))), 0) || 0;
   const canCreatePo = Boolean(onCreatePo) && (!pr.purchase_order_issued && (!isDirect || pr.status === 'APPROVED_BY_ACCOUNTING'));
 
+  const itemSuppliers = (pr.items || [])
+    .map((i) => i.supplier?.company_name)
+    .filter(Boolean) as string[];
+  const uniqueSuppliers = Array.from(new Set(itemSuppliers));
+  const supplierLabel = uniqueSuppliers.length > 1
+    ? `موردون متعددون (${uniqueSuppliers.length})`
+    : uniqueSuppliers[0] || pr.direct_supplier?.company_name || '—';
+
   return createPortal((
     <div className="modal-top-viewport fixed inset-0 z-[9999] flex min-h-screen items-center justify-center overflow-y-auto bg-slate-950/80 p-4 backdrop-blur-sm sm:p-6" dir="rtl">
       <div className="flex min-h-0 max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900 text-slate-100 shadow-2xl sm:max-h-[calc(100dvh-3rem)]">
@@ -40,7 +48,14 @@ export const PrDetailsModal: React.FC<PrDetailsModalProps> = ({ pr, isOpen, onCl
               <div className="flex justify-between gap-3"><span className="text-slate-400">الحالة:</span><span className="font-bold text-cyan-200">{PR_STATUS_LABELS[pr.status] || pr.status}</span></div>
               <div className="flex justify-between gap-3"><span className="text-slate-400">مهندس الموقع:</span><span className="text-slate-200">{pr.site_engineer?.name || '—'}</span></div>
               <div className="flex justify-between gap-3"><span className="text-amber-400 font-semibold">تاريخ الاحتياج:</span><span className="font-mono font-bold text-amber-300">{pr.date_needed || 'غير محدد'}</span></div>
-              {isDirect && <div className="flex justify-between gap-3"><span className="text-slate-400">المورد:</span><span className="font-bold text-emerald-300">{pr.direct_supplier?.company_name || '—'}</span></div>}
+              {isDirect && (
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-400">المورد:</span>
+                  <span className="font-bold text-emerald-300" title={uniqueSuppliers.join('، ')}>
+                    {supplierLabel}
+                  </span>
+                </div>
+              )}
               {isDirect && <div className="flex justify-between gap-3"><span className="text-slate-400">الإجمالي المقترح:</span><span className="font-mono font-bold text-emerald-300">{estimatedTotal.toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م</span></div>}
             </div>
             {pr.justification && (
@@ -59,6 +74,7 @@ export const PrDetailsModal: React.FC<PrDetailsModalProps> = ({ pr, isOpen, onCl
                   <th className="p-2">رقم قطعة الأرض</th>
                   <th className="p-2">المنطقة</th>
                   <th className="p-2">البند / الوصف</th>
+                  {isDirect && <th className="p-2">المورد</th>}
                   <th className="p-2">الكمية</th>
                   {isDirect && <th className="p-2">سعر الوحدة</th>}
                   {isDirect && <th className="p-2">الإجمالي</th>}
@@ -71,6 +87,11 @@ export const PrDetailsModal: React.FC<PrDetailsModalProps> = ({ pr, isOpen, onCl
                     <td className="p-2 text-slate-300 font-mono">{item.item_reference || '—'}</td>
                     <td className="p-2 text-slate-300">{item.region || '—'}</td>
                     <td className="p-2 text-slate-200 font-medium">{item.item_description}</td>
+                    {isDirect && (
+                      <td className="p-2 text-emerald-300 text-xs font-semibold">
+                        {item.supplier?.company_name || pr.direct_supplier?.company_name || '—'}
+                      </td>
+                    )}
                     <td className="p-2 font-mono text-slate-200">{item.quantity} {getUnitLabel(item.uom)}</td>
                     {isDirect && <td className="p-2 font-mono text-emerald-300">{Number(item.estimated_unit_price || 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م</td>}
                     {isDirect && <td className="p-2 font-mono font-bold text-emerald-300">{Number(item.estimated_line_total || (Number(item.quantity || 0) * Number(item.estimated_unit_price || 0))).toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م</td>}

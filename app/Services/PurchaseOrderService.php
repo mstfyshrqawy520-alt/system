@@ -91,13 +91,18 @@ class PurchaseOrderService
             throw new \RuntimeException('لا يمكن تغيير مورد العرض الذي اختاره المدير التنفيذي.');
         }
 
-        if ($isDirectPath && $pr->direct_supplier_id && (int) $pr->direct_supplier_id !== (int) $supplierId) {
-            throw new \RuntimeException('لا يمكن تغيير المورد المحدد في طلب الشراء المباشر بعد اعتماده.');
+        // For direct purchases with per-item suppliers, check that the given supplier
+        // is assigned to at least one PR item. Fall back to direct_supplier_id for backward compat.
+        if ($isDirectPath) {
+            $hasItemsForSupplier = $pr->items->contains(fn ($item) => (int) ($item->supplier_id ?? 0) === (int) $supplierId);
+            if (! $hasItemsForSupplier && $pr->direct_supplier_id && (int) $pr->direct_supplier_id !== (int) $supplierId) {
+                throw new \RuntimeException('المورد المحدد ليس مُعيّنًا لأي بند في طلب الشراء المباشر.');
+            }
         }
 
         if ($selectedQuote) {
             $supplierId = (int) $selectedQuote->supplier_id;
-        } elseif ($isDirectPath && $pr->direct_supplier_id) {
+        } elseif ($isDirectPath && ! $pr->items->contains(fn ($item) => (int) ($item->supplier_id ?? 0) === (int) $supplierId) && $pr->direct_supplier_id) {
             $supplierId = (int) $pr->direct_supplier_id;
         }
 
@@ -118,10 +123,15 @@ class PurchaseOrderService
                 throw new \RuntimeException('تغيرت حالة طلب الشراء أثناء الإنشاء. أعد تحميل الطلب وحاول مرة أخرى.');
             }
 
-            // Check if PO already exists for this PR
-            $existingPo = PurchaseOrder::where('purchase_request_id', $pr->id)
-                ->whereNotIn('status', ['REJECTED'])
-                ->first();
+            // Check if PO already exists for this PR (scoped to supplier for direct purchases)
+            $existingPoQuery = PurchaseOrder::where('purchase_request_id', $pr->id)
+                ->whereNotIn('status', ['REJECTED']);
+
+            if ($isDirectPath) {
+                $existingPoQuery->where('supplier_id', $supplier->id);
+            }
+
+            $existingPo = $existingPoQuery->first();
 
             if ($existingPo) {
                 if (in_array($existingPo->status, ['PO_DRAFT', 'RETURNED_TO_PROCUREMENT'], true)) {
@@ -203,15 +213,23 @@ class PurchaseOrderService
                     }
                 }
             } else {
-                // When no items array supplied: copy PR items with ZERO unit price.
-                // Procurement Manager must set commercial prices on the PO before submitting.
-                foreach ($pr->items as $prItem) {
+                // When no items array supplied: copy PR items.
+                // For direct purchases, only copy items belonging to the PO's supplier.
+                // Use the PR item's estimated_unit_price for direct paths (already set during financial data entry).
+                $prItems = $pr->items;
+                if ($isDirectPath) {
+                    $prItems = $prItems->filter(fn ($item) => (int) ($item->supplier_id ?? 0) === (int) $supplier->id);
+                }
+                foreach ($prItems as $prItem) {
                     [$itemReference, $region] = $this->requireReferenceFields(
                         $prItem->item_reference,
                         $prItem->region,
                         "pr_item.{$prItem->id}"
                     );
                     $qty = (float) $prItem->quantity;
+                    $unitPrice = $isDirectPath
+                        ? (float) ($prItem->estimated_unit_price ?? 0.00)
+                        : (float) ($selectedQuote?->unit_price ?? 0.00);
 
                     $po->items()->create([
                         'pr_item_id'      => $prItem->id,
@@ -221,8 +239,8 @@ class PurchaseOrderService
                         'region'          => $region,
                         'quantity'        => $qty,
                         'uom'             => $prItem->uom,
-                        'unit_price'      => (float) ($selectedQuote?->unit_price ?? 0.00),
-                        'line_total'      => round($qty * (float) ($selectedQuote?->unit_price ?? 0.00), 2),
+                        'unit_price'      => $unitPrice,
+                        'line_total'      => round($qty * $unitPrice, 2),
                         'specifications'  => $prItem->specifications,
                     ]);
                 }

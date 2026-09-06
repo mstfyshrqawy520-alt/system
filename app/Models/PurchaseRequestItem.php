@@ -17,6 +17,7 @@ class PurchaseRequestItem extends Model
     protected $fillable = [
         'purchase_request_id',
         'item_id',
+        'supplier_id',
         'item_description',
         'item_reference',
         'region',
@@ -45,6 +46,11 @@ class PurchaseRequestItem extends Model
     public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class, 'item_id');
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
     public function purchaseOrderItems(): HasMany

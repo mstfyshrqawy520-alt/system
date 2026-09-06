@@ -69,14 +69,26 @@ export const CreatePurchaseOrderPage: React.FC = () => {
           if (quoteId && prData?.selected_quote?.id && quoteId !== prData.selected_quote.id) {
             throw new Error('العرض المختار في الرابط لا يطابق العرض المعتمد لهذا الطلب.');
           }
+          let initialSupplierId = '';
           if (prData?.selected_quote?.supplier_id) {
-            setSupplierId(String(prData.selected_quote.supplier_id));
-          } else if (prData?.direct_supplier_id) {
-            setSupplierId(String(prData.direct_supplier_id));
+            initialSupplierId = String(prData.selected_quote.supplier_id);
+          } else if (prData?.procurement_route === 'DIRECT') {
+            const firstItemSupplier = prData.items?.find((i) => i.supplier_id)?.supplier_id;
+            initialSupplierId = String(firstItemSupplier || prData.direct_supplier_id || '');
           }
+          setSupplierId(initialSupplierId);
+
           if (prData && prData.items) {
+            let relevantItems = prData.items;
+            if (prData.procurement_route === 'DIRECT' && initialSupplierId) {
+              const sId = Number(initialSupplierId);
+              const matching = prData.items.filter((i) => (i.supplier_id || prData.direct_supplier_id) === sId);
+              if (matching.length > 0) {
+                relevantItems = matching;
+              }
+            }
             setPoItems(
-              prData.items.map((i) => ({
+              relevantItems.map((i) => ({
                 pr_item_id: i.id,
                 item_id: i.item_id || null,
                 item_description: i.item_description,
@@ -100,6 +112,34 @@ export const CreatePurchaseOrderPage: React.FC = () => {
     };
     init();
   }, [prId]);
+
+  const syncPoItemsForSupplier = (targetSupplierId: string, currentPr: PurchaseRequest) => {
+    if (!currentPr.items) return;
+    let relevantItems = currentPr.items;
+    if (currentPr.procurement_route === 'DIRECT' && targetSupplierId) {
+      const sId = Number(targetSupplierId);
+      const matching = currentPr.items.filter(
+        (i) => (i.supplier_id || currentPr.direct_supplier_id) === sId
+      );
+      if (matching.length > 0) {
+        relevantItems = matching;
+      }
+    }
+    setPoItems(
+      relevantItems.map((i) => ({
+        pr_item_id: i.id,
+        item_id: i.item_id || null,
+        item_description: i.item_description,
+        item_reference: i.item_reference || '',
+        region: i.region || '',
+        original_quantity: parseFloat(i.quantity) || 1,
+        quantity: parseFloat(i.quantity) || 1,
+        uom: i.uom || 'PCS',
+        unit_price: Number(currentPr.selected_quote?.unit_price || i.estimated_unit_price || 0),
+        specifications: i.specifications || '',
+      }))
+    );
+  };
 
   const handleItemQuantityChange = (index: number, val: string) => {
     setPoItems((prev) => {
@@ -186,7 +226,34 @@ export const CreatePurchaseOrderPage: React.FC = () => {
     }
   };
 
+  const directPrSuppliers = useMemo(() => {
+    if (pr?.procurement_route !== 'DIRECT' || !pr?.items) return [];
+    const map = new Map<number, { id: number; company_name: string; code?: string | null }>();
+    for (const item of pr.items) {
+      const sId = item.supplier_id || pr.direct_supplier_id;
+      if (sId) {
+        const found = suppliers.find((s) => s.id === sId) || item.supplier || (pr.direct_supplier?.id === sId ? pr.direct_supplier : null);
+        map.set(sId, {
+          id: sId,
+          company_name: found?.company_name || `مورد #${sId}`,
+          code: found?.code || null,
+        });
+      }
+    }
+    return Array.from(map.values());
+  }, [pr, suppliers]);
+
+  const hasMultipleDirectSuppliers = directPrSuppliers.length > 1;
+
   const supplierOptions = useMemo(() => {
+    if (pr?.procurement_route === 'DIRECT' && hasMultipleDirectSuppliers) {
+      return directPrSuppliers.map((s) => ({
+        value: s.id,
+        label: s.company_name,
+        badge: s.code || `SUP-${s.id}`,
+        searchTerms: [s.company_name, s.code || ''].filter(Boolean),
+      }));
+    }
     return suppliers.map((s) => ({
       value: s.id,
       label: s.company_name,
@@ -194,7 +261,14 @@ export const CreatePurchaseOrderPage: React.FC = () => {
       badge: s.code || `SUP-${s.id}`,
       searchTerms: [s.contact_person || '', s.email || '', s.tax_number || '', s.commercial_register || ''].filter(Boolean),
     }));
-  }, [suppliers]);
+  }, [suppliers, pr?.procurement_route, hasMultipleDirectSuppliers, directPrSuppliers]);
+
+  const handleSupplierSelect = (val: string) => {
+    setSupplierId(val);
+    if (pr) {
+      syncPoItemsForSupplier(val, pr);
+    }
+  };
 
   if (fetching) {
     return <LoadingSpinner message="جاري تجهيز بيانيات إنشاء أمر الشراء..." />;
@@ -371,10 +445,10 @@ export const CreatePurchaseOrderPage: React.FC = () => {
               <SearchableSelect
                 options={supplierOptions}
                 value={supplierId ? Number(supplierId) : ''}
-                onChange={(val) => setSupplierId(val ? String(val) : '')}
+                onChange={(val) => handleSupplierSelect(val ? String(val) : '')}
                 placeholder="-- ابحث عن المورد بالاسم أو الكود أو الهاتف --"
                 searchPlaceholder="اكتب اسم المورد أو الكود للبحث الفوري..."
-                disabled={Boolean(pr?.selected_quote?.id || pr?.procurement_route === 'DIRECT')}
+                disabled={Boolean(pr?.selected_quote?.id || (pr?.procurement_route === 'DIRECT' && !hasMultipleDirectSuppliers))}
                 emptyMessage="لا يوجد مورد بهذا الاسم"
               />
               {suppliers.length === 0 && (
@@ -414,6 +488,39 @@ export const CreatePurchaseOrderPage: React.FC = () => {
               />
             </div>
           </div>
+
+          {/* Multi-supplier Direct Purchase Helper Banner */}
+          {hasMultipleDirectSuppliers && pr && (
+            <div className="rounded-xl border border-violet-500/40 bg-violet-950/25 p-3.5 text-xs text-violet-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-base">ℹ️</span>
+                <div>
+                  <p className="font-bold text-violet-100">
+                    طلب شراء مباشر مقسّم على موردين متعددين ({directPrSuppliers.length} موردين)
+                  </p>
+                  <p className="text-[11px] text-violet-300/80">
+                    جاري إعداد أمر الشراء لبنود المورد المحدد ({poItems.length} من أصل {pr.items?.length || 0} بند). بعد إصداره يمكنك إصدار أمر الشراء للمورد التالي.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {directPrSuppliers.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => handleSupplierSelect(String(s.id))}
+                    className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                      Number(supplierId) === s.id
+                        ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30 ring-1 ring-violet-400'
+                        : 'bg-slate-900/90 text-slate-300 hover:bg-slate-800 border border-slate-700'
+                    }`}
+                  >
+                    {s.company_name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Commercial Line Items */}
           <div className="space-y-3 pt-2">

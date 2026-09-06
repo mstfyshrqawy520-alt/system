@@ -64,6 +64,7 @@ class ProcurementPurchaseOrderTest extends TestCase
         $this->employee->roles()->attach($empRole->id);
 
         // Suppliers
+        Supplier::query()->delete();
         $this->activeSupplier = Supplier::create([
             'code' => 'SUP-001',
             'company_name' => 'Al-Falak Technology Corp',

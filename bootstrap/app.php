@@ -69,6 +69,18 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (\Throwable $exception, Request $request) use ($isApiRequest) {
             if ($request->expectsJson() || $isApiRequest($request)) {
+                if ($exception instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+                    return response()->json([
+                        'message' => 'العنصر المطلوب غير موجود أو لم يعد متاحًا. أعد تحميل الصفحة وتحقق من الرقم المستخدم.',
+                    ], 404);
+                }
+
+                if ($exception instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                    return response()->json([
+                        'message' => $exception->getMessage() ?: 'حدث خطأ في الطلب.',
+                    ], $exception->getStatusCode(), $exception->getHeaders());
+                }
+
                 return response()->json([
                     'message' => $exception->getMessage(),
                     'exception' => get_class($exception),

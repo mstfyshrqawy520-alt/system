@@ -103,6 +103,12 @@ export interface PurchaseRequestItem {
     name: string;
     sku: string;
   } | null;
+  supplier_id?: number | null;
+  supplier?: {
+    id: number;
+    company_name: string;
+    code?: string | null;
+  } | null;
   item_description: string;
   item_reference?: string | null;
   region?: string | null;

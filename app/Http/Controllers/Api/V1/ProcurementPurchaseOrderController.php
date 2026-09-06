@@ -81,6 +81,27 @@ class ProcurementPurchaseOrderController extends Controller
      */
     public function approvePurchaseRequest(Request $request, string|int $id): JsonResponse
     {
+        $financialData = $request->input('financial_data');
+        if (is_array($financialData)) {
+            $globalSupplierId = $financialData['supplier_id'] ?? null;
+            $items = $financialData['items'] ?? null;
+            if (is_array($items)) {
+                $firstItemSupplier = null;
+                foreach ($items as $idx => $item) {
+                    if (!empty($item['supplier_id'])) {
+                        $firstItemSupplier ??= $item['supplier_id'];
+                    } elseif ($globalSupplierId) {
+                        $items[$idx]['supplier_id'] = $globalSupplierId;
+                    }
+                }
+                if (!$globalSupplierId && $firstItemSupplier) {
+                    $financialData['supplier_id'] = $firstItemSupplier;
+                }
+                $financialData['items'] = $items;
+                $request->merge(['financial_data' => $financialData]);
+            }
+        }
+
         $validated = $request->validate([
             'use_quotes' => ['nullable', 'boolean'],
             'comment' => ['nullable', 'string', 'max:2000'],
@@ -89,6 +110,7 @@ class ProcurementPurchaseOrderController extends Controller
             'financial_data.items' => ['required_if:use_quotes,false', 'array', 'min:1'],
             'financial_data.items.*' => ['array'],
             'financial_data.items.*.pr_item_id' => ['required_if:use_quotes,false', 'integer', 'exists:purchase_request_items,id'],
+            'financial_data.items.*.supplier_id' => ['required_if:use_quotes,false', 'integer', 'exists:suppliers,id'],
             'financial_data.items.*.quantity' => ['required_if:use_quotes,false', 'numeric', 'gt:0'],
             'financial_data.items.*.unit_price' => ['required_if:use_quotes,false', 'numeric', 'gte:0'],
             'financial_data.notes' => ['nullable', 'string', 'max:5000'],
