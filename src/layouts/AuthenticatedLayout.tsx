@@ -7,9 +7,11 @@ import { getPrimaryRoleSlug, getRoleLabel } from "../routes/roleRouting";
 import PageHeader from "../components/ui/PageHeader";
 import { usePersistedState } from "../hooks/usePersistedState";
 import InstallPrompt from "../components/pwa/InstallPrompt";
+import { useNotificationCount } from "../utils/notificationBadge";
 
 export const AuthenticatedLayout: React.FC = () => {
     const { user, logout, sessionExpired, hasPermission } = useAuth();
+    const unreadNotificationsCount = useNotificationCount();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [sidebarOpen, setSidebarOpen] = usePersistedState('layout.sidebar-open.v1', true);
     const location = useLocation();
@@ -421,13 +423,19 @@ export const AuthenticatedLayout: React.FC = () => {
                             <span className="ml-2.5 text-sm" aria-hidden="true">🗂️</span> أرشيف إجراءاتي
                         </Link>
                         <div className="border-t border-slate-800/80 my-3 pt-3"></div>
-                                                    <Link
+                        <Link
                             to="/notifications"
-
-                            className={linkClassName("/notifications")}
+                            className={`justify-between ${linkClassName("/notifications")}`}
                             onClick={closeMobileMenu}
                         >
-                            <span className="ml-2.5 text-sm">🔔</span> الإشعارات
+                            <span className="flex items-center">
+                                <span className="ml-2.5 text-sm">🔔</span> الإشعارات
+                            </span>
+                            {unreadNotificationsCount > 0 && (
+                                <span className="min-w-5 h-5 px-1.5 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center animate-pulse shadow-sm shadow-rose-600/30">
+                                    {unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount}
+                                </span>
+                            )}
                         </Link>
                         <Link
                             to="/profile"

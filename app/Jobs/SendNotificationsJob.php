@@ -64,6 +64,7 @@ class SendNotificationsJob implements ShouldQueue
 
             foreach ($users as $user) {
                 $targetUrl = $this->resolveTargetUrlForUser($user);
+                $unreadCount = $user->notifications()->whereNull('read_at')->count();
 
                 $fcmService->sendToUser(
                     $user,
@@ -77,6 +78,7 @@ class SendNotificationsJob implements ShouldQueue
                         'purchase_order_id' => $this->notifiable instanceof \App\Models\PurchaseOrder ? $this->notifiable->id : ($this->purchaseReceipt?->purchase_order_id ?? null),
                         'purchase_receipt_id' => $this->purchaseReceipt?->id ?? ($this->notifiable instanceof \App\Models\PurchaseReceipt ? $this->notifiable->id : null),
                         'url' => $targetUrl,
+                        'unread_count' => (string) $unreadCount,
                     ]
                 );
             }

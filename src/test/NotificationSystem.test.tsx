@@ -308,6 +308,7 @@ describe('الإشعارات System Frontend', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'الإشعارات' }));
+    fireEvent.click(screen.getByText(/عرض مركز الإشعارات/));
 
     await waitFor(() => {
       expect(screen.getByTestId('notifications-page')).toBeInTheDocument();

@@ -43,10 +43,11 @@ try {
 
       self.registration.showNotification(notificationTitle, notificationOptions);
 
-      // Update app badge count when background notification arrives
+      // Update app icon badge count when background notification arrives
+      const rawCount = payload.data?.unread_count;
+      const count = rawCount ? parseInt(rawCount, 10) : 1;
       if (self.navigator && self.navigator.setAppBadge) {
-        // We don't know the exact count, so just increment by showing a generic badge
-        self.navigator.setAppBadge().catch(() => {});
+        self.navigator.setAppBadge(count).catch(() => {});
       }
     });
   }
@@ -120,6 +121,9 @@ self.addEventListener('push', (event) => {
 // Push notification click handler - opens the window or focuses open tab with direct deep link
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  if (self.navigator && self.navigator.clearAppBadge) {
+    self.navigator.clearAppBadge().catch(() => {});
+  }
   const rawUrl = event.notification.data?.url || event.notification.data?.fcmOptions?.link || '/notifications';
   const targetUrl = rawUrl.startsWith('http') ? rawUrl : new URL(rawUrl, self.location.origin).href;
 

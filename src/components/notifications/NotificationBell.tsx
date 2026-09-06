@@ -25,6 +25,7 @@ import {
   setNotificationSoundEnabled,
   playNotificationSound,
 } from '../../utils/notificationSound';
+import { broadcastNotificationCount } from '../../utils/notificationBadge';
 
 export const NotificationBell: React.FC = () => {
   const { user } = useAuth();
@@ -42,15 +43,9 @@ export const NotificationBell: React.FC = () => {
   dropdownOpenRef.current = dropdownOpen;
   const navigate = useNavigate();
 
-  // ─── PWA Badge API: update app icon badge whenever unread count changes ───
+  // ─── Synchronize App Icon Badge, Favicon, and Global Navigation ───
   useEffect(() => {
-    if ('setAppBadge' in navigator) {
-      if (count > 0) {
-        navigator.setAppBadge(count).catch(() => {});
-      } else {
-        navigator.clearAppBadge?.().catch(() => {});
-      }
-    }
+    broadcastNotificationCount(count);
   }, [count]);
 
   // 1. Lightweight count check (0.1 kB) - default background operation
@@ -286,7 +281,7 @@ export const NotificationBell: React.FC = () => {
         type="button"
         onClick={handleToggleDropdown}
         className="relative flex min-h-11 min-w-11 items-center justify-center rounded-xl p-2 text-slate-400 hover:bg-slate-800/80 hover:text-cyan-300 transition-colors cursor-pointer"
-        aria-label="الإشعارات والتنبيهات"
+        aria-label="الإشعارات"
         title="الإشعارات والتنبيهات"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
