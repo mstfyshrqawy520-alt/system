@@ -300,6 +300,29 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
               const isOffice = item.request_type === 'OFFICE_SUPPLIES';
               const isSubmitting = directSubmittingId === item.id;
 
+              // Extract single parcel & region for the whole request card
+              const parcel = item.parcel_number || item.items_list?.[0]?.parcel || '';
+              const region = item.region || item.items_list?.[0]?.region || '';
+
+              // Deduplicate title: If title is identical to first item name, use justification/subtitle or clean category
+              const firstItemDesc = item.items_list?.[0]?.description?.trim();
+              const isTitleSameAsItem = Boolean(firstItemDesc && item.title?.trim() === firstItemDesc);
+
+              let displayTitle = item.title;
+              let displaySubtitle = item.subtitle;
+
+              if (isTitleSameAsItem) {
+                if (item.subtitle && item.subtitle.trim() !== firstItemDesc) {
+                  displayTitle = item.subtitle;
+                  displaySubtitle = undefined;
+                } else {
+                  displayTitle = isOffice ? 'طلب مستلزمات مكتبية' : 'طلب مواد مشروعات';
+                  displaySubtitle = undefined;
+                }
+              } else if (displaySubtitle && displayTitle && displaySubtitle.trim() === displayTitle.trim()) {
+                displaySubtitle = undefined;
+              }
+
               return (
                 <div
                   key={`${item.type}-${item.id}`}
@@ -310,19 +333,30 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                   }`}
                 >
                   <div className="space-y-3">
-                    {/* Top Row: Code, Badges & Date */}
-                    <div className="flex items-start justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                    {/* Top Row: Code, Location Badge & Date */}
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-mono text-xs font-black text-cyan-300 bg-cyan-950/90 border border-cyan-700/60 px-2 py-0.5 rounded-lg">
                           {item.code}
                         </span>
 
                         {isOffice ? (
-                          <span className="text-[10px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                          <span className="text-[11px] font-bold bg-indigo-950/90 text-indigo-300 border border-indigo-800/70 px-2 py-0.5 rounded-lg flex items-center gap-1">
                             <span>🏢</span> مستلزمات مكتبية
                           </span>
+                        ) : (parcel || region) ? (
+                          <span className="text-[11px] font-bold bg-amber-950/50 text-amber-300 border border-amber-700/50 px-2 py-0.5 rounded-lg flex items-center gap-1.5 shadow-sm">
+                            <span>🏗️</span>
+                            <span>قطعة {parcel || '—'}</span>
+                            {region && (
+                              <>
+                                <span className="text-amber-500/70">•</span>
+                                <span>{region}</span>
+                              </>
+                            )}
+                          </span>
                         ) : (
-                          <span className="text-[10px] font-bold bg-slate-900 text-amber-300 border border-amber-800/50 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                          <span className="text-[11px] font-bold bg-slate-900 text-amber-300 border border-amber-800/50 px-2 py-0.5 rounded-lg flex items-center gap-1">
                             <span>🏗️</span> مشتريات مواقع
                           </span>
                         )}
@@ -335,134 +369,98 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                       </div>
 
                       {item.timeAgo && (
-                        <span className="text-[10px] text-slate-500 font-mono shrink-0">
+                        <span className="text-[11px] text-slate-400 font-mono shrink-0">
                           {item.timeAgo}
                         </span>
                       )}
                     </div>
 
                     {/* Title & Subtitle */}
-                    <div>
-                      <h4 className="text-sm font-black text-slate-100 leading-snug">
-                        {item.title}
-                      </h4>
-                      {item.subtitle && (
-                        <p className="text-xs text-slate-400 mt-1 line-clamp-2">
-                          {item.subtitle}
-                        </p>
-                      )}
-                    </div>
+                    {(displayTitle || displaySubtitle) && (
+                      <div>
+                        {displayTitle && (
+                          <h4 className="text-sm font-black text-slate-100 leading-snug">
+                            {displayTitle}
+                          </h4>
+                        )}
+                        {displaySubtitle && (
+                          <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                            {displaySubtitle}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
-                    {/* Detailed Line Items Box (If available) */}
+                    {/* Line Items List (Clean, single-line per item, no repeated parcel/region) */}
                     {item.items_list && item.items_list.length > 0 && (
-                      <div className="rounded-xl border border-slate-800/90 bg-slate-900/70 p-2.5 space-y-2 text-xs">
-                        <div className="text-[11px] font-bold text-slate-300 flex items-center justify-between">
-                          <span className="flex items-center gap-1 text-cyan-400">
+                      <div className="rounded-xl border border-slate-800/90 bg-slate-900/60 p-2.5 space-y-1.5 text-xs">
+                        <div className="text-[11px] font-bold text-slate-300 flex items-center justify-between pb-1 border-b border-slate-800/60">
+                          <span className="flex items-center gap-1.5 text-cyan-400 font-bold">
                             <span>📦</span> بنود الطلب ({item.items_list.length}):
                           </span>
                           {item.items_count && item.items_count > item.items_list.length && (
                             <span className="text-[10px] text-slate-500">+{item.items_count - item.items_list.length} أصناف أخرى</span>
                           )}
                         </div>
-                        <div className="space-y-1.5 max-h-36 overflow-y-auto custom-select-scrollbar pr-1">
+                        <div className="space-y-1.5 max-h-36 overflow-y-auto custom-select-scrollbar pr-0.5">
                           {item.items_list.map((it, idx) => (
-                            <div key={idx} className="flex flex-col gap-1 text-[11px] text-slate-200 bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="font-semibold text-slate-100 truncate" title={it.description}>
-                                  • {it.description}
-                                </span>
-                                <span className="font-mono font-bold text-amber-300 shrink-0">
-                                  {it.quantity} {getUnitLabel(it.uom || '')}
-                                </span>
-                              </div>
-                              {(it.parcel || it.region) && (
-                                <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
-                                  {it.parcel && (
-                                    <span className="font-mono text-cyan-300 bg-cyan-950/90 border border-cyan-800/60 px-1.5 py-0.5 rounded font-bold">
-                                      قطعة: {it.parcel}
-                                    </span>
-                                  )}
-                                  {it.region && (
-                                    <span className="text-amber-300 bg-amber-950/90 border border-amber-800/60 px-1.5 py-0.5 rounded font-bold">
-                                      المنطقة: {it.region}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between gap-2 text-xs py-1.5 px-2.5 rounded-lg bg-slate-950/60 border border-slate-800/70 hover:border-slate-700/80 transition-colors"
+                            >
+                              <span className="font-semibold text-slate-100 truncate" title={it.description}>
+                                • {it.description}
+                              </span>
+                              <span className="font-mono font-bold text-amber-300 text-xs shrink-0">
+                                {it.quantity} {getUnitLabel(it.uom || '')}
+                              </span>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {/* Meta Info Grid: Requester, Department, Parcel/Location, Date Needed */}
-                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    {/* Meta Bar: Requester, Department, Date Needed, Amount, Supplier */}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-300 bg-slate-900/50 border border-slate-800/70 rounded-xl px-3 py-2">
                       {item.requester && (
-                        <div className="rounded-lg bg-slate-900/80 px-2 py-1 border border-slate-800/80 text-slate-300 flex items-center gap-1.5 truncate">
+                        <div className="flex items-center gap-1.5">
                           <span className="text-slate-500">👤 الطالب:</span>
-                          <strong className="truncate font-semibold text-slate-200">{item.requester}</strong>
+                          <strong className="font-semibold text-slate-200">{item.requester}</strong>
+                          {item.department && (
+                            <span className="text-slate-400 text-[11px]">({item.department})</span>
+                          )}
                         </div>
                       )}
 
-                      {item.department && (
-                        <div className="rounded-lg bg-slate-900/80 px-2 py-1 border border-slate-800/80 text-slate-300 flex items-center gap-1.5 truncate">
-                          <span className="text-slate-500">🏢 القسم:</span>
-                          <strong className="truncate font-semibold text-slate-200">{item.department}</strong>
-                        </div>
-                      )}
-
-                      {/* Location / Parcel Summary */}
-                      {(() => {
-                        const uniqueParcels = Array.from(new Set((item.items_list || []).map(it => it.parcel).filter(Boolean)));
-                        const uniqueRegions = Array.from(new Set((item.items_list || []).map(it => it.region).filter(Boolean)));
-                        const parcelsText = uniqueParcels.length > 0 
-                          ? uniqueParcels.map(p => `ق ${p}`).join('، ')
-                          : (item.parcel_number ? `ق ${item.parcel_number}` : '');
-                        const regionsText = uniqueRegions.length > 0
-                          ? `(${uniqueRegions.join('، ')})`
-                          : (item.region ? `(${item.region})` : '');
-                        const fullLocation = isOffice ? 'مقر الشركة' : `${parcelsText} ${regionsText}`.trim() || '—';
-
-                        return (item.parcel_number || item.region || isOffice || uniqueParcels.length > 0) ? (
-                          <div className="rounded-lg bg-slate-900/80 px-2 py-1 border border-slate-800/80 text-slate-300 flex items-center gap-1.5 truncate col-span-2 sm:col-span-1">
-                            <span className="text-slate-500">📍 الموقع:</span>
-                            <strong className="truncate font-semibold text-cyan-300" title={fullLocation}>
-                              {fullLocation}
-                            </strong>
-                          </div>
-                        ) : null;
-                      })()}
-
-                      {/* Date Needed */}
                       {item.date_needed && (
-                        <div className="rounded-lg bg-slate-900/80 px-2 py-1 border border-slate-800/80 text-slate-300 flex items-center gap-1.5 truncate col-span-2 sm:col-span-1">
-                          <span className="text-slate-500">📅 الاحتياج:</span>
-                          <strong className="truncate font-mono font-semibold text-amber-300">{item.date_needed}</strong>
+                        <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                          <span className="text-slate-500 font-sans">📅 الاحتياج:</span>
+                          <strong className="text-amber-300 font-bold">{item.date_needed}</strong>
                         </div>
                       )}
 
-                      {/* Amount if available */}
                       {item.amount !== undefined && Number(item.amount) > 0 && (
-                        <div className="rounded-lg bg-emerald-950/50 px-2 py-1 border border-emerald-800/60 text-emerald-300 flex items-center gap-1.5 col-span-2 font-mono font-bold">
-                          <span>💰 القيمة:</span>
+                        <div className="flex items-center gap-1.5 font-mono font-bold text-emerald-400">
+                          <span className="text-slate-500 font-sans font-normal">💰 القيمة:</span>
                           <span>{Number(item.amount).toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م</span>
                         </div>
                       )}
 
-                      {/* Supplier if available */}
                       {item.supplier && item.title !== item.supplier && (
-                        <div className="rounded-lg bg-slate-900/80 px-2 py-1 border border-slate-800/80 text-slate-300 flex items-center gap-1.5 col-span-2 truncate">
+                        <div className="flex items-center gap-1.5">
                           <span className="text-slate-500">🤝 المورد:</span>
-                          <strong className="truncate font-semibold text-slate-200">{item.supplier}</strong>
+                          <strong className="font-semibold text-slate-200">{item.supplier}</strong>
                         </div>
                       )}
                     </div>
 
-                    {/* Operational Reason Box */}
-                    <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 p-2.5 text-xs font-medium text-amber-200">
-                      <span className="font-bold text-amber-400">⚡ المطلوب: </span>
-                      {item.reason}
-                    </div>
+                    {/* Operational Reason */}
+                    {item.reason && (
+                      <div className="flex items-center gap-2 rounded-xl border border-amber-500/25 bg-amber-950/20 px-3 py-2 text-xs font-medium text-amber-200">
+                        <span className="font-bold text-amber-400 shrink-0">⚡ المطلوب:</span>
+                        <span className="truncate">{item.reason}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions Toolbar on the Card */}
