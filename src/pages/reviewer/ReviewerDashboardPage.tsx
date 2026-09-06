@@ -142,6 +142,7 @@ export const ReviewerDashboardPage: React.FC = () => {
           : undefined,
         directApproveLabel: 'اعتماد ونقل للمدير التنفيذي',
         directRejectLabel: 'رفض الطلب',
+        requireApproveModal: true,
       })),
 
     ...quoteRequests

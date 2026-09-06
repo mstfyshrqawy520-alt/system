@@ -49,6 +49,7 @@ export interface ActionInboxItem {
   onDirectSubmit?: (item: ActionInboxItem) => Promise<void> | void;
   directApproveLabel?: string;
   directRejectLabel?: string;
+  requireApproveModal?: boolean;
 }
 
 export interface ActionRequiredInboxProps {
@@ -158,7 +159,31 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
     isSubmitting: false,
   });
 
+  const [directApprovingId, setDirectApprovingId] = useState<string | number | null>(null);
   const [directSubmittingId, setDirectSubmittingId] = useState<string | number | null>(null);
+
+  const handleApproveClick = (item: ActionInboxItem) => {
+    const needsModal = item.requireApproveModal ?? (isReviewer && item.type === 'PR');
+    if (needsModal) {
+      setApproveModal({ isOpen: true, item, comment: '', isSubmitting: false });
+    } else {
+      handleDirectApprove(item);
+    }
+  };
+
+  const handleDirectApprove = async (item: ActionInboxItem) => {
+    if (!item.onDirectApprove || directApprovingId === item.id) return;
+    setDirectApprovingId(item.id);
+    try {
+      await item.onDirectApprove(item);
+      onItemActionComplete?.();
+    } catch (err: any) {
+      console.error(err);
+      alert(err?.response?.data?.message || err?.message || 'حدث خطأ أثناء اعتماد الطلب');
+    } finally {
+      setDirectApprovingId(null);
+    }
+  };
 
   const handleOpenPeek = (item: ActionInboxItem) => {
     if (item.type === 'PR' || item.type === 'PO') {
@@ -472,11 +497,12 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                           <Button
                             variant="success"
                             size="sm"
-                            onClick={() => setApproveModal({ isOpen: true, item, comment: '', isSubmitting: false })}
+                            disabled={directApprovingId === item.id}
+                            onClick={() => handleApproveClick(item)}
                             className="flex-1 text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/40"
                           >
                             <span>✓</span>
-                            <span>{item.directApproveLabel || 'اعتماد فوري'}</span>
+                            <span>{directApprovingId === item.id ? 'جاري الاعتماد...' : (item.directApproveLabel || 'اعتماد فوري')}</span>
                           </Button>
                         )}
 

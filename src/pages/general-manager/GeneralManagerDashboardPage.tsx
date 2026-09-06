@@ -175,6 +175,7 @@ export const GeneralManagerDashboardPage: React.FC = () => {
             },
             directApproveLabel: 'اعتماد تنفيذي نهائي',
             directRejectLabel: 'رفض الطلب',
+            requireApproveModal: false,
           })),
           // 2. Pending Executive Quote Decisions
           ...quoteRequests
