@@ -2,7 +2,16 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getMeApi, loginApi, logoutApi } from '../api/auth';
 import { setOnUnauthenticated } from '../api/client';
 import { LoginCredentials, User } from '../types/auth';
-import { clearSessionExpired, getToken, hasSessionExpired, removeToken, setToken as saveToken } from '../utils/authStorage';
+import {
+  clearSessionExpired,
+  getStoredUser,
+  getToken,
+  hasSessionExpired,
+  removeStoredUser,
+  removeToken,
+  setStoredUser,
+  setToken as saveToken,
+} from '../utils/authStorage';
 import { hasPermission as checkPermission, hasRole as checkRole } from '../utils/permissions';
 
 interface AuthContextType {
@@ -20,15 +29,16 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setTokenState] = useState<string | null>(getToken());
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<User | null>(() => getStoredUser<User>());
+  const [token, setTokenState] = useState<string | null>(() => getToken());
+  const [isLoading, setIsLoading] = useState<boolean>(() => !getStoredUser() && !getToken());
   const [sessionExpired, setSessionExpired] = useState<boolean>(hasSessionExpired());
 
   const handleUnauthenticated = () => {
     setUser(null);
     setTokenState(null);
     removeToken();
+    removeStoredUser();
     setSessionExpired(hasSessionExpired());
   };
 
@@ -37,17 +47,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initAuth = async () => {
       const storedToken = getToken();
-      if (storedToken) {
-        try {
-          const currentUser = await getMeApi();
-          setUser(currentUser);
-          setTokenState(storedToken);
-        } catch {
+      if (!storedToken) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const currentUser = await getMeApi();
+        setUser(currentUser);
+        setStoredUser(currentUser);
+        setTokenState(storedToken);
+      } catch (err: any) {
+        // ONLY log out if the backend explicitly returned a 401 Unauthorized (token deleted / revoked in DB)
+        if (err?.response?.status === 401) {
           handleUnauthenticated();
         }
+        // If it's a network drop, offline, timeout, or server reboot:
+        // KEEP USER LOGGED IN using stored session!
+      } finally {
+        setSessionExpired(hasSessionExpired());
+        setIsLoading(false);
       }
-      setSessionExpired(hasSessionExpired());
-      setIsLoading(false);
     };
 
     initAuth();
@@ -58,6 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await loginApi(credentials);
       saveToken(response.token);
+      setStoredUser(response.user);
       clearSessionExpired();
       setSessionExpired(false);
       setTokenState(response.token);

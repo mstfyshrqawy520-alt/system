@@ -91,7 +91,11 @@ export const setOnUnauthenticated = (callback: () => void) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    const isLoginOrPublicEndpoint =
+      error.config?.url?.includes('/auth/login') ||
+      error.config?.url?.includes('/auth/demo-accounts');
+
+    if (error.response && error.response.status === 401 && !isLoginOrPublicEndpoint) {
       markSessionExpired();
       removeToken();
       if (!getToken() && onUnauthenticatedCallback) {
