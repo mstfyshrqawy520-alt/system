@@ -68,13 +68,36 @@ export const updateAppAndTabBadge = (count: number): void => {
     }
   }
 
-  // 3. PWA App Icon Badge API (Home screen icon & Taskbar icon)
+  // 3. PWA App Icon Badge API (Desktop & iOS 16.4+ standalone PWA)
   if (typeof navigator !== 'undefined' && 'setAppBadge' in navigator) {
     if (count > 0) {
       navigator.setAppBadge(count).catch(() => {});
     } else {
       navigator.clearAppBadge?.().catch(() => {});
     }
+  }
+
+  // 4. Android Mobile System Notification Badge Bridge:
+  // On Android (Chrome / Samsung Internet), the launcher app icon badge is tied
+  // to active notifications in the Android notification tray.
+  if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'Notification' in window && Notification.permission === 'granted') {
+    navigator.serviceWorker.ready.then((registration) => {
+      if (count > 0) {
+        registration.showNotification('شركة اشبيلية — نظام المشتريات', {
+          body: `لديك (${count > 99 ? '99+' : count}) معاملات وإشعارات غير مقروءة تتطلب متابعتك.`,
+          icon: '/icon-192x192.png',
+          badge: '/favicon-32x32.png',
+          tag: 'ashbiliya-unread-badge',
+          renotify: false,
+          silent: true,
+          data: { url: '/notifications' },
+        } as any).catch(() => {});
+      } else {
+        registration.getNotifications({ tag: 'ashbiliya-unread-badge' }).then((notifications) => {
+          notifications.forEach((n) => n.close());
+        }).catch(() => {});
+      }
+    }).catch(() => {});
   }
 };
 

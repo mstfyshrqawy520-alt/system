@@ -389,6 +389,11 @@ export const AuthenticatedLayout: React.FC = () => {
                                         }
                                     />
                                 </svg>
+                                {unreadNotificationsCount > 0 && !mobileMenuOpen && (
+                                    <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse shadow-md shadow-rose-600/40">
+                                        {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+                                    </span>
+                                )}
                             </button>
                         </div>
                     </div>

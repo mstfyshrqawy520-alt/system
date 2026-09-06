@@ -97,8 +97,10 @@ self.addEventListener('push', (event) => {
     event.waitUntil(
       self.registration.showNotification(title, options).then(() => {
         // Update badge on push
+        const rawCount = data.unread_count;
+        const count = rawCount ? parseInt(rawCount, 10) : 1;
         if (self.navigator && self.navigator.setAppBadge) {
-          self.navigator.setAppBadge().catch(() => {});
+          self.navigator.setAppBadge(count).catch(() => {});
         }
       })
     );

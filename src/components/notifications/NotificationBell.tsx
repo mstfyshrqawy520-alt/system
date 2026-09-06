@@ -406,6 +406,29 @@ export const NotificationBell: React.FC = () => {
             </div>
           </div>
 
+          {/* Mobile Permission Banner to activate Home Screen Badge */}
+          {typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted' && (
+            <div className="bg-amber-950/60 border-b border-amber-800/60 px-3 py-2 flex items-center justify-between gap-2 text-xs text-amber-200 animate-fade-in">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-base shrink-0">📱</span>
+                <span className="text-[11px] leading-tight font-medium">لتفعيل عداد الأيقونة على الموبايل، يُرجى تفعيل الإذن:</span>
+              </div>
+              <button
+                type="button"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  const res = await requestAndRegisterPushToken();
+                  if (res.success) {
+                    broadcastNotificationCount(count);
+                  }
+                }}
+                className="shrink-0 bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded-lg font-black text-[11px] shadow-sm transition-colors cursor-pointer"
+              >
+                تفعيل الإذن 🔔
+              </button>
+            </div>
+          )}
+
           {/* List */}
           <div className="max-h-[min(60vh,380px)] overflow-y-auto divide-y divide-slate-800/60">
             {recentNotifications.length > 0 ? (
