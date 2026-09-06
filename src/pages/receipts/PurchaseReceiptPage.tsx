@@ -271,9 +271,19 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
   };
 
   const submitWarehouseReceipt = async (order: ReceiptPurchaseOrder) => {
+    const hasUnentered = (order.items || []).some((item) => {
+      const q = quantities[`${order.id}-${item.id}`];
+      return q === undefined || q === null || q.trim() === '';
+    });
+
+    if (hasUnentered) {
+      setError('يرجى إدخال الكميات المستلمة فعلياً لجميع الأصناف قبل تأكيد الاستلام.');
+      return;
+    }
+
     const items = (order.items || []).map((item) => ({
       purchase_order_item_id: item.id,
-      received_quantity: Number(quantities[`${order.id}-${item.id}`] ?? item.quantity),
+      received_quantity: Number(quantities[`${order.id}-${item.id}`]),
       notes: itemNotes[`${order.id}-${item.id}`] || undefined,
     }));
 
@@ -549,9 +559,8 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                         <div className="space-y-4">
                           {(order.items || []).map((item, idx) => {
                             const key = `${order.id}-${item.id}`;
-                            const val = quantities[key] ?? String(item.quantity);
+                            const val = quantities[key] ?? '';
                             const numVal = parseFloat(val) || 0;
-                            const isFull = numVal === item.quantity;
 
                             return (
                               <div
@@ -577,79 +586,71 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                                   </div>
                                 </div>
 
-                                {/* Quantities Comparison Grid */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-                                  {/* Required Box */}
-                                  <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 flex flex-col justify-between space-y-1">
-                                    <span className="text-xs font-bold text-slate-400">الكمية المطلوبة في أمر الشراء:</span>
-                                    <div className="font-mono text-xl sm:text-2xl font-black text-white flex items-baseline gap-2 mt-1">
-                                      <span>{item.quantity}</span>
-                                      <span className="text-base font-bold text-slate-300">{getUnitLabel(item.uom || '')}</span>
-                                    </div>
+                                {/* Received Quantity Input Section (Blind Receiving: PO quantity hidden) */}
+                                <div className="rounded-2xl border-2 border-emerald-500/80 bg-emerald-950/30 p-4 sm:p-5 space-y-3 shadow-inner">
+                                  <div className="flex items-center justify-between">
+                                    <label htmlFor={`qty-${key}`} className="text-sm sm:text-base font-black text-emerald-300 flex items-center gap-2">
+                                      <span className="text-lg">📥</span>
+                                      <span>الكمية التي استلمتها فعلياً:</span>
+                                    </label>
+                                    <span className="text-xs font-bold text-emerald-300 bg-emerald-950 border border-emerald-500/50 px-2.5 py-0.5 rounded-full">
+                                      اكتب الرقم هنا 👇
+                                    </span>
                                   </div>
 
-                                  {/* Received Quantity Box (Large and Easy to Tap) */}
-                                  <div className="rounded-2xl border-2 border-emerald-500 bg-emerald-950/40 p-4 space-y-2 shadow-inner">
-                                    <label className="text-xs sm:text-sm font-black text-emerald-300 flex items-center justify-between">
-                                      <span>الكمية التي استلمتها فعلياً:</span>
-                                      {isFull && (
-                                        <span className="text-xs font-black text-emerald-400 bg-emerald-950 border border-emerald-500/60 px-2 py-0.5 rounded-full">
-                                          ✓ كاملة
-                                        </span>
-                                      )}
-                                    </label>
-
-                                    <div className="flex items-center gap-2">
-                                      {/* Quick Minus Button */}
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const next = Math.max(0, numVal - 1);
-                                          setQuantities({ ...quantities, [key]: String(next) });
-                                        }}
-                                        className="h-12 w-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-xl flex items-center justify-center shrink-0 border border-slate-700 active:scale-95 cursor-pointer"
-                                        title="إنقاص واحد"
-                                      >
-                                        -
-                                      </button>
-
+                                  <div className="space-y-2.5">
+                                    <div className="relative flex items-center">
                                       <input
+                                        id={`qty-${key}`}
                                         type="number"
                                         min="0"
                                         step="any"
+                                        placeholder="أدخل الكمية المستلمة بالأرقام..."
                                         value={val}
                                         onChange={(e) => setQuantities({ ...quantities, [key]: e.target.value })}
-                                        className="w-full rounded-xl border-2 border-emerald-400 bg-slate-950 px-3.5 py-2.5 text-xl sm:text-2xl text-emerald-300 font-black text-center focus:ring-2 focus:ring-emerald-400 focus:outline-none shadow-inner"
+                                        className="w-full h-14 rounded-2xl border-2 border-emerald-400 bg-slate-900/95 pl-24 pr-4 text-xl sm:text-2xl font-black text-emerald-200 placeholder:text-slate-500 placeholder:text-sm sm:placeholder:text-base placeholder:font-normal focus:border-emerald-300 focus:bg-slate-900 focus:ring-4 focus:ring-emerald-500/30 focus:outline-none transition-all shadow-inner"
                                       />
-
-                                      {/* Quick Plus Button */}
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const next = numVal + 1;
-                                          setQuantities({ ...quantities, [key]: String(next) });
-                                        }}
-                                        className="h-12 w-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-xl flex items-center justify-center shrink-0 border border-slate-700 active:scale-95 cursor-pointer"
-                                        title="زيادة واحد"
-                                      >
-                                        +
-                                      </button>
-
-                                      <span className="text-sm sm:text-base font-black text-emerald-300 shrink-0 px-1">
-                                        {getUnitLabel(item.uom || '')}
-                                      </span>
+                                      {/* Unit badge pinned inside input */}
+                                      <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-emerald-950/90 border border-emerald-500/50 px-3 py-1.5 rounded-xl pointer-events-none">
+                                        <span className="text-xs sm:text-sm font-black text-emerald-300">
+                                          {getUnitLabel(item.uom || '')}
+                                        </span>
+                                      </div>
                                     </div>
 
-                                    {/* Quick full match button */}
-                                    {!isFull && (
-                                      <button
-                                        type="button"
-                                        onClick={() => setQuantities({ ...quantities, [key]: String(item.quantity) })}
-                                        className="text-xs font-bold text-emerald-300 hover:text-white underline cursor-pointer pt-0.5 inline-block"
-                                      >
-                                        ← ضبط على الكمية المطلوبة بالكامل ({item.quantity} {getUnitLabel(item.uom || '')})
-                                      </button>
-                                    )}
+                                    {/* Action Buttons: Clearly labeled pill buttons, not input boxes */}
+                                    <div className="flex items-center justify-between pt-1">
+                                      <span className="text-[11px] text-slate-400 font-medium">أزرار ضغط سريعة (ليست للكتابة):</span>
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          type="button"
+                                          tabIndex={-1}
+                                          onClick={() => {
+                                            const next = Math.max(0, numVal - 1);
+                                            setQuantities({ ...quantities, [key]: String(next) });
+                                          }}
+                                          className="h-8 px-3.5 rounded-full bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 border border-slate-600 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition select-none active:scale-95 shadow-sm"
+                                          title="إنقاص الكمية بمقدار 1"
+                                        >
+                                          <span className="text-sm font-black">-1</span>
+                                          <span>إنقاص</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          tabIndex={-1}
+                                          onClick={() => {
+                                            const next = numVal + 1;
+                                            setQuantities({ ...quantities, [key]: String(next) });
+                                          }}
+                                          className="h-8 px-3.5 rounded-full bg-emerald-900/60 hover:bg-emerald-800/80 active:bg-emerald-700 text-emerald-200 border border-emerald-600/70 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition select-none active:scale-95 shadow-sm"
+                                          title="زيادة الكمية بمقدار 1"
+                                        >
+                                          <span className="text-sm font-black">+1</span>
+                                          <span>زيادة</span>
+                                        </button>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
 
@@ -976,32 +977,43 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                                   )}
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                                  <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3.5 flex flex-col justify-between space-y-1">
-                                    <span className="text-xs font-bold text-slate-400">الكمية المطلوبة بأمر الشراء:</span>
-                                    <div className="font-mono text-lg sm:text-xl font-black text-slate-100 flex items-baseline gap-1.5">
-                                      <span>{item.ordered_quantity}</span>
-                                      <span className="text-sm font-bold text-slate-400">{getUnitLabel(item.purchase_order_item?.uom || '')}</span>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                                  {/* Warehouse Recorded Quantity (Blind to PO quantity) */}
+                                  <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 flex flex-col justify-between space-y-1">
+                                    <span className="text-xs font-bold text-slate-400">الكمية المسجلة من أمين المخزن:</span>
+                                    <div className="font-mono text-xl sm:text-2xl font-black text-cyan-300 flex items-baseline gap-2 mt-1">
+                                      <span>{item.received_quantity}</span>
+                                      <span className="text-base font-bold text-slate-300">{getUnitLabel(item.purchase_order_item?.uom || '')}</span>
                                     </div>
                                   </div>
 
-                                  <div className="rounded-xl border-2 border-emerald-500/70 bg-emerald-950/30 p-3.5 space-y-1.5 shadow-inner">
-                                    <label className="text-xs font-black text-emerald-300 flex items-center justify-between">
-                                      <span>الكمية المعتمدة ميدانياً:</span>
-                                      <span className="text-[11px] font-normal text-emerald-400/80">(جاهزة للتعديل)</span>
-                                    </label>
-                                    <div className="flex items-center gap-2">
+                                  {/* Site Engineer Confirmed Quantity */}
+                                  <div className="rounded-2xl border-2 border-emerald-500/80 bg-emerald-950/30 p-4 space-y-2 shadow-inner">
+                                    <div className="flex items-center justify-between">
+                                      <label htmlFor={`site-qty-${key}`} className="text-xs sm:text-sm font-black text-emerald-300 flex items-center gap-1.5">
+                                        <span>👷</span>
+                                        <span>الكمية المعتمدة ميدانياً:</span>
+                                      </label>
+                                      <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950 border border-emerald-500/50 px-2 py-0.5 rounded-full">
+                                        جاهزة للاعتماد
+                                      </span>
+                                    </div>
+                                    <div className="relative flex items-center">
                                       <input
+                                        id={`site-qty-${key}`}
                                         type="number"
                                         min="0"
                                         step="any"
+                                        placeholder="أدخل الكمية المعتمدة..."
                                         value={val}
                                         onChange={(e) => setQuantities({ ...quantities, [key]: e.target.value })}
-                                        className="w-full rounded-xl border-2 border-emerald-400 bg-slate-950 px-3.5 py-2 text-lg sm:text-xl text-emerald-300 font-black focus:ring-2 focus:ring-emerald-400 focus:outline-none shadow-inner"
+                                        className="w-full h-12 rounded-xl border-2 border-emerald-400 bg-slate-900/95 pl-24 pr-3.5 text-lg sm:text-xl font-black text-emerald-200 placeholder:text-slate-500 focus:border-emerald-300 focus:ring-4 focus:ring-emerald-500/30 focus:outline-none transition-all shadow-inner"
                                       />
-                                      <span className="text-sm sm:text-base font-black text-emerald-300 shrink-0 px-1">
-                                        {getUnitLabel(item.purchase_order_item?.uom || '')}
-                                      </span>
+                                      <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-emerald-950/90 border border-emerald-500/50 px-2.5 py-1 rounded-lg pointer-events-none">
+                                        <span className="text-xs font-black text-emerald-300">
+                                          {getUnitLabel(item.purchase_order_item?.uom || '')}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -1210,19 +1222,13 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                               )}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm pt-1">
-                              <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                                <span className="text-slate-400 block text-[11px]">المطلوب بأمر الشراء:</span>
-                                <span className="font-mono font-bold text-slate-200">
-                                  {item.ordered_quantity} {getUnitLabel(item.purchase_order_item?.uom || '')}
-                                </span>
-                              </div>
-                              <div className="bg-emerald-950/40 p-2 rounded-lg border border-emerald-800/60">
-                                <span className="text-emerald-400 block text-[11px]">المستلم الفعلي:</span>
-                                <span className="font-mono font-black text-emerald-300">
-                                  {item.received_quantity} {getUnitLabel(item.purchase_order_item?.uom || '')}
-                                </span>
-                              </div>
+                            <div className="bg-emerald-950/40 p-3 rounded-xl border border-emerald-800/60 flex items-center justify-between text-xs sm:text-sm pt-1">
+                              <span className="text-emerald-300 font-bold flex items-center gap-1.5">
+                                <span>✓</span> الكمية الفعلية المستلمة والمعتمدة:
+                              </span>
+                              <span className="font-mono font-black text-emerald-200 text-sm sm:text-base">
+                                {item.received_quantity} {getUnitLabel(item.purchase_order_item?.uom || '')}
+                              </span>
                             </div>
                             {item.notes && (
                               <p className="text-xs text-slate-400 bg-slate-900/60 p-2 rounded-lg">
