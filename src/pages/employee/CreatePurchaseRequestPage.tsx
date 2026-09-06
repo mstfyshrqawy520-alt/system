@@ -954,21 +954,160 @@ const CreatePurchaseRequestPage: React.FC = () => {
           </div>
         )}
 
-        {/* Compact Spreadsheet Table Container */}
-        <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60 shadow-inner">
-          <table className="w-full text-right text-xs border-collapse">
+        {/* ========================================================= */}
+        {/* 1. MOBILE VIEW (Touch-Friendly Responsive Cards)          */}
+        {/* ========================================================= */}
+        <div className="block md:hidden space-y-3.5">
+          {data.items.map((item, index) => {
+            const itemErr = validation.items[index];
+            const hasItemError = Boolean(itemErr && (itemErr.description || itemErr.quantity));
+
+            return (
+              <div
+                key={index}
+                id={`pr-item-card-mobile-${index}`}
+                className={`rounded-2xl border-2 p-4 space-y-3.5 shadow-lg transition-all ${
+                  hasItemError && showValidation
+                    ? 'bg-rose-950/30 border-rose-500/80 shadow-rose-950/40'
+                    : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                {/* Header: Index & Quick Actions */}
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-mono font-black text-xs shadow-sm">
+                      #{index + 1}
+                    </span>
+                    <span className="text-xs font-black text-slate-100">
+                      البند رقم {index + 1}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => duplicateItem(index)}
+                      className="px-2.5 py-1 text-xs text-slate-300 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 rounded-lg flex items-center gap-1 cursor-pointer transition select-none shadow-sm"
+                      title="نسخ وتكرار هذا البند بنفس البيانات"
+                    >
+                      <span>📋</span>
+                      <span className="text-[11px] font-bold">نسخ</span>
+                    </button>
+                    {data.items.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeItem(index)}
+                        className="px-2.5 py-1 text-xs text-rose-300 bg-rose-950/60 hover:bg-rose-900/80 active:bg-rose-800 border border-rose-800/80 rounded-lg flex items-center gap-1 cursor-pointer transition select-none shadow-sm"
+                        title="حذف هذا البند"
+                      >
+                        <span>🗑️</span>
+                        <span className="text-[11px] font-bold">حذف</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-200 flex items-center justify-between">
+                    <span>وصف الصنف / المادة: <span className="text-rose-400">*</span></span>
+                  </label>
+                  <input
+                    type="text"
+                    value={item.item_description}
+                    onChange={(e) => updateItem(index, { item_description: e.target.value })}
+                    placeholder={isOffice ? 'مثال: ورق A4 80جم، حبر HP...' : 'مثال: حديد تسليح 16 مم، خرسانة جاهزة...'}
+                    className={`w-full rounded-xl bg-slate-950 border px-3 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 ${
+                      itemErr?.description && (showValidation || item.item_description.length > 0)
+                        ? 'border-rose-500 focus:ring-rose-500'
+                        : 'border-slate-700 focus:border-cyan-400 focus:ring-cyan-500/30'
+                    }`}
+                  />
+                  {itemErr?.description && showValidation && (
+                    <span className="text-[11px] text-rose-400 block font-semibold">
+                      ⚠️ {itemErr.description}
+                    </span>
+                  )}
+                </div>
+
+                {/* Quantity & Unit Row */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-200">
+                      الكمية: <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="any"
+                      value={item.quantity === 0 ? '' : (item.quantity ?? '')}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => updateItem(index, { quantity: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
+                      placeholder="الكمية..."
+                      className={`w-full rounded-xl bg-slate-950 border px-3 py-2.5 text-sm font-mono font-bold text-amber-300 placeholder-slate-500 focus:outline-none focus:ring-2 ${
+                        itemErr?.quantity && showValidation
+                          ? 'border-rose-500 focus:ring-rose-500'
+                          : 'border-slate-700 focus:border-cyan-400 focus:ring-cyan-500/30'
+                      }`}
+                    />
+                    {itemErr?.quantity && showValidation && (
+                      <span className="text-[11px] text-rose-400 block font-semibold">
+                        ⚠️ الكمية مطلوبة
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-200">الوحدة:</label>
+                    <select
+                      value={item.uom}
+                      onChange={(e) => updateItem(index, { uom: e.target.value })}
+                      className="w-full h-[42px] rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-400"
+                    >
+                      {UNIT_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Technical Specifications */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-400">
+                    المواصفات الفنية (اختياري):
+                  </label>
+                  <input
+                    type="text"
+                    value={item.specifications || ''}
+                    onChange={(e) => updateItem(index, { specifications: e.target.value })}
+                    placeholder="ماركة، دقة، عيار، أبعاد..."
+                    className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ========================================================= */}
+        {/* 2. DESKTOP / TABLET VIEW (Spreadsheet Table)              */}
+        {/* ========================================================= */}
+        <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60 shadow-inner">
+          <table className="w-full min-w-[780px] text-right text-xs border-collapse">
             <thead>
               <tr className="border-b border-slate-800 bg-slate-900/90 text-slate-400 text-[11px] font-bold">
-                <th className="p-3 w-10 text-center">م</th>
-                <th className="p-3 min-w-[280px]">
+                <th className="p-3 w-12 text-center whitespace-nowrap">م</th>
+                <th className="p-3 min-w-[280px] whitespace-nowrap">
                   وصف الصنف / المادة <span className="text-rose-400">*</span>
                 </th>
-                <th className="p-3 w-28">
+                <th className="p-3 w-28 whitespace-nowrap">
                   الكمية <span className="text-rose-400">*</span>
                 </th>
-                <th className="p-3 w-32">الوحدة</th>
-                <th className="p-3 min-w-[200px]">المواصفات الفنية</th>
-                <th className="p-3 w-24 text-center">إجراءات</th>
+                <th className="p-3 w-32 whitespace-nowrap">الوحدة</th>
+                <th className="p-3 min-w-[200px] whitespace-nowrap">المواصفات الفنية</th>
+                <th className="p-3 w-24 text-center whitespace-nowrap">إجراءات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
@@ -1123,7 +1262,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
         region={data.region}
         onRemoveItem={data.items.length > 1 ? removeItem : undefined}
         onScrollToItem={(index) => {
-          const el = document.getElementById(`pr-item-card-${index}`);
+          const el = document.getElementById(`pr-item-card-mobile-${index}`) || document.getElementById(`pr-item-card-${index}`);
           if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             el.classList.add('ring-2', 'ring-cyan-400');
