@@ -21,11 +21,11 @@ import { parseApiError } from '../../utils/apiError';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { FormField, Input, Select, Textarea, SearchableSelect } from '../ui/FormField';
-import { getUnitLabel, getUnitOptions } from '../../utils/units';
+import { DEFAULT_PR_UNIT_CODES, getUnitLabel, getUnitOptions } from '../../utils/units';
 import { useAuth } from '../../context/AuthContext';
 import { PurchaseRequestItemsSummaryTable } from './PurchaseRequestItemsSummaryTable';
 
-const UNIT_OPTIONS = getUnitOptions(['PCS', 'KG', 'TON', 'M', 'M2', 'M3', 'L', 'BAG', 'BOX', 'CARTON', 'SET', 'PAIR', 'UNIT', 'HOUR', 'DAY']);
+const UNIT_OPTIONS = getUnitOptions(DEFAULT_PR_UNIT_CODES);
 
 const getTodayDateInputValue = (): string => {
   const today = new Date();
@@ -453,21 +453,6 @@ export const PurchaseRequestForm: React.FC<Props> = ({
                 );
               })}
             </Select>
-            {targetDepartmentId && (() => {
-              const selectedDepartment = departmentOptions.find((department) => department.id === Number(targetDepartmentId));
-              const managerName =
-                selectedDepartment?.manager?.name ||
-                (selectedDepartment?.code === 'EXECUTION' ? 'م. أيمن ماهر' :
-                 selectedDepartment?.code === 'BUILDINGS' ? 'المهندس حاتم' :
-                 selectedDepartment?.code === 'FINISHING' ? 'م. مسعود' :
-                 selectedDepartment?.code === 'LICENSES' ? 'م. مصطفى' :
-                 selectedDepartment?.code === 'BUFFET' ? 'أ. عمرو' : 'غير معين');
-              return selectedDepartment ? (
-                <p className="mt-1 text-[11px] text-slate-400">
-                  مدير القسم المستهدف (المراجع): <strong className="text-slate-200">{isGeneralManager ? 'مسار المدير العام (تجاوز المراجع)' : managerName}</strong>
-                </p>
-              ) : null;
-            })()}
           </FormField>
 
           {isGeneralManager && requestType !== 'OFFICE_SUPPLIES' && (

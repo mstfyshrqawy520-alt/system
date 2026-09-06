@@ -4,7 +4,7 @@ import { getSuppliersApi } from '../../api/suppliers';
 import { createDirectPoApi, getProcurementDepartmentsApi, getProcurementSiteEngineersApi, ProcurementDepartmentOption, ProcurementSiteEngineerOption } from '../../api/procurement';
 import { Supplier } from '../../types/purchaseOrder';
 import { parseApiError } from '../../utils/apiError';
-import { getUnitOptions } from '../../utils/units';
+import { DEFAULT_PR_UNIT_CODES, getUnitOptions } from '../../utils/units';
 import { SearchableSelect } from '../ui/FormField';
 
 interface ItemRow {
@@ -24,7 +24,7 @@ interface DirectPoModalProps {
   onSuccess: (requestId: number) => void;
 }
 
-const UNIT_OPTIONS = getUnitOptions(['PCS', 'KG', 'TON', 'M', 'M2', 'M3', 'L', 'BAG', 'BOX', 'CARTON', 'SET', 'UNIT', 'DAY']);
+const UNIT_OPTIONS = getUnitOptions(DEFAULT_PR_UNIT_CODES);
 
 const emptyItem = (): ItemRow => ({
   item_description: '',

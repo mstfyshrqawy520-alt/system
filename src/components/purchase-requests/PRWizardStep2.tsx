@@ -3,7 +3,7 @@ import { Input, Select, Textarea, SearchableSelect } from '../ui/FormField';
 import { Button } from '../ui/Button';
 import { getCatalogItemsApi } from '../../api/catalog';
 import { CatalogItem, CreatePurchaseRequestPayload, PurchaseRequestItemFormInput } from '../../types/purchaseRequest';
-import { getUnitLabel, getUnitOptions } from '../../utils/units';
+import { DEFAULT_PR_UNIT_CODES, getUnitLabel, getUnitOptions } from '../../utils/units';
 
 interface Props {
   data: CreatePurchaseRequestPayload;
@@ -11,7 +11,7 @@ interface Props {
   errors?: Record<number, { description?: string; reference?: string; region?: string; quantity?: string }>;
 }
 
-const UNIT_OPTIONS = getUnitOptions(['PCS', 'KG', 'TON', 'M', 'M2', 'M3', 'L', 'BAG', 'BOX', 'CARTON', 'SET', 'PAIR', 'UNIT', 'HOUR', 'DAY']);
+const UNIT_OPTIONS = getUnitOptions(DEFAULT_PR_UNIT_CODES);
 
 function emptyItem(): PurchaseRequestItemFormInput {
   return { item_description: '', item_reference: '', region: '', quantity: 1, uom: 'PCS', specifications: '', notes: '' };

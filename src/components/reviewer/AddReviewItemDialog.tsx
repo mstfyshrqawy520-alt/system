@@ -5,9 +5,9 @@ import { ReviewItemPayload } from '../../api/reviewer';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { FormField, Input, Select } from '../ui/FormField';
-import { getUnitOptions } from '../../utils/units';
+import { DEFAULT_PR_UNIT_CODES, getUnitOptions } from '../../utils/units';
 
-const UNIT_OPTIONS = getUnitOptions(['PCS', 'KG', 'TON', 'M', 'M2', 'M3', 'L', 'BAG', 'BOX', 'CARTON', 'SET', 'PAIR', 'UNIT', 'HOUR', 'DAY']);
+const UNIT_OPTIONS = getUnitOptions(DEFAULT_PR_UNIT_CODES);
 
 interface Props {
   isOpen: boolean;

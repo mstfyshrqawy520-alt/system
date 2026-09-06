@@ -22,7 +22,7 @@ import {
   SiteEngineerReceiverOption,
   PR_TYPE_LABELS,
 } from '../../types/purchaseRequest';
-import { getUnitLabel, getUnitOptions } from '../../utils/units';
+import { DEFAULT_PR_UNIT_CODES, getUnitLabel, getUnitOptions } from '../../utils/units';
 import { parseApiError } from '../../utils/apiError';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { useAuth } from '../../context/AuthContext';
@@ -30,7 +30,7 @@ import { emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
 import { SearchableSelect } from '../../components/ui/FormField';
 import { PurchaseRequestItemsSummaryTable } from '../../components/purchase-requests/PurchaseRequestItemsSummaryTable';
 
-const UNIT_OPTIONS = getUnitOptions(['PCS', 'KG', 'TON', 'M', 'M2', 'M3', 'L', 'BAG', 'BOX', 'CARTON', 'SET', 'PAIR', 'UNIT', 'HOUR', 'DAY']);
+const UNIT_OPTIONS = getUnitOptions(DEFAULT_PR_UNIT_CODES);
 
 const getTodayDateInputValue = (): string => {
   const today = new Date();
@@ -578,86 +578,57 @@ const CreatePurchaseRequestPage: React.FC = () => {
           </FormField>
         </div>
 
-        {targetDepartment && (
-          <div className="grid grid-cols-1 gap-3 rounded-xl border border-cyan-800/40 bg-cyan-950/20 p-3 text-xs sm:grid-cols-2">
-            <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-2.5">
-              <span className="text-slate-500 text-[10px]">مدير القسم المستهدف (المراجع):</span>
-              <div className="font-bold text-slate-200 mt-0.5">
-                {isGeneralManager
-                  ? 'مسار المدير العام المباشر (تجاوز المراجع)'
-                  : targetDepartment.manager?.name ||
-                    (targetDepartment.code === 'EXECUTION' ? 'م. أيمن ماهر' :
-                     targetDepartment.code === 'BUILDINGS' ? 'المهندس حاتم' :
-                     targetDepartment.code === 'FINISHING' ? 'م. مسعود' :
-                     targetDepartment.code === 'LICENSES' ? 'م. مصطفى' :
-                     targetDepartment.code === 'BUFFET' ? 'أ. عمرو' : 'غير معين')}
-              </div>
+        {/* Site Engineer Selector for General Manager Direct Path */}
+        {isGeneralManager && !isOffice && (
+          <div className="rounded-xl border border-emerald-700/60 bg-emerald-950/30 p-3.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-emerald-400 font-black flex items-center gap-1.5 text-xs">
+                <span>👷</span> تحديد مهندس الموقع / مسؤول الاستلام (اختيار المدير التنفيذي) <span className="text-rose-400">*</span>
+              </span>
+              <span className="text-[10px] text-emerald-300 font-bold bg-emerald-950/90 px-2 py-0.5 rounded border border-emerald-600/50">
+                بديل خطوة المراجع — إرسال مباشر للمشتريات
+              </span>
             </div>
-
-            {isOffice ? (
-              <div className="rounded-lg border border-indigo-800/50 bg-indigo-950/30 p-2.5">
-                <span className="text-indigo-400 font-bold flex items-center gap-1 text-[10px]">
-                  <span>📦</span> آلية الاستلام:
-                </span>
-                <div className="font-bold text-slate-200 mt-0.5">مقدم الطلب يستلم مباشرة بمقر الشركة</div>
-              </div>
-            ) : isGeneralManager ? (
-              <div className="rounded-xl border border-emerald-700/60 bg-emerald-950/30 p-3.5 sm:col-span-2 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-emerald-400 font-black flex items-center gap-1.5 text-xs">
-                    <span>👷</span> تحديد مهندس الموقع / مسؤول الاستلام (اختيار المدير التنفيذي) <span className="text-rose-400">*</span>
-                  </span>
-                  <span className="text-[10px] text-emerald-300 font-bold bg-emerald-950/90 px-2 py-0.5 rounded border border-emerald-600/50">
-                    بديل خطوة المراجع — إرسال مباشر للمشتريات
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-300 leading-relaxed">
-                  طالما أن طلب الشراء صادر من المدير التنفيذي فلن يمر على مراجع قسم، لذلك يتعين عليك تحديد مهندس الموقع أو مسؤول الاستلام الذي سيتولى فحص واستلام المواد قبل إرسال الطلب للمشتريات:
-                </p>
-                {isLoadingReceivers ? (
-                  <div className="text-xs text-slate-400 py-1 font-bold">جاري تحميل قائمة المهندسين والمستلمين...</div>
-                ) : (
-                  <Select
-                    id="pr-site-engineer"
-                    value={data.site_engineer_user_id || ''}
-                    onChange={(e) =>
-                      setData({
-                        ...data,
-                        site_engineer_user_id: e.target.value ? Number(e.target.value) : undefined,
-                      })
-                    }
-                    className="font-bold text-slate-100 bg-slate-900 border-emerald-600/70 focus:border-emerald-400"
-                  >
-                    <option value="" disabled>-- اختر مهندس الموقع أو مسؤول الاستلام المعتمد --</option>
-                    {siteEngineers.length > 0 && (
-                      <optgroup label="👷 مهندسو الموقع الأساسيون">
-                        {siteEngineers.map((eng) => (
-                          <option key={`gm-se-${eng.id}`} value={eng.id}>
-                            {eng.name} {eng.department_name ? `(${eng.department_name})` : ''}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                    {otherUsers.length > 0 && (
-                      <optgroup label="👥 مستخدمو النظام الآخرون (تفويض أي دور)">
-                        {otherUsers.map((u) => (
-                          <option key={`gm-oth-${u.id}`} value={u.id}>
-                            {u.name} — {u.role_name || 'مستخدم'} {u.department_name ? `(${u.department_name})` : ''}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                  </Select>
-                )}
-                {showValidation && validation.targetSiteEngineer && (
-                  <p className="text-[11px] font-bold text-rose-300 mt-1">⚠️ {validation.targetSiteEngineer}</p>
-                )}
-              </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              طالما أن طلب الشراء صادر من المدير التنفيذي فلن يمر على مراجع قسم، لذلك يتعين عليك تحديد مهندس الموقع أو مسؤول الاستلام الذي سيتولى فحص واستلام المواد قبل إرسال الطلب للمشتريات:
+            </p>
+            {isLoadingReceivers ? (
+              <div className="text-xs text-slate-400 py-1 font-bold">جاري تحميل قائمة المهندسين والمستلمين...</div>
             ) : (
-              <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-2.5">
-                <span className="text-slate-500 text-[10px]">مسؤول استلام الموقع:</span>
-                <div className="font-bold text-slate-200 mt-0.5">يحدده مراجع القسم عند الاعتماد</div>
-              </div>
+              <Select
+                id="pr-site-engineer"
+                value={data.site_engineer_user_id || ''}
+                onChange={(e) =>
+                  setData({
+                    ...data,
+                    site_engineer_user_id: e.target.value ? Number(e.target.value) : undefined,
+                  })
+                }
+                className="font-bold text-slate-100 bg-slate-900 border-emerald-600/70 focus:border-emerald-400"
+              >
+                <option value="" disabled>-- اختر مهندس الموقع أو مسؤول الاستلام المعتمد --</option>
+                {siteEngineers.length > 0 && (
+                  <optgroup label="👷 مهندسو الموقع الأساسيون">
+                    {siteEngineers.map((eng) => (
+                      <option key={`gm-se-${eng.id}`} value={eng.id}>
+                        {eng.name} {eng.department_name ? `(${eng.department_name})` : ''}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {otherUsers.length > 0 && (
+                  <optgroup label="👥 مستخدمو النظام الآخرون (تفويض أي دور)">
+                    {otherUsers.map((u) => (
+                      <option key={`gm-oth-${u.id}`} value={u.id}>
+                        {u.name} — {u.role_name || 'مستخدم'} {u.department_name ? `(${u.department_name})` : ''}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </Select>
+            )}
+            {showValidation && validation.targetSiteEngineer && (
+              <p className="text-[11px] font-bold text-rose-300 mt-1">⚠️ {validation.targetSiteEngineer}</p>
             )}
           </div>
         )}
@@ -765,20 +736,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="الأولوية">
-            <Select
-              id="pr-priority"
-              value={data.priority}
-              onChange={(event) => setData({ ...data, priority: event.target.value as PurchaseRequestPriority })}
-            >
-              <option value="LOW">منخفضة</option>
-              <option value="NORMAL">عادية</option>
-              <option value="HIGH">عاجلة</option>
-              <option value="URGENT">حرجة للغاية (طارئة)</option>
-            </Select>
-          </FormField>
-
+        <div>
           <FormField label="ملاحظات / الغرض من الشراء">
             <Textarea
               id="pr-notes"

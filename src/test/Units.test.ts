@@ -15,6 +15,13 @@ describe('Arabic unit labels', () => {
     expect(getUnitLabel('BAG')).toBe('شيكارة');
     expect(getUnitLabel('M2')).toBe('متر مربع');
     expect(getUnitLabel('TON')).toBe('طن');
+    expect(getUnitLabel('GALLON')).toBe('جالون');
+    expect(getUnitLabel('JERRICAN')).toBe('جركن');
+    expect(getUnitLabel('DRUM')).toBe('برميل');
+    expect(getUnitLabel('ROLL')).toBe('رول');
+    expect(getUnitLabel('SPOOL')).toBe('بكرة');
+    expect(getUnitLabel('DOZEN')).toBe('دستة');
+    expect(getUnitLabel('BAR')).toBe('سيخ');
   });
 
   it('keeps API values in English while accepting Arabic display values', () => {

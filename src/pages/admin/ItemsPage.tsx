@@ -18,9 +18,9 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import TableFilterBar from '../../components/ui/TableFilterBar';
 import { Modal } from '../../components/ui/Modal';
 import { FormField, Input, Select, Textarea } from '../../components/ui/FormField';
-import { getUnitLabel, getUnitOptions, getUnitValue } from '../../utils/units';
+import { DEFAULT_PR_UNIT_CODES, getUnitLabel, getUnitOptions, getUnitValue } from '../../utils/units';
 
-const UNIT_OPTIONS = getUnitOptions(['PCS', 'KG', 'TON', 'M', 'M2', 'M3', 'L', 'BAG', 'BOX', 'CARTON', 'SET', 'PAIR', 'UNIT', 'HOUR', 'DAY']);
+const UNIT_OPTIONS = getUnitOptions(DEFAULT_PR_UNIT_CODES);
 
 export const ItemsPage: React.FC = () => {
   const { hasPermission } = useAuth();
