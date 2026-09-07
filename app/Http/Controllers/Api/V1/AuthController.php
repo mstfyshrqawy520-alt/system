@@ -204,6 +204,7 @@ class AuthController extends Controller
             'email' => $user->email,
             'phone' => $user->phone,
             'is_active' => $user->is_active,
+            'department_id' => $user->department_id,
             'department' => $user->department ? [
                 'id' => $user->department->id,
                 'name' => $user->department->name,

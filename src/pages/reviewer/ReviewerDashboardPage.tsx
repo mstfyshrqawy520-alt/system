@@ -66,21 +66,8 @@ export const ReviewerDashboardPage: React.FC = () => {
 
   useRealtimeRefresh(() => fetchRequests(true));
 
-  const userDeptId = user?.department_id ? Number(user.department_id) : null;
-  const isUserAdmin = hasRole('admin');
-
-  // Filter requests strictly to user's assigned scope / target department
-  const scopedRequests = requests.filter((r) => {
-    if (isUserAdmin) return true;
-    // Explicitly assigned to this reviewer
-    if (r.reviewer_user_id && Number(r.reviewer_user_id) === Number(user?.id)) return true;
-    // Targeted to this reviewer's department
-    if (r.target_department_id) {
-      return userDeptId !== null && Number(r.target_department_id) === userDeptId;
-    }
-    // Fallback only if no target_department_id is set
-    return userDeptId !== null && r.department_id && Number(r.department_id) === userDeptId;
-  });
+  // Requests returned by the Reviewer API are already strictly scoped by backend authorization
+  const scopedRequests = requests;
 
   const submittedCount = scopedRequests.filter((r) => r.status === 'SUBMITTED').length;
   const underReviewCount = scopedRequests.filter((r) => r.status === 'UNDER_REVIEW').length;

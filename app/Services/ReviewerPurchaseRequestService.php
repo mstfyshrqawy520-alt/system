@@ -31,12 +31,6 @@ class ReviewerPurchaseRequestService
             return true;
         }
 
-        // 2. Designated manager of target department
-        if ($request->targetDepartment?->manager_user_id !== null && (int) $request->targetDepartment->manager_user_id === (int) $user->id) {
-            return true;
-        }
-
-        // 3. Official reviewer email mapping for target department
         $emailMap = [
             'EXECUTION' => 'ayman@gmail.com',
             'BUILDINGS' => 'hatem@gmail.com',
@@ -44,36 +38,42 @@ class ReviewerPurchaseRequestService
             'LICENSES' => 'mostafa@gmail.com',
             'BUFFET' => 'amr@gmail.com',
         ];
-        if ($request->targetDepartment?->code && isset($emailMap[$request->targetDepartment->code])) {
-            if ($user->email === $emailMap[$request->targetDepartment->code]) {
+
+        // 2. Target department takes priority when set
+        if ($request->target_department_id !== null) {
+            if ($request->targetDepartment?->manager_user_id !== null && (int) $request->targetDepartment->manager_user_id === (int) $user->id) {
                 return true;
             }
-        }
-
-        // 4. Any reviewer belonging to the target department (when target_department_id is set)
-        if ($request->target_department_id !== null) {
             if ($user->department_id !== null && (int) $user->department_id === (int) $request->target_department_id) {
                 return true;
             }
-            // Strict isolation: if request is directed to a specific target department,
-            // no other department (including the requesting department) is allowed to review it!
+            if ($request->targetDepartment?->code && isset($emailMap[$request->targetDepartment->code])) {
+                if ($user->email === $emailMap[$request->targetDepartment->code]) {
+                    return true;
+                }
+            }
+
             return false;
         }
 
-        // 5. Fallback ONLY for legacy requests where target_department_id is null:
+        // 3. Fallback to requesting department when target_department_id is null
         if ($request->department?->manager_user_id !== null && (int) $request->department->manager_user_id === (int) $user->id) {
             return true;
         }
-
-        if ($user->department_id !== null && $request->department_id !== null && (int) $user->department_id === (int) $request->department_id) {
+        if ($user->department_id !== null && (int) $user->department_id === (int) $request->department_id) {
             return true;
+        }
+        if ($request->department?->code && isset($emailMap[$request->department->code])) {
+            if ($user->email === $emailMap[$request->department->code]) {
+                return true;
+            }
         }
 
         return false;
     }
 
     /**
-     * Get reviewable PRs assigned to the Reviewer or within their target department scope.
+     * Get reviewable PRs assigned to the Reviewer or within their target or requesting department scope.
      */
     public function getReviewableRequests(User $user, array $filters = [], int $perPage = 200): LengthAwarePaginator
     {
@@ -91,14 +91,24 @@ class ReviewerPurchaseRequestService
             $query->where(function ($scopeQuery) use ($user) {
                 // 1. Explicitly assigned reviewer on the request
                 $scopeQuery->where('reviewer_user_id', $user->id)
-                    // 2. Or user is the designated manager of the TARGET department
+                    // 2. Or user is the designated manager of TARGET department (or requesting dept when target is null)
                     ->orWhereHas('targetDepartment', function ($departmentQuery) use ($user) {
                         $departmentQuery->where('manager_user_id', $user->id);
+                    })
+                    ->orWhere(function ($q) use ($user) {
+                        $q->whereNull('target_department_id')
+                            ->whereHas('department', function ($departmentQuery) use ($user) {
+                                $departmentQuery->where('manager_user_id', $user->id);
+                            });
                     });
 
-                // 3. Or request is targeted to the reviewer's department
+                // 3. Or request is targeted to the reviewer's department (or originated from reviewer's department when target is null)
                 if ($user->department_id !== null) {
-                    $scopeQuery->orWhere('target_department_id', $user->department_id);
+                    $scopeQuery->orWhere('target_department_id', $user->department_id)
+                        ->orWhere(function ($q) use ($user) {
+                            $q->whereNull('target_department_id')
+                                ->where('department_id', $user->department_id);
+                        });
                 }
 
                 // 4. Official reviewer mapping by department code
@@ -113,21 +123,13 @@ class ReviewerPurchaseRequestService
                     $targetCode = $emailToDeptCode[$user->email];
                     $scopeQuery->orWhereHas('targetDepartment', function ($departmentQuery) use ($targetCode) {
                         $departmentQuery->where('code', $targetCode);
+                    })->orWhere(function ($q) use ($targetCode) {
+                        $q->whereNull('target_department_id')
+                            ->whereHas('department', function ($departmentQuery) use ($targetCode) {
+                                $departmentQuery->where('code', $targetCode);
+                            });
                     });
                 }
-
-                // 5. Legacy / Fallback: If target_department_id is NULL, fall back to requesting department scope
-                $scopeQuery->orWhere(function ($fallbackQuery) use ($user) {
-                    $fallbackQuery->whereNull('target_department_id')
-                        ->where(function ($q) use ($user) {
-                            $q->whereHas('department', function ($departmentQuery) use ($user) {
-                                $departmentQuery->where('manager_user_id', $user->id);
-                            });
-                            if ($user->department_id !== null) {
-                                $q->orWhere('department_id', $user->department_id);
-                            }
-                        });
-                });
             });
         }
 

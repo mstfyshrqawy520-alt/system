@@ -106,18 +106,8 @@ export const ReviewerRequestsPage: React.FC = () => {
     }
   };
 
-  const userDeptId = user?.department_id ? Number(user.department_id) : null;
-  const isUserAdmin = hasRole('admin');
-
-  // Strictly scope requests to the reviewer's target department
-  const scopedRequests = requests.filter((r) => {
-    if (isUserAdmin) return true;
-    if (r.reviewer_user_id && Number(r.reviewer_user_id) === Number(user?.id)) return true;
-    if (r.target_department_id) {
-      return userDeptId !== null && Number(r.target_department_id) === userDeptId;
-    }
-    return userDeptId !== null && r.department_id && Number(r.department_id) === userDeptId;
-  });
+  // Requests returned by the Reviewer API are already strictly scoped by backend authorization
+  const scopedRequests = requests;
 
   const filteredRequests = scopedRequests.filter((request) => {
     if (activeFilter === 'ALL') return true;

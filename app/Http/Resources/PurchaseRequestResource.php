@@ -72,6 +72,7 @@ class PurchaseRequestResource extends JsonResource
                 'name' => $this->targetDepartment->name,
                 'code' => $this->targetDepartment->code,
             ] : null),
+            'department_id' => $this->department_id,
             'target_department_id' => $this->target_department_id ?? $this->department_id,
             'target_department' => $this->relationLoaded('targetDepartment') && $this->targetDepartment ? [
                 'id' => $this->targetDepartment->id,
