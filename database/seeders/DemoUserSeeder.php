@@ -89,7 +89,7 @@ class DemoUserSeeder extends Seeder
                 ['email' => $userData['email']],
                 [
                     'name' => $userData['name'],
-                    'password' => '123456',
+                    'password' => $userData['role'] === 'warehouse_keeper' ? '1' : '123456',
                     'department_id' => $userData['department_id'],
                     'is_active' => true,
                     'deleted_at' => null,

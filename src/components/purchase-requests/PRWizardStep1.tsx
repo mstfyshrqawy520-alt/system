@@ -86,9 +86,6 @@ export const PRWizardStep1: React.FC<Props> = ({
                 </span>
               )}
             </div>
-            <p className="text-[11px] leading-relaxed text-slate-400">
-              خاصة بقطع الأراضي والمواقع الإنشائية. تتطلب تحديد رقم القطعة والمنطقة وتمر على مهندس الموقع وأمين المخزن للاستلام.
-            </p>
           </button>
 
           {/* Option 2: Office Supplies */}
@@ -111,9 +108,6 @@ export const PRWizardStep1: React.FC<Props> = ({
                 </span>
               )}
             </div>
-            <p className="text-[11px] leading-relaxed text-slate-400">
-              طابعات، أقلام، أحبار، أجهزة، أو أدوات للمقر. <strong className="text-indigo-200">مقدم الطلب هو المستلم المباشر</strong> دون حاجة لمخازن أو موقع.
-            </p>
           </button>
         </div>
       </div>
@@ -136,7 +130,6 @@ export const PRWizardStep1: React.FC<Props> = ({
           emptyMessage="لا يوجد قسم بهذا الاسم"
           error={Boolean(errors.targetDepartment)}
         />
-        <p className="mt-1 text-[11px] text-slate-500">يمكنك اختيار قسمك أو قسمًا آخر حسب الجهة التي ستعالج الطلب.</p>
       </FormField>
 
       {targetDepartment ? (
@@ -154,9 +147,6 @@ export const PRWizardStep1: React.FC<Props> = ({
                 <span>📦</span> آلية الاستلام (طلب مكتبي)
               </span>
               <div className="mt-1 font-bold text-slate-100">مقدم الطلب هو المستلم المباشر</div>
-              <p className="mt-1 text-[10px] text-indigo-300/80 leading-relaxed">
-                لا يتطلب مهندس موقع. فور إصدار أمر الشراء وتوريد الأصناف، ستظهر لك إمكانية تأكيد الاستلام مباشرة من شاشتك.
-              </p>
             </div>
           ) : isGeneralManager ? (
             <div className="rounded-lg border border-emerald-800/60 bg-emerald-950/30 p-3">

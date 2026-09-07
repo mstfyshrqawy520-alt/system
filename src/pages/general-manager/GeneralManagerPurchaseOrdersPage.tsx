@@ -71,9 +71,6 @@ export const GeneralManagerPurchaseOrdersPage: React.FC = () => {
         <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
           <span>📋</span> أوامر الشراء الصادرة — العرض التنفيذي
         </h1>
-        <p className="text-xs text-slate-400 mt-1">
-          قائمة أوامر الشراء الصادرة التي تم إشعار الحسابات والمدير العام بها. يمكنك الاطلاع على التفاصيل الكاملة للعرض التنفيذي.
-        </p>
         <div className="mt-2 inline-flex items-center gap-1.5 bg-blue-900/40 border border-blue-700/50 rounded-lg px-3 py-1.5">
           <span className="text-blue-400 text-xs">👁️</span>
           <span className="text-blue-300 text-xs font-medium">وصول للعرض والاطلاع فقط — لا يوجد إجراء مطلوب</span>

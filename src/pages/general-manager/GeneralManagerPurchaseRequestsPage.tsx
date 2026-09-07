@@ -596,9 +596,6 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                     <h3 className="text-sm font-black text-slate-100 flex items-center gap-2">
                       <span>📦</span> مراجعة بنود الطلب والاعتماد الجزئي
                     </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      يمكنك استبعاد أو مسح أي بند لا توافق عليه، أو تعديل الكمية لأي بند بشكل منفصل.
-                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="rounded-full bg-emerald-950/80 border border-emerald-800/60 px-3 py-1 text-xs font-bold text-emerald-300">

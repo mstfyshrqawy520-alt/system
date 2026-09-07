@@ -102,7 +102,6 @@ export const UserPreferencesPage: React.FC = () => {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-black text-slate-100">إعدادات العرض وتجربة الاستخدام</h2>
-            <p className="text-xs text-slate-400 mt-1">يمكنك تغيير الإعدادات في أي وقت دون التأثير على بيانات الطلبات أو صلاحيات المستخدم.</p>
           </div>
           {saved && <span className="text-xs font-bold text-emerald-300">تم حفظ التفضيلات</span>}
         </div>
@@ -127,7 +126,6 @@ export const UserPreferencesPage: React.FC = () => {
       <section className="space-y-4">
         <div>
           <h2 className="text-lg font-black text-slate-100">إعدادات الإشعارات</h2>
-          <p className="mt-1 text-xs leading-6 text-slate-400">إشعارات المهام الأساسية تظل مفعلة، بينما يمكنك التحكم في التنبيهات المعلوماتية الاختيارية.</p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -135,7 +133,6 @@ export const UserPreferencesPage: React.FC = () => {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-sm font-black text-amber-100">إشعارات إلزامية</h3>
-                <p className="mt-1 text-xs leading-6 text-amber-200/70">تبقى مفعلة لأنها مرتبطة بالأمان أو بمهمة تتطلب إجراءً.</p>
               </div>
               <span className="rounded-md border border-amber-700/60 px-2 py-1 text-[11px] font-bold text-amber-200">محمية</span>
             </div>
@@ -152,7 +149,6 @@ export const UserPreferencesPage: React.FC = () => {
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
             <div>
               <h3 className="text-sm font-black text-slate-100">إشعارات اختيارية</h3>
-              <p className="mt-1 text-xs leading-6 text-slate-400">يمكنك إيقافها من هذا الجهاز دون التأثير على سير الطلبات أو الصلاحيات.</p>
             </div>
             <div className="mt-5 space-y-3">
               {[

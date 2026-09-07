@@ -383,9 +383,6 @@ export const PurchaseRequestForm: React.FC<Props> = ({
                 </span>
               )}
             </div>
-            <p className="text-[11px] leading-relaxed text-slate-400">
-              خاصة بقطع الأراضي والمواقع الإنشائية. تتطلب تحديد رقم القطعة والمنطقة وتمر على مهندس الموقع وأمين المخزن للاستلام.
-            </p>
           </button>
 
           {/* Option 2: Office Supplies */}
@@ -408,9 +405,6 @@ export const PurchaseRequestForm: React.FC<Props> = ({
                 </span>
               )}
             </div>
-            <p className="text-[11px] leading-relaxed text-slate-400">
-              طابعات، أقلام، أحبار، أجهزة، أو أدوات للمقر. <strong className="text-indigo-200">مقدم الطلب يستلم مباشرة</strong> دون حاجة لمخازن أو موقع.
-            </p>
           </button>
         </div>
       </Card>

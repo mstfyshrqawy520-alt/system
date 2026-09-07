@@ -20,8 +20,8 @@ const validateCredentials = (email: string, password: string): FieldErrors => {
   const normalizedEmail = email.trim();
 
   if (!normalizedEmail) {
-    errors.email = 'البريد الإلكتروني مطلوب.';
-  } else if (!emailPattern.test(normalizedEmail)) {
+    errors.email = 'البريد الإلكتروني أو كود الدخول مطلوب.';
+  } else if (normalizedEmail.includes('@') && !emailPattern.test(normalizedEmail)) {
     errors.email = 'صيغة البريد الإلكتروني غير صحيحة.';
   }
 
@@ -132,23 +132,23 @@ export const LoginPage: React.FC = () => {
               <form className="mt-6 space-y-5" onSubmit={handleSubmit} noValidate>
                 <div>
                   <label htmlFor="email" className="mb-2 block text-sm font-bold text-slate-200">
-                    البريد الإلكتروني <span className="text-[#e2bd68]" aria-hidden="true">*</span>
+                    البريد الإلكتروني أو كود الدخول <span className="text-[#e2bd68]" aria-hidden="true">*</span>
                   </label>
                   <div className={`relative flex min-h-12 items-center rounded-xl border bg-[#0a0f1b] transition-colors focus-within:border-[#d0ad63] focus-within:ring-2 focus-within:ring-[#d0ad63]/20 ${fieldErrors.email ? 'border-rose-500/80' : 'border-slate-700'}`}>
                     <input
                       id="email"
                       name="email"
-                      type="email"
-                      inputMode="email"
+                      type="text"
+                      inputMode="text"
                       dir="ltr"
-                      autoComplete="email"
+                      autoComplete="username"
                       required
                       value={email}
                       onChange={(event) => updateEmail(event.target.value)}
                       aria-invalid={Boolean(fieldErrors.email)}
                       aria-describedby={fieldErrors.email ? 'email-error' : undefined}
                       className="h-12 w-full rounded-xl bg-transparent px-4 py-3 text-left text-sm font-medium text-slate-100 outline-none placeholder:text-slate-600"
-                      placeholder="user@ashbiliya.com"
+                      placeholder="user@ashbiliya.com أو 1"
                     />
                   </div>
                   {fieldErrors.email && <p id="email-error" className="mt-2 text-xs font-semibold text-rose-300" role="alert">{fieldErrors.email}</p>}

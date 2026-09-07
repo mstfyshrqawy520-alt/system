@@ -456,13 +456,6 @@ export const AuthenticatedLayout: React.FC = () => {
                         >
                             <span className="ml-2.5 text-sm">⚙️</span> تفضيلات المستخدم
                         </Link>
-                        <Link
-                            to="/help"
-                            className={linkClassName("/help")}
-                            onClick={closeMobileMenu}
-                        >
-                            <span className="ml-2.5 text-sm">🧭</span> مركز المساعدة
-                        </Link>
                         <button
                             type="button"
                             onClick={() => { closeMobileMenu(); logout(); }}

@@ -313,16 +313,6 @@ export const ProfilePage: React.FC = () => {
           )}
         </Card>
       </div>
-
-      {/* Read-Only Notice Banner */}
-      <div className="p-4 bg-amber-950/30 border border-amber-800/50 rounded-xl flex items-center space-x-3 space-x-reverse text-amber-300 text-xs">
-        <svg className="w-5 h-5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span>
-          بيانات الملف الشخصي الأساسية للقراءة فقط. يمكنك تغيير كلمة المرور بنفسك من القسم المخصص أعلاه.
-        </span>
-      </div>
     </div>
   );
 };

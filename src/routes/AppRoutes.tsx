@@ -39,7 +39,6 @@ const LandParcelsPage = React.lazy(() => import("../pages/accounting/LandParcels
 const NotificationsPage = React.lazy(() => import("../pages/NotificationsPage"));
 const RoleArchivePage = React.lazy(() => import("../pages/RoleArchivePage"));
 const ProfilePage = React.lazy(() => import("../pages/ProfilePage"));
-const HelpCenterPage = React.lazy(() => import("../pages/HelpCenterPage"));
 const UserPreferencesPage = React.lazy(() => import("../pages/UserPreferencesPage"));
 const AdminDashboardPage = React.lazy(() => import("../pages/admin/AdminDashboardPage"));
 const UsersPage = React.lazy(() => import("../pages/admin/UsersPage"));
@@ -74,7 +73,6 @@ export const AppRoutes: React.FC = () => {
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/my-archive" element={<RoleArchivePage />} />
                 <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/help" element={<HelpCenterPage />} />
                 <Route path="/preferences" element={<UserPreferencesPage />} />
 
                 {/* ── Shared Purchase Request Routes for all operational roles ── */}

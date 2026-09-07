@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\V1;
 
 use App\Models\Department;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -88,6 +89,47 @@ class AuthenticationTest extends TestCase
         ]);
 
         $response->assertStatus(401)
+            ->assertJson(['message' => 'بيانات الدخول غير صحيحة.']);
+    }
+
+    public function test_warehouse_keeper_can_login_with_shorthand_one(): void
+    {
+        $warehouseRole = Role::firstOrCreate(['slug' => 'warehouse_keeper'], ['name' => 'Warehouse Keeper']);
+        $warehouseUser = User::create([
+            'department_id' => $this->department->id,
+            'name' => 'عم سلامة',
+            'email' => 'salam@gmail.com',
+            'password' => Hash::make('1'),
+            'is_active' => true,
+        ]);
+        $warehouseUser->roles()->attach($warehouseRole);
+
+        // Test with English digits "1" and "1"
+        $response = $this->postJson('/api/v1/auth/login', [
+            'email' => '1',
+            'password' => '1',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('user.id', $warehouseUser->id)
+            ->assertJsonPath('user.name', 'عم سلامة');
+
+        // Test with Arabic numerals "١" and "١"
+        $responseArabic = $this->postJson('/api/v1/auth/login', [
+            'email' => '١',
+            'password' => '١',
+        ]);
+
+        $responseArabic->assertStatus(200)
+            ->assertJsonPath('user.id', $warehouseUser->id);
+
+        // Test with wrong password for shorthand "1"
+        $responseWrong = $this->postJson('/api/v1/auth/login', [
+            'email' => '1',
+            'password' => 'wrong',
+        ]);
+
+        $responseWrong->assertStatus(401)
             ->assertJson(['message' => 'بيانات الدخول غير صحيحة.']);
     }
 

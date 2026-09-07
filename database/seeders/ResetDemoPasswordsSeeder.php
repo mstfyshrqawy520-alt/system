@@ -27,8 +27,15 @@ class ResetDemoPasswordsSeeder extends Seeder
             'banhawy@gmail.com',
         ];
 
-        User::whereIn('email', $emails)->update([
+        $standardEmails = array_diff($emails, ['salam@gmail.com']);
+
+        User::whereIn('email', $standardEmails)->update([
             'password' => Hash::make('123456'),
+            'is_active' => true,
+        ]);
+
+        User::where('email', 'salam@gmail.com')->update([
+            'password' => Hash::make('1'),
             'is_active' => true,
         ]);
     }

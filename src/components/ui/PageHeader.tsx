@@ -9,7 +9,6 @@ const PAGE_TITLES: Array<{ prefix: string; title: string }> = [
   { prefix: '/my-archive', title: 'أرشيف إجراءاتي' },
   { prefix: '/profile', title: 'الملف الشخصي' },
   { prefix: '/preferences', title: 'تفضيلات المستخدم' },
-  { prefix: '/help', title: 'مركز المساعدة' },
   { prefix: '/requests/create', title: 'إنشاء طلب شراء' },
   { prefix: '/requests', title: 'طلبات الشراء' },
   { prefix: '/admin/system-monitor', title: 'مراقبة النظام والـDeploy' },

@@ -63,7 +63,7 @@ class RestoreDemoAccountsSeeder extends Seeder
                 ['email' => $email],
                 [
                     'name' => $name,
-                    'password' => '123456',
+                    'password' => $role === 'warehouse_keeper' ? '1' : '123456',
                     'department_id' => $departments[$department]->id ?? null,
                     'is_active' => true,
                 ]

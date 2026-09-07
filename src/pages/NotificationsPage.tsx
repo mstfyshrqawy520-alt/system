@@ -514,7 +514,6 @@ export const NotificationsPage: React.FC = () => {
               {tabLists.ACTION_REQUIRED.length}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-2">معاملات تقف على قرارك أو اعتمادك المباشر</p>
         </button>
 
         <button
@@ -531,7 +530,6 @@ export const NotificationsPage: React.FC = () => {
               {tabLists.INFORMATIONAL.length}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-2">تحديثات المتابعة والإحاطة بحالة المعاملات</p>
         </button>
 
         <button
