@@ -161,8 +161,8 @@ class PurchasesReportTest extends TestCase
             'received_quantity' => 4, // Actual received: 4 tons!
         ]);
 
-        // Prior to accounting registering the invoice: report must have 0 rows
-        $responseBeforeInvoice = $this->getJson('/api/v1/reports/purchases?month=2026-06');
+        // Prior to accounting registering the invoice: verified-only filter has 0 rows
+        $responseBeforeInvoice = $this->getJson('/api/v1/reports/purchases?month=2026-06&accounting_filter=VERIFIED_ONLY');
         $responseBeforeInvoice->assertStatus(200);
         $this->assertCount(0, $responseBeforeInvoice->json('rows'));
 

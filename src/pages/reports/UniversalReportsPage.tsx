@@ -20,10 +20,10 @@ const PURCHASE_ORDER_STATUS_LABELS: Record<string, string> = {
 };
 
 const formatNumber = (value: number | string | null | undefined) =>
-  Number(value || 0).toLocaleString('ar-EG', { maximumFractionDigits: 0 });
+  Math.abs(Number(value || 0)).toLocaleString('en-US', { maximumFractionDigits: 0 });
 
 const formatCurrency = (value: number | string | null | undefined) =>
-  Number(value || 0).toLocaleString('ar-EG', {
+  Math.abs(Number(value || 0)).toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });

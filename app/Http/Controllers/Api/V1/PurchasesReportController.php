@@ -4,8 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Department;
-use App\Models\PurchaseReceipt;
-use App\Models\PurchaseReceiptItem;
+use App\Models\PurchaseOrder;
 use App\Models\SupplierInvoice;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -48,6 +47,7 @@ class PurchasesReportController extends Controller
         $departmentId = $request->filled('department_id') && $request->query('department_id') !== 'ALL'
             ? (int) $request->query('department_id')
             : null;
+        $accountingFilter = (string) $request->query('accounting_filter', 'ALL'); // 'ALL' | 'VERIFIED_ONLY' | 'PENDING'
 
         $startDate = null;
         $endDate = null;
@@ -97,137 +97,216 @@ class PurchasesReportController extends Controller
             }
         }
 
-        // 3. Query only transactions registered by Accounting (SupplierInvoices)
-        // This guarantees that only accounting-verified/settled transactions appear.
-        $invoicesQuery = SupplierInvoice::query()
+        // 3. Query all Purchase Orders in the period with items, receipts and supplier invoices
+        $ordersQuery = PurchaseOrder::query()
             ->with([
                 'supplier',
-                'purchaseOrder.items',
-                'purchaseOrder.purchaseRequest.department',
-                'purchaseOrder.purchaseRequest.targetDepartment',
-                'purchaseOrder.purchaseRequest.landParcel',
-                'purchaseReceipt.items.purchaseOrderItem.prItem',
-                'landAllocations.parcel',
-                'landAllocations.department',
-                'createdBy',
-            ]);
+                'items.prItem',
+                'purchaseRequest.department',
+                'purchaseRequest.targetDepartment',
+                'purchaseRequest.landParcel',
+                'purchaseReceipts.items.purchaseOrderItem',
+                'supplierInvoices.landAllocations.parcel',
+                'supplierInvoices.landAllocations.department',
+                'supplierInvoices.createdBy',
+            ])
+            ->whereNotIn('status', ['REJECTED', 'PO_DRAFT']);
 
-        // Filter by date (based on delivery date received_at or invoice_date)
+        // Date filtering based on order date or delivery date or invoice date
         if ($startDate !== null && $endDate !== null) {
             $startDateStr = $startDate->toDateString();
             $endDateStr = $endDate->toDateString();
 
-            $invoicesQuery->where(function ($q) use ($startDateStr, $endDateStr) {
+            $ordersQuery->where(function ($q) use ($startDateStr, $endDateStr) {
                 $q->where(function ($sub) use ($startDateStr, $endDateStr) {
-                    $sub->whereDate('invoice_date', '>=', $startDateStr)
+                    $sub->whereDate('created_at', '>=', $startDateStr)
+                        ->whereDate('created_at', '<=', $endDateStr);
+                })->orWhere(function ($sub) use ($startDateStr, $endDateStr) {
+                    $sub->whereNotNull('actual_delivery_date')
+                        ->whereDate('actual_delivery_date', '>=', $startDateStr)
+                        ->whereDate('actual_delivery_date', '<=', $endDateStr);
+                })->orWhereHas('supplierInvoices', function ($iq) use ($startDateStr, $endDateStr) {
+                    $iq->whereDate('invoice_date', '>=', $startDateStr)
                         ->whereDate('invoice_date', '<=', $endDateStr);
-                })->orWhereHas('purchaseReceipt', function ($rq) use ($startDateStr, $endDateStr) {
+                })->orWhereHas('purchaseReceipts', function ($rq) use ($startDateStr, $endDateStr) {
                     $rq->whereDate('received_at', '>=', $startDateStr)
                         ->whereDate('received_at', '<=', $endDateStr);
                 });
             });
         }
 
-        $invoices = $invoicesQuery->orderByDesc('invoice_date')->get();
+        $orders = $ordersQuery->orderByDesc('created_at')->get();
 
-        // 4. Flatten into the 12 exact report columns per line item
+        // 4. Transform into the 12 exact report columns per item
         $reportRows = [];
 
-        foreach ($invoices as $invoice) {
-            $receipt = $invoice->purchaseReceipt;
-            $order = $invoice->purchaseOrder;
-            $requestModel = $order?->purchaseRequest;
-
-            if (! $receipt || ! $order) {
-                continue;
-            }
+        foreach ($orders as $order) {
+            $requestModel = $order->purchaseRequest;
 
             // Department resolution
             $defaultDept = $requestModel?->targetDepartment
-                ?? $requestModel?->department
-                ?? $invoice->landAllocations->first()?->department;
+                ?? $requestModel?->department;
 
             $deptId = $defaultDept?->id;
             $deptName = $defaultDept?->name ?? 'العام';
 
+            if ($departmentId !== null && $deptId !== $departmentId) {
+                continue;
+            }
+
             // Land parcel & region resolution
-            $defaultParcelRef = $invoice->landAllocations->first()?->parcel?->parcel_reference
-                ?? $requestModel?->parcel_reference
+            $defaultParcelRef = $requestModel?->parcel_reference
                 ?? $requestModel?->landParcel?->parcel_reference
                 ?? '—';
 
-            $defaultRegion = $invoice->landAllocations->first()?->parcel?->region
-                ?? $requestModel?->region
+            $defaultRegion = $requestModel?->region
                 ?? $requestModel?->landParcel?->region
                 ?? '—';
 
-            // Iterate over receipt items (accounting-verified received quantities)
-            foreach ($receipt->items as $itemIndex => $receiptItem) {
-                $poItem = $receiptItem->purchaseOrderItem;
-                $prItem = $poItem?->prItem;
+            // Check if accounting recorded invoice exists for this order
+            $latestInvoice = $order->supplierInvoices->first();
+            $latestReceipt = $order->purchaseReceipts->where('status', 'APPROVED')->first()
+                ?? $order->purchaseReceipts->first();
 
-                $receivedQty = (float) $receiptItem->received_quantity;
-                $unitPrice = (float) ($poItem?->unit_price ?? 0);
-                $lineTotal = round($receivedQty * $unitPrice, 2);
+            $isAccountingRecorded = $latestInvoice !== null;
 
-                // Specific parcel or region on PO item if provided
-                $rowParcelRef = $poItem?->item_reference
-                    ?: ($prItem?->item_reference ?: $defaultParcelRef);
-                $rowRegion = $poItem?->region
-                    ?: ($prItem?->region ?: $defaultRegion);
+            if ($accountingFilter === 'VERIFIED_ONLY' && ! $isAccountingRecorded) {
+                continue;
+            }
+            if ($accountingFilter === 'PENDING' && $isAccountingRecorded) {
+                continue;
+            }
 
-                // Works / Specifications (الاعمال)
-                $works = $poItem?->specifications
-                    ?: ($prItem?->specifications ?: ($requestModel?->notes ?: '—'));
+            // If there's an invoice with receipt items, iterate over receipt items to drop actual received qty
+            if ($isAccountingRecorded && $latestReceipt && $latestReceipt->items->isNotEmpty()) {
+                foreach ($latestReceipt->items as $receiptItem) {
+                    $poItem = $receiptItem->purchaseOrderItem;
+                    $prItem = $poItem?->prItem;
 
-                // Apply department filter if selected
-                if ($departmentId !== null && $deptId !== $departmentId) {
-                    continue;
+                    $receivedQty = (float) $receiptItem->received_quantity;
+                    $unitPrice = (float) ($poItem?->unit_price ?? 0);
+                    $lineTotal = round($receivedQty * $unitPrice, 2);
+
+                    $rowParcelRef = $poItem?->item_reference
+                        ?: ($prItem?->item_reference ?: $defaultParcelRef);
+                    $rowRegion = $poItem?->region
+                        ?: ($prItem?->region ?: $defaultRegion);
+
+                    $works = $poItem?->specifications
+                        ?: ($prItem?->specifications ?: ($requestModel?->notes ?: '—'));
+
+                    $deliveryDate = $latestReceipt->received_at?->format('Y-m-d')
+                        ?? $latestInvoice->invoice_date?->format('Y-m-d')
+                        ?? $order->actual_delivery_date?->format('Y-m-d')
+                        ?? $order->created_at?->format('Y-m-d');
+
+                    $reportRows[] = [
+                        'id' => "PO-{$order->id}-REC-{$receiptItem->id}",
+                        'invoice_id' => $latestInvoice->id,
+                        'receipt_id' => $latestReceipt->id,
+                        'purchase_order_id' => $order->id,
+                        // 1. تاريخ التوريد
+                        'delivery_date' => $deliveryDate,
+                        'delivery_date_formatted' => $deliveryDate ? Carbon::parse($deliveryDate)->format('d/m/Y') : '—',
+                        // 2. رقم أمر الشراء
+                        'po_number' => $order->po_number,
+                        'po_number_short' => preg_replace('/^PO-\d{4}-0*/', '', $order->po_number) ?: $order->po_number,
+                        // 3. الصنف
+                        'item_name' => $poItem?->item_description ?? '—',
+                        // 4. الوحدة
+                        'uom' => $poItem?->uom ?? '—',
+                        // 5. الكمية (المستلمة المعتمدة لدى الحسابات)
+                        'quantity' => $receivedQty,
+                        // 6. سعر الوحدة
+                        'unit_price' => $unitPrice,
+                        // 7. سعر الكمية (الإجمالي)
+                        'total_price' => $lineTotal,
+                        // 8. أسم المورد
+                        'supplier_name' => $order->supplier?->company_name ?? $order->supplier?->name ?? '—',
+                        'supplier_id' => $order->supplier_id,
+                        // 9. رقم القطعة
+                        'parcel_reference' => $rowParcelRef ?: '—',
+                        // 10. إسم المنطقة
+                        'region' => $rowRegion ?: '—',
+                        // 11. القسم
+                        'department_id' => $deptId,
+                        'department_name' => $deptName,
+                        // 12. الاعمال
+                        'works' => $works ?: '—',
+                        // Extra metadata
+                        'accounting_status' => 'VERIFIED',
+                        'accounting_status_label' => 'مسقط ومسجل بالحسابات',
+                        'invoice_number' => $latestInvoice->invoice_number,
+                        'matching_status' => $latestInvoice->matching_status,
+                        'accountant_name' => $latestInvoice->createdBy?->name ?? 'الحسابات',
+                        'order_status' => $order->status,
+                        'created_at' => $order->created_at?->toIso8601String(),
+                    ];
                 }
+            } else {
+                // Not yet registered in invoice, use order items (e.g. issued orders awaiting accounting)
+                foreach ($order->items as $poItem) {
+                    $prItem = $poItem->prItem;
 
-                $deliveryDate = $receipt->received_at?->format('Y-m-d')
-                    ?? $invoice->invoice_date?->format('Y-m-d')
-                    ?? $receipt->created_at?->format('Y-m-d');
+                    $qty = (float) $poItem->quantity;
+                    $unitPrice = (float) $poItem->unit_price;
+                    $lineTotal = (float) ($poItem->line_total > 0 ? $poItem->line_total : round($qty * $unitPrice, 2));
 
-                $reportRows[] = [
-                    'id' => "INV-{$invoice->id}-ITEM-{$receiptItem->id}",
-                    'invoice_id' => $invoice->id,
-                    'receipt_id' => $receipt->id,
-                    'purchase_order_id' => $order->id,
-                    // 1. تاريخ التوريد
-                    'delivery_date' => $deliveryDate,
-                    'delivery_date_formatted' => $deliveryDate ? Carbon::parse($deliveryDate)->format('d/m/Y') : '—',
-                    // 2. رقم أمر الشراء
-                    'po_number' => $order->po_number,
-                    'po_number_short' => preg_replace('/^PO-\d{4}-0*/', '', $order->po_number) ?: $order->po_number,
-                    // 3. الصنف
-                    'item_name' => $poItem?->item_description ?? '—',
-                    // 4. الوحدة
-                    'uom' => $poItem?->uom ?? '—',
-                    // 5. الكمية (المستلمة المعتمدة لدى الحسابات)
-                    'quantity' => $receivedQty,
-                    // 6. سعر الوحدة
-                    'unit_price' => $unitPrice,
-                    // 7. سعر الكمية (الإجمالي)
-                    'total_price' => $lineTotal,
-                    // 8. أسم المورد
-                    'supplier_name' => $invoice->supplier?->company_name ?? $invoice->supplier?->name ?? '—',
-                    'supplier_id' => $invoice->supplier_id,
-                    // 9. رقم القطعة
-                    'parcel_reference' => $rowParcelRef ?: '—',
-                    // 10. إسم المنطقة
-                    'region' => $rowRegion ?: '—',
-                    // 11. القسم
-                    'department_id' => $deptId,
-                    'department_name' => $deptName,
-                    // 12. الاعمال
-                    'works' => $works ?: '—',
-                    // Extra metadata
-                    'invoice_number' => $invoice->invoice_number,
-                    'matching_status' => $invoice->matching_status,
-                    'accountant_name' => $invoice->createdBy?->name ?? 'الحسابات',
-                    'created_at' => $invoice->created_at?->toIso8601String(),
-                ];
+                    $rowParcelRef = $poItem->item_reference
+                        ?: ($prItem?->item_reference ?: $defaultParcelRef);
+                    $rowRegion = $poItem->region
+                        ?: ($prItem?->region ?: $defaultRegion);
+
+                    $works = $poItem->specifications
+                        ?: ($prItem?->specifications ?: ($requestModel?->notes ?: '—'));
+
+                    $deliveryDate = $order->actual_delivery_date?->format('Y-m-d')
+                        ?? $order->delivery_date?->format('Y-m-d')
+                        ?? $order->created_at?->format('Y-m-d');
+
+                    $reportRows[] = [
+                        'id' => "PO-{$order->id}-ITEM-{$poItem->id}",
+                        'invoice_id' => null,
+                        'receipt_id' => $latestReceipt?->id,
+                        'purchase_order_id' => $order->id,
+                        // 1. تاريخ التوريد
+                        'delivery_date' => $deliveryDate,
+                        'delivery_date_formatted' => $deliveryDate ? Carbon::parse($deliveryDate)->format('d/m/Y') : '—',
+                        // 2. رقم أمر الشراء
+                        'po_number' => $order->po_number,
+                        'po_number_short' => preg_replace('/^PO-\d{4}-0*/', '', $order->po_number) ?: $order->po_number,
+                        // 3. الصنف
+                        'item_name' => $poItem->item_description ?? '—',
+                        // 4. الوحدة
+                        'uom' => $poItem->uom ?? '—',
+                        // 5. الكمية
+                        'quantity' => $qty,
+                        // 6. سعر الوحدة
+                        'unit_price' => $unitPrice,
+                        // 7. سعر الكمية (الإجمالي)
+                        'total_price' => $lineTotal,
+                        // 8. أسم المورد
+                        'supplier_name' => $order->supplier?->company_name ?? $order->supplier?->name ?? '—',
+                        'supplier_id' => $order->supplier_id,
+                        // 9. رقم القطعة
+                        'parcel_reference' => $rowParcelRef ?: '—',
+                        // 10. إسم المنطقة
+                        'region' => $rowRegion ?: '—',
+                        // 11. القسم
+                        'department_id' => $deptId,
+                        'department_name' => $deptName,
+                        // 12. الاعمال
+                        'works' => $works ?: '—',
+                        // Extra metadata
+                        'accounting_status' => 'PENDING',
+                        'accounting_status_label' => 'صادر - بانتظار تسجيل الحسابات',
+                        'invoice_number' => null,
+                        'matching_status' => null,
+                        'accountant_name' => null,
+                        'order_status' => $order->status,
+                        'created_at' => $order->created_at?->toIso8601String(),
+                    ];
+                }
             }
         }
 
@@ -238,6 +317,7 @@ class PurchasesReportController extends Controller
         $totalQuantity = array_sum(array_column($reportRows, 'quantity'));
         $uniqueSuppliers = count(array_unique(array_filter(array_column($reportRows, 'supplier_name'), fn ($s) => $s && $s !== '—')));
         $uniqueParcels = count(array_unique(array_filter(array_column($reportRows, 'parcel_reference'), fn ($p) => $p && $p !== '—')));
+        $verifiedCount = count(array_filter($reportRows, fn ($r) => ($r['accounting_status'] ?? '') === 'VERIFIED'));
 
         // 6. List of available active departments for the filter dropdown
         $allDepartments = Department::query()
@@ -252,6 +332,7 @@ class PurchasesReportController extends Controller
                 'from_date' => $request->query('from_date'),
                 'to_date' => $request->query('to_date'),
                 'department_id' => $departmentId,
+                'accounting_filter' => $accountingFilter,
                 'date_label' => $dateLabel,
             ],
             'metrics' => [
@@ -261,6 +342,7 @@ class PurchasesReportController extends Controller
                 'total_items_count' => $totalItemsCount,
                 'suppliers_count' => $uniqueSuppliers,
                 'parcels_count' => $uniqueParcels,
+                'verified_items_count' => $verifiedCount,
             ],
             'departments' => $allDepartments,
             'rows' => $reportRows,

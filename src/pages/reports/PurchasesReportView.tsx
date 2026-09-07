@@ -5,7 +5,6 @@ import {
   PurchasesReportRow,
 } from '../../api/reports';
 import { parseApiError } from '../../utils/apiError';
-import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import { getUnitLabel } from '../../utils/units';
 
 interface ColumnFilters {
@@ -38,6 +37,23 @@ const initialFilters: ColumnFilters = {
   works: '',
 };
 
+// Clean number formatting without any RTL reversing bugs or minus signs
+const formatCleanNumber = (val: number | string | null | undefined, decimals = 2) => {
+  const num = Math.abs(Number(val || 0));
+  return num.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+};
+
+const formatCleanQty = (val: number | string | null | undefined) => {
+  const num = Math.abs(Number(val || 0));
+  return num.toLocaleString('en-US', {
+    minimumFractionDigits: Number.isInteger(num) ? 0 : 2,
+    maximumFractionDigits: 3,
+  });
+};
+
 export const PurchasesReportView: React.FC = () => {
   // Period filter states
   const [filterType, setFilterType] = useState<'daily' | 'monthly' | 'custom'>('monthly');
@@ -46,6 +62,7 @@ export const PurchasesReportView: React.FC = () => {
   const [fromDate, setFromDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [toDate, setToDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [selectedDepartment, setSelectedDepartment] = useState<string>('ALL');
+  const [accountingFilter, setAccountingFilter] = useState<'ALL' | 'VERIFIED_ONLY' | 'PENDING'>('ALL');
 
   // Column search filters
   const [colFilters, setColFilters] = useState<ColumnFilters>(initialFilters);
@@ -57,6 +74,9 @@ export const PurchasesReportView: React.FC = () => {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState<boolean>(false);
+
+  // Active cell selection indicator (Excel aesthetic)
+  const [selectedCell, setSelectedCell] = useState<string | null>(null);
 
   // Fetch report from backend
   const loadReport = async () => {
@@ -70,10 +90,11 @@ export const PurchasesReportView: React.FC = () => {
         from_date: filterType === 'custom' ? fromDate : undefined,
         to_date: filterType === 'custom' ? toDate : undefined,
         department_id: selectedDepartment !== 'ALL' ? selectedDepartment : undefined,
+        accounting_filter: accountingFilter,
       });
       setData(response);
     } catch (err) {
-      setError(parseApiError(err).message || 'تعذر تحميل تقرير المشتريات المحاسبي.');
+      setError(parseApiError(err).message || 'تعذر تحميل بيانات تقرير المشتريات.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -82,7 +103,7 @@ export const PurchasesReportView: React.FC = () => {
 
   useEffect(() => {
     void loadReport();
-  }, [filterType, selectedMonth, selectedDate, fromDate, toDate, selectedDepartment]);
+  }, [filterType, selectedMonth, selectedDate, fromDate, toDate, selectedDepartment, accountingFilter]);
 
   // Selected Department Name for dynamic title
   const activeDepartmentName = useMemo(() => {
@@ -164,7 +185,7 @@ export const PurchasesReportView: React.FC = () => {
     setColFilters((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Export CSV
+  // Export CSV (Excel Compatible with UTF-8 BOM)
   const handleExportCSV = () => {
     if (!filteredRows.length) return;
 
@@ -184,7 +205,6 @@ export const PurchasesReportView: React.FC = () => {
     ];
 
     const lines: string[] = [];
-    // BOM for Excel Arabic support
     lines.push('\uFEFF' + headers.join(','));
 
     filteredRows.forEach((r) => {
@@ -206,7 +226,6 @@ export const PurchasesReportView: React.FC = () => {
       );
     });
 
-    // Summary line
     lines.push(
       [
         '"الإجمالي"',
@@ -279,113 +298,114 @@ export const PurchasesReportView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-4" dir="rtl">
       {/* ========================================================================= */}
       {/* ── 1. OFFICIAL PRINT VIEW (Visible ONLY during window.print()) ─────────── */}
       {/* ========================================================================= */}
-      <div className="hidden print:block font-sans text-black bg-white p-2">
-        <div className="border-b-2 border-black pb-3 mb-3 flex items-start justify-between">
+      <div className="hidden print:block font-sans text-black bg-white p-0 m-0">
+        {/* Company Header */}
+        <div className="border-b-2 border-slate-900 pb-3 mb-3 flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-black text-black tracking-tight">
+            <div className="text-xs font-bold text-slate-600 tracking-wider">نظام المشتريات والحسابات المعتمد</div>
+            <h1 className="text-xl font-black text-black mt-0.5 tracking-tight">
               شركة اشبيلية للتطوير العقاري والمقاولات
             </h1>
-            <h2 className="text-base font-extrabold text-slate-900 mt-1">
+            <h2 className="text-base font-extrabold text-slate-800 mt-1">
               {dynamicReportTitle}
             </h2>
-            <div className="text-[11px] text-slate-600 mt-0.5">
-              تقرير مشتريات معتمد ومسقط محاسبياً بالكميات المستلمة الفعلية وأسعارها المعتمدة
-            </div>
           </div>
-          <div className="text-left text-[11px] font-mono border border-black p-2 rounded bg-slate-50">
+          <div className="text-left text-[11px] font-mono border border-slate-800 p-2 rounded bg-slate-50">
             <div>تاريخ الطباعة: {new Date().toLocaleDateString('ar-EG')}</div>
             <div>الوقت: {new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</div>
-            <div>الحالة: معتمد نهائي بالحسابات</div>
+            <div>الحالة: معتمد نهائي</div>
           </div>
         </div>
 
-        {/* Metadata Strip */}
-        <div className="grid grid-cols-4 gap-2 mb-3 text-xs border border-black bg-slate-100 p-2 font-semibold">
-          <div>
-            <span className="text-slate-600 block text-[10px]">نطاق التقرير:</span>
-            <span className="font-bold text-black">{dynamicReportTitle}</span>
-          </div>
+        {/* Excel Summary Metadata Box */}
+        <div className="grid grid-cols-4 gap-2 mb-3 text-xs border border-slate-800 bg-slate-100 p-2 font-semibold">
           <div>
             <span className="text-slate-600 block text-[10px]">القسم المحدد:</span>
             <span className="font-bold text-black">{activeDepartmentName || 'كافة الأقسام'}</span>
           </div>
           <div>
-            <span className="text-slate-600 block text-[10px]">عدد بنود التوريد:</span>
-            <span className="font-bold text-black font-mono">{filteredRows.length} بند</span>
+            <span className="text-slate-600 block text-[10px]">عدد الأوامر المسجلة:</span>
+            <span className="font-bold text-black font-mono">{liveTotals.uniqueOrders} أمر شراء</span>
+          </div>
+          <div>
+            <span className="text-slate-600 block text-[10px]">إجمالي الكميات:</span>
+            <span className="font-bold text-black font-mono" dir="ltr">
+              {formatCleanQty(liveTotals.totalQty)}
+            </span>
           </div>
           <div>
             <span className="text-slate-600 block text-[10px]">إجمالي قيمة المشتريات:</span>
-            <span className="font-black text-black font-mono text-sm">
-              {liveTotals.totalAmount.toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م
+            <span className="font-black text-black font-mono text-sm" dir="ltr">
+              {formatCleanNumber(liveTotals.totalAmount)} ج.م
             </span>
           </div>
         </div>
 
-        {/* Print Table */}
-        <table className="w-full border-collapse border-2 border-black text-[10px] text-right">
+        {/* 12-Column Official Excel Table */}
+        <table className="w-full border-collapse border-2 border-slate-900 text-[10.5px] text-right">
           <thead>
-            <tr className="bg-slate-200 border-b-2 border-black font-black text-black">
-              <th className="border border-black px-2 py-1 text-center w-8">م</th>
-              <th className="border border-black px-2 py-1 text-center whitespace-nowrap">تاريخ التوريد</th>
-              <th className="border border-black px-2 py-1 text-center whitespace-nowrap">رقم أمر الشراء</th>
-              <th className="border border-black px-2 py-1">الصنف</th>
-              <th className="border border-black px-1.5 py-1 text-center">الوحدة</th>
-              <th className="border border-black px-2 py-1 text-center">الكمية</th>
-              <th className="border border-black px-2 py-1 text-center">سعر الوحدة</th>
-              <th className="border border-black px-2 py-1 text-center font-bold">سعر الكمية</th>
-              <th className="border border-black px-2 py-1">أسم المورد</th>
-              <th className="border border-black px-1.5 py-1 text-center">رقم القطعة</th>
-              <th className="border border-black px-2 py-1 text-center">إسم المنطقة</th>
-              <th className="border border-black px-2 py-1 text-center">القسم</th>
-              <th className="border border-black px-2 py-1">الاعمال</th>
+            <tr className="bg-slate-200 border-b-2 border-slate-900 font-black text-black">
+              <th className="border border-slate-900 px-1 py-1.5 text-center w-7">م</th>
+              <th className="border border-slate-900 px-2 py-1.5 text-center whitespace-nowrap">تاريخ التوريد</th>
+              <th className="border border-slate-900 px-2 py-1.5 text-center whitespace-nowrap">رقم أمر الشراء</th>
+              <th className="border border-slate-900 px-2 py-1.5">الصنف</th>
+              <th className="border border-slate-900 px-1.5 py-1.5 text-center">الوحدة</th>
+              <th className="border border-slate-900 px-2 py-1.5 text-center">الكمية</th>
+              <th className="border border-slate-900 px-2 py-1.5 text-center">سعر الوحدة</th>
+              <th className="border border-slate-900 px-2 py-1.5 text-center font-bold bg-slate-300">سعر الكمية</th>
+              <th className="border border-slate-900 px-2 py-1.5">أسم المورد</th>
+              <th className="border border-slate-900 px-1.5 py-1.5 text-center">رقم القطعة</th>
+              <th className="border border-slate-900 px-2 py-1.5 text-center">إسم المنطقة</th>
+              <th className="border border-slate-900 px-2 py-1.5 text-center">القسم</th>
+              <th className="border border-slate-900 px-2 py-1.5">الاعمال</th>
             </tr>
           </thead>
           <tbody>
             {filteredRows.map((row, idx) => (
               <tr key={row.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                <td className="border border-black px-1.5 py-1 text-center font-bold">{idx + 1}</td>
-                <td className="border border-black px-2 py-1 text-center font-mono whitespace-nowrap">
+                <td className="border border-slate-800 px-1 py-1.5 text-center font-bold font-mono">{idx + 1}</td>
+                <td className="border border-slate-800 px-2 py-1.5 text-center font-mono whitespace-nowrap">
                   {row.delivery_date_formatted || row.delivery_date}
                 </td>
-                <td className="border border-black px-2 py-1 text-center font-mono font-bold whitespace-nowrap">
+                <td className="border border-slate-800 px-2 py-1.5 text-center font-mono font-bold whitespace-nowrap">
                   {row.po_number_short || row.po_number}
                 </td>
-                <td className="border border-black px-2 py-1 font-bold">{row.item_name}</td>
-                <td className="border border-black px-1.5 py-1 text-center">{getUnitLabel(row.uom) || row.uom}</td>
-                <td className="border border-black px-2 py-1 text-center font-mono font-bold">
-                  {Number(row.quantity).toLocaleString('ar-EG', { maximumFractionDigits: 3 })}
+                <td className="border border-slate-800 px-2 py-1.5 font-bold text-black">{row.item_name}</td>
+                <td className="border border-slate-800 px-1.5 py-1.5 text-center">{getUnitLabel(row.uom) || row.uom}</td>
+                <td className="border border-slate-800 px-2 py-1.5 text-center font-mono font-bold" dir="ltr">
+                  {formatCleanQty(row.quantity)}
                 </td>
-                <td className="border border-black px-2 py-1 text-center font-mono">
-                  {Number(row.unit_price).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}
+                <td className="border border-slate-800 px-2 py-1.5 text-center font-mono" dir="ltr">
+                  {formatCleanNumber(row.unit_price)}
                 </td>
-                <td className="border border-black px-2 py-1 text-center font-mono font-bold bg-slate-100">
-                  {Number(row.total_price).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}
+                <td className="border border-slate-800 px-2 py-1.5 text-center font-mono font-black bg-slate-100" dir="ltr">
+                  {formatCleanNumber(row.total_price)}
                 </td>
-                <td className="border border-black px-2 py-1">{row.supplier_name}</td>
-                <td className="border border-black px-1.5 py-1 text-center font-mono font-bold">{row.parcel_reference}</td>
-                <td className="border border-black px-2 py-1 text-center">{row.region}</td>
-                <td className="border border-black px-2 py-1 text-center">{row.department_name}</td>
-                <td className="border border-black px-2 py-1">{row.works}</td>
+                <td className="border border-slate-800 px-2 py-1.5">{row.supplier_name}</td>
+                <td className="border border-slate-800 px-1.5 py-1.5 text-center font-mono font-bold">{row.parcel_reference}</td>
+                <td className="border border-slate-800 px-2 py-1.5 text-center">{row.region}</td>
+                <td className="border border-slate-800 px-2 py-1.5 text-center">{row.department_name}</td>
+                <td className="border border-slate-800 px-2 py-1.5">{row.works}</td>
               </tr>
             ))}
           </tbody>
           <tfoot>
-            <tr className="bg-slate-200 border-t-2 border-black font-black text-black">
-              <td colSpan={5} className="border border-black px-2 py-1.5 text-center">
-                الإجمالي العام ({filteredRows.length} بند توريد)
+            <tr className="bg-slate-200 border-t-2 border-slate-900 font-black text-black">
+              <td colSpan={5} className="border border-slate-900 px-2 py-2 text-center text-xs font-bold">
+                الإجمالي العام ({filteredRows.length} بند مسجل)
               </td>
-              <td className="border border-black px-2 py-1.5 text-center font-mono font-bold">
-                {liveTotals.totalQty.toLocaleString('ar-EG', { maximumFractionDigits: 3 })}
+              <td className="border border-slate-900 px-2 py-2 text-center font-mono font-bold" dir="ltr">
+                {formatCleanQty(liveTotals.totalQty)}
               </td>
-              <td className="border border-black px-2 py-1.5 text-center">—</td>
-              <td className="border border-black px-2 py-1.5 text-center font-mono font-black text-sm bg-slate-300">
-                {liveTotals.totalAmount.toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م
+              <td className="border border-slate-900 px-2 py-2 text-center">—</td>
+              <td className="border border-slate-900 px-2 py-2 text-center font-mono font-black text-xs bg-slate-300" dir="ltr">
+                {formatCleanNumber(liveTotals.totalAmount)} ج.م
               </td>
-              <td colSpan={5} className="border border-black px-2 py-1.5 text-left text-[9px] text-slate-700">
+              <td colSpan={5} className="border border-slate-900 px-2 py-2 text-left text-[10px] text-slate-700">
                 أوامر الشراء: {liveTotals.uniqueOrders} | الموردين: {liveTotals.uniqueSuppliers}
               </td>
             </tr>
@@ -393,105 +413,170 @@ export const PurchasesReportView: React.FC = () => {
         </table>
 
         {/* Signatures */}
-        <div className="mt-8 pt-4 border-t border-black grid grid-cols-3 gap-6 text-center text-xs">
+        <div className="mt-8 pt-4 border-t-2 border-slate-900 grid grid-cols-3 gap-6 text-center text-xs">
           <div className="space-y-4">
             <div className="font-bold">إعداد الحسابات</div>
-            <div className="border-b border-dashed border-black h-8 w-40 mx-auto" />
+            <div className="border-b border-dashed border-slate-900 h-8 w-44 mx-auto" />
             <div className="text-[10px] text-slate-500">التوقيع والتاريخ</div>
           </div>
           <div className="space-y-4">
             <div className="font-bold">مراجعة مدير المشتريات</div>
-            <div className="border-b border-dashed border-black h-8 w-40 mx-auto" />
+            <div className="border-b border-dashed border-slate-900 h-8 w-44 mx-auto" />
             <div className="text-[10px] text-slate-500">التوقيع والتاريخ</div>
           </div>
           <div className="space-y-4">
             <div className="font-bold">اعتماد المدير التنفيذي</div>
-            <div className="border-b border-dashed border-black h-8 w-40 mx-auto" />
+            <div className="border-b border-dashed border-slate-900 h-8 w-44 mx-auto" />
             <div className="text-[10px] text-slate-500">التوقيع والتاريخ</div>
           </div>
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* ── 2. ON-SCREEN INTERACTIVE DASHBOARD & TABLE ──────────────────────────── */}
+      {/* ── 2. ON-SCREEN AUTHENTIC EXCEL SPREADSHEET VIEW ───────────────────────── */}
       {/* ========================================================================= */}
-      <div className="print:hidden space-y-6">
-        {/* Header Title & Top Controls */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-l from-slate-900 via-slate-900/90 to-slate-950 p-5 shadow-2xl">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold text-lg">
-                  📑
-                </div>
-                <div>
-                  <h1 className="text-lg sm:text-xl font-black text-slate-100 flex items-center gap-2">
-                    <span>{dynamicReportTitle}</span>
-                  </h1>
-                  <p className="text-xs text-slate-400">
-                    تقرير مشتريات تفصيلي مسقط من الحسابات وفق إذن الاستلام المعتمد والكميات الفعلية.
-                  </p>
-                </div>
+      <div className="print:hidden space-y-4 font-sans">
+        
+        {/* ── EXCEL RIBBON & WORKBOOK HEADER ── */}
+        <div className="rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl overflow-hidden">
+          
+          {/* Top Green Excel Title Bar */}
+          <div className="bg-[#107c41] px-4 py-2.5 text-white flex flex-wrap items-center justify-between gap-3 shadow-md">
+            <div className="flex items-center gap-3">
+              <span className="flex h-7 w-7 items-center justify-center rounded bg-white/20 font-black text-base shadow-inner">
+                📗
+              </span>
+              <div>
+                <h1 className="text-sm sm:text-base font-black tracking-wide flex items-center gap-2">
+                  <span>ورقة إكسيل: {dynamicReportTitle}.xlsx</span>
+                </h1>
+                <span className="text-[10px] text-emerald-100 opacity-90 block">
+                  جدول بيانات مسقط محاسبياً • 12 عموداً • إمكانية التصفية والفرز والتصدير
+                </span>
               </div>
             </div>
 
-            {/* Quick Actions (Print / Excel / Copy / Refresh) */}
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 px-3.5 py-2 text-xs font-bold text-slate-200 shadow-sm transition"
-                title="طباعة التقرير الرسمي"
-              >
-                <span>🖨️</span>
-                <span>طباعة التقرير</span>
-              </button>
-
+            {/* Quick Excel Actions */}
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={handleExportCSV}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-600/40 bg-emerald-950/40 hover:bg-emerald-900/50 px-3.5 py-2 text-xs font-bold text-emerald-300 shadow-sm transition"
-                title="تصدير شيت إكسل"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 hover:bg-white/20 px-3 py-1.5 text-xs font-bold text-white transition border border-white/20 shadow-sm"
+                title="تنزيل كملف Excel CSV"
               >
                 <span>📥</span>
-                <span>تصدير إكسل</span>
+                <span>حفظ Excel</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleCopyClipboard}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 px-3 py-2 text-xs font-bold text-slate-300 shadow-sm transition"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 hover:bg-white/20 px-3 py-1.5 text-xs font-bold text-white transition border border-white/20 shadow-sm"
                 title="نسخ الجدول لبرنامج إكسل"
               >
                 <span>📋</span>
-                <span>{copySuccess ? 'تم النسخ!' : 'نسخ لإكسل'}</span>
+                <span>{copySuccess ? 'تم النسخ!' : 'نسخ الورقة'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-900 px-3.5 py-1.5 text-xs font-extrabold text-white transition border border-emerald-600 shadow"
+                title="طباعة تقرير إكسل مسطر"
+              >
+                <span>🖨️</span>
+                <span>طباعة الورقة</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => void loadReport()}
                 disabled={refreshing}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs font-bold text-slate-300 transition disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-lg bg-white/10 hover:bg-white/20 px-2.5 py-1.5 text-xs text-white transition border border-white/20 disabled:opacity-50"
+                title="إعادة احتساب وتحديث البيانات"
               >
                 <span className={refreshing ? 'animate-spin' : ''}>🔄</span>
-                <span>تحديث</span>
               </button>
             </div>
           </div>
 
-          {/* Filter Bar: Period Type + Date Pickers + Department Dropdown */}
-          <div className="mt-5 pt-4 border-t border-slate-800/80 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3 items-end">
-            {/* 1. Period Mode Selection */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-400 block">نوع التقرير:</label>
-              <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-950 p-1 border border-slate-800">
+          {/* Formula & Status Bar (fx) */}
+          <div className="bg-slate-800/90 px-4 py-2 border-b border-slate-700 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3 flex-1 min-w-[280px]">
+              <div className="font-mono font-black text-amber-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-700 text-[11px]">
+                fx
+              </div>
+              <div className="text-slate-300 font-mono text-[11px] truncate flex items-center gap-4">
+                <span>
+                  =SUM(الكمية): <strong className="text-amber-300 font-bold" dir="ltr">{formatCleanQty(liveTotals.totalQty)}</strong>
+                </span>
+                <span className="text-slate-500">|</span>
+                <span>
+                  =SUM(سعر_الكمية): <strong className="text-emerald-300 font-bold" dir="ltr">{formatCleanNumber(liveTotals.totalAmount)} ج.م</strong>
+                </span>
+                <span className="text-slate-500">|</span>
+                <span>
+                  =COUNT(البنود): <strong className="text-cyan-300 font-bold">{filteredRows.length}</strong>
+                </span>
+                {selectedCell && (
+                  <>
+                    <span className="text-slate-500">|</span>
+                    <span className="text-slate-400">الخلية المحددة: <strong className="text-white">{selectedCell}</strong></span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Accounting Mode Toggle (All Orders vs Verified Only vs Pending) */}
+            <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 px-2">عرض:</span>
+              <button
+                type="button"
+                onClick={() => setAccountingFilter('ALL')}
+                className={`px-2.5 py-1 text-[11px] font-bold rounded transition ${
+                  accountingFilter === 'ALL'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                الكل ({data?.rows?.length || 0})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAccountingFilter('VERIFIED_ONLY')}
+                className={`px-2.5 py-1 text-[11px] font-bold rounded transition ${
+                  accountingFilter === 'VERIFIED_ONLY'
+                    ? 'bg-amber-500 text-slate-950 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                مسقط ومسجل بالحسابات ({data?.metrics?.verified_items_count || 0})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAccountingFilter('PENDING')}
+                className={`px-2.5 py-1 text-[11px] font-bold rounded transition ${
+                  accountingFilter === 'PENDING'
+                    ? 'bg-cyan-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                بانتظار تسجيل الحسابات
+              </button>
+            </div>
+          </div>
+
+          {/* Controls Bar: Period Type + Date + Department Dropdown */}
+          <div className="p-3 bg-slate-950/70 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex flex-wrap items-center gap-3">
+              
+              {/* Period Type */}
+              <div className="flex items-center gap-1 rounded-lg bg-slate-900 p-1 border border-slate-800">
                 <button
                   type="button"
                   onClick={() => setFilterType('monthly')}
-                  className={`py-1.5 text-xs font-extrabold rounded-lg transition ${
-                    filterType === 'monthly'
-                      ? 'bg-amber-500 text-slate-950 shadow-md'
-                      : 'text-slate-400 hover:text-slate-200'
+                  className={`px-3 py-1 rounded text-xs font-bold transition ${
+                    filterType === 'monthly' ? 'bg-[#107c41] text-white shadow' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   شهري
@@ -499,10 +584,8 @@ export const PurchasesReportView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setFilterType('daily')}
-                  className={`py-1.5 text-xs font-extrabold rounded-lg transition ${
-                    filterType === 'daily'
-                      ? 'bg-amber-500 text-slate-950 shadow-md'
-                      : 'text-slate-400 hover:text-slate-200'
+                  className={`px-3 py-1 rounded text-xs font-bold transition ${
+                    filterType === 'daily' ? 'bg-[#107c41] text-white shadow' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   يومي
@@ -510,88 +593,90 @@ export const PurchasesReportView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setFilterType('custom')}
-                  className={`py-1.5 text-xs font-extrabold rounded-lg transition ${
-                    filterType === 'custom'
-                      ? 'bg-amber-500 text-slate-950 shadow-md'
-                      : 'text-slate-400 hover:text-slate-200'
+                  className={`px-3 py-1 rounded text-xs font-bold transition ${
+                    filterType === 'custom' ? 'bg-[#107c41] text-white shadow' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   مخصص
                 </button>
               </div>
-            </div>
 
-            {/* 2. Date Input according to filterType */}
-            {filterType === 'monthly' && (
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 block">شهر التقرير (MM-YYYY):</label>
-                <input
-                  type="month"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-mono font-bold text-slate-200 focus:border-amber-400 focus:outline-none"
-                />
-              </div>
-            )}
+              {/* Date Input */}
+              {filterType === 'monthly' && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-bold text-slate-400">الشهر:</span>
+                  <input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-mono font-bold text-slate-200 focus:border-emerald-400 focus:outline-none"
+                  />
+                </div>
+              )}
 
-            {filterType === 'daily' && (
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 block">تاريخ اليوم المحدد:</label>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-mono font-bold text-slate-200 focus:border-amber-400 focus:outline-none"
-                />
-              </div>
-            )}
+              {filterType === 'daily' && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-bold text-slate-400">اليوم:</span>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-mono font-bold text-slate-200 focus:border-emerald-400 focus:outline-none"
+                  />
+                </div>
+              )}
 
-            {filterType === 'custom' && (
-              <div className="space-y-1 col-span-1 md:col-span-2 grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs font-bold text-slate-400 block">من تاريخ:</label>
+              {filterType === 'custom' && (
+                <div className="flex items-center gap-2">
                   <input
                     type="date"
                     value={fromDate}
                     onChange={(e) => setFromDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-mono text-slate-200 focus:border-amber-400 focus:outline-none"
+                    className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs font-mono text-slate-200 focus:border-emerald-400 focus:outline-none"
                   />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-400 block">إلى تاريخ:</label>
+                  <span className="text-slate-500">إلى</span>
                   <input
                     type="date"
                     value={toDate}
                     onChange={(e) => setToDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-mono text-slate-200 focus:border-amber-400 focus:outline-none"
+                    className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs font-mono text-slate-200 focus:border-emerald-400 focus:outline-none"
                   />
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* 3. Department Selector */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-400 block">القسم المنفذ / الطالب:</label>
-              <select
-                value={selectedDepartment}
-                onChange={(e) => setSelectedDepartment(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-bold text-slate-200 focus:border-amber-400 focus:outline-none"
-              >
-                <option value="ALL">جميع الأقسام</option>
-                {data?.departments?.map((dept) => (
-                  <option key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </option>
-                ))}
-              </select>
+              {/* Department Dropdown */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-bold text-slate-400">القسم:</span>
+                <select
+                  value={selectedDepartment}
+                  onChange={(e) => setSelectedDepartment(e.target.value)}
+                  className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-bold text-slate-200 focus:border-emerald-400 focus:outline-none"
+                >
+                  <option value="ALL">جميع الأقسام</option>
+                  {data?.departments?.map((dept) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            {/* Toggle Column Filters */}
-            <div className="flex items-center justify-end pb-1">
+            {/* Filter Toggle Button */}
+            <div className="flex items-center gap-2">
+              {hasActiveColFilters && (
+                <button
+                  type="button"
+                  onClick={handleClearColFilters}
+                  className="text-[11px] font-bold text-rose-400 hover:underline"
+                >
+                  مسح فلاتر الأعمدة ✕
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setShowColumnFilters((prev) => !prev)}
-                className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1.5 transition"
+                className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition"
               >
                 <span>🔍</span>
                 <span>{showColumnFilters ? 'إخفاء فلاتر الأعمدة' : 'إظهار فلاتر الأعمدة'}</span>
@@ -600,337 +685,366 @@ export const PurchasesReportView: React.FC = () => {
           </div>
         </div>
 
-        {/* Error message */}
+        {/* Error Notification */}
         {error && (
           <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs font-bold text-rose-300">
             {error}
           </div>
         )}
 
-        {/* Financial KPI Summary Cards */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-1 shadow-md">
-            <span className="text-[11px] font-bold text-slate-400 block">إجمالي مشتريات التقرير</span>
-            <span className="text-lg font-black text-emerald-400 font-mono block">
-              <CurrencyDisplay amount={liveTotals.totalAmount} />
-            </span>
-            <span className="text-[10px] text-slate-500 block">معتمد ومسقط بالحسابات</span>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-1 shadow-md">
-            <span className="text-[11px] font-bold text-slate-400 block">إجمالي الكميات المسقطة</span>
-            <span className="text-lg font-black text-amber-300 font-mono block">
-              {liveTotals.totalQty.toLocaleString('ar-EG', { maximumFractionDigits: 3 })}
-            </span>
-            <span className="text-[10px] text-slate-500 block">كميات مستلمة فعلياً</span>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-1 shadow-md">
-            <span className="text-[11px] font-bold text-slate-400 block">أوامر الشراء المسجلة</span>
-            <span className="text-lg font-black text-cyan-300 font-mono block">
-              {liveTotals.uniqueOrders} أمر
-            </span>
-            <span className="text-[10px] text-slate-500 block">إجمالي البنود: {filteredRows.length}</span>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-1 shadow-md">
-            <span className="text-[11px] font-bold text-slate-400 block">الموردين المعتمدين</span>
-            <span className="text-lg font-black text-purple-300 font-mono block">
-              {liveTotals.uniqueSuppliers} مورد
-            </span>
-            <span className="text-[10px] text-slate-500 block">حسب الفلاتر المحددة</span>
-          </div>
-        </div>
-
-        {/* ── Main 12-Column Table Container ── */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 sm:p-5 space-y-4 shadow-xl">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-emerald-400 text-base">📊</span>
-              <h3 className="text-sm font-black text-slate-100">
-                جدول بيانات تقرير المشتريات (12 عموداً محاسبياً)
-              </h3>
-              {hasActiveColFilters && (
-                <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-300 border border-amber-500/30">
-                  فلاتر نشطة
-                </span>
-              )}
+        {/* ── REAL EXCEL SPREADSHEET GRID (WHITE PAPER SHEET) ── */}
+        <div className="rounded-2xl border-2 border-slate-300 bg-white text-slate-900 shadow-2xl overflow-hidden">
+          
+          {/* Sheet Tab Bar at top */}
+          <div className="bg-[#e9ecef] border-b border-slate-300 px-4 py-2 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 font-bold text-slate-700">
+              <span className="text-emerald-700">📊</span>
+              <span>ورقة العمل: مشتريات وتوريدات شركة اشبيلية ({dynamicReportTitle})</span>
             </div>
-
-            <div className="flex items-center gap-2">
-              {hasActiveColFilters && (
-                <button
-                  type="button"
-                  onClick={handleClearColFilters}
-                  className="rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-rose-400 transition"
-                >
-                  إلغاء فلاتر الأعمدة ✕
-                </button>
-              )}
-              <span className="text-xs text-slate-400 font-mono">
-                المعروض: <strong className="text-slate-200">{filteredRows.length}</strong> بند
-              </span>
+            <div className="flex items-center gap-3 text-[11px] font-mono text-slate-600">
+              <span>أوامر الشراء: <strong className="text-black">{liveTotals.uniqueOrders}</strong></span>
+              <span>•</span>
+              <span>الموردين: <strong className="text-black">{liveTotals.uniqueSuppliers}</strong></span>
+              <span>•</span>
+              <span>إجمالي البنود: <strong className="text-black">{filteredRows.length}</strong></span>
             </div>
           </div>
 
           {loading ? (
-            <div className="flex min-h-[250px] items-center justify-center p-8 text-amber-400">
+            <div className="flex min-h-[300px] items-center justify-center p-12 text-emerald-700">
               <div className="flex flex-col items-center gap-3 text-center">
-                <span className="h-8 w-8 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
-                <span className="text-xs font-bold text-slate-400">
-                  جاري جلب واحتساب بيانات مشتريات الحسابات المعتمدة...
+                <span className="h-9 w-9 animate-spin rounded-full border-3 border-emerald-600 border-t-transparent" />
+                <span className="text-xs font-bold text-slate-600">
+                  جاري تحميل وحساب بيانات ورقة العمل...
                 </span>
               </div>
             </div>
           ) : filteredRows.length > 0 ? (
-            <div className="overflow-x-auto rounded-xl border border-slate-800 shadow-inner">
-              <table className="w-full text-right text-xs border-collapse min-w-[1100px]">
-                {/* 1. Header with exact column names from paper slip */}
-                <thead className="bg-slate-900 border-b border-slate-700 text-slate-200 font-black">
-                  <tr>
-                    <th className="px-2.5 py-3 text-center w-8 border-l border-slate-800">م</th>
-                    <th className="px-3 py-3 text-center border-l border-slate-800 whitespace-nowrap">تاريخ التوريد</th>
-                    <th className="px-3 py-3 text-center border-l border-slate-800 whitespace-nowrap">رقم أمر الشراء</th>
-                    <th className="px-3 py-3 border-l border-slate-800 min-w-[150px]">الصنف</th>
-                    <th className="px-2.5 py-3 text-center border-l border-slate-800 w-16">الوحدة</th>
-                    <th className="px-3 py-3 text-center border-l border-slate-800 w-20">الكمية</th>
-                    <th className="px-3 py-3 text-center border-l border-slate-800 w-24">سعر الوحدة</th>
-                    <th className="px-3 py-3 text-center border-l border-slate-800 w-28 bg-slate-900/90 text-amber-300">سعر الكمية</th>
-                    <th className="px-3 py-3 border-l border-slate-800 min-w-[130px]">أسم المورد</th>
-                    <th className="px-2.5 py-3 text-center border-l border-slate-800 w-20">رقم القطعة</th>
-                    <th className="px-3 py-3 text-center border-l border-slate-800 w-24">إسم المنطقة</th>
-                    <th className="px-3 py-3 text-center border-l border-slate-800 w-24">القسم</th>
-                    <th className="px-3 py-3 min-w-[160px]">الاعمال</th>
+            <div className="overflow-x-auto max-h-[700px] overflow-y-auto">
+              <table className="w-full text-right text-xs border-collapse min-w-[1200px]">
+                
+                {/* 1. Excel Column Letter Headers (A, B, C, D...) */}
+                <thead className="sticky top-0 z-20 bg-[#f1f5f9] border-b-2 border-slate-400 text-slate-700 select-none">
+                  <tr className="text-[11px] font-mono text-center font-extrabold">
+                    <th className="border border-slate-300 px-1 py-1 w-8 bg-[#e2e8f0]">#</th>
+                    <th className="border border-slate-300 px-2 py-1 bg-[#e2e8f0]">A</th>
+                    <th className="border border-slate-300 px-2 py-1 bg-[#e2e8f0]">B</th>
+                    <th className="border border-slate-300 px-2 py-1 bg-[#e2e8f0]">C</th>
+                    <th className="border border-slate-300 px-2 py-1 bg-[#e2e8f0]">D</th>
+                    <th className="border border-slate-300 px-2 py-1 bg-[#e2e8f0]">E</th>
+                    <th className="border border-slate-300 px-2 py-1 bg-[#e2e8f0]">F</th>
+                    <th className="border border-slate-300 px-2 py-1 bg-[#e2e8f0]">G</th>
+                    <th className="border border-slate-300 px-2 py-1 bg-[#e2e8f0]">H</th>
+                    <th className="border border-slate-300 px-2 py-1 bg-[#e2e8f0]">I</th>
+                    <th className="border border-slate-300 px-2 py-1 bg-[#e2e8f0]">J</th>
+                    <th className="border border-slate-300 px-2 py-1 bg-[#e2e8f0]">K</th>
+                    <th className="border border-slate-300 px-2 py-1 bg-[#e2e8f0]">L</th>
                   </tr>
 
-                  {/* 2. Per-Column Filter Input Row */}
+                  {/* 2. Formal 12-Column Title Headers from Handwritten Note */}
+                  <tr className="bg-[#f8fafc] text-slate-900 font-black text-[11.5px] border-b-2 border-slate-400">
+                    <th className="border border-slate-300 px-1 py-2 text-center w-8 bg-[#e2e8f0]">م</th>
+                    <th className="border border-slate-300 px-2.5 py-2 text-center whitespace-nowrap min-w-[90px]">تاريخ التوريد</th>
+                    <th className="border border-slate-300 px-2.5 py-2 text-center whitespace-nowrap min-w-[110px]">رقم أمر الشراء</th>
+                    <th className="border border-slate-300 px-3 py-2 min-w-[170px]">الصنف</th>
+                    <th className="border border-slate-300 px-2 py-2 text-center w-16">الوحدة</th>
+                    <th className="border border-slate-300 px-2.5 py-2 text-center w-20">الكمية</th>
+                    <th className="border border-slate-300 px-2.5 py-2 text-center w-24">سعر الوحدة</th>
+                    <th className="border border-slate-300 px-3 py-2 text-center w-28 bg-emerald-50 text-emerald-900">سعر الكمية</th>
+                    <th className="border border-slate-300 px-3 py-2 min-w-[140px]">أسم المورد</th>
+                    <th className="border border-slate-300 px-2 py-2 text-center w-20">رقم القطعة</th>
+                    <th className="border border-slate-300 px-2.5 py-2 text-center w-24">إسم المنطقة</th>
+                    <th className="border border-slate-300 px-2.5 py-2 text-center w-24">القسم</th>
+                    <th className="border border-slate-300 px-3 py-2 min-w-[170px]">الاعمال</th>
+                  </tr>
+
+                  {/* 3. Excel Filter Input Row under each column */}
                   {showColumnFilters && (
-                    <tr className="bg-slate-950 border-b border-slate-800 text-[11px] font-normal">
-                      <th className="p-1 border-l border-slate-800 text-center text-slate-600">—</th>
-                      <th className="p-1 border-l border-slate-800">
+                    <tr className="bg-[#f1f5f9] border-b border-slate-300 text-[10.5px]">
+                      <th className="p-0.5 border border-slate-300 text-center bg-[#e2e8f0] text-slate-400">—</th>
+                      <th className="p-1 border border-slate-300">
                         <input
                           type="text"
-                          placeholder="تاريخ..."
+                          placeholder="فلتر..."
                           value={colFilters.delivery_date}
                           onChange={(e) => handleUpdateColFilter('delivery_date', e.target.value)}
-                          className="w-full rounded bg-slate-900 px-1.5 py-1 text-[11px] text-slate-200 placeholder-slate-600 border border-slate-800 focus:border-amber-400 focus:outline-none"
+                          className="w-full rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[11px] text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:outline-none"
                         />
                       </th>
-                      <th className="p-1 border-l border-slate-800">
+                      <th className="p-1 border border-slate-300">
                         <input
                           type="text"
-                          placeholder="رقم الأمر..."
+                          placeholder="الأمر..."
                           value={colFilters.po_number}
                           onChange={(e) => handleUpdateColFilter('po_number', e.target.value)}
-                          className="w-full rounded bg-slate-900 px-1.5 py-1 text-[11px] text-slate-200 placeholder-slate-600 border border-slate-800 focus:border-amber-400 focus:outline-none"
+                          className="w-full rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[11px] text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:outline-none"
                         />
                       </th>
-                      <th className="p-1 border-l border-slate-800">
+                      <th className="p-1 border border-slate-300">
                         <input
                           type="text"
                           placeholder="الصنف..."
                           value={colFilters.item_name}
                           onChange={(e) => handleUpdateColFilter('item_name', e.target.value)}
-                          className="w-full rounded bg-slate-900 px-1.5 py-1 text-[11px] text-slate-200 placeholder-slate-600 border border-slate-800 focus:border-amber-400 focus:outline-none"
+                          className="w-full rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[11px] text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:outline-none"
                         />
                       </th>
-                      <th className="p-1 border-l border-slate-800">
+                      <th className="p-1 border border-slate-300">
                         <input
                           type="text"
                           placeholder="الوحدة..."
                           value={colFilters.uom}
                           onChange={(e) => handleUpdateColFilter('uom', e.target.value)}
-                          className="w-full rounded bg-slate-900 px-1.5 py-1 text-[11px] text-slate-200 placeholder-slate-600 border border-slate-800 focus:border-amber-400 focus:outline-none text-center"
+                          className="w-full rounded border border-slate-300 bg-white px-1 py-0.5 text-[11px] text-center text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:outline-none"
                         />
                       </th>
-                      <th className="p-1 border-l border-slate-800">
+                      <th className="p-1 border border-slate-300">
                         <input
                           type="text"
                           placeholder="كمية..."
                           value={colFilters.quantity}
                           onChange={(e) => handleUpdateColFilter('quantity', e.target.value)}
-                          className="w-full rounded bg-slate-900 px-1.5 py-1 text-[11px] text-slate-200 placeholder-slate-600 border border-slate-800 focus:border-amber-400 focus:outline-none text-center"
+                          className="w-full rounded border border-slate-300 bg-white px-1 py-0.5 text-[11px] text-center text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:outline-none"
                         />
                       </th>
-                      <th className="p-1 border-l border-slate-800">
+                      <th className="p-1 border border-slate-300">
                         <input
                           type="text"
                           placeholder="سعر..."
                           value={colFilters.unit_price}
                           onChange={(e) => handleUpdateColFilter('unit_price', e.target.value)}
-                          className="w-full rounded bg-slate-900 px-1.5 py-1 text-[11px] text-slate-200 placeholder-slate-600 border border-slate-800 focus:border-amber-400 focus:outline-none text-center"
+                          className="w-full rounded border border-slate-300 bg-white px-1 py-0.5 text-[11px] text-center text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:outline-none"
                         />
                       </th>
-                      <th className="p-1 border-l border-slate-800">
+                      <th className="p-1 border border-slate-300">
                         <input
                           type="text"
                           placeholder="إجمالي..."
                           value={colFilters.total_price}
                           onChange={(e) => handleUpdateColFilter('total_price', e.target.value)}
-                          className="w-full rounded bg-slate-900 px-1.5 py-1 text-[11px] text-slate-200 placeholder-slate-600 border border-slate-800 focus:border-amber-400 focus:outline-none text-center"
+                          className="w-full rounded border border-slate-300 bg-white px-1 py-0.5 text-[11px] text-center text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:outline-none"
                         />
                       </th>
-                      <th className="p-1 border-l border-slate-800">
+                      <th className="p-1 border border-slate-300">
                         <input
                           type="text"
                           placeholder="المورد..."
                           value={colFilters.supplier_name}
                           onChange={(e) => handleUpdateColFilter('supplier_name', e.target.value)}
-                          className="w-full rounded bg-slate-900 px-1.5 py-1 text-[11px] text-slate-200 placeholder-slate-600 border border-slate-800 focus:border-amber-400 focus:outline-none"
+                          className="w-full rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[11px] text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:outline-none"
                         />
                       </th>
-                      <th className="p-1 border-l border-slate-800">
+                      <th className="p-1 border border-slate-300">
                         <input
                           type="text"
                           placeholder="قطعة..."
                           value={colFilters.parcel_reference}
                           onChange={(e) => handleUpdateColFilter('parcel_reference', e.target.value)}
-                          className="w-full rounded bg-slate-900 px-1.5 py-1 text-[11px] text-slate-200 placeholder-slate-600 border border-slate-800 focus:border-amber-400 focus:outline-none text-center"
+                          className="w-full rounded border border-slate-300 bg-white px-1 py-0.5 text-[11px] text-center text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:outline-none"
                         />
                       </th>
-                      <th className="p-1 border-l border-slate-800">
+                      <th className="p-1 border border-slate-300">
                         <input
                           type="text"
                           placeholder="منطقة..."
                           value={colFilters.region}
                           onChange={(e) => handleUpdateColFilter('region', e.target.value)}
-                          className="w-full rounded bg-slate-900 px-1.5 py-1 text-[11px] text-slate-200 placeholder-slate-600 border border-slate-800 focus:border-amber-400 focus:outline-none text-center"
+                          className="w-full rounded border border-slate-300 bg-white px-1 py-0.5 text-[11px] text-center text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:outline-none"
                         />
                       </th>
-                      <th className="p-1 border-l border-slate-800">
+                      <th className="p-1 border border-slate-300">
                         <input
                           type="text"
                           placeholder="القسم..."
                           value={colFilters.department_name}
                           onChange={(e) => handleUpdateColFilter('department_name', e.target.value)}
-                          className="w-full rounded bg-slate-900 px-1.5 py-1 text-[11px] text-slate-200 placeholder-slate-600 border border-slate-800 focus:border-amber-400 focus:outline-none text-center"
+                          className="w-full rounded border border-slate-300 bg-white px-1 py-0.5 text-[11px] text-center text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:outline-none"
                         />
                       </th>
-                      <th className="p-1">
+                      <th className="p-1 border border-slate-300">
                         <input
                           type="text"
                           placeholder="الاعمال..."
                           value={colFilters.works}
                           onChange={(e) => handleUpdateColFilter('works', e.target.value)}
-                          className="w-full rounded bg-slate-900 px-1.5 py-1 text-[11px] text-slate-200 placeholder-slate-600 border border-slate-800 focus:border-amber-400 focus:outline-none"
+                          className="w-full rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[11px] text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:outline-none"
                         />
                       </th>
                     </tr>
                   )}
                 </thead>
 
-                {/* 3. Table Rows */}
-                <tbody className="divide-y divide-slate-800/70">
-                  {filteredRows.map((row, idx) => (
-                    <tr
-                      key={row.id}
-                      className={`hover:bg-slate-900/60 transition-colors ${
-                        idx % 2 === 0 ? 'bg-slate-950/40' : 'bg-slate-900/20'
-                      }`}
-                    >
-                      {/* م */}
-                      <td className="px-2.5 py-2.5 text-center font-mono font-bold text-slate-500 border-l border-slate-800">
-                        {idx + 1}
-                      </td>
+                {/* 4. Table Rows with Clear Authentic Excel Cell Borders */}
+                <tbody>
+                  {filteredRows.map((row, idx) => {
+                    const rowNumber = idx + 1;
+                    const isEven = idx % 2 === 0;
 
-                      {/* 1. تاريخ التوريد */}
-                      <td className="px-3 py-2.5 text-center font-mono text-slate-300 border-l border-slate-800 whitespace-nowrap text-[11px]">
-                        {row.delivery_date_formatted || row.delivery_date}
-                      </td>
+                    return (
+                      <tr
+                        key={row.id}
+                        className={`transition-colors hover:bg-emerald-50/70 ${
+                          isEven ? 'bg-white' : 'bg-[#f8fafc]'
+                        }`}
+                      >
+                        {/* Row Number (Excel Index Column) */}
+                        <td className="border border-slate-300 px-1.5 py-2 text-center font-mono text-[10px] font-bold text-slate-500 bg-[#f1f5f9] select-none">
+                          {rowNumber}
+                        </td>
 
-                      {/* 2. رقم أمر الشراء */}
-                      <td className="px-3 py-2.5 text-center font-mono font-bold text-cyan-300 border-l border-slate-800 whitespace-nowrap">
-                        {row.po_number_short || row.po_number}
-                      </td>
+                        {/* A: تاريخ التوريد */}
+                        <td
+                          onClick={() => setSelectedCell(`A${rowNumber}`)}
+                          className="border border-slate-300 px-2.5 py-2 text-center font-mono text-slate-800 whitespace-nowrap text-[11px]"
+                        >
+                          {row.delivery_date_formatted || row.delivery_date}
+                        </td>
 
-                      {/* 3. الصنف */}
-                      <td className="px-3 py-2.5 font-bold text-slate-100 border-l border-slate-800">
-                        {row.item_name}
-                      </td>
+                        {/* B: رقم أمر الشراء */}
+                        <td
+                          onClick={() => setSelectedCell(`B${rowNumber}`)}
+                          className="border border-slate-300 px-2.5 py-2 text-center font-mono font-black text-blue-700 whitespace-nowrap"
+                        >
+                          {row.po_number_short || row.po_number}
+                        </td>
 
-                      {/* 4. الوحدة */}
-                      <td className="px-2.5 py-2.5 text-center text-slate-300 border-l border-slate-800">
-                        {getUnitLabel(row.uom) || row.uom}
-                      </td>
+                        {/* C: الصنف */}
+                        <td
+                          onClick={() => setSelectedCell(`C${rowNumber}`)}
+                          className="border border-slate-300 px-3 py-2 font-bold text-slate-900 leading-snug"
+                        >
+                          {row.item_name}
+                        </td>
 
-                      {/* 5. الكمية */}
-                      <td className="px-3 py-2.5 text-center font-mono font-extrabold text-amber-300 border-l border-slate-800">
-                        {Number(row.quantity).toLocaleString('ar-EG', { maximumFractionDigits: 3 })}
-                      </td>
+                        {/* D: الوحدة */}
+                        <td
+                          onClick={() => setSelectedCell(`D${rowNumber}`)}
+                          className="border border-slate-300 px-2 py-2 text-center text-slate-700 whitespace-nowrap"
+                        >
+                          {getUnitLabel(row.uom) || row.uom}
+                        </td>
 
-                      {/* 6. سعر الوحدة */}
-                      <td className="px-3 py-2.5 text-center font-mono text-slate-300 border-l border-slate-800">
-                        {Number(row.unit_price).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}
-                      </td>
+                        {/* E: الكمية */}
+                        <td
+                          onClick={() => setSelectedCell(`E${rowNumber}`)}
+                          className="border border-slate-300 px-2.5 py-2 text-center font-mono font-extrabold text-slate-900"
+                          dir="ltr"
+                        >
+                          {formatCleanQty(row.quantity)}
+                        </td>
 
-                      {/* 7. سعر الكمية (الإجمالي) */}
-                      <td className="px-3 py-2.5 text-center font-mono font-extrabold text-emerald-300 border-l border-slate-800 bg-emerald-950/20">
-                        {Number(row.total_price).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}
-                      </td>
+                        {/* F: سعر الوحدة */}
+                        <td
+                          onClick={() => setSelectedCell(`F${rowNumber}`)}
+                          className="border border-slate-300 px-2.5 py-2 text-center font-mono text-slate-800"
+                          dir="ltr"
+                        >
+                          {formatCleanNumber(row.unit_price)}
+                        </td>
 
-                      {/* 8. أسم المورد */}
-                      <td className="px-3 py-2.5 font-bold text-slate-200 border-l border-slate-800">
-                        {row.supplier_name}
-                      </td>
+                        {/* G: سعر الكمية (الإجمالي) */}
+                        <td
+                          onClick={() => setSelectedCell(`G${rowNumber}`)}
+                          className="border border-slate-300 px-3 py-2 text-center font-mono font-black text-emerald-800 bg-emerald-50/50"
+                          dir="ltr"
+                        >
+                          {formatCleanNumber(row.total_price)}
+                        </td>
 
-                      {/* 9. رقم القطعة */}
-                      <td className="px-2.5 py-2.5 text-center font-mono font-bold text-amber-400 border-l border-slate-800">
-                        {row.parcel_reference}
-                      </td>
+                        {/* H: أسم المورد */}
+                        <td
+                          onClick={() => setSelectedCell(`H${rowNumber}`)}
+                          className="border border-slate-300 px-3 py-2 font-bold text-slate-800"
+                        >
+                          {row.supplier_name}
+                        </td>
 
-                      {/* 10. إسم المنطقة */}
-                      <td className="px-3 py-2.5 text-center text-slate-300 border-l border-slate-800">
-                        {row.region}
-                      </td>
+                        {/* I: رقم القطعة */}
+                        <td
+                          onClick={() => setSelectedCell(`I${rowNumber}`)}
+                          className="border border-slate-300 px-2 py-2 text-center font-mono font-bold text-amber-800 bg-amber-50/30"
+                        >
+                          {row.parcel_reference}
+                        </td>
 
-                      {/* 11. القسم */}
-                      <td className="px-3 py-2.5 text-center text-slate-300 border-l border-slate-800">
-                        <span className="inline-block rounded-md bg-slate-800 px-2 py-0.5 text-[11px] font-bold text-slate-200">
-                          {row.department_name}
-                        </span>
-                      </td>
+                        {/* J: إسم المنطقة */}
+                        <td
+                          onClick={() => setSelectedCell(`J${rowNumber}`)}
+                          className="border border-slate-300 px-2.5 py-2 text-center text-slate-800"
+                        >
+                          {row.region}
+                        </td>
 
-                      {/* 12. الاعمال */}
-                      <td className="px-3 py-2.5 text-slate-300 font-medium leading-relaxed">
-                        {row.works}
-                      </td>
-                    </tr>
-                  ))}
+                        {/* K: القسم */}
+                        <td
+                          onClick={() => setSelectedCell(`K${rowNumber}`)}
+                          className="border border-slate-300 px-2.5 py-2 text-center"
+                        >
+                          <span className="inline-block rounded bg-slate-200 px-2 py-0.5 text-[11px] font-bold text-slate-800">
+                            {row.department_name}
+                          </span>
+                        </td>
+
+                        {/* L: الاعمال */}
+                        <td
+                          onClick={() => setSelectedCell(`L${rowNumber}`)}
+                          className="border border-slate-300 px-3 py-2 text-slate-700 leading-snug"
+                        >
+                          {row.works}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
 
-                {/* 4. Table Footer Summary Row */}
-                <tfoot className="bg-slate-900 border-t-2 border-slate-700 text-slate-200 font-black">
-                  <tr>
-                    <td colSpan={5} className="px-3 py-3 text-center border-l border-slate-800 text-xs">
-                      إجمالي البنود المفلترة ({filteredRows.length} بند)
+                {/* 5. Excel Total Formula Row with Double Bottom Underline */}
+                <tfoot className="sticky bottom-0 z-10 bg-[#e2e8f0] border-t-2 border-slate-500 border-b-4 border-double border-slate-900 text-slate-900 font-black">
+                  <tr className="text-xs">
+                    <td className="border border-slate-300 px-1.5 py-2 text-center font-bold bg-[#cbd5e1]">Σ</td>
+                    <td colSpan={4} className="border border-slate-300 px-3 py-2 text-center font-bold text-slate-800">
+                      الإجمالي العام (=SUM لـ {filteredRows.length} بند مسجل)
                     </td>
-                    <td className="px-3 py-3 text-center font-mono font-extrabold text-amber-300 border-l border-slate-800">
-                      {liveTotals.totalQty.toLocaleString('ar-EG', { maximumFractionDigits: 3 })}
+                    <td className="border border-slate-300 px-2.5 py-2 text-center font-mono font-extrabold text-slate-900 text-sm" dir="ltr">
+                      {formatCleanQty(liveTotals.totalQty)}
                     </td>
-                    <td className="px-3 py-3 text-center font-mono text-slate-400 border-l border-slate-800">
-                      —
+                    <td className="border border-slate-300 px-2 py-2 text-center text-slate-500">—</td>
+                    <td className="border border-slate-300 px-3 py-2 text-center font-mono font-black text-sm text-emerald-800 bg-emerald-100" dir="ltr">
+                      {formatCleanNumber(liveTotals.totalAmount)} ج.م
                     </td>
-                    <td className="px-3 py-3 text-center font-mono font-black text-sm text-emerald-400 border-l border-slate-800 bg-emerald-950/40">
-                      {liveTotals.totalAmount.toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م
-                    </td>
-                    <td colSpan={5} className="px-3 py-3 text-slate-400 text-xs text-left">
-                      الأوامر: <strong className="text-slate-200">{liveTotals.uniqueOrders}</strong> | الموردين: <strong className="text-slate-200">{liveTotals.uniqueSuppliers}</strong>
+                    <td colSpan={5} className="border border-slate-300 px-3 py-2 text-slate-700 text-left text-[11px] font-mono">
+                      عدد الأوامر: {liveTotals.uniqueOrders} | الموردين: {liveTotals.uniqueSuppliers}
                     </td>
                   </tr>
                 </tfoot>
               </table>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center p-12 text-center rounded-xl border border-slate-800/80 bg-slate-950/40">
-              <span className="text-4xl mb-2">🔍</span>
-              <p className="text-sm font-extrabold text-slate-200">
-                لا توجد مشتريات معتمدة مسجلة بالحسابات لهذه الفترة أو الفلاتر
+            <div className="flex flex-col items-center justify-center p-16 text-center bg-white text-slate-600">
+              <span className="text-4xl mb-3">📋</span>
+              <p className="text-base font-black text-slate-800">
+                لا توجد بيانات مطابقة للفترة أو الفلاتر المحددة
               </p>
-              <p className="text-xs text-slate-500 mt-1">
-                تأكد من قيام الحسابات بتسجيل فاتورة المورد على إذن الاستلام المعتمد لتسقط البيانات في هذا التقرير.
+              <p className="text-xs text-slate-500 mt-1 max-w-md">
+                قم بتعديل محدد الشهر أو القسم، أو اضغط على &quot;عرض: الكل&quot; لمشاهدة كافة الأوامر الصادرة.
               </p>
             </div>
           )}
+
+          {/* Bottom Sheet Status Bar */}
+          <div className="bg-[#f1f5f9] border-t border-slate-300 px-4 py-2 flex flex-wrap items-center justify-between text-[11px] text-slate-600 font-mono">
+            <div className="flex items-center gap-4">
+              <span>جاهز | READY</span>
+              <span>•</span>
+              <span>الصفوف المعروضة: <strong>{filteredRows.length}</strong></span>
+              <span>•</span>
+              <span>مجموع الكميات: <strong dir="ltr">{formatCleanQty(liveTotals.totalQty)}</strong></span>
+              <span>•</span>
+              <span>مجموع المبالغ: <strong dir="ltr">{formatCleanNumber(liveTotals.totalAmount)} EGP</strong></span>
+            </div>
+            <div className="text-[10px] text-slate-500">
+              تحديث تلقائي • نظام إدارة المشتريات والحسابات
+            </div>
+          </div>
         </div>
       </div>
     </div>

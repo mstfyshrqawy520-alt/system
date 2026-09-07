@@ -23,6 +23,9 @@ export interface PurchasesReportRow {
   works: string;
   invoice_number?: string;
   matching_status?: string;
+  accounting_status?: string;
+  accounting_status_label?: string;
+  order_status?: string;
   accountant_name?: string;
   created_at?: string;
 }
@@ -34,6 +37,7 @@ export interface PurchasesReportMetrics {
   total_items_count: number;
   suppliers_count: number;
   parcels_count: number;
+  verified_items_count?: number;
 }
 
 export interface PurchasesReportDepartment {
@@ -50,6 +54,7 @@ export interface PurchasesReportResponse {
     from_date?: string;
     to_date?: string;
     department_id?: number | null;
+    accounting_filter?: string;
     date_label?: string;
   };
   metrics: PurchasesReportMetrics;
@@ -64,6 +69,7 @@ export interface PurchasesReportParams {
   from_date?: string;
   to_date?: string;
   department_id?: number | string;
+  accounting_filter?: 'ALL' | 'VERIFIED_ONLY' | 'PENDING';
   search?: string;
 }
 
@@ -80,6 +86,7 @@ export const getPurchasesReportApi = async (
   if (params.department_id !== undefined && params.department_id !== '' && params.department_id !== 'ALL') {
     queryParams.set('department_id', String(params.department_id));
   }
+  if (params.accounting_filter) queryParams.set('accounting_filter', params.accounting_filter);
   if (params.search) queryParams.set('search', params.search);
 
   const response = await apiClient.get<PurchasesReportResponse>(
