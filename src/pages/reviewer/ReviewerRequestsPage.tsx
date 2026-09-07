@@ -54,6 +54,7 @@ const REVIEWER_APPROVED_STATUSES = new Set([
 const REVIEWER_EDITABLE_STATUSES = ['UNDER_REVIEW', 'PENDING_PROCUREMENT_APPROVAL', 'APPROVED_BY_REVIEWER'];
 
 import { useRealtimeRefresh, emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
+import { ApproveRequestDialog } from '../../components/reviewer/ApproveRequestDialog';
 
 export const ReviewerRequestsPage: React.FC = () => {
   const { user, hasPermission, hasRole } = useAuth();
@@ -63,7 +64,8 @@ export const ReviewerRequestsPage: React.FC = () => {
   const [activeFilter, setActiveFilter] = usePersistedState<string>('reviewer.active-filter.v1', urlStatus || 'ALL');
   const [searchFilters, setSearchFilters] = usePersistedState<ReviewerRequestFilters>('reviewer.search-filters.v3', INITIAL_FILTERS);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [approvingId, setApprovingId] = useState<number | null>(null);
+  const [requestToApprove, setRequestToApprove] = useState<PurchaseRequest | null>(null);
+  const [isApproving, setIsApproving] = useState<boolean>(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -86,19 +88,21 @@ export const ReviewerRequestsPage: React.FC = () => {
 
   useRealtimeRefresh(() => fetchRequests(searchFilters, true));
 
-  const handleQuickApprove = async (id: number) => {
-    setApprovingId(id);
+  const handleConfirmApprove = async (comment?: string, siteEngineerUserId?: number | null) => {
+    if (!requestToApprove) return;
+    setIsApproving(true);
     setError(null);
     setSuccessMsg(null);
     try {
-      await approvePurchaseRequestApi(id, 'تم الاعتماد المباشر بواسطة المراجع');
-      setSuccessMsg('✅ تم اعتماد طلب الشراء فوراً بخطوة واحدة.');
+      await approvePurchaseRequestApi(requestToApprove.id, comment, siteEngineerUserId);
+      setSuccessMsg(`✅ تم اعتماد طلب الشراء رقم ${requestToApprove.request_number} وتحديد مسؤول الاستلام بنجاح.`);
+      setRequestToApprove(null);
       emitAppDataUpdated();
       await fetchRequests(searchFilters, true);
     } catch (err) {
       setError(parseApiError(err));
     } finally {
-      setApprovingId(null);
+      setIsApproving(false);
     }
   };
 
@@ -300,13 +304,11 @@ export const ReviewerRequestsPage: React.FC = () => {
                         <Button
                           variant="success"
                           size="sm"
-                          isLoading={approvingId === request.id}
-                          disabled={approvingId !== null}
-                          onClick={() => handleQuickApprove(request.id)}
+                          onClick={() => setRequestToApprove(request)}
                           className="px-2.5 py-1 text-xs"
-                          title="اعتماد فوري للطلب بنقرة واحدة"
+                          title="اعتماد الطلب وتحديد مهندس الموقع المستلم"
                         >
-                          اعتماد فوري
+                          اعتماد الطلب
                         </Button>
                       )}
                       {REVIEWER_EDITABLE_STATUSES.includes(request.status) && hasPermission('purchase_request.edit_during_review') && (
@@ -362,12 +364,10 @@ export const ReviewerRequestsPage: React.FC = () => {
                     <Button
                       variant="success"
                       size="sm"
-                      isLoading={approvingId === request.id}
-                      disabled={approvingId !== null}
-                      onClick={() => handleQuickApprove(request.id)}
+                      onClick={() => setRequestToApprove(request)}
                       className="flex-1"
                     >
-                      اعتماد فوري
+                      اعتماد الطلب
                     </Button>
                   )}
                   {REVIEWER_EDITABLE_STATUSES.includes(request.status) && hasPermission('purchase_request.edit_during_review') && <Link to={`/reviewer/requests/${request.id}/review`} className="flex-1"><Button variant="secondary" size="sm" className="w-full">{request.status === 'PENDING_PROCUREMENT_APPROVAL' ? 'تعديل قبل المشتريات' : 'مراجعة وتعديل'}</Button></Link>}
@@ -379,6 +379,15 @@ export const ReviewerRequestsPage: React.FC = () => {
         </div>
         </>
       )}
+
+      <ApproveRequestDialog
+        isOpen={requestToApprove !== null}
+        requestNumber={requestToApprove?.request_number || ''}
+        initialSiteEngineerId={requestToApprove?.site_engineer?.id || requestToApprove?.site_engineer_user_id || requestToApprove?.target_department?.site_engineer?.id || null}
+        isApproving={isApproving}
+        onConfirm={handleConfirmApprove}
+        onCancel={() => setRequestToApprove(null)}
+      />
     </div>
   );
 };

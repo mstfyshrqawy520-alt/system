@@ -379,6 +379,45 @@ class ReviewerPurchaseRequestTest extends TestCase
         ]);
     }
 
+    public function test_reviewer_approval_fails_if_no_site_engineer_is_selected_and_no_department_default(): void
+    {
+        $this->itDept->update(['site_engineer_user_id' => null]);
+        $this->itSubmittedPr->update(['site_engineer_user_id' => null]);
+
+        $token = $this->itReviewer->createToken('test_token')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->postJson('/api/v1/reviewer/purchase-requests/' . $this->itSubmittedPr->id . '/approve', [
+                'comment' => 'No engineer passed',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['site_engineer_user_id']);
+    }
+
+    public function test_reviewer_approval_succeeds_when_explicit_site_engineer_is_provided(): void
+    {
+        $this->itDept->update(['site_engineer_user_id' => null]);
+        $this->itSubmittedPr->update(['site_engineer_user_id' => null]);
+
+        $token = $this->itReviewer->createToken('test_token')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->postJson('/api/v1/reviewer/purchase-requests/' . $this->itSubmittedPr->id . '/approve', [
+                'comment' => 'Assigned explicit site engineer',
+                'site_engineer_user_id' => $this->itSiteEngineer->id,
+            ]);
+
+        $response->assertStatus(200);
+
+        $this->assertDatabaseHas('purchase_requests', [
+            'id' => $this->itSubmittedPr->id,
+            'site_engineer_user_id' => $this->itSiteEngineer->id,
+            'status' => 'PENDING_EXECUTIVE_APPROVAL',
+        ]);
+    }
+
+
     public function test_reviewer_cannot_approve_already_approved_request(): void
     {
         $this->itSubmittedPr->update(['status' => 'APPROVED_BY_REVIEWER']);

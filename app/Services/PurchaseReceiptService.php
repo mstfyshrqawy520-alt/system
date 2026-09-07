@@ -64,8 +64,21 @@ class PurchaseReceiptService
         ?string $notes = null,
         ?array $photoData = null
     ): PurchaseReceipt {
-        $purchaseOrder->loadMissing(['purchaseRequest', 'items']);
+        $purchaseOrder->loadMissing(['purchaseRequest.targetDepartment', 'purchaseRequest.department', 'items']);
         $siteEngineerId = $purchaseOrder->purchaseRequest?->site_engineer_user_id;
+
+        if (! $siteEngineerId) {
+            $fallbackEngineerId = $purchaseOrder->purchaseRequest?->targetDepartment?->site_engineer_user_id
+                ?? $purchaseOrder->purchaseRequest?->department?->site_engineer_user_id
+                ?? User::whereHas('roles', fn ($q) => $q->where('slug', 'site_engineer'))->where('is_active', true)->value('id');
+
+            if ($fallbackEngineerId) {
+                $siteEngineerId = $fallbackEngineerId;
+                if ($purchaseOrder->purchaseRequest) {
+                    $purchaseOrder->purchaseRequest->update(['site_engineer_user_id' => $fallbackEngineerId]);
+                }
+            }
+        }
 
         if (! $siteEngineerId) {
             throw new \RuntimeException('لا يوجد مهندس موقع محدد لهذا الطلب.');

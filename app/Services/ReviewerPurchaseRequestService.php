@@ -480,10 +480,32 @@ class ReviewerPurchaseRequestService
             }
             $fromState = $pr->status;
 
-            $updateData = ['status' => 'PENDING_EXECUTIVE_APPROVAL'];
-            if ($siteEngineerUserId) {
-                $updateData['site_engineer_user_id'] = $siteEngineerUserId;
+            // Resolve site engineer: explicit reviewer selection takes precedence, then PR value, then department default
+            $siteEngineerId = $siteEngineerUserId ?: $pr->site_engineer_user_id;
+            if (! $siteEngineerId && $pr->targetDepartment?->site_engineer_user_id) {
+                $siteEngineerId = $pr->targetDepartment->site_engineer_user_id;
             }
+            if (! $siteEngineerId && $pr->department?->site_engineer_user_id) {
+                $siteEngineerId = $pr->department->site_engineer_user_id;
+            }
+
+            if (! $siteEngineerId) {
+                throw ValidationException::withMessages([
+                    'site_engineer_user_id' => ['يجب اختيار مهندس الموقع أو مسؤول الاستلام قبل اعتماد الطلب وإرساله إلى المدير التنفيذي.'],
+                ]);
+            }
+
+            $engineerUser = User::where('id', $siteEngineerId)->where('is_active', true)->first();
+            if (! $engineerUser) {
+                throw ValidationException::withMessages([
+                    'site_engineer_user_id' => ['مهندس الموقع / مسؤول الاستلام المحدد غير موجود أو حسابه غير نشط.'],
+                ]);
+            }
+
+            $updateData = [
+                'status' => 'PENDING_EXECUTIVE_APPROVAL',
+                'site_engineer_user_id' => $engineerUser->id,
+            ];
 
             $pr->update($updateData);
 
