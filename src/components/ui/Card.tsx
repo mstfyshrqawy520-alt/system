@@ -137,4 +137,89 @@ export const KpiCard: React.FC<KpiCardProps> = ({
   return cardElement;
 };
 
+export interface KpiPillProps {
+  title: string;
+  value: React.ReactNode;
+  icon?: React.ReactNode;
+  accentColor?: 'cyan' | 'emerald' | 'amber' | 'rose' | 'indigo' | 'purple' | 'slate' | 'orange' | 'violet';
+  isActive?: boolean;
+  onClick?: () => void;
+  to?: string;
+  clickableHint?: string;
+  className?: string;
+}
+
+export const KpiPill: React.FC<KpiPillProps> = ({
+  title,
+  value,
+  icon,
+  accentColor = 'cyan',
+  isActive = false,
+  onClick,
+  to,
+  clickableHint,
+  className = '',
+}) => {
+  const isInteractive = Boolean(onClick || to);
+
+  const colorMap: Record<string, string> = {
+    cyan: isActive
+      ? 'bg-cyan-950/90 text-cyan-200 border-cyan-400 ring-2 ring-cyan-500/40 shadow-md shadow-cyan-950/50'
+      : 'bg-slate-900/90 text-slate-300 border-slate-700/80 hover:border-cyan-500/60 hover:text-cyan-300',
+    emerald: isActive
+      ? 'bg-emerald-950/90 text-emerald-200 border-emerald-400 ring-2 ring-emerald-500/40 shadow-md shadow-emerald-950/50'
+      : 'bg-slate-900/90 text-slate-300 border-slate-700/80 hover:border-emerald-500/60 hover:text-emerald-300',
+    amber: isActive
+      ? 'bg-amber-950/90 text-amber-200 border-amber-400 ring-2 ring-amber-500/40 shadow-md shadow-amber-950/50'
+      : 'bg-slate-900/90 text-slate-300 border-slate-700/80 hover:border-amber-500/60 hover:text-amber-300',
+    rose: isActive
+      ? 'bg-rose-950/90 text-rose-200 border-rose-400 ring-2 ring-rose-500/40 shadow-md shadow-rose-950/50'
+      : 'bg-slate-900/90 text-slate-300 border-slate-700/80 hover:border-rose-500/60 hover:text-rose-300',
+    indigo: isActive
+      ? 'bg-indigo-950/90 text-indigo-200 border-indigo-400 ring-2 ring-indigo-500/40 shadow-md shadow-indigo-950/50'
+      : 'bg-slate-900/90 text-slate-300 border-slate-700/80 hover:border-indigo-500/60 hover:text-indigo-300',
+    slate: isActive
+      ? 'bg-slate-800 text-white border-slate-400 ring-2 ring-slate-400/40'
+      : 'bg-slate-900/90 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200',
+  };
+
+  const theme = colorMap[accentColor] || colorMap.cyan;
+
+  const content = (
+    <button
+      type="button"
+      onClick={onClick}
+      title={clickableHint || title}
+      className={`inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border text-xs font-bold transition-all shrink-0 whitespace-nowrap shadow-sm select-none cursor-pointer active:scale-95 ${theme} ${className}`}
+    >
+      {icon && <span className="text-sm shrink-0">{icon}</span>}
+      <span className="text-[11px] font-semibold opacity-90">{title}:</span>
+      <span className="font-mono font-black text-sm">{value}</span>
+    </button>
+  );
+
+  if (to) {
+    return (
+      <Link to={to} className="shrink-0 no-underline">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
+};
+
+export const KpiPillsBar: React.FC<{ children: React.ReactNode; className?: string }> = ({
+  children,
+  className = '',
+}) => (
+  <div
+    className={`flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar scroll-smooth flex-nowrap sm:flex-wrap ${className}`}
+    dir="rtl"
+  >
+    {children}
+  </div>
+);
+
 export default Card;
+

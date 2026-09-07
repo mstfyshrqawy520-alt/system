@@ -10,7 +10,7 @@ import { getPendingQuoteRequestsApi } from '../../api/purchaseQuotes';
 import { PurchaseOrder } from '../../types/purchaseOrder';
 import { PurchaseRequest } from '../../types/purchaseRequest';
 import { Button } from '../../components/ui/Button';
-import { KpiCard } from '../../components/ui/Card';
+import { KpiCard, KpiPill, KpiPillsBar } from '../../components/ui/Card';
 import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import { DashboardBars, DashboardDonut } from '../../components/ui/DashboardCharts';
 import { getDefaultDateFrom, getTodayInputDate } from '../../utils/dateFilters';
@@ -273,41 +273,41 @@ export const GeneralManagerDashboardPage: React.FC = () => {
         </button>
       </div>
 
-      {/* KPI Executive Summary Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard
+      {/* Slim Horizontal KPI Pills */}
+      <KpiPillsBar className="my-2">
+        <KpiPill
           title="أوامر الشراء المصدرة"
-          value={filteredPos.length}
+          value={`${filteredPos.length} أمر`}
           accentColor="cyan"
-          icon={<span className="text-sm">📋</span>}
+          icon={<span className="text-xs">📋</span>}
           to="/general-manager/purchase-orders"
           clickableHint="عرض أوامر الشراء ←"
         />
-        <KpiCard
-          title="إجمالي قيم المشتريات (EGP)"
-          value={<CurrencyDisplay amount={totalValue} amountClassName="text-base font-bold font-mono text-emerald-400" />}
+        <KpiPill
+          title="إجمالي قيم المشتريات"
+          value={<CurrencyDisplay amount={totalValue} amountClassName="font-bold font-mono text-emerald-400 text-xs" />}
           accentColor="emerald"
-          icon={<span className="text-sm">💵</span>}
+          icon={<span className="text-xs">💵</span>}
           to="/general-manager/reports"
           clickableHint="تقارير الإنفاق ←"
         />
-        <KpiCard
-          title="طلبات بانتظار الاعتماد"
+        <KpiPill
+          title="بانتظار الاعتماد التنفيذي"
           value={pendingGmRequestsCount}
           accentColor="amber"
-          icon={<span className="text-sm">⏳</span>}
+          icon={<span className="text-xs">⏳</span>}
           to="/general-manager/purchase-requests"
           clickableHint="مراجعة واعتماد الطلبات ←"
         />
-        <KpiCard
+        <KpiPill
           title="عروض أسعار للترسية"
-          value={<span className="text-sm font-bold text-indigo-300">قرارات العروض</span>}
+          value={<span className="text-xs font-bold text-indigo-300">قرار الترسية</span>}
           accentColor="indigo"
-          icon={<span className="text-sm">⚖️</span>}
+          icon={<span className="text-xs">⚖️</span>}
           to="/general-manager/purchase-quotes"
           clickableHint="اتخاذ قرارات الترسية ←"
         />
-      </div>
+      </KpiPillsBar>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <DashboardBars

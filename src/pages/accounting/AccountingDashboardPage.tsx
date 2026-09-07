@@ -7,7 +7,7 @@ import { getPendingQuoteRequestsApi } from '../../api/purchaseQuotes';
 import { PurchaseOrder } from '../../types/purchaseOrder';
 import { PurchaseRequest } from '../../types/purchaseRequest';
 import { Button } from '../../components/ui/Button';
-import { KpiCard } from '../../components/ui/Card';
+import { KpiCard, KpiPill, KpiPillsBar } from '../../components/ui/Card';
 import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import PurchaseOrderPrintModal from '../../components/procurement/PurchaseOrderPrintModal';
 import { DashboardBars, DashboardDonut } from '../../components/ui/DashboardCharts';
@@ -228,41 +228,41 @@ export const AccountingDashboardPage: React.FC = () => {
         );
       })()}
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard
-          title="إجمالي أوامر الشراء المصدرة"
-          value={pos.length}
+      {/* Slim Horizontal KPI Pills */}
+      <KpiPillsBar className="my-2">
+        <KpiPill
+          title="أوامر الشراء المصدرة"
+          value={`${pos.length} أمر`}
           accentColor="cyan"
-          icon={<span className="text-sm">📋</span>}
+          icon={<span className="text-xs">📋</span>}
           to="/accounting/purchase-orders"
           clickableHint="أرشيف الأوامر ←"
         />
-        <KpiCard
-          title="إجمالي القيم المشتراة (EGP)"
-          value={<CurrencyDisplay amount={totalIssuedEgp} amountClassName="text-base font-bold font-mono text-emerald-400" />}
+        <KpiPill
+          title="إجمالي القيم المشتراة"
+          value={<CurrencyDisplay amount={totalIssuedEgp} amountClassName="font-bold font-mono text-emerald-400 text-xs" />}
           accentColor="emerald"
-          icon={<span className="text-sm">💵</span>}
+          icon={<span className="text-xs">💵</span>}
           to="/accounting/reports"
           clickableHint="التقارير المالية ←"
         />
-        <KpiCard
-          title="توريدات قيد الانتظار والمتابعة"
+        <KpiPill
+          title="توريدات قيد المتابعة"
           value={upcomingDeliveriesCount}
           accentColor="amber"
-          icon={<span className="text-sm">🚚</span>}
+          icon={<span className="text-xs">🚚</span>}
           to="/accounting/purchase-orders"
           clickableHint="متابعة الاستلام ←"
         />
-        <KpiCard
-          title="عدد الموردين المتدفق لهم"
+        <KpiPill
+          title="الموردين النشطين"
           value={Object.keys(supplierSpendMap).length}
           accentColor="purple"
-          icon={<span className="text-sm">🏬</span>}
-          to="/accounting/supplier-accounts"
+          icon={<span className="text-xs">🏢</span>}
+          to="/accounting/supplier-finance"
           clickableHint="حسابات الموردين ←"
         />
-      </div>
+      </KpiPillsBar>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <DashboardBars title="الإنفاق حسب القسم" subtitle="قيمة الأوامر المصدرة للأقسام" segments={departmentSegments} unit="ج.م" />

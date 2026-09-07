@@ -14,7 +14,7 @@ import { getPendingQuoteRequestsApi } from '../../api/purchaseQuotes';
 import { ApiError } from '../../types/api';
 import { PurchaseRequest } from '../../types/purchaseRequest';
 import { parseApiError } from '../../utils/apiError';
-import { KpiCard } from '../../components/ui/Card';
+import { KpiCard, KpiPill, KpiPillsBar } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import ActionRequiredInbox, { ActionInboxItem } from '../../components/dashboard/ActionRequiredInbox';
@@ -246,44 +246,54 @@ export const ReviewerDashboardPage: React.FC = () => {
         items={reviewerActionItems}
       />
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <KpiCard
+      {/* Slim Horizontal KPI Pills */}
+      <KpiPillsBar className="my-2">
+        <KpiPill
+          title="الكل"
+          value={scopedRequests.length}
+          accentColor="slate"
+          icon={<span className="text-xs">📋</span>}
+          isActive={activeFilter === 'ALL'}
+          onClick={() => setActiveFilter('ALL')}
+          clickableHint="عرض جميع الطلبات"
+        />
+        <KpiPill
           title="في انتظار المراجعة"
           value={submittedCount}
           accentColor="indigo"
-          icon={<span className="text-sm">⏳</span>}
+          icon={<span className="text-xs">⏳</span>}
           isActive={activeFilter === 'SUBMITTED'}
           onClick={() => setActiveFilter(activeFilter === 'SUBMITTED' ? 'ALL' : 'SUBMITTED')}
-          clickableHint={activeFilter === 'SUBMITTED' ? '● محدد حالياً' : 'اضغط لتصفية في الانتظار'}
+          clickableHint="اضغط لتصفية في الانتظار"
         />
-        <KpiCard
+        <KpiPill
           title="قيد المراجعة"
           value={underReviewCount}
           accentColor="cyan"
-          icon={<span className="text-sm">🔍</span>}
+          icon={<span className="text-xs">🔍</span>}
           isActive={activeFilter === 'UNDER_REVIEW'}
           onClick={() => setActiveFilter(activeFilter === 'UNDER_REVIEW' ? 'ALL' : 'UNDER_REVIEW')}
-          clickableHint={activeFilter === 'UNDER_REVIEW' ? '● محدد حالياً' : 'اضغط لتصفية قيد المراجعة'}
+          clickableHint="اضغط لتصفية قيد المراجعة"
         />
-        <KpiCard
+        <KpiPill
           title="معتمدة"
           value={approvedCount}
           accentColor="emerald"
-          icon={<span className="text-sm">✅</span>}
+          icon={<span className="text-xs">✅</span>}
           isActive={activeFilter === 'APPROVED'}
           onClick={() => setActiveFilter(activeFilter === 'APPROVED' ? 'ALL' : 'APPROVED')}
-          clickableHint={activeFilter === 'APPROVED' ? '● محدد حالياً' : 'اضغط لتصفية المعتمدة'}
+          clickableHint="اضغط لتصفية المعتمدة"
         />
-        <KpiCard
+        <KpiPill
           title="مرفوضة"
           value={rejectedCount}
           accentColor="rose"
-          icon={<span className="text-sm">❌</span>}
+          icon={<span className="text-xs">❌</span>}
           isActive={activeFilter === 'REJECTED'}
           onClick={() => setActiveFilter(activeFilter === 'REJECTED' ? 'ALL' : 'REJECTED')}
-          clickableHint={activeFilter === 'REJECTED' ? '● محدد حالياً' : 'اضغط لتصفية المرفوضة'}
+          clickableHint="اضغط لتصفية المرفوضة"
         />
-      </div>
+      </KpiPillsBar>
 
       <section className="min-w-0 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">

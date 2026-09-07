@@ -14,7 +14,7 @@ import {
 import { ApiError } from '../../types/api';
 import { PurchaseRequest } from '../../types/purchaseRequest';
 import { parseApiError } from '../../utils/apiError';
-import { KpiCard } from '../../components/ui/Card';
+import { KpiCard, KpiPill, KpiPillsBar } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import ActionRequiredInbox, { ActionInboxItem } from '../../components/dashboard/ActionRequiredInbox';
 
@@ -208,54 +208,54 @@ export const EmployeeDashboardPage: React.FC = () => {
         );
       })()}
 
-      {/* Summary KPI Cards with Click Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        <KpiCard
-          title="إجمالي"
+      {/* Summary KPI Pills (Slim Horizontal Strip) */}
+      <KpiPillsBar className="my-2">
+        <KpiPill
+          title="إجمالي الطلبات"
           value={totalCount}
           accentColor="cyan"
-          icon={<span className="text-sm">📋</span>}
+          icon={<span className="text-xs">📋</span>}
           isActive={activeFilter === 'ALL'}
           onClick={() => setActiveFilter('ALL')}
-          clickableHint={activeFilter === 'ALL' ? '● محدد حالياً' : 'اضغط لعرض الكل'}
+          clickableHint="عرض كل الطلبات"
         />
-        <KpiCard
+        <KpiPill
           title="مسودات"
           value={draftCount}
           accentColor="slate"
-          icon={<span className="text-sm">✏️</span>}
+          icon={<span className="text-xs">✏️</span>}
           isActive={activeFilter === 'DRAFT'}
           onClick={() => setActiveFilter('DRAFT')}
-          clickableHint={activeFilter === 'DRAFT' ? '● محدد حالياً' : 'اضغط لتصفية المسودات'}
+          clickableHint="تصفية المسودات"
         />
-        <KpiCard
+        <KpiPill
           title="قيد المراجعة"
           value={pendingCount}
           accentColor="amber"
-          icon={<span className="text-sm">⏳</span>}
+          icon={<span className="text-xs">⏳</span>}
           isActive={activeFilter === 'PENDING'}
           onClick={() => setActiveFilter('PENDING')}
-          clickableHint={activeFilter === 'PENDING' ? '● محدد حالياً' : 'اضغط لتصفية قيد المراجعة'}
+          clickableHint="تصفية قيد المراجعة"
         />
-        <KpiCard
+        <KpiPill
           title="معتمدة"
           value={approvedCount}
           accentColor="emerald"
-          icon={<span className="text-sm">✅</span>}
+          icon={<span className="text-xs">✅</span>}
           isActive={activeFilter === 'APPROVED'}
           onClick={() => setActiveFilter('APPROVED')}
-          clickableHint={activeFilter === 'APPROVED' ? '● محدد حالياً' : 'اضغط لتصفية المعتمدة'}
+          clickableHint="تصفية المعتمدة"
         />
-        <KpiCard
+        <KpiPill
           title="مرفوضة"
           value={rejectedCount}
           accentColor="rose"
-          icon={<span className="text-sm">❌</span>}
+          icon={<span className="text-xs">❌</span>}
           isActive={activeFilter === 'REJECTED'}
           onClick={() => setActiveFilter('REJECTED')}
-          clickableHint={activeFilter === 'REJECTED' ? '● محدد حالياً' : 'اضغط لتصفية المرفوضة'}
+          clickableHint="تصفية المرفوضة"
         />
-      </div>
+      </KpiPillsBar>
 
       {/* Recent Requests Section with Dynamic Filter Header */}
       <div className="space-y-4">
