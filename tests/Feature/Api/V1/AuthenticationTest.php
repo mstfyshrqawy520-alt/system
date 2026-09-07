@@ -175,6 +175,14 @@ class AuthenticationTest extends TestCase
         $responseArabic->assertStatus(200)
             ->assertJsonPath('user.id', $warehouseUser->id);
 
+        // Test salam@gmail.com with 123456
+        $responseFullEmail = $this->postJson('/api/v1/auth/login', [
+            'email' => 'salam@gmail.com',
+            'password' => '123456',
+        ]);
+        $responseFullEmail->assertStatus(200)
+            ->assertJsonPath('user.id', $warehouseUser->id);
+
         // Test with wrong password for shorthand "1"
         $responseWrong = $this->postJson('/api/v1/auth/login', [
             'email' => '1',

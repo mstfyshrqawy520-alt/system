@@ -85,6 +85,21 @@ export const LoginPage: React.FC = () => {
     setError(null);
   };
 
+  const handleQuickLogin = async (quickEmail: string, quickPass: string) => {
+    setEmail(quickEmail);
+    setPassword(quickPass);
+    setFieldErrors({});
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await login({ email: quickEmail, password: quickPass });
+    } catch (err) {
+      setError(parseApiError(err));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <main
       className="relative min-h-[100dvh] flex items-center justify-center overflow-y-auto bg-[#080b14] px-4 py-8 text-right text-slate-100 sm:px-6 lg:px-8"
@@ -193,6 +208,88 @@ export const LoginPage: React.FC = () => {
                 >
                   {isSubmitting ? <LoadingSpinner size="sm" message="جاري تسجيل الدخول..." /> : 'تسجيل الدخول'}
                 </button>
+
+                {/* Quick Role Login Buttons */}
+                <div className="pt-4 border-t border-slate-800">
+                  <div className="flex items-center justify-between mb-2.5">
+                    <span className="text-xs font-bold text-amber-300">
+                      ⚡ الدخول السريع بنقرة واحدة:
+                    </span>
+                    <span className="text-[10px] text-slate-400">اختر دورك للدخول المباشر</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => handleQuickLogin('admin@gmail.com', '123456')}
+                      className="flex flex-col items-start p-2 text-right transition-all bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-amber-500/50 rounded-xl group"
+                    >
+                      <span className="font-bold text-amber-300 group-hover:text-amber-200">👑 مدير النظام</span>
+                      <span className="text-[10px] text-slate-400 font-mono">admin / 123456</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => handleQuickLogin('salam@gmail.com', '1')}
+                      className="flex flex-col items-start p-2 text-right transition-all bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl group"
+                    >
+                      <span className="font-bold text-emerald-400 group-hover:text-emerald-300">📦 أمين المخزن</span>
+                      <span className="text-[10px] text-slate-400 font-mono">1 / 1</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => handleQuickLogin('ahmed@gmail.com', '123456')}
+                      className="flex flex-col items-start p-2 text-right transition-all bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-cyan-500/50 rounded-xl group"
+                    >
+                      <span className="font-bold text-cyan-300 group-hover:text-cyan-200">💼 مدير المشتريات</span>
+                      <span className="text-[10px] text-slate-400 font-mono">ahmed / 123456</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => handleQuickLogin('mohamed@gmail.com', '123456')}
+                      className="flex flex-col items-start p-2 text-right transition-all bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-purple-500/50 rounded-xl group"
+                    >
+                      <span className="font-bold text-purple-300 group-hover:text-purple-200">🏢 المدير العام</span>
+                      <span className="text-[10px] text-slate-400 font-mono">mohamed / 123456</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => handleQuickLogin('hasan@gmail.com', '123456')}
+                      className="flex flex-col items-start p-2 text-right transition-all bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-blue-500/50 rounded-xl group"
+                    >
+                      <span className="font-bold text-blue-300 group-hover:text-blue-200">💰 المحاسب</span>
+                      <span className="text-[10px] text-slate-400 font-mono">hasan / 123456</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => handleQuickLogin('kamel@gmail.com', '123456')}
+                      className="flex flex-col items-start p-2 text-right transition-all bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-orange-500/50 rounded-xl group"
+                    >
+                      <span className="font-bold text-orange-300 group-hover:text-orange-200">👷 مهندس الموقع</span>
+                      <span className="text-[10px] text-slate-400 font-mono">kamel / 123456</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => handleQuickLogin('ayman@gmail.com', '123456')}
+                      className="flex flex-col items-start p-2 text-right transition-all bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-teal-500/50 rounded-xl group col-span-2 sm:col-span-3"
+                    >
+                      <span className="font-bold text-teal-300 group-hover:text-teal-200">🔍 المراجع الفني (قسم التنفيذ)</span>
+                      <span className="text-[10px] text-slate-400 font-mono">ayman / 123456</span>
+                    </button>
+                  </div>
+                </div>
               </form>
 
               <p className="mt-6 text-center text-[11px] leading-5 text-slate-500">نظام مشتريات شركة اشبيلية — محمي ومشفر</p>
