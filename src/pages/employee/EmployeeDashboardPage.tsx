@@ -71,13 +71,22 @@ export const EmployeeDashboardPage: React.FC = () => {
   const rejectedCount = requests.filter((r) => r.status === 'REJECTED').length;
 
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   const filteredRequests = requests.filter((r) => {
-    if (activeFilter === 'ALL') return true;
-    if (activeFilter === 'DRAFT') return r.status === 'DRAFT';
-    if (activeFilter === 'PENDING') return r.status === 'SUBMITTED' || r.status === 'UNDER_REVIEW';
-    if (activeFilter === 'APPROVED') return EMPLOYEE_APPROVED_STATUSES.has(r.status);
-    if (activeFilter === 'REJECTED') return r.status === 'REJECTED';
+    if (activeFilter === 'DRAFT' && r.status !== 'DRAFT') return false;
+    if (activeFilter === 'PENDING' && (r.status !== 'SUBMITTED' && r.status !== 'UNDER_REVIEW')) return false;
+    if (activeFilter === 'APPROVED' && !EMPLOYEE_APPROVED_STATUSES.has(r.status)) return false;
+    if (activeFilter === 'REJECTED' && r.status !== 'REJECTED') return false;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const numMatch = r.request_number?.toLowerCase().includes(q);
+      const justMatch = r.justification?.toLowerCase().includes(q);
+      const parcelMatch = r.items?.some((it) => it.item_reference?.toLowerCase().includes(q));
+      const itemMatch = r.items?.some((it) => (it.item_description || it.item?.name || '').toLowerCase().includes(q));
+      return numMatch || justMatch || parcelMatch || itemMatch;
+    }
     return true;
   });
 
@@ -250,11 +259,14 @@ export const EmployeeDashboardPage: React.FC = () => {
 
       {/* Recent Requests Section with Dynamic Filter Header */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+          <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-sm font-bold text-slate-200">
-              📋 {activeFilter === 'ALL' ? 'طلبات الشراء الأخيرة' : `طلبات الشراء (${getFilterLabel()})`}
+              📋 {activeFilter === 'ALL' ? 'طلبات الشراء' : `طلبات (${getFilterLabel()})`}
             </h2>
+            <span className="text-[11px] font-bold bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 px-2 py-0.5 rounded-full">
+              {filteredRequests.length} طلب
+            </span>
             {activeFilter !== 'ALL' && (
               <button
                 type="button"
@@ -265,13 +277,16 @@ export const EmployeeDashboardPage: React.FC = () => {
               </button>
             )}
           </div>
-          <Link
-            to={activeFilter === 'ALL' ? '/employee/requests' : `/employee/requests?status=${activeFilter}`}
-            className="text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1"
-          >
-            <span>عرض في صفحة مستقلة ({filteredRequests.length})</span>
-            <span>&rarr;</span>
-          </Link>
+
+          <div className="w-full sm:w-72">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="🔍 بحث برقم الطلب، الصنف، القطعة..."
+              className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+            />
+          </div>
         </div>
 
         {filteredRequests.length === 0 ? (

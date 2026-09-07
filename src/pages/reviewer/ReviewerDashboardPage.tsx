@@ -74,13 +74,23 @@ export const ReviewerDashboardPage: React.FC = () => {
   const approvedCount = scopedRequests.filter((r) => REVIEWER_APPROVED_STATUSES.has(r.status)).length;
   const rejectedCount = scopedRequests.filter((r) => r.status === 'REJECTED').length;
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED'>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   const filteredRequests = scopedRequests.filter((r) => {
-    if (activeFilter === 'ALL') return true;
-    if (activeFilter === 'SUBMITTED') return r.status === 'SUBMITTED';
-    if (activeFilter === 'UNDER_REVIEW') return r.status === 'UNDER_REVIEW';
-    if (activeFilter === 'APPROVED') return REVIEWER_APPROVED_STATUSES.has(r.status);
-    if (activeFilter === 'REJECTED') return r.status === 'REJECTED';
+    if (activeFilter === 'SUBMITTED' && r.status !== 'SUBMITTED') return false;
+    if (activeFilter === 'UNDER_REVIEW' && r.status !== 'UNDER_REVIEW') return false;
+    if (activeFilter === 'APPROVED' && !REVIEWER_APPROVED_STATUSES.has(r.status)) return false;
+    if (activeFilter === 'REJECTED' && r.status !== 'REJECTED') return false;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const numMatch = r.request_number?.toLowerCase().includes(q);
+      const reqMatch = r.requester?.name?.toLowerCase().includes(q);
+      const deptMatch = r.department?.name?.toLowerCase().includes(q);
+      const parcelMatch = r.items?.some((it) => it.item_reference?.toLowerCase().includes(q));
+      const itemMatch = r.items?.some((it) => (it.item_description || it.item?.name || '').toLowerCase().includes(q));
+      return numMatch || reqMatch || deptMatch || parcelMatch || itemMatch;
+    }
     return true;
   });
 
@@ -94,7 +104,7 @@ export const ReviewerDashboardPage: React.FC = () => {
     }
   };
 
-  const visibleRequests = filteredRequests.slice(0, 10);
+  const visibleRequests = filteredRequests;
 
   if (isLoading) {
     return <LoadingSpinner fullScreen message="تحميل لوحة مراجعة الطلبات..." />;
@@ -215,16 +225,14 @@ export const ReviewerDashboardPage: React.FC = () => {
           </p>
         </div>
 
-        {hasPermission('purchase_request.view_assigned') && (
-          <Link
-            to={activeFilter === 'ALL' ? '/reviewer/requests' : `/reviewer/requests?status=${activeFilter}`}
-            className="w-full sm:w-auto"
-          >
-            <Button variant="primary" size="md" className="w-full whitespace-nowrap sm:w-auto">
-              عرض قائمة مراجعة الطلبات ←
+        {/* Action Header bar */}
+        <div className="flex items-center gap-2">
+          <Link to="/requests/create">
+            <Button variant="primary" size="sm" className="whitespace-nowrap flex items-center gap-1">
+              <span>✍️</span> إنشاء طلب جديد
             </Button>
           </Link>
-        )}
+        </div>
       </div>
 
       <ErrorMessage error={error} onDismiss={() => setError(null)} />
@@ -278,11 +286,14 @@ export const ReviewerDashboardPage: React.FC = () => {
       </div>
 
       <section className="min-w-0 space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+          <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-sm font-bold text-slate-200">
-              📋 {activeFilter === 'ALL' ? 'طلبات تنتظر المراجعة والاعتماد' : `طلبات (${getFilterLabel()})`}
+              📋 {activeFilter === 'ALL' ? 'طلبات الشراء' : `طلبات (${getFilterLabel()})`}
             </h2>
+            <span className="text-[11px] font-bold bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 px-2 py-0.5 rounded-full">
+              {filteredRequests.length} طلب
+            </span>
             {activeFilter !== 'ALL' && (
               <button
                 type="button"
@@ -293,12 +304,16 @@ export const ReviewerDashboardPage: React.FC = () => {
               </button>
             )}
           </div>
-          <Link
-            to={activeFilter === 'ALL' ? '/reviewer/requests' : `/reviewer/requests?status=${activeFilter}`}
-            className="text-xs text-cyan-400 hover:underline"
-          >
-            عرض القائمة الكاملة ({filteredRequests.length}) &rarr;
-          </Link>
+
+          <div className="w-full sm:w-72">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="🔍 بحث برقم الطلب، الصنف، القطعة..."
+              className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+            />
+          </div>
         </div>
 
         {requests.length === 0 ? (

@@ -163,6 +163,14 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
 
   const [directApprovingId, setDirectApprovingId] = useState<string | number | null>(null);
   const [directSubmittingId, setDirectSubmittingId] = useState<string | number | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => {
+      setToastMessage((cur) => (cur?.text === text ? null : cur));
+    }, 4000);
+  };
 
   const handleApproveClick = (item: ActionInboxItem) => {
     const needsModal = item.requireApproveModal ?? (isReviewer && item.type === 'PR');
@@ -180,10 +188,11 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
     setDirectApprovingId(item.id);
     try {
       await item.onDirectApprove(item);
+      showToast(`تم اعتماد ${item.code} بنجاح ✅`, 'success');
       onItemActionComplete?.();
     } catch (err: any) {
       console.error(err);
-      alert(err?.response?.data?.message || err?.message || 'حدث خطأ أثناء اعتماد الطلب');
+      showToast(err?.response?.data?.message || err?.message || 'حدث خطأ أثناء اعتماد الطلب', 'error');
     } finally {
       setDirectApprovingId(null);
     }
@@ -215,11 +224,12 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
         approveModal.comment,
         isReviewer && selectedEngineerId ? Number(selectedEngineerId) : undefined
       );
+      showToast(`تم اعتماد ${approveModal.item.code} وتحديد مسؤول الاستلام بنجاح ✅`, 'success');
       setApproveModal({ isOpen: false, item: null, comment: '', isSubmitting: false });
       onItemActionComplete?.();
     } catch (err: any) {
       console.error(err);
-      alert(err?.response?.data?.message || err?.message || 'حدث خطأ أثناء اعتماد الطلب');
+      showToast(err?.response?.data?.message || err?.message || 'حدث خطأ أثناء اعتماد الطلب', 'error');
       setApproveModal((prev) => ({ ...prev, isSubmitting: false }));
     }
   };
@@ -233,6 +243,7 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
     setRejectModal((prev) => ({ ...prev, isSubmitting: true, error: undefined }));
     try {
       await rejectModal.item.onDirectReject(rejectModal.item, rejectModal.reason.trim());
+      showToast(`تم تسجيل الرفض/الإعادة للمعاملة ${rejectModal.item.code}`, 'success');
       setRejectModal({ isOpen: false, item: null, reason: '', isSubmitting: false });
       onItemActionComplete?.();
     } catch (err: any) {
@@ -250,10 +261,11 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
     setDirectSubmittingId(item.id);
     try {
       await item.onDirectSubmit(item);
+      showToast(`تم إرسال الطلب ${item.code} للمراجعة بنجاح 🚀`, 'success');
       onItemActionComplete?.();
     } catch (err: any) {
       console.error(err);
-      alert(err?.response?.data?.message || err?.message || 'حدث خطأ أثناء إرسال الطلب');
+      showToast(err?.response?.data?.message || err?.message || 'حدث خطأ أثناء إرسال الطلب', 'error');
     } finally {
       setDirectSubmittingId(null);
     }
@@ -756,13 +768,26 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
         </div>
       </Modal>
 
-      {/* Quick Peek Drawer */}
-      <QuickPeekDrawer
-        isOpen={peekState.isOpen}
-        onClose={() => setPeekState((prev) => ({ ...prev, isOpen: false }))}
-        type={peekState.type}
-        id={peekState.id}
-      />
+      {/* Floating Action Toast Notification */}
+      {toastMessage && (
+        <div
+          role="status"
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl text-xs font-bold transition-all duration-300 backdrop-blur-md animate-fade-in ${
+            toastMessage.type === 'success'
+              ? 'bg-emerald-950/95 border border-emerald-500/80 text-emerald-100 shadow-emerald-950/50'
+              : 'bg-rose-950/95 border border-rose-500/80 text-rose-100 shadow-rose-950/50'
+          }`}
+        >
+          <span>{toastMessage.text}</span>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="mr-2 text-slate-400 hover:text-white transition-colors cursor-pointer text-sm"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </>
   );
 };

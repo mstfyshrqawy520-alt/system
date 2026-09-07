@@ -28,7 +28,6 @@ import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { useAuth } from '../../context/AuthContext';
 import { emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
 import { SearchableSelect } from '../../components/ui/FormField';
-import { PurchaseRequestItemsSummaryTable } from '../../components/purchase-requests/PurchaseRequestItemsSummaryTable';
 
 const UNIT_OPTIONS = getUnitOptions(DEFAULT_PR_UNIT_CODES);
 
@@ -1068,26 +1067,19 @@ const CreatePurchaseRequestPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Real-time Items Summary Table (similar to quotes table) */}
-      <PurchaseRequestItemsSummaryTable
-        items={data.items}
-        requestType={data.request_type}
-        parcelReference={data.parcel_reference}
-        region={data.region}
-        onRemoveItem={data.items.length > 1 ? removeItem : undefined}
-        onScrollToItem={(index) => {
-          const el = document.getElementById(`pr-item-card-mobile-${index}`) || document.getElementById(`pr-item-card-${index}`);
-          if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            el.classList.add('ring-2', 'ring-cyan-400');
-            setTimeout(() => el.classList.remove('ring-2', 'ring-cyan-400'), 1500);
-          }
-        }}
-      />
-
       {/* Bottom Submit & Action Bar */}
-      <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 shadow-2xl backdrop-blur-sm">
-        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+      <div className="sticky bottom-3 z-30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-slate-700/80 bg-slate-950/95 p-4 shadow-2xl backdrop-blur-md">
+        <div className="flex flex-wrap items-center gap-4 text-xs">
+          <div className="flex items-center gap-3 bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-xl">
+            <span className="text-slate-400 font-bold">إجمالي الأصناف:</span>
+            <span className="font-mono font-black text-cyan-300 text-sm">{data.items.length}</span>
+            <span className="text-slate-600">|</span>
+            <span className="text-slate-400 font-bold">إجمالي الكميات:</span>
+            <span className="font-mono font-black text-amber-300 text-sm">
+              {data.items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0)}
+            </span>
+          </div>
+
           {draftMessage && (
             <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/60 px-2 py-0.5 rounded-md">
               ✓ {draftMessage}
@@ -1123,7 +1115,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
             onClick={() => void handleSubmit()}
             disabled={isSubmitting || isSavingDraft}
             isLoading={isSubmitting}
-            className="px-6 shadow-lg shadow-cyan-600/30"
+            className="px-6 shadow-lg shadow-cyan-600/30 text-xs sm:text-sm font-bold"
           >
             🚀 {isGeneralManager ? 'إرسال مباشر للمشتريات' : 'إرسال طلب الشراء فوراً'}
           </Button>
