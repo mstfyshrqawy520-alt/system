@@ -73,6 +73,11 @@ class RestoreDemoAccountsSeeder extends Seeder
                 $user->restore();
             }
 
+            $user->update([
+                'is_active' => true,
+                'password' => $role === 'warehouse_keeper' ? '1' : '123456',
+            ]);
+
             if (isset($roles[$role]) && ! $user->roles()->where('slug', $role)->exists()) {
                 $user->roles()->syncWithoutDetaching([$roles[$role]->id]);
             }

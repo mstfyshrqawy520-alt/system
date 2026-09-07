@@ -92,6 +92,58 @@ class AuthenticationTest extends TestCase
             ->assertJson(['message' => 'بيانات الدخول غير صحيحة.']);
     }
 
+    public function test_login_succeeds_with_common_email_domain_typo(): void
+    {
+        $adminRole = Role::firstOrCreate(['slug' => 'admin'], ['name' => 'Admin']);
+        $adminUser = User::create([
+            'department_id' => $this->department->id,
+            'name' => 'Admin',
+            'email' => 'admin@gmail.com',
+            'password' => Hash::make('123456'),
+            'is_active' => true,
+        ]);
+        $adminUser->roles()->attach($adminRole->id);
+
+        $response = $this->postJson('/api/v1/auth/login', [
+            'email' => 'admin@gamil.com',
+            'password' => '123456',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'message' => 'تم تسجيل الدخول بنجاح.',
+                'user' => [
+                    'email' => 'admin@gmail.com',
+                ],
+            ]);
+    }
+
+    public function test_login_succeeds_with_shorthand_username(): void
+    {
+        $adminRole = Role::firstOrCreate(['slug' => 'admin'], ['name' => 'Admin']);
+        User::firstOrCreate([
+            'email' => 'admin@gmail.com',
+        ], [
+            'department_id' => $this->department->id,
+            'name' => 'Admin',
+            'password' => Hash::make('123456'),
+            'is_active' => true,
+        ]);
+
+        $response = $this->postJson('/api/v1/auth/login', [
+            'email' => 'admin',
+            'password' => '123456',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'message' => 'تم تسجيل الدخول بنجاح.',
+                'user' => [
+                    'email' => 'admin@gmail.com',
+                ],
+            ]);
+    }
+
     public function test_warehouse_keeper_can_login_with_shorthand_one(): void
     {
         $warehouseRole = Role::firstOrCreate(['slug' => 'warehouse_keeper'], ['name' => 'Warehouse Keeper']);
