@@ -171,6 +171,8 @@ class PurchaseReceiptService
                 );
             }
 
+            app(NotificationService::class)->markEntityNotificationsAsRead($purchaseOrder, $warehouseKeeper);
+
             return $receipt->fresh(['purchaseOrder.supplier', 'purchaseOrder.items.item', 'purchaseRequest', 'warehouseKeeper', 'siteEngineer', 'items.purchaseOrderItem']);
         });
     }
@@ -260,6 +262,16 @@ class PurchaseReceiptService
                 $receipt->purchaseOrder,
                 $receipt
             );
+
+            if ($receipt->warehouse_keeper_user_id) {
+                $notificationService->queueNotification(
+                    $receipt->warehouse_keeper_user_id,
+                    'purchase_receipt_approved_site_engineer',
+                    'تم اعتماد إذن الاستلام من مهندس الموقع',
+                    "اعتمد مهندس الموقع إذن الاستلام {$receipt->receipt_number} لأمر الشراء {$receipt->purchaseOrder->po_number}.",
+                    $receipt
+                );
+            }
 
             return $receipt->fresh(['purchaseOrder.supplier', 'purchaseOrder.items.item', 'purchaseRequest', 'warehouseKeeper', 'siteEngineer', 'items.purchaseOrderItem']);
         });

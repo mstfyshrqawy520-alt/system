@@ -337,6 +337,18 @@ export const resolveNotificationAction = (
   // 5. Purchase Orders (أوامر الشراء)
   if (info.docType === 'PO' || info.poId || type.includes('purchase_order') || type.includes('po_')) {
     const isReturned = type.includes('returned') || type.includes('rejected');
+    if (roleSlugs.includes('warehouse_keeper') && !roleSlugs.includes('site_engineer')) {
+      return {
+        url: '/warehouse',
+        actionLabel: 'فحص واستلام المواد بالمستودع',
+        icon: '📦',
+        badgeLabel: 'استلام مستودع',
+        docType: 'PO',
+        docNumber: info.docNumber,
+        isActionable: true,
+        priority: 'HIGH',
+      };
+    }
     if (roleSlugs.includes('general_manager')) {
       return {
         url: info.poId ? `/general-manager/purchase-orders/${info.poId}` : '/general-manager/purchase-orders',

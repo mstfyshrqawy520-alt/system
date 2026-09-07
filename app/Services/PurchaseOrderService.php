@@ -556,6 +556,24 @@ class PurchaseOrderService
                 );
             }
 
+            // Notify Warehouse Keepers when a purchase order is issued and delivered to warehouse
+            if (! $lockedPo->isBuildingsDirectDelivery() && ! $lockedPo->purchaseRequest?->isOfficeRequest()) {
+                $warehouseKeepers = User::whereHas('roles', fn ($q) => $q->where('slug', 'warehouse_keeper'))
+                    ->where('is_active', true)
+                    ->get();
+                if ($warehouseKeepers->isEmpty()) {
+                    $warehouseKeepers = User::where('email', 'salam@gmail.com')->where('is_active', true)->get();
+                }
+
+                $notificationService->queueUsers(
+                    $warehouseKeepers,
+                    'purchase_order_ready_for_warehouse',
+                    'أمر شراء بانتظار استلام المواد بالمخزن',
+                    "تم إصدار أمر الشراء {$lockedPo->po_number} بانتظار استلام الأصناف وفحصها وإصدار إذن الاستلام.",
+                    $lockedPo
+                );
+            }
+
             // If this purchase order is for Buildings direct delivery, route directly to site engineer
             if ($lockedPo->isBuildingsDirectDelivery()) {
                 app(PurchaseReceiptService::class)->createDirectSiteReceiptForBuildings($lockedPo);

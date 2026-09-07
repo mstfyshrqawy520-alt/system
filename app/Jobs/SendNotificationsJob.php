@@ -114,6 +114,9 @@ class SendNotificationsJob implements ShouldQueue
         }
 
         if ($this->notifiable instanceof \App\Models\PurchaseOrder) {
+            if ($user->hasRole('warehouse_keeper') && ! $user->hasRole('site_engineer')) {
+                return "/warehouse";
+            }
             if ($user->hasRole('procurement_manager')) {
                 return "/procurement/purchase-orders/{$id}";
             }
