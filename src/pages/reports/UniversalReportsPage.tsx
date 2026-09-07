@@ -7,6 +7,7 @@ import { KpiCard } from '../../components/ui/Card';
 import { parseApiError } from '../../utils/apiError';
 import { DashboardBars, DashboardDonut, DashboardChartSegment } from '../../components/ui/DashboardCharts';
 import { getUnitLabel } from '../../utils/units';
+import { PurchasesReportView } from './PurchasesReportView';
 
 const PURCHASE_ORDER_STATUS_LABELS: Record<string, string> = {
   PO_DRAFT: 'مسودة أمر شراء',
@@ -69,6 +70,9 @@ const ProgressBar: React.FC<{ value: number; max: number; color?: string }> = ({
 };
 
 export const UniversalReportsPage: React.FC = () => {
+  // Main Tab: 'purchases_verified' (12 Columns Verified Purchases Report) vs 'orders_overview' (General Orders Analytics)
+  const [mainTab, setMainTab] = usePersistedState<'purchases_verified' | 'orders_overview'>('reports.mainTab.v3', 'purchases_verified');
+
   // Filter types: 'daily' | 'monthly' | 'period' | 'custom'
   const [reportType, setReportType] = usePersistedState<'daily' | 'monthly' | 'period' | 'custom'>('reports.filterType.v1', 'daily');
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -377,11 +381,49 @@ export const UniversalReportsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in" dir="rtl">
+      {/* Top Tab Bar between Purchases Report (12 cols) and Orders Analytics */}
+      <div className="print:hidden flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-950 p-2.5 shadow-lg">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setMainTab('purchases_verified')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all ${
+              mainTab === 'purchases_verified'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <span>📑</span>
+            <span>تقرير المشتريات المحاسبي (12 عموداً مسقطاً)</span>
+          </button>
 
-      {/* ========================================================================= */}
-      {/* ── 1. OFFICIAL EXCEL PRINT DOCUMENT (Visible ONLY during window.print()) ── */}
-      {/* ========================================================================= */}
-      <div className="hidden print:block font-sans text-black bg-white p-0 m-0 print:m-0 print:p-0">
+          <button
+            type="button"
+            onClick={() => setMainTab('orders_overview')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all ${
+              mainTab === 'orders_overview'
+                ? 'bg-slate-800 text-cyan-300 border border-slate-700 shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <span>📊</span>
+            <span>سجل أوامر الشراء ومؤشرات التحليلات</span>
+          </button>
+        </div>
+
+        <div className="hidden sm:flex items-center gap-2 px-3 text-[11px] font-bold text-slate-500">
+          <span>🔒 وصول مصرح: الحسابات • الإدارة التنفيذية • المشتريات</span>
+        </div>
+      </div>
+
+      {mainTab === 'purchases_verified' ? (
+        <PurchasesReportView />
+      ) : (
+        <>
+          {/* ========================================================================= */}
+          {/* ── 1. OFFICIAL EXCEL PRINT DOCUMENT (Visible ONLY during window.print()) ── */}
+          {/* ========================================================================= */}
+          <div className="hidden print:block font-sans text-black bg-white p-0 m-0 print:m-0 print:p-0">
         
         {/* Official Header */}
         <div className="border-b-2 border-black pb-3 mb-3 flex items-start justify-between">
@@ -1319,6 +1361,8 @@ export const UniversalReportsPage: React.FC = () => {
           </>
         )}
       </div>
+        </>
+      )}
 
     </div>
   );

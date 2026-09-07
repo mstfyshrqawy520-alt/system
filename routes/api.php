@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\SystemEventController;
 use App\Http\Controllers\Api\V1\ProcurementPurchaseOrderController;
 use App\Http\Controllers\Api\V1\PurchaseRequestController;
+use App\Http\Controllers\Api\V1\PurchasesReportController;
 use App\Http\Controllers\Api\V1\ReviewerPurchaseRequestController;
 use Illuminate\Support\Facades\Route;
 
@@ -50,6 +51,8 @@ Route::prefix('auth')->group(function () {
 
 // Catalog Items Route
 Route::middleware('auth:sanctum')->get('/catalog-items', [\App\Http\Controllers\Api\V1\CatalogItemController::class, 'index']);
+Route::middleware('auth:sanctum')->get('/reports/purchases', [PurchasesReportController::class, 'index'])
+    ->middleware('permission:purchase_order.view|purchase_order.view_gm|purchase_order.view_accounting');
 
 // Employee Purchase Request Routes
 Route::middleware('auth:sanctum')->prefix('purchase-requests')->group(function () {
@@ -224,6 +227,9 @@ Route::middleware('auth:sanctum')->prefix('procurement')->group(function () {
         ->middleware('permission:purchase_order.edit');
 
     Route::get('/analytics', [ProcurementAnalyticsController::class, 'index'])
+        ->middleware('permission:purchase_order.view|purchase_order.view_gm|purchase_order.view_accounting');
+
+    Route::get('/reports/purchases', [PurchasesReportController::class, 'index'])
         ->middleware('permission:purchase_order.view|purchase_order.view_gm|purchase_order.view_accounting');
 });
 

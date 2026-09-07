@@ -1,0 +1,89 @@
+import { apiClient } from './client';
+
+export interface PurchasesReportRow {
+  id: string;
+  invoice_id: number;
+  receipt_id: number;
+  purchase_order_id: number;
+  delivery_date: string;
+  delivery_date_formatted: string;
+  po_number: string;
+  po_number_short: string;
+  item_name: string;
+  uom: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  supplier_name: string;
+  supplier_id: number;
+  parcel_reference: string;
+  region: string;
+  department_id?: number | null;
+  department_name: string;
+  works: string;
+  invoice_number?: string;
+  matching_status?: string;
+  accountant_name?: string;
+  created_at?: string;
+}
+
+export interface PurchasesReportMetrics {
+  total_amount: number;
+  total_quantity: number;
+  total_orders_count: number;
+  total_items_count: number;
+  suppliers_count: number;
+  parcels_count: number;
+}
+
+export interface PurchasesReportDepartment {
+  id: number;
+  name: string;
+  code: string;
+}
+
+export interface PurchasesReportResponse {
+  filters: {
+    filter_type: 'daily' | 'monthly' | 'custom';
+    date?: string;
+    month?: string;
+    from_date?: string;
+    to_date?: string;
+    department_id?: number | null;
+    date_label?: string;
+  };
+  metrics: PurchasesReportMetrics;
+  departments: PurchasesReportDepartment[];
+  rows: PurchasesReportRow[];
+}
+
+export interface PurchasesReportParams {
+  filter_type?: 'daily' | 'monthly' | 'custom';
+  date?: string;
+  month?: string;
+  from_date?: string;
+  to_date?: string;
+  department_id?: number | string;
+  search?: string;
+}
+
+export const getPurchasesReportApi = async (
+  params: PurchasesReportParams = {}
+): Promise<PurchasesReportResponse> => {
+  const queryParams = new URLSearchParams();
+
+  if (params.filter_type) queryParams.set('filter_type', params.filter_type);
+  if (params.date) queryParams.set('date', params.date);
+  if (params.month) queryParams.set('month', params.month);
+  if (params.from_date) queryParams.set('from_date', params.from_date);
+  if (params.to_date) queryParams.set('to_date', params.to_date);
+  if (params.department_id !== undefined && params.department_id !== '' && params.department_id !== 'ALL') {
+    queryParams.set('department_id', String(params.department_id));
+  }
+  if (params.search) queryParams.set('search', params.search);
+
+  const response = await apiClient.get<PurchasesReportResponse>(
+    `/reports/purchases?${queryParams.toString()}`
+  );
+  return response.data;
+};
