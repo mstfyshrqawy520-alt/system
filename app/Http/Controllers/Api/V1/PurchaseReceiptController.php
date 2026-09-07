@@ -68,6 +68,8 @@ class PurchaseReceiptController extends Controller
 
     public function indexAssigned(Request $request)
     {
+        $this->service->syncPendingBuildingsReceiptsForEngineer($request->user());
+
         $receipts = PurchaseReceipt::with([
             'purchaseOrder.supplier',
             'purchaseOrder.purchaseRequest.department',

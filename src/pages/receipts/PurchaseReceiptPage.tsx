@@ -922,6 +922,12 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                             <span className="text-xs sm:text-sm font-bold text-slate-300 bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg">
                               أمر شراء: <span className="font-mono text-cyan-300">{receipt.purchase_order?.po_number}</span>
                             </span>
+                            {receipt.receipt_type === 'SITE_DIRECT' && (
+                              <span className="text-xs sm:text-sm font-black text-amber-200 bg-amber-950/90 border border-amber-500/80 px-3 py-1 rounded-xl flex items-center gap-1.5 shadow-md">
+                                <span>🏗️</span>
+                                <span>توريد مباشر لموقع المباني (استلام مباشر بالموقع دون مرور بالمخزن)</span>
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -950,7 +956,15 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                                 </div>
                               </div>
 
-                              {receipt.warehouse_keeper && (
+                              {receipt.receipt_type === 'SITE_DIRECT' ? (
+                                <div className="flex items-center gap-2 text-indigo-200 bg-indigo-950/50 p-2.5 rounded-xl border border-indigo-700/60">
+                                  <span className="text-base">🏗️</span>
+                                  <div>
+                                    <span className="text-indigo-400 block text-[11px] font-bold">مسار التوريد:</span>
+                                    <span className="font-bold text-white">مباشر للموقع من المورد</span>
+                                  </div>
+                                </div>
+                              ) : receipt.warehouse_keeper ? (
                                 <div className="flex items-center gap-2 text-amber-300 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/50">
                                   <span className="text-base">📦</span>
                                   <div>
@@ -958,7 +972,7 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                                     <span className="font-bold">{receipt.warehouse_keeper.name}</span>
                                   </div>
                                 </div>
-                              )}
+                              ) : null}
 
                               {/* Parcel Reference Callout */}
                               <div className="flex items-center gap-2 text-cyan-200 bg-cyan-950/40 p-2.5 rounded-xl border border-cyan-800/50">
@@ -1080,9 +1094,11 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-                                  {/* Warehouse Recorded Quantity (Blind to PO quantity) */}
+                                  {/* Warehouse Recorded Quantity or Ordered Quantity for SITE_DIRECT */}
                                   <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 flex flex-col justify-between space-y-1">
-                                    <span className="text-xs font-bold text-slate-400">الكمية المسجلة من أمين المخزن:</span>
+                                    <span className="text-xs font-bold text-slate-400">
+                                      {receipt.receipt_type === 'SITE_DIRECT' ? 'الكمية المطلوبة للتوريد المباشر بالموقع:' : 'الكمية المسجلة من أمين المخزن:'}
+                                    </span>
                                     <div className="font-mono text-xl sm:text-2xl font-black text-cyan-300 flex items-baseline gap-2 mt-1">
                                       <span>{item.received_quantity}</span>
                                       <span className="text-base font-bold text-slate-300">{getUnitLabel(item.purchase_order_item?.uom || '')}</span>
@@ -1208,6 +1224,11 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                       <span className="text-xs sm:text-sm text-slate-300">
                         🏢 {receipt.purchase_order?.supplier?.company_name || 'مورد غير محدد'}
                       </span>
+                      {receipt.receipt_type === 'SITE_DIRECT' && (
+                        <span className="text-xs font-black px-2.5 py-0.5 rounded-full border bg-amber-950/80 text-amber-300 border-amber-600/70 shadow-sm">
+                          🏗️ توريد مباشر لموقع المباني
+                        </span>
+                      )}
                       <span
                         className={`text-xs font-bold px-3 py-1 rounded-full border ${
                           isApproved
@@ -1269,13 +1290,13 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
                     <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3.5 space-y-1">
                       <div className="flex items-center justify-between text-slate-400 font-bold">
-                        <span>📦 استلام أمين المخزن:</span>
+                        <span>{receipt.receipt_type === 'SITE_DIRECT' ? '🏗️ توريد مباشر للموقع:' : '📦 استلام أمين المخزن:'}</span>
                         <span className="font-mono text-xs text-slate-500">
                           {receipt.received_at || receipt.created_at?.slice(0, 10) || '—'}
                         </span>
                       </div>
                       <p className="text-slate-100 font-bold text-sm sm:text-base">
-                        {receipt.warehouse_keeper?.name || 'عم سلامة (أمين المخزن)'}
+                        {receipt.receipt_type === 'SITE_DIRECT' ? 'توريد مباشر من المورد لموقع المباني (بدون مخزن)' : (receipt.warehouse_keeper?.name || 'عم سلامة (أمين المخزن)')}
                       </p>
                       {receipt.warehouse_notes && (
                         <p className="text-amber-300 text-xs sm:text-sm bg-amber-950/30 p-2.5 rounded-lg border border-amber-900/40 mt-1">

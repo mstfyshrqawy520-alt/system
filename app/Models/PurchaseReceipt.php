@@ -93,6 +93,11 @@ class PurchaseReceipt extends Model
         return $this->receipt_type === 'REQUESTER_OFFICE';
     }
 
+    public function isBuildingsDirectReceipt(): bool
+    {
+        return $this->receipt_type === 'SITE_DIRECT';
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseReceiptItem::class);

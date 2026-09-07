@@ -83,6 +83,23 @@ class PurchaseRequest extends Model
         return ! $this->isOfficeRequest();
     }
 
+    public function isBuildingsDirectDelivery(): bool
+    {
+        $this->loadMissing(['department', 'targetDepartment', 'assignedReviewer.department']);
+        $deptCode = $this->targetDepartment?->code ?? $this->department?->code;
+        $reviewerDeptCode = $this->assignedReviewer?->department?->code;
+
+        if ($deptCode === 'BUILDINGS' || $reviewerDeptCode === 'BUILDINGS') {
+            return true;
+        }
+
+        if ($this->assignedReviewer?->email === 'hatem@gmail.com') {
+            return true;
+        }
+
+        return false;
+    }
+
     protected function casts(): array
     {
         return [

@@ -17,12 +17,21 @@ class PurchaseReceiptService
             'supplier',
             'purchaseRequest.requester',
             'purchaseRequest.department',
+            'purchaseRequest.targetDepartment',
+            'purchaseRequest.assignedReviewer.department',
             'purchaseRequest.siteEngineer',
             'items.item',
             'items.prItem',
         ])
             ->where('status', 'ISSUED')
             ->whereDoesntHave('receipts', fn ($query) => $query->whereIn('status', ['PENDING_SITE_ENGINEER', 'APPROVED']))
+            ->whereDoesntHave('purchaseRequest', function ($prQuery) {
+                $prQuery->where('request_type', 'OFFICE_SUPPLIES')
+                    ->orWhereHas('targetDepartment', fn ($q) => $q->where('code', 'BUILDINGS'))
+                    ->orWhereHas('department', fn ($q) => $q->where('code', 'BUILDINGS'))
+                    ->orWhereHas('assignedReviewer.department', fn ($q) => $q->where('code', 'BUILDINGS'))
+                    ->orWhereHas('assignedReviewer', fn ($q) => $q->where('email', 'hatem@gmail.com'));
+            })
             ->orderByDesc('updated_at')
             ->paginate($perPage);
     }
@@ -64,7 +73,16 @@ class PurchaseReceiptService
         ?string $notes = null,
         ?array $photoData = null
     ): PurchaseReceipt {
-        $purchaseOrder->loadMissing(['purchaseRequest.targetDepartment', 'purchaseRequest.department', 'items']);
+        $purchaseOrder->loadMissing(['purchaseRequest.targetDepartment', 'purchaseRequest.department', 'purchaseRequest.assignedReviewer.department', 'items']);
+
+        if ($purchaseOrder->isBuildingsDirectDelivery()) {
+            throw new \RuntimeException('لا يمكن لأمين المخزن استلام طلبات قسم المباني؛ حيث يتم توريدها واستلامها في الموقع مباشرة عبر مهندس الموقع.');
+        }
+
+        if ($purchaseOrder->purchaseRequest?->isOfficeRequest()) {
+            throw new \RuntimeException('هذا الطلب يخص مستلزمات مكتبية ويتم تأكيد استلامه مباشرة من قبل مقدم الطلب.');
+        }
+
         $siteEngineerId = $purchaseOrder->purchaseRequest?->site_engineer_user_id;
 
         if (! $siteEngineerId) {
@@ -336,4 +354,121 @@ class PurchaseReceiptService
             return $receipt->fresh(['purchaseOrder.supplier', 'purchaseOrder.items.item', 'purchaseRequest', 'receiver', 'items.purchaseOrderItem']);
         });
     }
+
+    /**
+     * Automatically create a direct site receipt for Buildings department orders,
+     * routing the receipt straight to the site engineer and bypassing the warehouse.
+     */
+    public function createDirectSiteReceiptForBuildings(PurchaseOrder $purchaseOrder): PurchaseReceipt
+    {
+        $purchaseOrder->loadMissing([
+            'purchaseRequest.targetDepartment',
+            'purchaseRequest.department',
+            'purchaseRequest.assignedReviewer.department',
+            'purchaseRequest.siteEngineer',
+            'items',
+        ]);
+
+        $existingReceipt = PurchaseReceipt::where('purchase_order_id', $purchaseOrder->id)
+            ->whereIn('status', ['PENDING_SITE_ENGINEER', 'APPROVED'])
+            ->first();
+
+        if ($existingReceipt) {
+            return $existingReceipt;
+        }
+
+        $siteEngineerId = $purchaseOrder->purchaseRequest?->site_engineer_user_id;
+
+        if (! $siteEngineerId) {
+            $fallbackEngineerId = $purchaseOrder->purchaseRequest?->targetDepartment?->site_engineer_user_id
+                ?? $purchaseOrder->purchaseRequest?->department?->site_engineer_user_id
+                ?? User::whereHas('roles', fn ($q) => $q->where('slug', 'site_engineer'))->where('is_active', true)->value('id');
+
+            if ($fallbackEngineerId) {
+                $siteEngineerId = $fallbackEngineerId;
+                if ($purchaseOrder->purchaseRequest) {
+                    $purchaseOrder->purchaseRequest->update(['site_engineer_user_id' => $fallbackEngineerId]);
+                }
+            }
+        }
+
+        if (! $siteEngineerId) {
+            throw new \RuntimeException('لا يمكن إنشاء إذن استلام مباشر لقسم المباني دون تحديد مهندس الموقع.');
+        }
+
+        return DB::transaction(function () use ($purchaseOrder, $siteEngineerId): PurchaseReceipt {
+            $receipt = PurchaseReceipt::create([
+                'purchase_order_id' => $purchaseOrder->id,
+                'purchase_request_id' => $purchaseOrder->purchase_request_id,
+                'warehouse_keeper_user_id' => null,
+                'site_engineer_user_id' => $siteEngineerId,
+                'receipt_number' => 'GRN-SITE-' . now()->format('YmdHis') . '-' . $purchaseOrder->id,
+                'receipt_type' => 'SITE_DIRECT',
+                'status' => 'PENDING_SITE_ENGINEER',
+                'received_at' => now()->toDateString(),
+                'warehouse_submitted_at' => now(),
+                'warehouse_notes' => 'توريد مباشر لموقع المباني — استلام فوري بالموقع من المورد بدون المرور على المخزن.',
+            ]);
+
+            foreach ($purchaseOrder->items as $orderItem) {
+                $receipt->items()->create([
+                    'purchase_order_item_id' => $orderItem->id,
+                    'ordered_quantity' => $orderItem->quantity,
+                    'received_quantity' => $orderItem->quantity,
+                    'notes' => 'توريد مباشر لموقع المباني',
+                ]);
+            }
+
+            $purchaseOrder->update(['delivery_status' => 'IN_RECEIPT']);
+
+            ApprovalHistory::create([
+                'target_type' => PurchaseReceipt::class,
+                'target_id' => $receipt->id,
+                'actor_user_id' => $purchaseOrder->created_by_user_id ?? $siteEngineerId,
+                'action' => 'SITE_DIRECT_RECEIPT_CREATED',
+                'from_state' => 'ISSUED',
+                'to_state' => 'PENDING_SITE_ENGINEER',
+                'comments' => 'تم إنشاء إذن استلام مباشر لموقع المباني وتوجيهه إلى مهندس الموقع للاستلام والفحص.',
+            ]);
+
+            $siteEngineer = User::find($siteEngineerId);
+            if ($siteEngineer) {
+                app(NotificationService::class)->queueNotification(
+                    $siteEngineer,
+                    'purchase_receipt_pending_site_engineer',
+                    'توريد مباشر لموقع المباني بانتظار استلامك',
+                    "أمر الشراء {$purchaseOrder->po_number} تم توجيهه إليك مباشرة لاستلام مواد المباني بالموقع واعتماد إذن الاستلام {$receipt->receipt_number}.",
+                    $receipt
+                );
+            }
+
+            return $receipt->fresh(['purchaseOrder.supplier', 'purchaseOrder.items.item', 'purchaseRequest', 'warehouseKeeper', 'siteEngineer', 'items.purchaseOrderItem']);
+        });
+    }
+
+    /**
+     * Sync and generate any missing direct site receipts for Buildings orders assigned to this engineer.
+     */
+    public function syncPendingBuildingsReceiptsForEngineer(User $siteEngineer): void
+    {
+        $pendingPos = PurchaseOrder::with([
+            'purchaseRequest.department',
+            'purchaseRequest.targetDepartment',
+            'purchaseRequest.assignedReviewer.department',
+            'items',
+        ])
+            ->where('status', 'ISSUED')
+            ->whereDoesntHave('receipts', fn ($query) => $query->whereIn('status', ['PENDING_SITE_ENGINEER', 'APPROVED']))
+            ->whereHas('purchaseRequest', function ($query) use ($siteEngineer) {
+                $query->where('site_engineer_user_id', $siteEngineer->id);
+            })
+            ->get();
+
+        foreach ($pendingPos as $po) {
+            if ($po->isBuildingsDirectDelivery()) {
+                $this->createDirectSiteReceiptForBuildings($po);
+            }
+        }
+    }
 }
+

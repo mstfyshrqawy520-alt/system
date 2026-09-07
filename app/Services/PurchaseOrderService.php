@@ -556,6 +556,11 @@ class PurchaseOrderService
                 );
             }
 
+            // If this purchase order is for Buildings direct delivery, route directly to site engineer
+            if ($lockedPo->isBuildingsDirectDelivery()) {
+                app(PurchaseReceiptService::class)->createDirectSiteReceiptForBuildings($lockedPo);
+            }
+
             return $lockedPo->fresh(['purchaseRequest.requester', 'purchaseRequest.department', 'purchaseRequest.assignedReviewer', 'purchaseRequest.approvalHistory.actor', 'selectedQuote', 'supplier', 'createdBy', 'items.item']);
         });
     }

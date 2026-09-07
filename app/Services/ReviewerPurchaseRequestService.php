@@ -504,6 +504,7 @@ class ReviewerPurchaseRequestService
 
             $updateData = [
                 'status' => 'PENDING_EXECUTIVE_APPROVAL',
+                'reviewer_user_id' => $pr->reviewer_user_id ?: $reviewer->id,
                 'site_engineer_user_id' => $engineerUser->id,
             ];
 

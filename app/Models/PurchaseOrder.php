@@ -55,6 +55,17 @@ class PurchaseOrder extends Model
         return $this->belongsTo(PurchaseRequest::class, 'purchase_request_id');
     }
 
+    public function isBuildingsDirectDelivery(): bool
+    {
+        $this->loadMissing([
+            'purchaseRequest.department',
+            'purchaseRequest.targetDepartment',
+            'purchaseRequest.assignedReviewer.department',
+        ]);
+
+        return $this->purchaseRequest?->isBuildingsDirectDelivery() ?? false;
+    }
+
     public function selectedQuote(): BelongsTo
     {
         return $this->belongsTo(PurchaseRequestQuote::class, 'selected_quote_id');

@@ -37,6 +37,7 @@ export interface ReceiptPurchaseOrder {
 export interface ReceiptRecord {
   id: number;
   receipt_number: string;
+  receipt_type?: string | null;
   status: string;
   created_at?: string | null;
   received_at?: string | null;

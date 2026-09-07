@@ -5,6 +5,7 @@ namespace Tests\Feature\Api\V1;
 use App\Models\Department;
 use App\Models\Notification;
 use App\Models\PurchaseOrder;
+use App\Models\PurchaseReceipt;
 use App\Models\PurchaseRequest;
 use App\Models\Role;
 use App\Models\Supplier;
@@ -105,6 +106,142 @@ class PurchaseReceiptWorkflowTest extends TestCase
 
         $this->expectException(\RuntimeException::class);
         app(PurchaseReceiptService::class)->approveBySiteEngineer($otherEngineer, $receipt);
+    }
+
+    public function test_buildings_orders_bypass_warehouse_and_route_directly_to_site_engineer(): void
+    {
+        $buildingsDept = Department::create(['name' => 'المباني', 'code' => 'BUILDINGS', 'is_active' => true]);
+        $buildingsReviewer = $this->makeUser('hatem@test', 'م. حاتم', 'reviewer', $buildingsDept->id);
+        $buildingsEngineer = $this->makeUser('buildings-engineer@test', 'مهندس موقع المباني', 'site_engineer', $buildingsDept->id);
+
+        $buildingsPr = PurchaseRequest::create([
+            'request_number' => 'PR-BLD-001',
+            'user_id' => $this->siteEngineer->id,
+            'department_id' => $buildingsDept->id,
+            'reviewer_user_id' => $buildingsReviewer->id,
+            'site_engineer_user_id' => $buildingsEngineer->id,
+            'priority' => 'NORMAL',
+            'status' => 'APPROVED_BY_PROCUREMENT',
+            'total_estimated_cost' => 5000,
+            'date_needed' => now()->toDateString(),
+        ]);
+
+        $buildingsPo = PurchaseOrder::create([
+            'po_number' => 'PO-BLD-001',
+            'purchase_request_id' => $buildingsPr->id,
+            'supplier_id' => $this->purchaseOrder->supplier_id,
+            'created_by_user_id' => $this->warehouse->id,
+            'status' => 'ISSUED',
+            'subtotal' => 5000,
+            'grand_total' => 5000,
+            'delivery_status' => 'NOT_STARTED',
+        ]);
+        $buildingsPo->items()->create([
+            'item_description' => 'حديد تسليح',
+            'item_reference' => 'BLD-ITEM-001',
+            'region' => 'منطقة المباني',
+            'quantity' => 20,
+            'uom' => 'TON',
+            'unit_price' => 250,
+            'line_total' => 5000,
+        ]);
+
+        $this->assertTrue($buildingsPo->isBuildingsDirectDelivery());
+
+        // 1. Warehouse queue MUST NOT contain Buildings orders
+        $warehouseQueue = app(PurchaseReceiptService::class)->warehouseQueue();
+        $this->assertFalse(
+            $warehouseQueue->getCollection()->contains('id', $buildingsPo->id),
+            'Buildings PO must not appear in warehouse queue.'
+        );
+
+        // 2. Warehouse keeper cannot create a receipt for Buildings order
+        try {
+            app(PurchaseReceiptService::class)->createByWarehouse(
+                $this->warehouse,
+                $buildingsPo,
+                [['purchase_order_item_id' => $buildingsPo->items()->first()->id, 'received_quantity' => 20]]
+            );
+            $this->fail('Warehouse receipt creation should have been rejected for Buildings order.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('لا يمكن لأمين المخزن استلام طلبات قسم المباني', $e->getMessage());
+        }
+
+        // 3. Auto-sync generates SITE_DIRECT receipt for site engineer
+        app(PurchaseReceiptService::class)->syncPendingBuildingsReceiptsForEngineer($buildingsEngineer);
+
+        $directReceipt = PurchaseReceipt::where('purchase_order_id', $buildingsPo->id)->first();
+        $this->assertNotNull($directReceipt);
+        $this->assertSame('SITE_DIRECT', $directReceipt->receipt_type);
+        $this->assertSame('PENDING_SITE_ENGINEER', $directReceipt->status);
+        $this->assertNull($directReceipt->warehouse_keeper_user_id);
+        $this->assertSame($buildingsEngineer->id, $directReceipt->site_engineer_user_id);
+        $this->assertSame('IN_RECEIPT', $buildingsPo->fresh()->delivery_status);
+
+        // 4. Site Engineer approves receipt -> advances PO to DELIVERED and notifies accounting
+        $approvedReceipt = app(PurchaseReceiptService::class)->approveBySiteEngineer(
+            $buildingsEngineer,
+            $directReceipt,
+            'تم استلام ومطابقة حديد التسليح بالموقع بنجاح.'
+        );
+
+        $this->assertSame('APPROVED', $approvedReceipt->status);
+        $this->assertSame('DELIVERED', $buildingsPo->fresh()->delivery_status);
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $this->accountant->id,
+            'type' => 'purchase_order_and_receipt_ready_accounting',
+        ]);
+    }
+
+    public function test_po_issued_for_buildings_automatically_creates_direct_site_receipt(): void
+    {
+        $buildingsDept = Department::create(['name' => 'المباني', 'code' => 'BUILDINGS', 'is_active' => true]);
+        $procurementUser = $this->makeUser('procurement@test', 'مدير المشتريات', 'procurement_manager', $buildingsDept->id);
+        $buildingsEngineer = $this->makeUser('engineer-bld2@test', 'مهندس موقع المباني 2', 'site_engineer', $buildingsDept->id);
+
+        $buildingsPr = PurchaseRequest::create([
+            'request_number' => 'PR-BLD-002',
+            'user_id' => $this->siteEngineer->id,
+            'department_id' => $buildingsDept->id,
+            'site_engineer_user_id' => $buildingsEngineer->id,
+            'priority' => 'NORMAL',
+            'status' => 'APPROVED_BY_PROCUREMENT',
+            'total_estimated_cost' => 3000,
+            'date_needed' => now()->toDateString(),
+        ]);
+
+        $draftPo = PurchaseOrder::create([
+            'po_number' => 'PO-BLD-002',
+            'purchase_request_id' => $buildingsPr->id,
+            'supplier_id' => $this->purchaseOrder->supplier_id,
+            'created_by_user_id' => $procurementUser->id,
+            'status' => 'PO_DRAFT',
+            'subtotal' => 3000,
+            'grand_total' => 3000,
+            'delivery_status' => 'NOT_STARTED',
+        ]);
+        $draftPo->items()->create([
+            'item_description' => 'طوب أحمر',
+            'item_reference' => 'BLD-BRICK-001',
+            'region' => 'منطقة المباني',
+            'quantity' => 5000,
+            'uom' => 'PCS',
+            'unit_price' => 0.6,
+            'line_total' => 3000,
+        ]);
+
+        // Submit to Accounting (which issues the PO)
+        $issuedPo = app(\App\Services\PurchaseOrderService::class)->submitToAccounting($procurementUser, $draftPo);
+
+        $this->assertSame('ISSUED', $issuedPo->status);
+
+        // A direct site receipt MUST have been created automatically!
+        $directReceipt = PurchaseReceipt::where('purchase_order_id', $issuedPo->id)->first();
+        $this->assertNotNull($directReceipt, 'Direct site receipt should be created automatically upon PO issue.');
+        $this->assertSame('SITE_DIRECT', $directReceipt->receipt_type);
+        $this->assertSame('PENDING_SITE_ENGINEER', $directReceipt->status);
+        $this->assertSame($buildingsEngineer->id, $directReceipt->site_engineer_user_id);
+        $this->assertNull($directReceipt->warehouse_keeper_user_id);
     }
 
     private function makeUser(string $email, string $name, string $roleSlug, int $departmentId): User
