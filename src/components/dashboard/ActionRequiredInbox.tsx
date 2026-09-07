@@ -132,18 +132,19 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
     if (approveModal.isOpen && approveModal.item?.type === 'PR' && isReviewer) {
       setIsLoadingReceivers(true);
       setReceiverError(null);
+      setSelectedEngineerId('');
       getSiteEngineerReceiverOptionsApi()
         .then((res) => {
           setReceiverOptions({
             siteEngineers: res.site_engineers || [],
             otherUsers: res.other_users || [],
           });
-          if (res.site_engineers && res.site_engineers.length > 0) {
-            setSelectedEngineerId(res.site_engineers[0].id);
-          }
         })
         .catch(() => {})
         .finally(() => setIsLoadingReceivers(false));
+    } else if (!approveModal.isOpen) {
+      setSelectedEngineerId('');
+      setReceiverError(null);
     }
   }, [approveModal.isOpen, approveModal.item, isReviewer]);
 
@@ -166,6 +167,8 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
   const handleApproveClick = (item: ActionInboxItem) => {
     const needsModal = item.requireApproveModal ?? (isReviewer && item.type === 'PR');
     if (needsModal) {
+      setSelectedEngineerId('');
+      setReceiverError(null);
       setApproveModal({ isOpen: true, item, comment: '', isSubmitting: false });
     } else {
       handleDirectApprove(item);
@@ -201,7 +204,7 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
   const handleConfirmDirectApprove = async () => {
     if (!approveModal.item?.onDirectApprove) return;
     if (approveModal.item.type === 'PR' && isReviewer && !selectedEngineerId) {
-      setReceiverError('يجب تحديد مهندس الموقع / مسؤول الاستلام قبل اعتماد الطلب.');
+      setReceiverError('يرجى اختيار مهندس الموقع / مسؤول الاستلام أولاً قبل تأكيد الاعتماد.');
       return;
     }
     setReceiverError(null);
@@ -621,9 +624,13 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                     setSelectedEngineerId(e.target.value ? Number(e.target.value) : '');
                     setReceiverError(null);
                   }}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-slate-100 outline-none focus:border-emerald-400 font-bold"
+                  className={`w-full rounded-xl border p-2.5 text-xs text-slate-100 outline-none font-bold transition-all ${
+                    receiverError
+                      ? 'border-rose-500 bg-rose-950/40 ring-1 ring-rose-500 focus:border-rose-400'
+                      : 'border-slate-700 bg-slate-950 focus:border-emerald-400'
+                  }`}
                 >
-                  <option value="" disabled>-- اختر مهندس الموقع أو مسؤول الاستلام --</option>
+                  <option value="">-- اختر مهندس الموقع --</option>
                   {receiverOptions.siteEngineers.length > 0 && (
                     <optgroup label="👷 مهندسو الموقع الأساسيون">
                       {receiverOptions.siteEngineers.map((eng) => (
@@ -644,7 +651,11 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                   )}
                 </select>
               )}
-              {receiverError && <p className="mt-1 text-xs text-rose-400 font-bold">{receiverError}</p>}
+              {receiverError && (
+                <p className="mt-1.5 flex items-center gap-1 text-xs text-rose-400 font-bold">
+                  <span>⚠️</span> {receiverError}
+                </p>
+              )}
               <p className="mt-1 text-[11px] text-slate-400">
                 الشخص المختار سيتولى مراجعة إذن الاستلام واعتماده بالموقع فور توريد الأصناف.
               </p>

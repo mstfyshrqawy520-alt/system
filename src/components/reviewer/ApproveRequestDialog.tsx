@@ -33,18 +33,13 @@ export const ApproveRequestDialog: React.FC<Props> = ({
 
   useEffect(() => {
     if (isOpen) {
-      if (initialSiteEngineerId) {
-        setSelectedEngineerId(initialSiteEngineerId);
-      }
+      setSelectedEngineerId(initialSiteEngineerId || '');
       setIsLoadingOptions(true);
+      setSelectionError(null);
       getSiteEngineerReceiverOptionsApi()
         .then((res) => {
           setSiteEngineers(res.site_engineers || []);
           setOtherUsers(res.other_users || []);
-          // If no initial site engineer was selected, default to the first site engineer if available
-          if (!initialSiteEngineerId && res.site_engineers && res.site_engineers.length > 0) {
-            setSelectedEngineerId(res.site_engineers[0].id);
-          }
         })
         .catch(() => {
           // Fallback if needed
@@ -54,6 +49,7 @@ export const ApproveRequestDialog: React.FC<Props> = ({
         });
     } else {
       setComment('');
+      setSelectedEngineerId('');
       setSelectionError(null);
     }
   }, [isOpen, initialSiteEngineerId]);
@@ -61,7 +57,7 @@ export const ApproveRequestDialog: React.FC<Props> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEngineerId) {
-      setSelectionError('يجب تحديد مهندس الموقع / مسؤول الاستلام قبل اعتماد الطلب.');
+      setSelectionError('يرجى اختيار مهندس الموقع / مسؤول الاستلام أولاً قبل اعتماد الطلب.');
       return;
     }
     setSelectionError(null);
@@ -109,10 +105,9 @@ export const ApproveRequestDialog: React.FC<Props> = ({
                 setSelectedEngineerId(e.target.value ? Number(e.target.value) : '');
                 setSelectionError(null);
               }}
-              required
-              className="font-bold text-slate-100 bg-slate-900 border-slate-700"
+              className={`font-bold text-slate-100 bg-slate-900 ${selectionError ? 'border-rose-500' : 'border-slate-700'}`}
             >
-              <option value="" disabled>-- اختر مهندس الموقع أو مسؤول الاستلام --</option>
+              <option value="">-- اختر مهندس الموقع --</option>
               {siteEngineers.length > 0 && (
                 <optgroup label="👷 مهندسو الموقع الأساسيون">
                   {siteEngineers.map((eng) => (
