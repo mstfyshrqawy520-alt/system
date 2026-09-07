@@ -42,11 +42,19 @@ export const AuthenticatedLayout: React.FC = () => {
             case "reviewer":
                 return (
                     <>
+                        <Link to="/requests" className={linkClassName("/requests")}><span className="ml-2.5 text-sm" aria-hidden="true">📋</span> طلبات الشراء الخاصة بي</Link>
+                        <Link to="/requests/create" className={linkClassName("/requests/create")}><span className="ml-2.5 text-sm" aria-hidden="true">✍️</span> إنشاء طلب شراء</Link>
                         <Link
                             to="/reviewer"
                             className={linkClassName("/reviewer")}
                         >
-                            <span className="ml-2.5 text-sm" aria-hidden="true">📊</span> لوحة وطلبات المراجعة
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📊</span> لوحة المراجعة
+                        </Link>
+                        <Link
+                            to="/reviewer/requests"
+                            className={linkClassName("/reviewer/requests")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📋</span> طلبات المراجعة
                         </Link>
                         <Link
                             to="/reviewer/purchase-quotes"
@@ -54,34 +62,47 @@ export const AuthenticatedLayout: React.FC = () => {
                         >
                             <span className="ml-2.5 text-sm" aria-hidden="true">💰</span> ترشيح عروض الأسعار
                         </Link>
-                        <Link to="/requests/create" className={linkClassName("/requests/create")}><span className="ml-2.5 text-sm" aria-hidden="true">✍️</span> إنشاء طلب شراء</Link>
+                        <Link
+                            to="/site-engineer"
+                            className={linkClassName("/site-engineer")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📦</span> إذن استلام المواد
+                        </Link>
                     </>
                 );
             case "warehouse_keeper":
                 return (
                     <>
-                        <Link to="/warehouse" className={linkClassName("/warehouse")}><span className="ml-2.5 text-sm" aria-hidden="true">📦</span> استلام المواد (المستودع)</Link>
-                        <Link to="/site-engineer" className={linkClassName("/site-engineer")}><span className="ml-2.5 text-sm" aria-hidden="true">📋</span> إذن فحص الاستلام</Link>
+                        <Link to="/requests" className={linkClassName("/requests")}><span className="ml-2.5 text-sm" aria-hidden="true">📋</span> طلبات الشراء الخاصة بي</Link>
                         <Link to="/requests/create" className={linkClassName("/requests/create")}><span className="ml-2.5 text-sm" aria-hidden="true">✍️</span> إنشاء طلب شراء</Link>
-                        <Link to="/requests" className={linkClassName("/requests")}><span className="ml-2.5 text-sm" aria-hidden="true">📋</span> طلباتي</Link>
+                        <Link to="/warehouse" className={linkClassName("/warehouse")}><span className="ml-2.5 text-sm" aria-hidden="true">📦</span> استلام المواد (المستودع)</Link>
+                        <Link to="/site-engineer" className={linkClassName("/site-engineer")}><span className="ml-2.5 text-sm" aria-hidden="true">📋</span> إذن استلام المواد</Link>
                     </>
                 );
             case "site_engineer":
                 return (
                     <>
-                        <Link to="/site-engineer" className={linkClassName("/site-engineer")}><span className="ml-2.5 text-sm" aria-hidden="true">📦</span> إذن استلام وفحص المواد</Link>
                         <Link to="/requests" className={linkClassName("/requests")}><span className="ml-2.5 text-sm" aria-hidden="true">📋</span> طلبات الشراء الخاصة بي</Link>
                         <Link to="/requests/create" className={linkClassName("/requests/create")}><span className="ml-2.5 text-sm" aria-hidden="true">✍️</span> إنشاء طلب شراء</Link>
+                        <Link to="/site-engineer" className={linkClassName("/site-engineer")}><span className="ml-2.5 text-sm" aria-hidden="true">📦</span> إذن استلام المواد</Link>
                     </>
                 );
             case "procurement_manager":
                 return (
                     <>
+                        <Link to="/requests" className={linkClassName("/requests")}><span className="ml-2.5 text-sm" aria-hidden="true">📋</span> طلبات الشراء الخاصة بي</Link>
+                        <Link to="/requests/create" className={linkClassName("/requests/create")}><span className="ml-2.5 text-sm" aria-hidden="true">✍️</span> إنشاء طلب شراء</Link>
                         <Link
                             to="/procurement"
                             className={linkClassName("/procurement")}
                         >
-                            <span className="ml-2.5 text-sm" aria-hidden="true">📊</span> لوحة المشتريات والطلبات
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📊</span> لوحة المشتريات
+                        </Link>
+                        <Link
+                            to="/procurement/purchase-requests"
+                            className={linkClassName("/procurement/purchase-requests")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">⊛</span> طلبات الشراء المعتمدة
                         </Link>
                         <Link
                             to="/procurement/purchase-orders"
@@ -99,14 +120,21 @@ export const AuthenticatedLayout: React.FC = () => {
                             to="/procurement/reports"
                             className={linkClassName("/procurement/reports")}
                         >
-                            <span className="ml-2.5 text-sm" aria-hidden="true">📈</span> التقارير وشيت المشتريات
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📈</span> التقارير والتحليلات
                         </Link>
-                        <Link to="/requests/create" className={linkClassName("/requests/create")}><span className="ml-2.5 text-sm" aria-hidden="true">✍️</span> إنشاء طلب شراء</Link>
+                        <Link
+                            to="/site-engineer"
+                            className={linkClassName("/site-engineer")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📦</span> إذن استلام المواد
+                        </Link>
                     </>
                 );
             case "accountant":
                 return (
                     <>
+                        <Link to="/requests" className={linkClassName("/requests")}><span className="ml-2.5 text-sm" aria-hidden="true">📋</span> طلبات الشراء الخاصة بي</Link>
+                        <Link to="/requests/create" className={linkClassName("/requests/create")}><span className="ml-2.5 text-sm" aria-hidden="true">✍️</span> إنشاء طلب شراء</Link>
                         <Link
                             to="/accounting"
                             className={linkClassName("/accounting")}
@@ -126,10 +154,22 @@ export const AuthenticatedLayout: React.FC = () => {
                             <span className="ml-2.5 text-sm" aria-hidden="true">📋</span> أوامر الشراء للحسابات
                         </Link>
                         <Link
-                            to="/accounting/supplier-finance"
-                            className={linkClassName("/accounting/supplier-finance")}
+                            to="/accounting/purchase-quotes"
+                            className={linkClassName("/accounting/purchase-quotes")}
                         >
-                            <span className="ml-2.5 text-sm" aria-hidden="true">🏢</span> حسابات وفواتير الموردين
+                            <span className="ml-2.5 text-sm" aria-hidden="true">💰</span> ترشيح عروض الأسعار
+                        </Link>
+                        <Link
+                            to="/accounting/supplier-payments"
+                            className={linkClassName("/accounting/supplier-payments")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">💳</span> فواتير ودفعات الموردين
+                        </Link>
+                        <Link
+                            to="/accounting/supplier-accounts"
+                            className={linkClassName("/accounting/supplier-accounts")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">🏦</span> حسابات الموردين
                         </Link>
                         <Link
                             to="/accounting/land-parcels"
@@ -141,13 +181,21 @@ export const AuthenticatedLayout: React.FC = () => {
                             to="/accounting/reports"
                             className={linkClassName("/accounting/reports")}
                         >
-                            <span className="ml-2.5 text-sm" aria-hidden="true">📈</span> تقرير المشتريات (Excel)
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📈</span> التقارير والتحليلات
+                        </Link>
+                        <Link
+                            to="/site-engineer"
+                            className={linkClassName("/site-engineer")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📦</span> إذن استلام المواد
                         </Link>
                     </>
                 );
             case "general_manager":
                 return (
                     <>
+                        <Link to="/requests" className={linkClassName("/requests")}><span className="ml-2.5 text-sm" aria-hidden="true">📋</span> طلبات الشراء الخاصة بي</Link>
+                        <Link to="/requests/create" className={linkClassName("/requests/create")}><span className="ml-2.5 text-sm" aria-hidden="true">✍️</span> إنشاء طلب شراء</Link>
                         <Link
                             to="/general-manager"
                             className={linkClassName("/general-manager")}
@@ -158,31 +206,37 @@ export const AuthenticatedLayout: React.FC = () => {
                             to="/general-manager/purchase-requests"
                             className={linkClassName("/general-manager/purchase-requests")}
                         >
-                            <span className="ml-2.5 text-sm" aria-hidden="true">⚖️</span> طلبات القرار التنفيذي
+                            <span className="ml-2.5 text-sm" aria-hidden="true">✅</span> طلبات القرار التنفيذي
                         </Link>
                         <Link
                             to="/general-manager/purchase-quotes"
                             className={linkClassName("/general-manager/purchase-quotes")}
                         >
-                            <span className="ml-2.5 text-sm" aria-hidden="true">💰</span> قرار عروض الأسعار
+                            <span className="ml-2.5 text-sm" aria-hidden="true">⚖️</span> قرار عروض الأسعار
                         </Link>
                         <Link
                             to="/general-manager/purchase-orders"
                             className={linkClassName("/general-manager/purchase-orders")}
                         >
-                            <span className="ml-2.5 text-sm" aria-hidden="true">📋</span> أوامر الشراء الصادرة
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📋</span> أوامر الشراء الصادرة — العرض التنفيذي
                         </Link>
                         <Link
                             to="/general-manager/land-parcels"
                             className={linkClassName("/general-manager/land-parcels")}
                         >
-                            <span className="ml-2.5 text-sm" aria-hidden="true">🏗️</span> مشاريع وقطع الأراضي
+                            <span className="ml-2.5 text-sm" aria-hidden="true">🏗️</span> متابعة مشاريع وقطع الأراضي
                         </Link>
                         <Link
                             to="/general-manager/reports"
                             className={linkClassName("/general-manager/reports")}
                         >
-                            <span className="ml-2.5 text-sm" aria-hidden="true">📈</span> تقرير المشتريات (Excel)
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📈</span> التقارير والتحليلات
+                        </Link>
+                        <Link
+                            to="/site-engineer"
+                            className={linkClassName("/site-engineer")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📦</span> إذن استلام المواد
                         </Link>
                     </>
                 );
@@ -198,6 +252,7 @@ export const AuthenticatedLayout: React.FC = () => {
                         <Link to="/admin/categories" className={linkClassName("/admin/categories")}><span className="ml-2.5 text-sm" aria-hidden="true">📁</span> التصنيفات</Link>
                         <Link to="/admin/items" className={linkClassName("/admin/items")}><span className="ml-2.5 text-sm" aria-hidden="true">📦</span> الأصناف</Link>
                         <Link to="/admin/suppliers" className={linkClassName("/admin/suppliers")}><span className="ml-2.5 text-sm" aria-hidden="true">🏢</span> الموردين</Link>
+                        <Link to="/site-engineer" className={linkClassName("/site-engineer")}><span className="ml-2.5 text-sm" aria-hidden="true">📦</span> إذن استلام المواد</Link>
                     </>
                 );
             case "employee":
@@ -208,13 +263,25 @@ export const AuthenticatedLayout: React.FC = () => {
                             to="/employee"
                             className={linkClassName("/employee")}
                         >
-                            <span className="ml-2.5 text-sm" aria-hidden="true">📋</span> لوحة ومتابعة طلباتي
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📊</span> لوحة الموظف
+                        </Link>
+                        <Link
+                            to="/employee/requests"
+                            className={linkClassName("/employee/requests")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📋</span> طلباتي
                         </Link>
                         <Link
                             to="/employee/requests/create"
                             className={linkClassName("/employee/requests/create")}
                         >
-                            <span className="ml-2.5 text-sm" aria-hidden="true">✍️</span> إنشاء طلب شراء جديد
+                            <span className="ml-2.5 text-sm" aria-hidden="true">✍️</span> إنشاء طلب شراء
+                        </Link>
+                        <Link
+                            to="/site-engineer"
+                            className={linkClassName("/site-engineer")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📦</span> إذن استلام المواد
                         </Link>
                     </>
                 );
