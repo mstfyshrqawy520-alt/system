@@ -166,51 +166,116 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Items Table */}
+      {/* Items Section */}
       <Card className="space-y-4">
-        <h3 className="text-sm font-bold text-slate-200">📦 بنود أمر الشراء (المطلوبة من المورد)</h3>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>#</TableHead>
-              <TableHead>اسم الصنف</TableHead>
-              <TableHead>المنطقة</TableHead>
-              <TableHead>الكمية والوحدة</TableHead>
-              <TableHead>سعر الوحدة</TableHead>
-              <TableHead>إجمالي البند</TableHead>
-              <TableHead>الوصف والمواصفات</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {po.items && po.items.length > 0 ? (
-              po.items.map((item, index) => (
-                <TableRow key={item.id || index}>
-                  <TableCell className="font-mono text-cyan-400">{index + 1}</TableCell>
-                  <TableCell className="font-bold text-slate-100">{item.item_name || item.item?.name || '—'}</TableCell>
-                  <TableCell className="font-mono text-slate-300">{item.region || '—'}</TableCell>
-                  <TableCell className="text-slate-300">
-                    {item.quantity} {getUnitLabel(item.uom || '')}
-                  </TableCell>
-                  <TableCell className="font-mono text-cyan-400">
-                    <CurrencyDisplay amount={item.unit_price || 0} currency={po.currency || 'ج.م'} />
-                  </TableCell>
-                  <TableCell className="font-mono text-emerald-400 font-bold">
-                    <CurrencyDisplay amount={item.line_total || (Number(item.quantity || 0) * Number(item.unit_price || 0))} currency={po.currency || 'ج.م'} />
-                  </TableCell>
-                  <TableCell className="text-slate-400 text-[11px] max-w-xs truncate">
-                    {item.item_description || item.specifications || 'لا توجد مواصفات إضافية'}
+        <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+          <h3 className="text-sm font-bold text-slate-200">📦 بنود أمر الشراء (المطلوبة من المورد)</h3>
+          {po.items && po.items.length > 0 && (
+            <span className="text-xs text-slate-400 font-mono">
+              إجمالي {po.items.length} بنود
+            </span>
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden sm:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead>اسم الصنف</TableHead>
+                <TableHead>المنطقة</TableHead>
+                <TableHead>الكمية والوحدة</TableHead>
+                <TableHead>سعر الوحدة</TableHead>
+                <TableHead>إجمالي البند</TableHead>
+                <TableHead>الوصف والمواصفات</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {po.items && po.items.length > 0 ? (
+                po.items.map((item, index) => (
+                  <TableRow key={item.id || index}>
+                    <TableCell className="font-mono text-cyan-400">{index + 1}</TableCell>
+                    <TableCell className="font-bold text-slate-100">{item.item_name || item.item?.name || '—'}</TableCell>
+                    <TableCell className="font-mono text-slate-300">{item.region || '—'}</TableCell>
+                    <TableCell className="text-slate-300">
+                      {item.quantity} {getUnitLabel(item.uom || '')}
+                    </TableCell>
+                    <TableCell className="font-mono text-cyan-400">
+                      <CurrencyDisplay amount={item.unit_price || 0} currency={po.currency || 'ج.م'} />
+                    </TableCell>
+                    <TableCell className="font-mono text-emerald-400 font-bold">
+                      <CurrencyDisplay amount={item.line_total || (Number(item.quantity || 0) * Number(item.unit_price || 0))} currency={po.currency || 'ج.م'} />
+                    </TableCell>
+                    <TableCell className="text-slate-400 text-[11px] max-w-xs truncate">
+                      {item.item_description || item.specifications || 'لا توجد مواصفات إضافية'}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-4 text-slate-500">
+                    لا توجد بنود مضافة لهذا الأمر
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-4 text-slate-500">
-                  لا توجد بنود مضافة لهذا الأمر
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="space-y-3 sm:hidden">
+          {po.items && po.items.length > 0 ? (
+            po.items.map((item, index) => (
+              <div key={`po-mob-${item.id || index}`} className="rounded-xl border border-slate-800 bg-slate-950/90 p-3.5 space-y-2.5 shadow-sm">
+                <div className="flex items-start justify-between gap-2 border-b border-slate-800/80 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-black px-2 py-0.5 rounded-md bg-cyan-950 text-cyan-300 border border-cyan-800/80">
+                      #{index + 1}
+                    </span>
+                    <h4 className="text-sm font-black text-slate-100">{item.item_name || item.item?.name || '—'}</h4>
+                  </div>
+                  {item.region && (
+                    <span className="text-[11px] text-slate-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 font-medium">
+                      {item.region}
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-800/60">
+                    <span className="text-slate-400 block text-[10px]">الكمية والوحدة:</span>
+                    <span className="font-bold text-slate-100 text-xs">
+                      {item.quantity} {getUnitLabel(item.uom || '')}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-800/60">
+                    <span className="text-slate-400 block text-[10px]">سعر الوحدة:</span>
+                    <span className="font-mono font-bold text-cyan-300 text-xs">
+                      <CurrencyDisplay amount={item.unit_price || 0} currency={po.currency || 'ج.م'} />
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between border-t border-slate-800/70 pt-2 text-xs bg-slate-900/40 p-2 rounded-lg">
+                  <span className="text-slate-300 font-semibold">إجمالي البند:</span>
+                  <span className="font-mono font-black text-emerald-400 text-sm">
+                    <CurrencyDisplay amount={item.line_total || (Number(item.quantity || 0) * Number(item.unit_price || 0))} currency={po.currency || 'ج.م'} />
+                  </span>
+                </div>
+
+                {(item.item_description || item.specifications) && (
+                  <p className="text-[11px] text-slate-400 bg-slate-900/30 p-2 rounded border border-slate-800/50 leading-relaxed">
+                    {item.item_description || item.specifications}
+                  </p>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-4 text-xs text-slate-500">لا توجد بنود مضافة لهذا الأمر</div>
+          )}
+        </div>
 
         {/* Totals Box */}
         <div className="flex justify-end pt-2">
@@ -255,7 +320,7 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
             return (
               <Card
                 key={receipt.id}
-                className={`p-5 space-y-4 transition-all border ${
+                className={`p-4 sm:p-5 space-y-4 transition-all border ${
                   isHighlighted
                     ? 'border-cyan-400/90 bg-slate-900 shadow-xl shadow-cyan-950/40 ring-1 ring-cyan-400/50'
                     : 'border-slate-800 bg-slate-950/80'
@@ -263,13 +328,13 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
               >
                 {/* Receipt Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="font-mono text-base font-black text-cyan-300 bg-slate-900 border border-slate-700/80 px-2.5 py-1 rounded-xl">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <span className="font-mono text-sm sm:text-base font-black text-cyan-300 bg-slate-900 border border-slate-700/80 px-2.5 py-1 rounded-xl">
                       {receipt.receipt_number}
                     </span>
 
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold border whitespace-nowrap ${
                         receipt.status === 'APPROVED'
                           ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/80'
                           : 'bg-amber-950/80 text-amber-300 border-amber-700/80'
@@ -280,7 +345,7 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
                         : `⏳ حالة الإذن: ${receipt.status}`}
                     </span>
 
-                    <span className="bg-slate-900 text-slate-300 border border-slate-700/80 px-2 py-0.5 rounded-lg text-xs font-semibold">
+                    <span className="bg-slate-900 text-slate-300 border border-slate-700/80 px-2 py-0.5 rounded-lg text-xs font-semibold whitespace-nowrap">
                       {receipt.receipt_type === 'REQUESTER_OFFICE'
                         ? '🏢 استلام مكتبي'
                         : receipt.receipt_type === 'SITE_DIRECT'
@@ -293,7 +358,7 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
                     <Link
                       to={`/accounting/supplier-payments?tab=payments&purchase_receipt_id=${receipt.id}&po=${po.po_number || po.id}`}
                     >
-                      <Button variant="primary" size="sm" className="font-bold shadow-sm">
+                      <Button variant="primary" size="sm" className="font-bold shadow-sm w-full sm:w-auto">
                         <span>🧾 تسجيل فاتورة وسداد هذا الإذن</span>
                         <span className="mr-1">←</span>
                       </Button>
@@ -304,7 +369,7 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
                 {/* Receipt Meta Details */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs bg-slate-900/60 p-3 rounded-xl border border-slate-800/60">
                   <div>
-                    <span className="text-slate-400 block font-semibold">تاريخ الاستلام:</span>
+                    <span className="text-slate-400 block font-semibold text-[11px]">تاريخ الاستلام:</span>
                     <span className="text-slate-100 font-medium">
                       {receipt.received_at || receipt.warehouse_submitted_at
                         ? new Date(receipt.received_at || receipt.warehouse_submitted_at!).toLocaleDateString('ar-EG')
@@ -313,21 +378,21 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <span className="text-slate-400 block font-semibold">أمين المستودع (المستلم):</span>
+                    <span className="text-slate-400 block font-semibold text-[11px]">أمين المستودع (المستلم):</span>
                     <span className="text-cyan-300 font-bold">
                       {receipt.warehouse_keeper?.name || '—'}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-slate-400 block font-semibold">مهندس الموقع المعتمد:</span>
+                    <span className="text-slate-400 block font-semibold text-[11px]">مهندس الموقع المعتمد:</span>
                     <span className="text-emerald-300 font-bold">
                       {receipt.site_engineer?.name || '—'}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-slate-400 block font-semibold">تاريخ اعتماد الموقع:</span>
+                    <span className="text-slate-400 block font-semibold text-[11px]">تاريخ اعتماد الموقع:</span>
                     <span className="text-slate-100 font-medium">
                       {receipt.site_engineer_approved_at
                         ? new Date(receipt.site_engineer_approved_at).toLocaleDateString('ar-EG')
@@ -354,11 +419,13 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Items Received Table */}
+                {/* Items Received Section */}
                 {receipt.items && receipt.items.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-xs font-bold text-slate-300">📦 البنود المستلمة ومطابقتها بأمر الشراء:</h4>
-                    <div className="overflow-x-auto">
+
+                    {/* Desktop Table View */}
+                    <div className="hidden sm:block">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -390,11 +457,11 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
                                 </TableCell>
                                 <TableCell className="text-xs">
                                   {isComplete ? (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800/80 px-2 py-0.5 text-[11px] font-bold">
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800/80 px-2.5 py-0.5 text-xs font-bold whitespace-nowrap">
                                       ✓ مطابق 100%
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-950 text-amber-300 border border-amber-800/80 px-2 py-0.5 text-[11px] font-bold">
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-950 text-amber-300 border border-amber-800/80 px-2.5 py-0.5 text-xs font-bold whitespace-nowrap">
                                       ⚠️ استلام جزئي ({recQty}/{reqQty})
                                     </span>
                                   )}
@@ -407,6 +474,60 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
                           })}
                         </TableBody>
                       </Table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="space-y-2.5 sm:hidden">
+                      {receipt.items.map((rItem, idx) => {
+                        const reqQty = Number(rItem.ordered_quantity || 0);
+                        const recQty = Number(rItem.received_quantity || 0);
+                        const isComplete = recQty >= reqQty && reqQty > 0;
+
+                        return (
+                          <div key={`rcpt-mob-${rItem.id || idx}`} className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 space-y-2">
+                            <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="font-mono text-xs font-black px-2 py-0.5 rounded-md bg-cyan-950 text-cyan-300 border border-cyan-800/80 shrink-0">
+                                  #{idx + 1}
+                                </span>
+                                <h5 className="text-xs font-bold text-slate-100 truncate">
+                                  {rItem.purchase_order_item?.item_name || rItem.purchase_order_item?.item_description || '—'}
+                                </h5>
+                              </div>
+                              {isComplete ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800/80 px-2 py-0.5 text-[10px] font-bold whitespace-nowrap shrink-0">
+                                  ✓ مطابق 100%
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-950 text-amber-300 border border-amber-800/80 px-2 py-0.5 text-[10px] font-bold whitespace-nowrap shrink-0">
+                                  ⚠️ استلام جزئي ({recQty}/{reqQty})
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div className="bg-slate-950/70 p-2 rounded-lg border border-slate-800/60">
+                                <span className="text-slate-400 block text-[10px]">المطلوب بأمر الشراء:</span>
+                                <span className="font-mono font-bold text-slate-200 text-xs">
+                                  {reqQty} {rItem.purchase_order_item?.uom ? getUnitLabel(rItem.purchase_order_item.uom) : ''}
+                                </span>
+                              </div>
+                              <div className="bg-slate-950/70 p-2 rounded-lg border border-slate-800/60">
+                                <span className="text-slate-400 block text-[10px]">المستلم فعلياً:</span>
+                                <span className="font-mono font-bold text-emerald-400 text-xs">
+                                  {recQty} {rItem.purchase_order_item?.uom ? getUnitLabel(rItem.purchase_order_item.uom) : ''}
+                                </span>
+                              </div>
+                            </div>
+
+                            {rItem.notes && (
+                              <p className="text-[11px] text-slate-400 bg-slate-950/50 p-2 rounded border border-slate-800/40">
+                                <strong>ملاحظات:</strong> {rItem.notes}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

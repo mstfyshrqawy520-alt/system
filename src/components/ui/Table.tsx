@@ -8,7 +8,10 @@ export interface TableProps {
 export const Table: React.FC<TableProps> = ({ children, className = '' }) => {
   return (
     <div className="w-full max-w-full min-w-0 overflow-x-auto overscroll-x-contain touch-pan-x [scrollbar-width:thin] rounded-2xl border border-slate-800/90 bg-slate-900/70 shadow-xl shadow-slate-950/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md">
-      <table className={`w-full min-w-[650px] text-right text-xs text-slate-200 border-collapse ${className}`}>
+      <table
+        style={{ minWidth: '650px' }}
+        className={`w-full text-right text-xs text-slate-200 border-collapse ${className}`}
+      >
         {children}
       </table>
     </div>
@@ -57,6 +60,7 @@ export const TableHead: React.FC<{ children?: React.ReactNode; className?: strin
     <th
       scope="col"
       colSpan={colSpan}
+      style={{ whiteSpace: 'nowrap' }}
       className={`whitespace-nowrap px-3.5 py-3 text-xs font-bold text-slate-300 sm:px-4 sm:py-3.5 ${className}`}
     >
       {children}
@@ -70,7 +74,11 @@ export const TableCell: React.FC<{ children?: React.ReactNode; className?: strin
   colSpan,
 }) => {
   return (
-    <td colSpan={colSpan} className={`whitespace-nowrap px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs text-slate-200 ${className}`}>
+    <td
+      colSpan={colSpan}
+      style={{ whiteSpace: 'nowrap' }}
+      className={`whitespace-nowrap px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs text-slate-200 ${className}`}
+    >
       {children}
     </td>
   );
