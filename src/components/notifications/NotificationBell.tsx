@@ -301,36 +301,39 @@ export const NotificationBell: React.FC = () => {
 
       {/* Realtime Toast Popover */}
       {latestToast && !dropdownOpen && (
-        <div
-          className="fixed inset-x-3 top-14 sm:inset-auto sm:left-0 sm:top-12 z-50 sm:w-80 rounded-2xl border-2 border-cyan-500/80 bg-slate-950 p-4 text-right shadow-2xl animate-fade-in backdrop-blur-md"
-          dir="rtl"
-        >
-          <div className="flex items-center justify-between border-b border-cyan-900/50 pb-2">
-            <span className="flex items-center gap-1.5 text-xs font-black text-cyan-300">
-              <span>⚡</span> إشعار عاجل جديد
-            </span>
-            <button
-              type="button"
-              onClick={() => setLatestToast(null)}
-              className="flex items-center gap-1 text-slate-400 hover:text-rose-400 text-xs font-bold px-2 py-0.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-rose-950/40 transition-colors cursor-pointer"
-              title="إغلاق الإشعار"
-            >
-              <span>✕</span>
-              <span>إغلاق</span>
-            </button>
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setLatestToast(null)} />
+          <div
+            className="fixed inset-x-3 top-14 sm:inset-auto sm:left-0 sm:top-12 z-50 sm:w-80 rounded-2xl border-2 border-cyan-500/80 bg-slate-950 p-4 text-right shadow-2xl animate-fade-in backdrop-blur-md"
+            dir="rtl"
+          >
+            <div className="flex items-center justify-between border-b border-cyan-900/50 pb-2">
+              <span className="flex items-center gap-1.5 text-xs font-black text-cyan-300">
+                <span>⚡</span> إشعار عاجل جديد
+              </span>
+              <button
+                type="button"
+                onClick={() => setLatestToast(null)}
+                className="flex items-center gap-1 text-slate-400 hover:text-rose-400 text-xs font-bold px-2 py-0.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-rose-950/40 transition-colors cursor-pointer"
+                title="إغلاق الإشعار"
+              >
+                <span>✕</span>
+                <span>إغلاق</span>
+              </button>
+            </div>
+            <p className="mt-2 text-sm font-bold text-slate-100">{latestToast.title}</p>
+            <p className="mt-1 text-xs leading-5 text-slate-300 line-clamp-2">{latestToast.message}</p>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => handleNotificationClick(latestToast)}
+                className="flex-1 rounded-xl bg-cyan-600 px-3 py-2 text-xs font-black text-white hover:bg-cyan-500 transition-colors shadow-md shadow-cyan-900/30 text-center cursor-pointer"
+              >
+                {resolveNotificationAction(latestToast, user).actionLabel} ←
+              </button>
+            </div>
           </div>
-          <p className="mt-2 text-sm font-bold text-slate-100">{latestToast.title}</p>
-          <p className="mt-1 text-xs leading-5 text-slate-300 line-clamp-2">{latestToast.message}</p>
-          <div className="mt-3 flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => handleNotificationClick(latestToast)}
-              className="flex-1 rounded-xl bg-cyan-600 px-3 py-2 text-xs font-black text-white hover:bg-cyan-500 transition-colors shadow-md shadow-cyan-900/30 text-center cursor-pointer"
-            >
-              {resolveNotificationAction(latestToast, user).actionLabel} ←
-            </button>
-          </div>
-        </div>
+        </>
       )}
 
       {/* Mobile Backdrop */}

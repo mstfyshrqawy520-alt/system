@@ -294,11 +294,20 @@ export const EmployeeDashboardPage: React.FC = () => {
             لا توجد طلبات تطابق تصنيف &quot;{getFilterLabel()}&quot;.
           </div>
         ) : (
-          <PurchaseRequestTable
-            requests={filteredRequests.slice(0, 10)}
-            onOpenSubmitModal={(pr) => setSelectedSubmitPr(pr)}
-            onOpenDeleteModal={(pr) => setSelectedDeletePr(pr)}
-          />
+          <>
+            <PurchaseRequestTable
+              requests={filteredRequests.slice(0, 10)}
+              onOpenSubmitModal={(pr) => setSelectedSubmitPr(pr)}
+              onOpenDeleteModal={(pr) => setSelectedDeletePr(pr)}
+            />
+            {filteredRequests.length > 10 && (
+              <div className="mt-3 text-center">
+                <Link to="/employee/requests" className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-800/60 bg-cyan-950/30 px-4 py-2.5 text-xs font-bold text-cyan-300 hover:bg-cyan-900/40 hover:border-cyan-600 transition-all">
+                  عرض كل الطلبات ({filteredRequests.length}) ←
+                </Link>
+              </div>
+            )}
+          </>
         )}
       </div>
 

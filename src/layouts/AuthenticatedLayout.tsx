@@ -362,14 +362,15 @@ export const AuthenticatedLayout: React.FC = () => {
                             <div className="w-10 h-10 rounded-xl bg-[#11100e] border border-[#b89552]/60 p-1.5 flex items-center justify-center shadow-inner shadow-black/30">
                                 <img src="/eshbelia-logo.png" alt="شعار شركة اشبيلية" className="h-full w-full object-contain" />
                             </div>
-                            <div className="hidden sm:flex flex-col min-w-0">
-                                <span className="text-base font-black tracking-tight text-slate-100">
-                                    <span className="truncate">شركة اشبيلية</span>
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-sm sm:text-base font-black tracking-tight text-slate-100">
+                                    <span className="truncate">اشبيلية</span>
+                                    <span className="hidden sm:inline truncate"> — شركة</span>
                                 </span>
-                                <span className="text-[10px] font-bold tracking-wide text-[#d4b36a]">
+                                <span className="hidden sm:block text-[10px] font-bold tracking-wide text-[#d4b36a]">
                                     <span className="truncate">للتطوير العقاري والمقاولات</span>
                                 </span>
-                                <span className="text-[9px] font-semibold text-slate-500">
+                                <span className="hidden sm:block text-[9px] font-semibold text-slate-500">
                                     <span className="truncate">نظام المشتريات التشغيلية</span>
                                 </span>
                             </div>
@@ -419,7 +420,7 @@ export const AuthenticatedLayout: React.FC = () => {
                                 onClick={() => { setMobileMenuOpen(!mobileMenuOpen); setSidebarOpen(true); }}
                                 aria-label="Toggle navigation menu"
                                 aria-expanded={mobileMenuOpen}
-                                className="flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-slate-800/80 p-2.5 text-slate-300 hover:text-white border border-slate-700"
+                                className="relative flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-slate-800/80 p-2.5 text-slate-300 hover:text-white border border-slate-700"
                             >
                                 <svg
                                     className="w-5 h-5"
@@ -516,7 +517,7 @@ export const AuthenticatedLayout: React.FC = () => {
                 </aside>
 
                 {/* Main Content Area */}
-                <main className="flex-1 min-w-0 w-full bg-slate-900/70 border border-slate-800/80 rounded-2xl shadow-2xl p-3 sm:p-4 lg:p-5 min-h-[calc(100dvh-6rem)] backdrop-blur-sm overflow-visible flex flex-col">
+                <main className="flex-1 min-w-0 w-full bg-slate-900/70 border border-slate-800/80 rounded-2xl shadow-2xl p-3 sm:p-4 lg:p-5 pb-20 sm:pb-4 lg:pb-5 min-h-[calc(100dvh-6rem)] backdrop-blur-sm overflow-visible flex flex-col">
                     {sessionExpired && (
                         <div className="mb-4 flex flex-col gap-2 rounded-xl border border-amber-700/70 bg-amber-950/30 px-4 py-3 text-xs text-amber-200 sm:flex-row sm:items-center sm:justify-between" role="alert" aria-live="assertive">
                             <span>انتهت جلسة الدخول. احفظ أي بيانات محلية، ثم سجّل الدخول مرة أخرى للمتابعة.</span>
