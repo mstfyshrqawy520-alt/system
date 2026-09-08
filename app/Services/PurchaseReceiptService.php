@@ -277,6 +277,22 @@ class PurchaseReceiptService
                 $receipt
             );
 
+            // Notify Financial Director for informational awareness only (no invoice registration action)
+            if ($deptAccountants->isNotEmpty()) {
+                $financialDirectors = $accountants->reject(function ($u) {
+                    return $u->hasRole('site_accountant') || $u->hasRole('licenses_accountant') || $u->hasRole('buffet_accountant');
+                });
+                foreach ($financialDirectors as $director) {
+                    $notificationService->queueNotification(
+                        $director,
+                        'purchase_order_and_receipt_approved_info',
+                        'إشعار للعلم: إذن استلام معتمد جاهز للفوترة',
+                        "تم اعتماد إذن الاستلام {$receipt->receipt_number} لأمر الشراء {$receipt->purchaseOrder->po_number}، وهو بانتظار تسجيل الفاتورة من قِبل محاسب القسم المختص (للعلم فقط).",
+                        $receipt->purchaseOrder
+                    );
+                }
+            }
+
             if ($receipt->warehouse_keeper_user_id) {
                 $notificationService->queueNotification(
                     $receipt->warehouse_keeper_user_id,
@@ -392,6 +408,22 @@ class PurchaseReceiptService
                 $receipt->purchaseOrder,
                 $receipt
             );
+
+            // Notify Financial Director for informational awareness only (no invoice registration action)
+            if ($deptAccountants->isNotEmpty()) {
+                $financialDirectors = $accountants->reject(function ($u) {
+                    return $u->hasRole('site_accountant') || $u->hasRole('licenses_accountant') || $u->hasRole('buffet_accountant');
+                });
+                foreach ($financialDirectors as $director) {
+                    $notificationService->queueNotification(
+                        $director,
+                        'purchase_order_and_receipt_approved_info',
+                        'إشعار للعلم: إذن استلام معتمد جاهز للفوترة',
+                        "تم اعتماد إذن الاستلام {$receipt->receipt_number} لأمر الشراء {$receipt->purchaseOrder->po_number}، وهو بانتظار تسجيل الفاتورة من قِبل محاسب القسم المختص (للعلم فقط).",
+                        $receipt->purchaseOrder
+                    );
+                }
+            }
 
             return $receipt->fresh(['purchaseOrder.supplier', 'purchaseOrder.items.item', 'purchaseRequest', 'receiver', 'items.purchaseOrderItem']);
         });

@@ -36,12 +36,10 @@ class NotificationResource extends JsonResource
             $role = $user->roles->first()?->slug;
 
             if ($role === 'accountant') {
-                if ($this->type === 'purchase_order_and_receipt_ready_accounting' || $this->purchase_receipt_id || $this->notifiable_type === PurchaseOrder::class || $this->purchase_order_id) {
+                if (in_array($this->type, ['purchase_order_and_receipt_ready_accounting', 'purchase_order_and_receipt_approved_info'], true) || $this->purchase_receipt_id || $this->notifiable_type === PurchaseOrder::class || $this->purchase_order_id) {
                     $poId = $this->purchase_order_id ?: ($this->notifiable_type === PurchaseOrder::class ? $this->notifiable_id : null);
                     if ($poId) {
                         $targetUrl = "/accounting/purchase-orders/{$poId}" . ($this->purchase_receipt_id ? "?receipt_id={$this->purchase_receipt_id}" : '');
-                    } elseif ($this->purchase_receipt_id) {
-                        $targetUrl = "/accounting/supplier-payments?tab=payments&purchase_receipt_id={$this->purchase_receipt_id}";
                     } else {
                         $targetUrl = '/accounting/purchase-orders';
                     }
