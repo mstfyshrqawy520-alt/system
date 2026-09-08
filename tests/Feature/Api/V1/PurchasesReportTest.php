@@ -222,4 +222,85 @@ class PurchasesReportTest extends TestCase
         $responseDifferentDay->assertStatus(200);
         $this->assertCount(0, $responseDifferentDay->json('rows'));
     }
+
+    public function test_site_accountant_can_access_purchases_report_scoped_to_allowed_departments(): void
+    {
+        $siteAccountantRole = Role::firstOrCreate(['slug' => 'site_accountant'], ['name' => 'Site Accountant']);
+        $viewPerm = Permission::firstOrCreate(['slug' => 'purchase_order.view_accounting'], ['name' => 'عرض أوامر الشراء']);
+        $siteAccountantRole->permissions()->syncWithoutDetaching([$viewPerm->id]);
+
+        $siteAccountant = User::create([
+            'department_id' => $this->executionDept->id,
+            'name' => 'Habiba Site Accountant',
+            'email' => 'habiba.test@example.com',
+            'password' => Hash::make('Secret123!'),
+            'is_active' => true,
+        ]);
+        $siteAccountant->roles()->attach($siteAccountantRole->id);
+
+        // 1. Order in EXECUTION department (allowed)
+        $prExecution = PurchaseRequest::create([
+            'request_number' => 'PR-EXEC-001',
+            'request_type' => 'PROJECT_MATERIALS',
+            'department_id' => $this->executionDept->id,
+            'user_id' => $siteAccountant->id,
+            'status' => 'APPROVED_BY_GENERAL_MANAGER',
+        ]);
+        $poExecution = PurchaseOrder::create([
+            'po_number' => 'PO-EXEC-001',
+            'purchase_request_id' => $prExecution->id,
+            'supplier_id' => $this->supplier->id,
+            'created_by_user_id' => $siteAccountant->id,
+            'status' => 'APPROVED_BY_ACCOUNTING',
+            'subtotal' => 50000,
+            'grand_total' => 50000,
+            'actual_delivery_date' => '2026-06-15',
+        ]);
+        PurchaseOrderItem::create([
+            'purchase_order_id' => $poExecution->id,
+            'item_description' => 'أسمنت تنفيذ',
+            'quantity' => 10,
+            'uom' => 'طن',
+            'unit_price' => 5000,
+            'line_total' => 50000,
+        ]);
+
+        // 2. Order in disallowed department (e.g. BUFFET)
+        $disallowedDept = Department::create(['name' => 'البوفيه', 'code' => 'BUFFET', 'is_active' => true]);
+        $prBuffet = PurchaseRequest::create([
+            'request_number' => 'PR-BUF-001',
+            'request_type' => 'OFFICE_SUPPLIES',
+            'department_id' => $disallowedDept->id,
+            'user_id' => $siteAccountant->id,
+            'status' => 'APPROVED_BY_GENERAL_MANAGER',
+        ]);
+        $poBuffet = PurchaseOrder::create([
+            'po_number' => 'PO-BUF-001',
+            'purchase_request_id' => $prBuffet->id,
+            'supplier_id' => $this->supplier->id,
+            'created_by_user_id' => $siteAccountant->id,
+            'status' => 'APPROVED_BY_ACCOUNTING',
+            'subtotal' => 3000,
+            'grand_total' => 3000,
+            'actual_delivery_date' => '2026-06-15',
+        ]);
+        PurchaseOrderItem::create([
+            'purchase_order_id' => $poBuffet->id,
+            'item_description' => 'شاي وسكر',
+            'quantity' => 20,
+            'uom' => 'عبوة',
+            'unit_price' => 150,
+            'line_total' => 3000,
+        ]);
+
+        Sanctum::actingAs($siteAccountant);
+
+        $response = $this->getJson('/api/v1/reports/purchases?month=2026-06');
+        $response->assertStatus(200);
+
+        $rows = $response->json('rows');
+        $this->assertCount(1, $rows);
+        $this->assertEquals('أسمنت تنفيذ', $rows[0]['item_name']);
+        $this->assertEquals('التنفيذ', $rows[0]['department_name']);
+    }
 }

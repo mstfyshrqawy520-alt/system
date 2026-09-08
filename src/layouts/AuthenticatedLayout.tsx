@@ -198,19 +198,31 @@ export const AuthenticatedLayout: React.FC = () => {
                             to="/site-accountant"
                             className={linkClassName("/site-accountant")}
                         >
-                            <span className="ml-2.5 text-sm" aria-hidden="true">📊</span> لوحة الحسابات
-                        </Link>
-                        <Link
-                            to="/accounting/supplier-finance"
-                            className={linkClassName("/accounting/supplier-finance")}
-                        >
-                            <span className="ml-2.5 text-sm" aria-hidden="true">🧾</span> تسجيل فواتير الموردين
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📊</span> لوحة المحاسبة
                         </Link>
                         <Link
                             to="/accounting/purchase-orders"
                             className={linkClassName("/accounting/purchase-orders")}
                         >
                             <span className="ml-2.5 text-sm" aria-hidden="true">📋</span> أوامر الشراء والاستلام
+                        </Link>
+                        <Link
+                            to="/accounting/supplier-payments"
+                            className={linkClassName("/accounting/supplier-payments")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">💳</span> فواتير ودفعات الموردين
+                        </Link>
+                        <Link
+                            to="/accounting/supplier-accounts"
+                            className={linkClassName("/accounting/supplier-accounts")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">🏦</span> حسابات الموردين
+                        </Link>
+                        <Link
+                            to="/accounting/reports"
+                            className={linkClassName("/accounting/reports")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📈</span> التقارير والتحليلات
                         </Link>
                         <Link
                             to="/requests/create"

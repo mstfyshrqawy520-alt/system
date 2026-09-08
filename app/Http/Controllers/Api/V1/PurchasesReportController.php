@@ -17,6 +17,7 @@ class PurchasesReportController extends Controller
      */
     private const ALLOWED_ROLES = [
         'accountant',
+        'site_accountant',
         'general_manager',
         'procurement_manager',
         'admin',
@@ -98,6 +99,8 @@ class PurchasesReportController extends Controller
         }
 
         // 3. Query all Purchase Orders in the period with items, receipts and supplier invoices
+        $isSiteAccountant = $user->hasRole('site_accountant') && ! $user->hasRole('accountant') && ! $user->hasRole('admin');
+
         $ordersQuery = PurchaseOrder::query()
             ->with([
                 'supplier',
@@ -110,7 +113,12 @@ class PurchasesReportController extends Controller
                 'supplierInvoices.landAllocations.department',
                 'supplierInvoices.createdBy',
             ])
-            ->whereNotIn('status', ['REJECTED', 'PO_DRAFT']);
+            ->whereNotIn('status', ['REJECTED', 'PO_DRAFT'])
+            ->when($isSiteAccountant, function ($q) {
+                $q->whereHas('purchaseRequest.department', function ($dq) {
+                    $dq->whereIn('code', ['EXECUTION', 'FINISHING', 'BUILDINGS']);
+                });
+            });
 
         // Date filtering based on order date or delivery date or invoice date
         if ($startDate !== null && $endDate !== null) {

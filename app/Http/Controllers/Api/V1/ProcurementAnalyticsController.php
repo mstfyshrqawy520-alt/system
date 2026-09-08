@@ -32,7 +32,10 @@ class ProcurementAnalyticsController extends Controller
 
         [$startDate, $endDate, $dateLabel] = $this->resolveDateRange($request);
 
-        $cacheKey = 'procurement:analytics:v4:' . md5(json_encode($request->all()));
+        $user = $request->user();
+        $isSiteAccountant = $user?->hasRole('site_accountant') && ! $user?->hasRole('accountant') && ! $user?->hasRole('admin');
+
+        $cacheKey = 'procurement:analytics:v4:' . ($isSiteAccountant ? 'site_acc_' . ($user->id ?? 0) . ':' : '') . md5(json_encode($request->all()));
 
         if (Cache::has($cacheKey)) {
             return response()->json(Cache::get($cacheKey));
@@ -42,7 +45,12 @@ class ProcurementAnalyticsController extends Controller
         $basePurchaseOrderQuery = PurchaseOrder::query()
             ->select(['id', 'po_number', 'purchase_request_id', 'supplier_id', 'created_by_user_id', 'status', 'grand_total', 'delivery_status', 'delivery_date', 'actual_delivery_date', 'created_at', 'updated_at'])
             ->when($startDate !== null, fn ($query) => $query->where('created_at', '>=', $startDate))
-            ->when($endDate !== null, fn ($query) => $query->where('created_at', '<=', $endDate));
+            ->when($endDate !== null, fn ($query) => $query->where('created_at', '<=', $endDate))
+            ->when($isSiteAccountant, function ($q) {
+                $q->whereHas('purchaseRequest.department', function ($dq) {
+                    $dq->whereIn('code', ['EXECUTION', 'FINISHING', 'BUILDINGS']);
+                });
+            });
 
         $filteredPurchaseOrderQuery = clone $basePurchaseOrderQuery;
         if (is_string($status) && in_array($status, self::ORDER_STATUSES, true)) {
@@ -62,7 +70,12 @@ class ProcurementAnalyticsController extends Controller
                 $query->whereNotIn('status', ['REJECTED']);
             })
             ->when($startDate !== null, fn ($query) => $query->where('created_at', '>=', $startDate))
-            ->when($endDate !== null, fn ($query) => $query->where('created_at', '<=', $endDate));
+            ->when($endDate !== null, fn ($query) => $query->where('created_at', '<=', $endDate))
+            ->when($isSiteAccountant, function ($q) {
+                $q->whereHas('department', function ($dq) {
+                    $dq->whereIn('code', ['EXECUTION', 'FINISHING', 'BUILDINGS']);
+                });
+            });
 
         $approvedRequests = $approvedRequestQuery
             ->orderByDesc('updated_at')

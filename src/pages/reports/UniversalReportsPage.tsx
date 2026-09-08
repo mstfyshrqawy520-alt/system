@@ -8,6 +8,7 @@ import { parseApiError } from '../../utils/apiError';
 import { DashboardBars, DashboardDonut, DashboardChartSegment } from '../../components/ui/DashboardCharts';
 import { getUnitLabel } from '../../utils/units';
 import { PurchasesReportView } from './PurchasesReportView';
+import { useAuth } from '../../context/AuthContext';
 
 const PURCHASE_ORDER_STATUS_LABELS: Record<string, string> = {
   PO_DRAFT: 'مسودة أمر شراء',
@@ -70,6 +71,9 @@ const ProgressBar: React.FC<{ value: number; max: number; color?: string }> = ({
 };
 
 export const UniversalReportsPage: React.FC = () => {
+  const { hasRole } = useAuth();
+  const isSiteAccountant = hasRole('site_accountant') && !hasRole('accountant') && !hasRole('admin');
+
   // Main Tab: 'purchases_verified' (12 Columns Verified Purchases Report) vs 'orders_overview' (General Orders Analytics)
   const [mainTab, setMainTab] = usePersistedState<'purchases_verified' | 'orders_overview'>('reports.mainTab.v3', 'purchases_verified');
 
@@ -705,11 +709,16 @@ export const UniversalReportsPage: React.FC = () => {
         {/* Page Top Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="h-3 w-3 rounded-full bg-emerald-400 animate-pulse" />
               <h1 className="text-xl font-black text-slate-100 flex items-center gap-2">
                 <span>📑</span> تقارير المشتريات والبيانات المحاسبية
               </h1>
+              {isSiteAccountant && (
+                <span className="rounded-xl border border-amber-700/60 bg-amber-950/50 px-2.5 py-0.5 text-xs font-bold text-amber-300">
+                  أقسام التنفيذ والتشطيبات والمباني
+                </span>
+              )}
             </div>
             <p className="mt-1 text-xs text-slate-400">
               طباعة وتصدير تقارير المشتريات اليومية والشهرية بنمط جدول إكسل محاسبي مسطر ومعتمد.

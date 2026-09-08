@@ -145,6 +145,7 @@ export const AppRoutes: React.FC = () => {
                     <Route path="/accounting/supplier-finance" element={<SupplierFinanceWorkspacePage />} />
                     <Route path="/accounting/supplier-payments" element={<SupplierFinanceWorkspacePage />} />
                     <Route path="/accounting/supplier-accounts" element={<SupplierFinanceWorkspacePage />} />
+                    <Route path="/accounting/reports" element={<UniversalReportsPage />} />
                 </Route>
 
                 {/* ── Site Accountant Dedicated Dashboard ─────────────────────── */}
@@ -158,7 +159,6 @@ export const AppRoutes: React.FC = () => {
                     <Route path="/accounting/purchase-requests" element={<AccountingPurchaseRequestsPage />} />
                     <Route path="/accounting/purchase-quotes" element={<PurchaseQuotesDecisionPage mode="recommend" />} />
                     <Route path="/accounting/land-parcels" element={<LandParcelsPage />} />
-                    <Route path="/accounting/reports" element={<UniversalReportsPage />} />
                 </Route>
 
                 {/* ── General Manager Routes ────────────────────────────────── */}
@@ -173,7 +173,7 @@ export const AppRoutes: React.FC = () => {
                 </Route>
 
                 {/* Direct alias & shared routes */}
-                <Route element={<RoleRoute allowedRoles={["accountant", "general_manager", "procurement_manager", "admin"]} />}>
+                <Route element={<RoleRoute allowedRoles={["accountant", "site_accountant", "general_manager", "procurement_manager", "admin"]} />}>
                     <Route path="/reports" element={<UniversalReportsPage />} />
                 </Route>
                 <Route path="/purchase-quotes" element={<PurchaseQuotesDecisionPage mode="recommend" />} />

@@ -133,14 +133,14 @@ class SupplierInvoiceController extends Controller
     public function supplierAccounts(Request $request): JsonResponse
     {
         return response()->json([
-            'data' => $this->service->supplierAccounts((int) $request->integer('limit', 200)),
+            'data' => $this->service->supplierAccounts((int) $request->integer('limit', 200), $request->user()),
         ]);
     }
 
-    public function supplierAccount(Supplier $supplier): JsonResponse
+    public function supplierAccount(Request $request, Supplier $supplier): JsonResponse
     {
         return response()->json([
-            'data' => $this->service->supplierAccount($supplier),
+            'data' => $this->service->supplierAccount($supplier, $request->user()),
         ]);
     }
 

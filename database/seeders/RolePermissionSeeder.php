@@ -177,6 +177,7 @@ class RolePermissionSeeder extends Seeder
                     'accounting.invoice.view',
                     'accounting.invoice.create',
                     'accounting.invoice.match',
+                    'supplier.account.view',
                     'purchase_order.view',
                     'purchase_order.view_accounting',
                     'purchase_request.create',

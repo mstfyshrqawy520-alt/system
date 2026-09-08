@@ -296,32 +296,61 @@ class SupplierInvoiceService
         });
     }
 
-    public function supplierAccounts(int $limit = 200): array
+    public function supplierAccounts(int $limit = 200, ?User $user = null): array
     {
+        $isRestricted = $this->isRestrictedSiteAccountant($user);
+
         return Supplier::query()
             ->where('is_active', true)
+            ->when($isRestricted, function ($query) {
+                $query->where(function ($sq) {
+                    $sq->whereHas('purchaseOrders.purchaseRequest.department', function ($dq) {
+                        $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+                    })->orWhereHas('invoices.purchaseOrder.purchaseRequest.department', function ($dq) {
+                        $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+                    });
+                });
+            })
             ->orderBy('company_name')
             ->limit($limit)
             ->get()
-            ->map(fn (Supplier $supplier) => $this->supplierSummary($supplier))
+            ->map(fn (Supplier $supplier) => $this->supplierSummary($supplier, $user))
             ->values()
             ->all();
     }
 
-    public function supplierAccount(Supplier $supplier): array
+    public function supplierAccount(Supplier $supplier, ?User $user = null): array
     {
+        $isRestricted = $this->isRestrictedSiteAccountant($user);
+
         $supplier->load([
-            'purchaseOrders' => fn ($query) => $query->orderByDesc('created_at'),
-            'invoices.purchaseOrder',
-            'invoices.purchaseReceipt',
-            'invoices.paymentAllocations.payment',
-            'invoices.landAllocations.parcel',
+            'purchaseOrders' => fn ($query) => $query
+                ->when($isRestricted, function ($q) {
+                    $q->whereHas('purchaseRequest.department', function ($dq) {
+                        $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+                    });
+                })
+                ->orderByDesc('created_at'),
+            'invoices' => fn ($query) => $query
+                ->when($isRestricted, function ($q) {
+                    $q->whereHas('purchaseOrder.purchaseRequest.department', function ($dq) {
+                        $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+                    });
+                })
+                ->with(['purchaseOrder', 'purchaseReceipt', 'paymentAllocations.payment', 'landAllocations.parcel']),
+            'payments' => fn ($query) => $query
+                ->when($isRestricted, function ($q) {
+                    $q->whereHas('allocations.invoice.purchaseOrder.purchaseRequest.department', function ($dq) {
+                        $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+                    });
+                })
+                ->orderByDesc('payment_date'),
             'balanceAccount',
         ]);
 
         return [
             'supplier' => $supplier,
-            'summary' => $this->supplierSummary($supplier),
+            'summary' => $this->supplierSummary($supplier, $user),
             'invoices' => $supplier->invoices->sortByDesc('invoice_date')->values(),
             'payments' => $supplier->payments->sortByDesc('payment_date')->values(),
         ];
@@ -359,14 +388,35 @@ class SupplierInvoiceService
         return $this->supplierAccount($supplier);
     }
 
-    private function supplierSummary(Supplier $supplier): array
+    private function supplierSummary(Supplier $supplier, ?User $user = null): array
     {
-        $openingBalance = (float) ($supplier->opening_balance ?? 0);
-        $totalInvoiced = (float) SupplierInvoice::where('supplier_id', $supplier->id)
+        $isRestricted = $this->isRestrictedSiteAccountant($user);
+
+        $openingBalance = $isRestricted ? 0 : (float) ($supplier->opening_balance ?? 0);
+
+        $invoicesQuery = SupplierInvoice::where('supplier_id', $supplier->id)
             ->where('status', '!=', 'DRAFT')
-            ->sum('amount');
-        $totalPaid = (float) SupplierPayment::where('supplier_id', $supplier->id)->sum('amount');
+            ->when($isRestricted, function ($q) {
+                $q->whereHas('purchaseOrder.purchaseRequest.department', function ($dq) {
+                    $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+                });
+            });
+
+        $totalInvoiced = (float) (clone $invoicesQuery)->sum('amount');
+
+        $paymentsQuery = SupplierPayment::where('supplier_id', $supplier->id)
+            ->when($isRestricted, function ($q) {
+                $q->whereHas('allocations.invoice.purchaseOrder.purchaseRequest.department', function ($dq) {
+                    $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+                });
+            });
+
+        $totalPaid = (float) $paymentsQuery->sum('amount');
         $balance = round($openingBalance + $totalInvoiced - $totalPaid, 2);
+
+        $openInvoicesCount = (clone $invoicesQuery)->whereIn('status', ['OPEN', 'PARTIALLY_PAID'])->count();
+        $invoicesCount = (clone $invoicesQuery)->count();
+        $paymentsCount = (clone $paymentsQuery)->count();
 
         return [
             'supplier_id' => $supplier->id,
@@ -375,18 +425,14 @@ class SupplierInvoiceService
             'email' => $supplier->email,
             'phone' => $supplier->phone,
             'opening_balance' => $openingBalance,
-            'opening_balance_notes' => $supplier->opening_balance_notes,
+            'opening_balance_notes' => $isRestricted ? null : $supplier->opening_balance_notes,
             'total_invoiced' => $totalInvoiced,
             'total_paid' => $totalPaid,
             'balance' => $balance,
             'is_overpaid' => $balance < 0,
-            'open_invoices_count' => SupplierInvoice::where('supplier_id', $supplier->id)
-                ->whereIn('status', ['OPEN', 'PARTIALLY_PAID'])
-                ->count(),
-            'invoices_count' => SupplierInvoice::where('supplier_id', $supplier->id)
-                ->where('status', '!=', 'DRAFT')
-                ->count(),
-            'payments_count' => SupplierPayment::where('supplier_id', $supplier->id)->count(),
+            'open_invoices_count' => $openInvoicesCount,
+            'invoices_count' => $invoicesCount,
+            'payments_count' => $paymentsCount,
         ];
     }
 
