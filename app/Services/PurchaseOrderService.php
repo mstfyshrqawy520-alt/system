@@ -537,11 +537,23 @@ class PurchaseOrderService
             // Notify Accountants (Read-only access notification)
             $notificationService = app(\App\Services\NotificationService::class);
             $accountants = $notificationService->resolveUsersWithPermission('purchase_order.view_accounting');
+
+            $lockedPo->loadMissing('purchaseRequest.department');
+            $deptCode = $lockedPo->purchaseRequest?->department?->code;
+            if (in_array($deptCode, ['EXECUTION', 'FINISHING', 'BUILDINGS'], true)) {
+                $siteAccountants = User::whereHas('roles', fn ($q) => $q->where('slug', 'site_accountant'))
+                    ->where('is_active', true)
+                    ->get();
+                $allAccountants = $accountants->merge($siteAccountants)->unique('id');
+            } else {
+                $allAccountants = $accountants;
+            }
+
             $notificationService->queueUsers(
-                $accountants,
+                $allAccountants,
                 'purchase_order_issued_accounting',
                 'تم إصدار أمر شراء جديد',
-                "تم إصدار أمر الشراء {$lockedPo->po_number} للاطلاع المالي.",
+                "تم إصدار أمر الشراء {$lockedPo->po_number} للاطلاع المالي وتجهيز الفواتير.",
                 $lockedPo
             );
 

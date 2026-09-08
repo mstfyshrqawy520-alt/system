@@ -15,7 +15,18 @@ use Illuminate\Validation\ValidationException;
 
 class SupplierInvoiceService
 {
-    public function approvedReceipts(int $limit = 100)
+    public const SITE_ACCOUNTANT_DEPARTMENT_CODES = ['EXECUTION', 'FINISHING', 'BUILDINGS'];
+
+    public function isRestrictedSiteAccountant(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return $user->hasRole('site_accountant') && ! $user->hasRole('accountant') && ! $user->hasRole('admin');
+    }
+
+    public function approvedReceipts(int $limit = 100, ?User $user = null)
     {
         return PurchaseReceipt::with([
             'purchaseOrder.supplier',
@@ -38,21 +49,31 @@ class SupplierInvoiceService
             ->whereDoesntHave('supplierInvoices', function ($query) {
                 $query->whereIn('status', ['DRAFT', 'OPEN', 'PARTIALLY_PAID', 'PAID']);
             })
+            ->when($this->isRestrictedSiteAccountant($user), function ($query) {
+                $query->whereHas('purchaseOrder.purchaseRequest.department', function ($dq) {
+                    $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+                });
+            })
             ->orderByDesc('site_engineer_approved_at')
             ->limit($limit)
             ->get();
     }
 
-    public function invoices(?int $supplierId = null, int $limit = 200)
+    public function invoices(?int $supplierId = null, int $limit = 200, ?User $user = null)
     {
         return SupplierInvoice::with([
             'supplier',
-            'purchaseOrder',
+            'purchaseOrder.purchaseRequest.department',
             'purchaseReceipt',
             'paymentAllocations.payment',
             'landAllocations.parcel',
         ])
             ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
+            ->when($this->isRestrictedSiteAccountant($user), function ($query) {
+                $query->whereHas('purchaseOrder.purchaseRequest.department', function ($dq) {
+                    $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+                });
+            })
             ->orderByDesc('invoice_date')
             ->orderByDesc('id')
             ->limit($limit)

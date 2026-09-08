@@ -191,6 +191,35 @@ export const AuthenticatedLayout: React.FC = () => {
                         </Link>
                     </>
                 );
+            case "site_accountant":
+                return (
+                    <>
+                        <Link
+                            to="/accounting/supplier-finance"
+                            className={linkClassName("/accounting/supplier-finance")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">🧾</span> تسجيل فواتير الموردين
+                        </Link>
+                        <Link
+                            to="/accounting/purchase-orders"
+                            className={linkClassName("/accounting/purchase-orders")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📋</span> أوامر الشراء والاستلام
+                        </Link>
+                        <Link
+                            to="/requests/create"
+                            className={linkClassName("/requests/create")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">✍️</span> إنشاء طلب شراء
+                        </Link>
+                        <Link
+                            to="/requests"
+                            className={linkClassName("/requests")}
+                        >
+                            <span className="ml-2.5 text-sm" aria-hidden="true">📂</span> طلباتي
+                        </Link>
+                    </>
+                );
             case "general_manager":
                 return (
                     <>

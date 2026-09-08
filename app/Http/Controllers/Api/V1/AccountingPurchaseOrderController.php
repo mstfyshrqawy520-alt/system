@@ -24,7 +24,7 @@ class AccountingPurchaseOrderController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $perPage = min(max((int) $request->query('per_page', 15), 1), 100);
-        $pos = $this->accountingService->getAccountingPurchaseOrders($perPage);
+        $pos = $this->accountingService->getAccountingPurchaseOrders($perPage, $request->user());
 
         return PurchaseOrderResource::collection($pos);
     }
@@ -49,6 +49,13 @@ class AccountingPurchaseOrderController extends Controller
             'receipts.siteEngineer',
             'receipts.receiver',
         ])->findOrFail((int) $id);
+
+        if ($request->user()?->hasRole('site_accountant') && ! $request->user()?->hasRole('accountant') && ! $request->user()?->hasRole('admin')) {
+            $deptCode = $po->purchaseRequest?->department?->code;
+            if (! in_array($deptCode, ['EXECUTION', 'FINISHING', 'BUILDINGS'], true)) {
+                abort(403, 'غير مصرح بعرض أمر شراء خارج نطاق التنفيذ والتشطيبات والمباني.');
+            }
+        }
 
         return new PurchaseOrderResource($po);
     }

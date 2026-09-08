@@ -18,7 +18,7 @@ class SupplierInvoiceController extends Controller
     public function approvedReceipts(Request $request): JsonResponse
     {
         return response()->json([
-            'data' => $this->service->approvedReceipts((int) $request->integer('limit', 100)),
+            'data' => $this->service->approvedReceipts((int) $request->integer('limit', 100), $request->user()),
         ]);
     }
 
@@ -28,6 +28,7 @@ class SupplierInvoiceController extends Controller
             'data' => $this->service->invoices(
                 $request->filled('supplier_id') ? (int) $request->input('supplier_id') : null,
                 (int) $request->integer('limit', 200),
+                $request->user()
             ),
         ]);
     }
@@ -49,6 +50,14 @@ class SupplierInvoiceController extends Controller
             'land_allocations.*.amount' => ['required', 'numeric', 'gt:0'],
             'land_allocations.*.notes' => ['nullable', 'string', 'max:1000'],
         ]);
+
+        $po = PurchaseOrder::with('purchaseRequest.department')->findOrFail($validated['purchase_order_id']);
+        if ($this->service->isRestrictedSiteAccountant($request->user())) {
+            $deptCode = $po->purchaseRequest?->department?->code;
+            if (! in_array($deptCode, SupplierInvoiceService::SITE_ACCOUNTANT_DEPARTMENT_CODES, true)) {
+                return response()->json(['message' => 'غير مصرح بتسجيل فواتير لأقسام خارج نطاق التنفيذ والتشطيبات والمباني.'], 403);
+            }
+        }
 
         $invoice = $this->service->createInvoice(
             $request->user(),

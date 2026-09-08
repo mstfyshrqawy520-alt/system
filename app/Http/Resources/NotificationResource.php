@@ -48,6 +48,21 @@ class NotificationResource extends JsonResource
                 } elseif ($this->notifiable_type === PurchaseRequest::class) {
                     $targetUrl = '/accounting/purchase-requests';
                 }
+            } elseif ($role === 'site_accountant') {
+                if ($this->purchase_receipt_id) {
+                    $targetUrl = "/accounting/supplier-finance?tab=invoicing&receipt_id={$this->purchase_receipt_id}";
+                } elseif ($this->type === 'purchase_order_and_receipt_ready_accounting' || $this->notifiable_type === PurchaseOrder::class || $this->purchase_order_id) {
+                    $poId = $this->purchase_order_id ?: ($this->notifiable_type === PurchaseOrder::class ? $this->notifiable_id : null);
+                    if ($poId) {
+                        $targetUrl = "/accounting/purchase-orders/{$poId}";
+                    } else {
+                        $targetUrl = "/accounting/supplier-finance?tab=invoicing";
+                    }
+                } elseif ($this->notifiable_type === PurchaseRequest::class) {
+                    $targetUrl = "/requests/{$this->notifiable_id}";
+                } else {
+                    $targetUrl = "/accounting/supplier-finance";
+                }
             } elseif ($role === 'general_manager') {
                 if ($this->notifiable_type === PurchaseOrder::class || $this->purchase_order_id) {
                     $poId = $this->notifiable_type === PurchaseOrder::class ? $this->notifiable_id : $this->purchase_order_id;

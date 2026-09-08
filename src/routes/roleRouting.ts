@@ -5,6 +5,7 @@ export type AppRoleSlug =
     | "admin"
     | "general_manager"
     | "accountant"
+    | "site_accountant"
     | "procurement_manager"
     | "reviewer"
     | "warehouse_keeper"
@@ -15,6 +16,7 @@ export const ROLE_HOME_PRIORITY: AppRoleSlug[] = [
     "admin",
     "general_manager",
     "accountant",
+    "site_accountant",
     "procurement_manager",
     "reviewer",
     "warehouse_keeper",
@@ -26,6 +28,7 @@ const ROLE_HOME_PATHS: Record<AppRoleSlug, string> = {
     admin: "/admin",
     general_manager: "/general-manager",
     accountant: "/accounting",
+    site_accountant: "/accounting/supplier-finance",
     procurement_manager: "/procurement",
     reviewer: "/reviewer",
     warehouse_keeper: "/warehouse",
@@ -36,7 +39,8 @@ const ROLE_HOME_PATHS: Record<AppRoleSlug, string> = {
 const ROLE_LABELS: Record<AppRoleSlug, string> = {
     admin: "مدير النظام",
     general_manager: "المدير العام",
-    accountant: "المحاسب",
+    accountant: "المدير المالي",
+    site_accountant: "الحسابات",
     procurement_manager: "مدير المشتريات",
     reviewer: "المراجع",
     warehouse_keeper: "أمين المخزن",

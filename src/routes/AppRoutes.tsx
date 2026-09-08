@@ -137,16 +137,20 @@ export const AppRoutes: React.FC = () => {
                     <Route path="/procurement/*" element={<ProcurementManagerPage />} />
                 </Route>
 
-                {/* ── Accounting Routes ─────────────────────────────────────── */}
-                <Route element={<RoleRoute allowedRoles={["accountant"]} />}>
-                    <Route path="/accounting" element={<AccountingDashboardPage />} />
-                    <Route path="/accounting/purchase-requests" element={<AccountingPurchaseRequestsPage />} />
+                {/* ── Accounting & Site Accountant Shared Routes ────────────── */}
+                <Route element={<RoleRoute allowedRoles={["accountant", "site_accountant"]} />}>
                     <Route path="/accounting/purchase-orders" element={<AccountingPurchaseOrdersPage />} />
                     <Route path="/accounting/purchase-orders/:id" element={<AccountingPurchaseOrderDetailsPage />} />
-                    <Route path="/accounting/purchase-quotes" element={<PurchaseQuotesDecisionPage mode="recommend" />} />
                     <Route path="/accounting/supplier-finance" element={<SupplierFinanceWorkspacePage />} />
                     <Route path="/accounting/supplier-payments" element={<SupplierFinanceWorkspacePage />} />
                     <Route path="/accounting/supplier-accounts" element={<SupplierFinanceWorkspacePage />} />
+                </Route>
+
+                {/* ── Financial Director (Accountant) Only Routes ─────────────── */}
+                <Route element={<RoleRoute allowedRoles={["accountant"]} />}>
+                    <Route path="/accounting" element={<AccountingDashboardPage />} />
+                    <Route path="/accounting/purchase-requests" element={<AccountingPurchaseRequestsPage />} />
+                    <Route path="/accounting/purchase-quotes" element={<PurchaseQuotesDecisionPage mode="recommend" />} />
                     <Route path="/accounting/land-parcels" element={<LandParcelsPage />} />
                     <Route path="/accounting/reports" element={<UniversalReportsPage />} />
                 </Route>

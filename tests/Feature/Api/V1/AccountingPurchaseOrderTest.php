@@ -266,4 +266,79 @@ class AccountingPurchaseOrderTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    public function test_site_accountant_can_view_orders_scoped_to_allowed_departments(): void
+    {
+        $siteAccountantRole = Role::where('slug', 'site_accountant')->firstOrFail();
+        $siteAccountant = User::create([
+            'department_id' => $this->dept->id,
+            'name' => 'Habiba Site Accountant',
+            'email' => 'habiba@ashbiliya.com',
+            'password' => Hash::make('Secret123!'),
+            'is_active' => true,
+        ]);
+        $siteAccountant->roles()->attach($siteAccountantRole->id);
+
+        $executionDept = Department::firstOrCreate(['code' => 'EXECUTION'], ['name' => 'التنفيذ', 'is_active' => true]);
+        $licensesDept = Department::firstOrCreate(['code' => 'LICENSES'], ['name' => 'التراخيص', 'is_active' => true]);
+
+        // PO in EXECUTION (allowed)
+        $prAllowed = PurchaseRequest::create([
+            'request_number' => 'PR-ACC-EXEC',
+            'user_id' => $this->employee->id,
+            'department_id' => $executionDept->id,
+            'status' => 'APPROVED_BY_GENERAL_MANAGER',
+            'date_needed' => now()->addDays(5)->toDateString(),
+        ]);
+        $poAllowed = PurchaseOrder::create([
+            'po_number' => 'PO-ACC-EXEC',
+            'purchase_request_id' => $prAllowed->id,
+            'supplier_id' => $this->supplier->id,
+            'created_by_user_id' => $this->procurementManager->id,
+            'status' => 'ISSUED',
+            'subtotal' => 1000,
+            'grand_total' => 1000,
+            'delivery_status' => 'NOT_STARTED',
+        ]);
+
+        // PO in LICENSES (disallowed)
+        $prDisallowed = PurchaseRequest::create([
+            'request_number' => 'PR-ACC-LIC',
+            'user_id' => $this->employee->id,
+            'department_id' => $licensesDept->id,
+            'status' => 'APPROVED_BY_GENERAL_MANAGER',
+            'date_needed' => now()->addDays(5)->toDateString(),
+        ]);
+        $poDisallowed = PurchaseOrder::create([
+            'po_number' => 'PO-ACC-LIC',
+            'purchase_request_id' => $prDisallowed->id,
+            'supplier_id' => $this->supplier->id,
+            'created_by_user_id' => $this->procurementManager->id,
+            'status' => 'ISSUED',
+            'subtotal' => 500,
+            'grand_total' => 500,
+            'delivery_status' => 'NOT_STARTED',
+        ]);
+
+        $token = $siteAccountant->createToken('sa_token')->plainTextToken;
+
+        // Index endpoint should include allowed PO and exclude disallowed PO
+        $indexRes = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->getJson('/api/v1/accounting/purchase-orders');
+
+        $indexRes->assertStatus(200);
+        $poNumbers = collect($indexRes->json('data'))->pluck('po_number')->all();
+        $this->assertContains('PO-ACC-EXEC', $poNumbers);
+        $this->assertNotContains('PO-ACC-LIC', $poNumbers);
+
+        // Show endpoint: allowed PO returns 200
+        $showAllowed = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->getJson('/api/v1/accounting/purchase-orders/' . $poAllowed->id);
+        $showAllowed->assertStatus(200);
+
+        // Show endpoint: disallowed PO returns 403
+        $showDisallowed = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->getJson('/api/v1/accounting/purchase-orders/' . $poDisallowed->id);
+        $showDisallowed->assertStatus(403);
+    }
 }

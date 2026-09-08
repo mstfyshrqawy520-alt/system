@@ -24,11 +24,13 @@ import { FormField, Input, Select, SearchableSelect } from '../../components/ui/
 const ROLE_LABELS: Record<string, string> = {
   admin: 'مدير النظام',
   general_manager: 'المدير العام',
-  accountant: 'المحاسب',
+  accountant: 'المدير المالي',
+  site_accountant: 'الحسابات',
   procurement_manager: 'مدير المشتريات',
   reviewer: 'المراجع',
   employee: 'الموظف',
   site_engineer: 'مهندس الموقع',
+  warehouse_keeper: 'أمين المخزن',
 };
 
 export const UsersPage: React.FC = () => {

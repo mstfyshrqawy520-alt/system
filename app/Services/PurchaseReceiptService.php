@@ -254,8 +254,20 @@ class PurchaseReceiptService
 
             $notificationService = app(NotificationService::class);
             $accountants = $notificationService->resolveUsersWithPermission('purchase_order.view_accounting');
+
+            $receipt->purchaseOrder->loadMissing('purchaseRequest.department');
+            $deptCode = $receipt->purchaseOrder->purchaseRequest?->department?->code;
+            if (in_array($deptCode, ['EXECUTION', 'FINISHING', 'BUILDINGS'], true)) {
+                $siteAccountants = User::whereHas('roles', fn ($q) => $q->where('slug', 'site_accountant'))
+                    ->where('is_active', true)
+                    ->get();
+                $allAccountants = $accountants->merge($siteAccountants)->unique('id');
+            } else {
+                $allAccountants = $accountants;
+            }
+
             $notificationService->queueAccountingWithPurchaseOrderAndReceipt(
-                $accountants,
+                $allAccountants,
                 $receipt->purchaseOrder,
                 $receipt
             );

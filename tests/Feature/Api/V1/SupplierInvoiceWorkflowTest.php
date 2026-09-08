@@ -265,6 +265,109 @@ class SupplierInvoiceWorkflowTest extends TestCase
         return app(PurchaseReceiptService::class)->approveBySiteEngineer($this->siteEngineer, $receipt);
     }
 
+    public function test_site_accountant_only_sees_receipts_from_allowed_departments(): void
+    {
+        $siteAccountant = $this->makeUser('habiba-test@test', 'حبيبة', 'site_accountant');
+        $allowedDept = Department::firstOrCreate(['code' => 'FINISHING'], ['name' => 'التشطيبات', 'is_active' => true]);
+        $disallowedDept = Department::firstOrCreate(['code' => 'LICENSES'], ['name' => 'التراخيص', 'is_active' => true]);
+
+        // Order 1 in EXECUTION (allowed)
+        $order1 = $this->makeOrder('PO-EXEC-001', 1000, '2026-08-01', $this->supplier);
+        $receipt1 = $this->approveReceipt($order1, 10);
+
+        // Order 2 in LICENSES (disallowed)
+        $employee2 = $this->makeUser('emp-lic@test', 'موظف التراخيص', 'employee');
+        $pr2 = PurchaseRequest::create([
+            'request_number' => 'PR-LIC-001',
+            'user_id' => $employee2->id,
+            'department_id' => $disallowedDept->id,
+            'site_engineer_user_id' => $this->siteEngineer->id,
+            'priority' => 'NORMAL',
+            'status' => 'APPROVED_BY_PROCUREMENT',
+            'total_estimated_cost' => 500,
+            'date_needed' => '2026-08-01',
+        ]);
+        $order2 = PurchaseOrder::create([
+            'po_number' => 'PO-LIC-001',
+            'purchase_request_id' => $pr2->id,
+            'supplier_id' => $this->supplier->id,
+            'created_by_user_id' => $employee2->id,
+            'status' => 'ISSUED',
+            'subtotal' => 500,
+            'grand_total' => 500,
+            'delivery_status' => 'NOT_STARTED',
+        ]);
+        $order2->items()->create([
+            'item_description' => 'ترخيص',
+            'quantity' => 5,
+            'uom' => 'PCS',
+            'unit_price' => 100,
+            'line_total' => 500,
+        ]);
+        $receipt2 = $this->approveReceipt($order2, 5);
+
+        $service = app(SupplierInvoiceService::class);
+
+        // Site accountant should only see receipt 1
+        $siteAccountantReceipts = $service->approvedReceipts(100, $siteAccountant);
+        $this->assertTrue($siteAccountantReceipts->contains('id', $receipt1->id));
+        $this->assertFalse($siteAccountantReceipts->contains('id', $receipt2->id));
+
+        // Full accountant sees both
+        $accountantReceipts = $service->approvedReceipts(100, $this->accountant);
+        $this->assertTrue($accountantReceipts->contains('id', $receipt1->id));
+        $this->assertTrue($accountantReceipts->contains('id', $receipt2->id));
+    }
+
+    public function test_site_accountant_cannot_store_invoice_for_disallowed_department(): void
+    {
+        $siteAccountant = $this->makeUser('habiba-test2@test', 'حبيبة', 'site_accountant');
+        $disallowedDept = Department::firstOrCreate(['code' => 'BUFFET'], ['name' => 'البوفيه', 'is_active' => true]);
+
+        $employee = $this->makeUser('emp-buf@test', 'موظف البوفيه', 'employee');
+        $pr = PurchaseRequest::create([
+            'request_number' => 'PR-BUF-001',
+            'user_id' => $employee->id,
+            'department_id' => $disallowedDept->id,
+            'site_engineer_user_id' => $this->siteEngineer->id,
+            'priority' => 'NORMAL',
+            'status' => 'APPROVED_BY_PROCUREMENT',
+            'total_estimated_cost' => 300,
+            'date_needed' => '2026-08-01',
+        ]);
+        $order = PurchaseOrder::create([
+            'po_number' => 'PO-BUF-001',
+            'purchase_request_id' => $pr->id,
+            'supplier_id' => $this->supplier->id,
+            'created_by_user_id' => $employee->id,
+            'status' => 'ISSUED',
+            'subtotal' => 300,
+            'grand_total' => 300,
+            'delivery_status' => 'NOT_STARTED',
+        ]);
+        $order->items()->create([
+            'item_description' => 'شاي وسكر',
+            'quantity' => 3,
+            'uom' => 'PCS',
+            'unit_price' => 100,
+            'line_total' => 300,
+        ]);
+        $receipt = $this->approveReceipt($order, 3);
+
+        $response = $this->actingAs($siteAccountant, 'sanctum')->postJson('/api/v1/accounting/invoices', [
+            'purchase_order_id' => $order->id,
+            'purchase_receipt_id' => $receipt->id,
+            'invoice_number' => 'INV-BUF-001',
+            'invoice_date' => '2026-08-05',
+            'amount' => 300,
+            'land_allocations' => [
+                ['land_parcel_id' => $this->parcel->id, 'amount' => 300],
+            ],
+        ]);
+
+        $response->assertStatus(403);
+    }
+
     private function makeUser(string $email, string $name, string $roleSlug): User
     {
         $user = User::create([
