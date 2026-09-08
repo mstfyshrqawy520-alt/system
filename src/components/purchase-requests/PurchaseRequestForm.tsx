@@ -437,7 +437,7 @@ export const PurchaseRequestForm: React.FC<Props> = ({
                   dept.manager?.name ||
                   (dept.code === 'EXECUTION' ? 'م. أيمن ماهر' :
                    dept.code === 'BUILDINGS' ? 'المهندس حاتم' :
-                   dept.code === 'FINISHING' ? 'م. مسعود' :
+                   dept.code === 'FINISHING' ? 'المهندس مصطفى الخشن' :
                    dept.code === 'LICENSES' ? 'م. مصطفى' :
                    dept.code === 'BUFFET' ? 'أ. عمرو' : '');
                 return (

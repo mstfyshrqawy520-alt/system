@@ -13,7 +13,7 @@ class ResetDemoPasswordsSeeder extends Seeder
         $emails = [
             'ayman@gmail.com',
             'hatem@gmail.com',
-            'masoud@gmail.com',
+            'kheshen@gmail.com',
             'mostafa@gmail.com',
             'amr@gmail.com',
             'ahmed@gmail.com',

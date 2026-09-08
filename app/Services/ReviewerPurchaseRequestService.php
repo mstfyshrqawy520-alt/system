@@ -34,7 +34,7 @@ class ReviewerPurchaseRequestService
         $emailMap = [
             'EXECUTION' => 'ayman@gmail.com',
             'BUILDINGS' => 'hatem@gmail.com',
-            'FINISHING' => 'masoud@gmail.com',
+            'FINISHING' => 'kheshen@gmail.com',
             'LICENSES' => 'mostafa@gmail.com',
             'BUFFET' => 'amr@gmail.com',
         ];
@@ -115,7 +115,7 @@ class ReviewerPurchaseRequestService
                 $emailToDeptCode = [
                     'ayman@gmail.com' => 'EXECUTION',
                     'hatem@gmail.com' => 'BUILDINGS',
-                    'masoud@gmail.com' => 'FINISHING',
+                    'kheshen@gmail.com' => 'FINISHING',
                     'mostafa@gmail.com' => 'LICENSES',
                     'amr@gmail.com' => 'BUFFET',
                 ];

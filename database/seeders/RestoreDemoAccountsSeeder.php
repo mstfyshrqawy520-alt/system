@@ -39,7 +39,7 @@ class RestoreDemoAccountsSeeder extends Seeder
             // Department Reviewers
             ['ayman@gmail.com', 'م. أيمن ماهر', 'reviewer', 'EXECUTION'],
             ['hatem@gmail.com', 'المهندس حاتم', 'reviewer', 'BUILDINGS'],
-            ['masoud@gmail.com', 'م. مسعود', 'reviewer', 'FINISHING'],
+            ['kheshen@gmail.com', 'المهندس مصطفى الخشن', 'reviewer', 'FINISHING'],
             ['mostafa@gmail.com', 'م. مصطفى', 'reviewer', 'LICENSES'],
             ['amr@gmail.com', 'أ. عمرو', 'reviewer', 'BUFFET'],
 
@@ -87,7 +87,7 @@ class RestoreDemoAccountsSeeder extends Seeder
         foreach ([
             'EXECUTION' => 'ayman@gmail.com',
             'BUILDINGS' => 'hatem@gmail.com',
-            'FINISHING' => 'masoud@gmail.com',
+            'FINISHING' => 'kheshen@gmail.com',
             'LICENSES' => 'mostafa@gmail.com',
             'BUFFET' => 'amr@gmail.com',
         ] as $department => $email) {

@@ -65,7 +65,7 @@ class DemoUserSeeder extends Seeder
             // Department reviewers
             ['email' => 'ayman@gmail.com', 'name' => 'م. أيمن ماهر', 'role' => 'reviewer', 'department_id' => $executionDept->id],
             ['email' => 'hatem@gmail.com', 'name' => 'المهندس حاتم', 'role' => 'reviewer', 'department_id' => $buildingsDept->id],
-            ['email' => 'masoud@gmail.com', 'name' => 'م. مسعود', 'role' => 'reviewer', 'department_id' => $finishingDept->id],
+            ['email' => 'kheshen@gmail.com', 'name' => 'المهندس مصطفى الخشن', 'role' => 'reviewer', 'department_id' => $finishingDept->id],
             ['email' => 'mostafa@gmail.com', 'name' => 'م. مصطفى', 'role' => 'reviewer', 'department_id' => $licensesDept->id],
             ['email' => 'amr@gmail.com', 'name' => 'أ. عمرو', 'role' => 'reviewer', 'department_id' => $buffetDept->id],
 
@@ -106,7 +106,7 @@ class DemoUserSeeder extends Seeder
 
         $executionManager = User::where('email', 'ayman@gmail.com')->firstOrFail();
         $buildingsManager = User::where('email', 'hatem@gmail.com')->firstOrFail();
-        $finishingManager = User::where('email', 'masoud@gmail.com')->firstOrFail();
+        $finishingManager = User::where('email', 'kheshen@gmail.com')->firstOrFail();
         $licensesManager = User::where('email', 'mostafa@gmail.com')->firstOrFail();
         $buffetManager = User::where('email', 'amr@gmail.com')->firstOrFail();
 

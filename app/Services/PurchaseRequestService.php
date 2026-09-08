@@ -175,7 +175,7 @@ class PurchaseRequestService
                 $emailMap = [
                     'EXECUTION' => 'ayman@gmail.com',
                     'BUILDINGS' => 'hatem@gmail.com',
-                    'FINISHING' => 'masoud@gmail.com',
+                    'FINISHING' => 'kheshen@gmail.com',
                     'LICENSES' => 'mostafa@gmail.com',
                     'BUFFET' => 'amr@gmail.com',
                 ];
@@ -354,7 +354,7 @@ class PurchaseRequestService
                     $emailMap = [
                         'EXECUTION' => 'ayman@gmail.com',
                         'BUILDINGS' => 'hatem@gmail.com',
-                        'FINISHING' => 'masoud@gmail.com',
+                        'FINISHING' => 'kheshen@gmail.com',
                         'LICENSES' => 'mostafa@gmail.com',
                         'BUFFET' => 'amr@gmail.com',
                     ];
