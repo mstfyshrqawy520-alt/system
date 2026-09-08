@@ -32,6 +32,9 @@ export interface Notification {
   message: string;
   notifiable_type?: string | null;
   notifiable_id?: number | null;
+  purchase_order_id?: number | null;
+  purchase_receipt_id?: number | null;
+  target_url?: string;
   data?: NotificationData;
   read_at: string | null;
   created_at: string | null;

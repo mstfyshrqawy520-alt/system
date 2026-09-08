@@ -708,7 +708,12 @@ export const NotificationsPage: React.FC = () => {
             return (
               <Card
                 key={notification.id}
-                className={`p-4 sm:p-5 flex flex-col gap-3 transition-all border ${isUnread
+                onClick={() => {
+                  if (status !== 'failed') {
+                    void handleNotificationAction(notification);
+                  }
+                }}
+                className={`p-4 sm:p-5 flex flex-col gap-3 transition-all border cursor-pointer select-none ${isUnread
                     ? status === 'needs_action'
                       ? 'border-amber-500/90 bg-gradient-to-r from-amber-950/30 via-slate-900 to-amber-950/15 shadow-xl shadow-amber-950/30 ring-1 ring-amber-500/40'
                       : status === 'failed'
@@ -832,7 +837,10 @@ export const NotificationsPage: React.FC = () => {
                       <Button
                         variant={status === 'needs_action' ? 'primary' : 'secondary'}
                         size="sm"
-                        onClick={() => void handleNotificationAction(notification)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleNotificationAction(notification);
+                        }}
                         isLoading={isThisExecuting}
                         disabled={isThisExecuting}
                         className="text-xs font-bold"

@@ -182,10 +182,62 @@ export const resolveNotificationAction = (
     priority = 'HIGH';
   }
 
+  // 0. Dedicated check for PO & Receipt ready for accounting
+  if (type.includes('purchase_order_and_receipt_ready_accounting') || title.includes('جاهزان للحسابات')) {
+    const receiptId = info.receiptId || notification.purchase_receipt_id || data.purchase_receipt_id;
+    const poId = info.poId || notification.purchase_order_id || data.purchase_order_id;
+    if (roleSlugs.includes('accountant')) {
+      return {
+        url: receiptId
+          ? `/accounting/supplier-payments?purchase_receipt_id=${receiptId}`
+          : (poId ? `/accounting/purchase-orders/${poId}` : '/accounting/supplier-payments'),
+        actionLabel: 'تسجيل الفاتورة وسداد المستحقات',
+        icon: '⚡',
+        badgeLabel: 'مطلوب إجراء',
+        docType: 'RECEIPT',
+        docNumber: info.docNumber,
+        isActionable: true,
+        priority: 'HIGH',
+      };
+    }
+  }
+
   // 1. Explicit Target URL override if specified directly by backend
   if (notification.target_url && notification.target_url !== '/' && notification.target_url !== '/notifications') {
+    let targetUrl = notification.target_url;
+
+    // Sanitize targetUrl so user doesn't hit 403 on mismatched role prefix!
+    const poMatch = targetUrl.match(/^\/procurement\/purchase-orders\/(\d+)/);
+    if (poMatch) {
+      const poId = poMatch[1];
+      if (roleSlugs.includes('accountant')) {
+        const receiptId = info.receiptId || notification.purchase_receipt_id || data.purchase_receipt_id;
+        targetUrl = (type.includes('ready_accounting') || title.includes('للحسابات') || receiptId)
+          ? `/accounting/supplier-payments?purchase_receipt_id=${receiptId || ''}`
+          : `/accounting/purchase-orders/${poId}`;
+      } else if (roleSlugs.includes('general_manager')) {
+        targetUrl = `/general-manager/purchase-orders/${poId}`;
+      } else if (!roleSlugs.includes('procurement_manager') && !roleSlugs.includes('admin')) {
+        targetUrl = '/requests';
+      }
+    } else if (targetUrl.startsWith('/procurement/') && !roleSlugs.includes('procurement_manager') && !roleSlugs.includes('admin')) {
+      if (roleSlugs.includes('accountant')) {
+        targetUrl = '/accounting';
+      } else if (roleSlugs.includes('general_manager')) {
+        targetUrl = '/general-manager';
+      } else {
+        targetUrl = '/requests';
+      }
+    } else if (targetUrl.startsWith('/accounting/') && !roleSlugs.includes('accountant') && !roleSlugs.includes('admin')) {
+      if (roleSlugs.includes('general_manager')) {
+        targetUrl = targetUrl.replace('/accounting/', '/general-manager/');
+      } else if (roleSlugs.includes('procurement_manager')) {
+        targetUrl = targetUrl.replace('/accounting/', '/procurement/');
+      }
+    }
+
     return {
-      url: notification.target_url,
+      url: targetUrl,
       actionLabel: isActionable ? 'متابعة الإجراء المطلوب' : 'عرض ومتابعة الطلب',
       icon: isActionable ? '⚡' : '📋',
       badgeLabel: isActionable ? 'مطلوب إجراء' : 'إشعار',

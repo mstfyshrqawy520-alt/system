@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import { ForbiddenPage } from '../pages/ErrorPages';
@@ -20,6 +20,7 @@ interface RoleRouteProps {
  */
 export const RoleRoute: React.FC<RoleRouteProps> = ({ allowedRoles, children }) => {
   const { user, isAuthenticated, isLoading, hasRole } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return <LoadingSpinner fullScreen message="جارٍ التحقق من جلسة الدخول..." />;
@@ -37,6 +38,21 @@ export const RoleRoute: React.FC<RoleRouteProps> = ({ allowedRoles, children }) 
   const isAllowed = allowedRoles.some((role) => hasRole(role));
 
   if (!isAllowed) {
+    // Intelligent role-aware redirect for cross-role links (e.g. PO links from notifications)
+    const poMatch = location.pathname.match(/^\/(?:procurement|accounting|general-manager)\/purchase-orders\/(\d+)/);
+    if (poMatch) {
+      const poId = poMatch[1];
+      if (hasRole('accountant')) {
+        return <Navigate to={`/accounting/purchase-orders/${poId}${location.search}`} replace />;
+      }
+      if (hasRole('general_manager')) {
+        return <Navigate to={`/general-manager/purchase-orders/${poId}${location.search}`} replace />;
+      }
+      if (hasRole('procurement_manager')) {
+        return <Navigate to={`/procurement/purchase-orders/${poId}${location.search}`} replace />;
+      }
+    }
+
     return <ForbiddenPage />;
   }
 
