@@ -189,7 +189,7 @@ export const PurchaseRequestTable: React.FC<Props> = ({
     </Table>
       </div>
 
-      <div className="space-y-3 md:hidden">
+      <div className="space-y-2.5 md:hidden">
         {requests.map((pr) => {
           const isDraft = pr.status === 'DRAFT';
           const canEdit = REQUESTER_EDITABLE_STATUSES.includes(pr.status) && hasPermission('purchase_request.edit_own');
@@ -199,52 +199,127 @@ export const PurchaseRequestTable: React.FC<Props> = ({
           const parcelsDisplay = getSummaryParcels(pr);
           const regionsDisplay = getSummaryRegions(pr);
           const quantitiesInfo = getSummaryQuantities(pr.items);
+          const isOffice = pr.request_type === 'OFFICE_SUPPLIES';
+          const primaryItemDesc = itemNames[0] || (isOffice ? 'مستلزمات مكتبية' : 'مواد مشروعات');
 
           return (
-            <article key={`mobile-card-${pr.id}`} className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <Link to={`/requests/${pr.id}`} className="font-mono text-sm font-bold text-cyan-400 hover:underline">
-                  {pr.request_number}
-                </Link>
-                <div className="flex flex-wrap items-center gap-1.5">
+            <article
+              key={`mobile-card-${pr.id}`}
+              className="rounded-2xl border border-slate-800 bg-slate-900/90 p-3.5 space-y-2.5 shadow-md hover:border-slate-700 transition-all"
+            >
+              {/* Row 1: Request Number, Status Badge, and Date */}
+              <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                <div className="flex items-center gap-2">
+                  <Link
+                    to={`/requests/${pr.id}`}
+                    className="font-mono text-sm font-black text-cyan-300 hover:text-cyan-200 hover:underline"
+                  >
+                    {pr.request_number}
+                  </Link>
                   <PurchaseRequestStatusBadge status={pr.status} />
                 </div>
+                <span className="font-mono text-[10px] text-slate-400 shrink-0">
+                  {formatRequestDate(pr.created_at)}
+                </span>
               </div>
 
-              {itemNames.length > 0 && (
-                <div className="text-xs">
-                  <span className="text-slate-400">الأصناف: </span>
-                  <span className="font-bold text-cyan-200">{itemNames.join('، ')}</span>
-                </div>
-              )}
-              <dl className="mt-4 grid grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
-                <div><dt className="text-slate-500">رقم قطعة الأرض</dt><dd className="mt-1 font-mono font-bold text-slate-200">{parcelsDisplay}</dd></div>
-                <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 font-bold text-slate-200">{regionsDisplay}</dd></div>
-                <div>
-                  <dt className="text-slate-500">الكمية / العدد</dt>
-                  <dd className="mt-1" title={quantitiesInfo.tooltip}>
-                    <span className="font-mono font-bold text-amber-300">{quantitiesInfo.display}</span>
-                    {quantitiesInfo.subtext && (
-                      <span className="text-[10px] text-slate-400 block font-normal leading-tight">{quantitiesInfo.subtext}</span>
-                    )}
-                  </dd>
-                </div>
-                <div><dt className="text-slate-500">تاريخ الاحتياج</dt><dd className="mt-1 font-mono font-bold text-amber-300">{pr.date_needed || 'غير محدد'}</dd></div>
-                <div><dt className="text-slate-500">تاريخ الطلب</dt><dd className="mt-1 text-slate-300">{formatRequestDate(pr.created_at)}</dd></div>
-                <div><dt className="text-slate-500">نوع الطلب</dt><dd className="mt-1 font-bold text-slate-200">{getRequestType(pr)}</dd></div>
-                <div><dt className="text-slate-500">القسم / المشروع</dt><dd className="mt-1 font-bold text-slate-200">{pr.target_department?.name || pr.department?.name || 'غير محدد'}</dd></div>
-                <div><dt className="text-slate-500">آخر إجراء</dt><dd className="mt-1 text-slate-300">{getLastAction(pr)}</dd></div>
-                <div className="col-span-1 min-[420px]:col-span-2"><dt className="text-slate-500">الحالة</dt>
-<dd className="mt-1 font-bold text-slate-200">{PR_STATUS_LABELS[pr.status as keyof typeof PR_STATUS_LABELS] || 'حالة غير معروفة'}{canEdit ? ' — قابلة للتعديل' : ''}</dd></div>
-              </dl>
-              <div className="mt-4 border-t border-slate-800 pt-3">
-                <PurchaseRequestTimeline request={pr} compact />
+              {/* Row 2: Mandatory Core Data Strip (المنطقة ورقم القطعة) */}
+              <div className="flex items-center gap-2 text-xs flex-wrap bg-slate-950/70 border border-slate-800/80 rounded-xl px-2.5 py-1.5">
+                {isOffice ? (
+                  <span className="font-bold text-indigo-300 flex items-center gap-1 text-[11px]">
+                    <span>🏢</span> مستلزمات مكتبية للمقر
+                  </span>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-1 font-semibold text-slate-300">
+                      <span className="text-slate-400">قطعة:</span>
+                      <strong className="font-mono font-bold text-cyan-300">{parcelsDisplay || '—'}</strong>
+                    </div>
+                    <span className="text-slate-600">•</span>
+                    <div className="flex items-center gap-1 font-semibold text-slate-300">
+                      <span className="text-slate-400">المنطقة:</span>
+                      <strong className="font-bold text-amber-300">{regionsDisplay || '—'}</strong>
+                    </div>
+                  </>
+                )}
+                {pr.date_needed && (
+                  <>
+                    <span className="text-slate-600 mr-auto">•</span>
+                    <div className="flex items-center gap-1 text-[11px] font-mono text-slate-400">
+                      <span>الاحتياج:</span>
+                      <strong className="text-amber-200">{pr.date_needed}</strong>
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:flex min-[420px]:flex-wrap">
-                <Link to={`/requests/${pr.id}`} className="w-full min-[420px]:w-auto"><Button variant="secondary" size="sm" className="w-full min-[420px]:w-auto">عرض</Button></Link>
-                {canEdit && <Link to={`/requests/${pr.id}/edit`} className="w-full min-[420px]:w-auto"><Button variant="warning" size="sm" className="w-full min-[420px]:w-auto">تعديل</Button></Link>}
-                {canSubmit && <Button variant="primary" size="sm" className="w-full min-[420px]:w-auto" onClick={() => onOpenSubmitModal(pr)}>تقديم الطلب</Button>}
-                {canDelete && <Button variant="danger" size="sm" className="w-full min-[420px]:w-auto" onClick={() => onOpenDeleteModal(pr)}>حذف</Button>}
+
+              {/* Row 3: Mandatory Core Data (الصنف والكمية) */}
+              <div className="rounded-xl border border-slate-800/90 bg-slate-950/90 p-2.5 space-y-1.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] font-bold text-slate-400 block">الصنف والمواد:</span>
+                    <p className="text-xs font-bold text-slate-100 line-clamp-2 mt-0.5">
+                      {primaryItemDesc}
+                    </p>
+                  </div>
+                  <div className="text-left shrink-0">
+                    <span className="text-[10px] font-bold text-slate-400 block">الكمية الإجمالية:</span>
+                    <span className="font-mono font-black text-amber-300 text-xs">
+                      {quantitiesInfo.display}
+                    </span>
+                    {quantitiesInfo.subtext && (
+                      <span className="text-[9px] text-slate-400 block">{quantitiesInfo.subtext}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* If multiple items exist */}
+                {itemNames.length > 1 && (
+                  <div className="pt-1.5 border-t border-slate-800/60 text-[11px] text-slate-400 flex items-center justify-between">
+                    <span className="text-cyan-400 font-semibold">
+                      +{itemNames.length - 1} أصناف أخرى مشمولة في هذا الطلب
+                    </span>
+                    <Link to={`/requests/${pr.id}`} className="text-[10px] font-bold text-cyan-300 hover:underline">
+                      عرض الكل ←
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              {/* Row 4: Actions Toolbar */}
+              <div className="flex items-center gap-1.5 pt-1">
+                <Link to={`/requests/${pr.id}`} className="flex-1">
+                  <Button variant="secondary" size="sm" className="w-full text-xs font-bold py-1.5">
+                    عرض التفاصيل
+                  </Button>
+                </Link>
+                {canSubmit && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="flex-1 text-xs font-black py-1.5 shadow-sm"
+                    onClick={() => onOpenSubmitModal(pr)}
+                  >
+                    تقديم الطلب
+                  </Button>
+                )}
+                {canEdit && (
+                  <Link to={`/requests/${pr.id}/edit`}>
+                    <Button variant="warning" size="sm" className="text-xs font-bold px-3 py-1.5">
+                      تعديل
+                    </Button>
+                  </Link>
+                )}
+                {canDelete && (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    className="text-xs font-bold px-2.5 py-1.5"
+                    onClick={() => onOpenDeleteModal(pr)}
+                  >
+                    حذف
+                  </Button>
+                )}
               </div>
             </article>
           );

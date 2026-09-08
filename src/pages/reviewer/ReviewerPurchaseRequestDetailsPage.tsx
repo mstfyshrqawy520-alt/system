@@ -12,6 +12,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import { getUnitLabel } from '../../utils/units';
+import { getSummaryParcels, getSummaryRegions, getSummaryQuantities } from '../../utils/formatRequestSummary';
 import SystemEventTimeline from '../../components/ui/SystemEventTimeline';
 import { UnifiedNotesCard } from '../../components/common/UnifiedNotesCard';
 
@@ -113,6 +114,16 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
   const canEditBeforeApproval = isUnderReview && hasPermission('purchase_request.edit_during_review');
   const isLockedAfterApproval = !isSubmitted && !isUnderReview;
 
+  const itemNames = requestData.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
+  const itemsDisplay = itemNames.length === 0
+    ? '—'
+    : itemNames.length === 1
+      ? itemNames[0]
+      : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
+  const parcelsDisplay = getSummaryParcels(requestData);
+  const regionsDisplay = getSummaryRegions(requestData);
+  const quantitiesInfo = getSummaryQuantities(requestData.items);
+
   return (
     <div className="space-y-6 animate-fade-in" dir="rtl">
       <ErrorMessage error={error} onDismiss={() => setError(null)} />
@@ -161,6 +172,39 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
               &rarr; القائمة
             </Button>
           </Link>
+        </div>
+      </div>
+
+      {/* ── شريط البيانات الأساسية الأربعة الإلزامي (المنطقة، رقم القطعة، الأصناف، والكمية) ── */}
+      <div className="rounded-2xl border-2 border-amber-500/40 bg-gradient-to-r from-slate-900 via-amber-950/20 to-slate-900 p-3.5 sm:p-4 shadow-xl">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5">
+            <span className="text-[10px] font-bold text-slate-400 block">رقم قطعة الأرض:</span>
+            <span className="text-sm sm:text-base font-black font-mono text-cyan-300 block mt-0.5">
+              {parcelsDisplay}
+            </span>
+          </div>
+
+          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5">
+            <span className="text-[10px] font-bold text-slate-400 block">المنطقة الجغرافية:</span>
+            <span className="text-sm sm:text-base font-black text-amber-300 block mt-0.5">
+              {regionsDisplay}
+            </span>
+          </div>
+
+          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5">
+            <span className="text-[10px] font-bold text-slate-400 block">الأصناف المطلوبة ({requestData.items?.length || 0}):</span>
+            <span className="text-xs sm:text-sm font-black text-slate-100 block mt-0.5 truncate" title={itemNames.join('، ')}>
+              {itemsDisplay}
+            </span>
+          </div>
+
+          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5">
+            <span className="text-[10px] font-bold text-slate-400 block">الكمية الإجمالية:</span>
+            <span className="text-sm sm:text-base font-black font-mono text-amber-300 block mt-0.5" title={quantitiesInfo.tooltip}>
+              {quantitiesInfo.display}
+            </span>
+          </div>
         </div>
       </div>
 

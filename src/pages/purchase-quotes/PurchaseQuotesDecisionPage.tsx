@@ -439,9 +439,22 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
                       <span className="font-bold text-slate-300 text-[11px] block">الأصناف المغطاة بالعرض:</span>
                       <div className="space-y-1.5">
                         {request.items?.map((item, itmIdx) => (
-                          <div key={item.id || itmIdx} className="flex items-center justify-between border-b border-slate-800/50 pb-1 text-xs">
-                            <span className="text-slate-200 font-semibold">{item.item_description}</span>
-                            <span className="font-mono font-bold text-amber-300">{item.quantity} {getUnitLabel(item.uom)}</span>
+                          <div key={item.id || itmIdx} className="border-b border-slate-800/50 pb-1.5 text-xs space-y-0.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-100 font-bold">{item.item_description}</span>
+                              <span className="font-mono font-bold text-amber-300">{item.quantity} {getUnitLabel(item.uom)}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                              {item.item_reference && (
+                                <span className="font-mono text-cyan-300">قطعة: {item.item_reference}</span>
+                              )}
+                              {item.region && (
+                                <>
+                                  <span className="text-slate-600">•</span>
+                                  <span className="text-slate-300">المنطقة: {item.region}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>

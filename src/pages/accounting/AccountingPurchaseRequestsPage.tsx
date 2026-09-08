@@ -20,6 +20,8 @@ import DirectAccountingReviewModal from '../../components/procurement/DirectAcco
 import TableFilterBar from '../../components/ui/TableFilterBar';
 import { getDefaultDateFrom, getTodayInputDate, isDefaultTodayRange } from '../../utils/dateFilters';
 import { useRealtimeRefresh, emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
+import { getUnitLabel } from '../../utils/units';
+import { getSummaryParcels, getSummaryRegions, getSummaryQuantities } from '../../utils/formatRequestSummary';
 
 const AccountingPurchaseRequestsPage: React.FC = () => {
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
@@ -157,16 +159,27 @@ const AccountingPurchaseRequestsPage: React.FC = () => {
                   <TableHead className="whitespace-nowrap">تاريخ الاحتياج</TableHead>
                   <TableHead className="whitespace-nowrap">مقدم الطلب</TableHead>
                   <TableHead className="whitespace-nowrap">رئيس القسم</TableHead>
-                  <TableHead className="whitespace-nowrap">الصنف / رقم قطعة الأرض</TableHead>
+                  <TableHead className="whitespace-nowrap">الصنف</TableHead>
+                  <TableHead className="whitespace-nowrap">رقم قطعة الأرض</TableHead>
                   <TableHead className="whitespace-nowrap">المنطقة</TableHead>
+                  <TableHead className="whitespace-nowrap">الكمية / العدد</TableHead>
                   <TableHead className="whitespace-nowrap">الإجمالي المقترح</TableHead>
                   <TableHead className="whitespace-nowrap text-center">الإجراء</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRequests.map(request => {
-                  const firstItem = request.items?.[0];
+                  const itemNames = request.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
+                  const itemsDisplay = itemNames.length === 0
+                    ? '—'
+                    : itemNames.length === 1
+                      ? itemNames[0]
+                      : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
+                  const parcelsDisplay = getSummaryParcels(request);
+                  const regionsDisplay = getSummaryRegions(request);
+                  const quantitiesInfo = getSummaryQuantities(request.items);
                   const estimatedTotal = request.items?.reduce((sum, item) => sum + Number(item.estimated_line_total || (Number(item.quantity || 0) * Number(item.estimated_unit_price || 0))), 0) || 0;
+
                   return (
                     <TableRow key={request.id}>
                       <TableCell className="whitespace-nowrap font-mono font-bold text-cyan-300">{request.request_number}</TableCell>
@@ -175,8 +188,14 @@ const AccountingPurchaseRequestsPage: React.FC = () => {
                       <TableCell className="whitespace-nowrap font-mono font-bold text-amber-300">{request.date_needed || '—'}</TableCell>
                       <TableCell className="max-w-[160px]">{request.requester?.name || '—'}</TableCell>
                       <TableCell className="max-w-[160px]">{request.assigned_reviewer?.name || '—'}</TableCell>
-                      <TableCell><div className="font-bold">{firstItem?.item_description || firstItem?.item?.name || '—'}</div><div className="font-mono text-xs text-cyan-300">{firstItem?.item_reference || '—'}</div></TableCell>
-                      <TableCell>{firstItem?.region || '—'}</TableCell>
+                      <TableCell className="max-w-[180px] truncate font-bold">
+                        <span title={itemNames.join('، ')}>{itemsDisplay}</span>
+                      </TableCell>
+                      <TableCell className="font-mono text-cyan-300 whitespace-nowrap">{parcelsDisplay}</TableCell>
+                      <TableCell className="whitespace-nowrap">{regionsDisplay}</TableCell>
+                      <TableCell className="whitespace-nowrap font-mono font-bold text-amber-300">
+                        <span title={quantitiesInfo.tooltip}>{quantitiesInfo.display}</span>
+                      </TableCell>
                       <TableCell className="whitespace-nowrap font-mono font-bold text-emerald-300">{estimatedTotal.toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م</TableCell>
                       <TableCell className="min-w-[190px]"><div className="flex flex-wrap justify-center gap-2"><Button size="sm" variant="secondary" className="whitespace-nowrap" onClick={() => setSelectedRequest(request)}>عرض التفاصيل</Button><Button size="sm" variant="success" className="whitespace-nowrap" disabled={actionId === request.id} onClick={() => setReviewingRequest(request)}>مراجعة وإرسال</Button><Button size="sm" variant="danger" className="whitespace-nowrap" disabled={actionId === request.id} onClick={() => void reject(request)}>رفض الطلب</Button></div></TableCell>
                     </TableRow>
@@ -188,8 +207,12 @@ const AccountingPurchaseRequestsPage: React.FC = () => {
 
           <div className="space-y-3 md:hidden">
             {filteredRequests.map(request => {
-              const firstItem = request.items?.[0];
+              const itemNames = request.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
+              const parcelsDisplay = getSummaryParcels(request);
+              const regionsDisplay = getSummaryRegions(request);
+              const quantitiesInfo = getSummaryQuantities(request.items);
               const estimatedTotal = request.items?.reduce((sum, item) => sum + Number(item.estimated_line_total || (Number(item.quantity || 0) * Number(item.estimated_unit_price || 0))), 0) || 0;
+
               return (
                 <article key={`mobile-${request.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
                   <div className="flex min-w-0 items-start justify-between gap-3"><span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">{request.request_number}</span><span className="shrink-0 text-[11px] text-amber-300">موافقة مالية</span></div>
@@ -198,10 +221,10 @@ const AccountingPurchaseRequestsPage: React.FC = () => {
                     <div className="min-w-0"><dt className="text-slate-500">تاريخ الاحتياج</dt><dd className="mt-1 break-normal font-mono font-bold text-amber-300">{request.date_needed || 'غير محدد'}</dd></div>
                     <div className="min-w-0"><dt className="text-slate-500">المورد</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{request.direct_supplier?.company_name || 'غير محدد'}</dd></div>
                     <div className="min-w-0"><dt className="text-slate-500">مقدم الطلب</dt><dd className="mt-1 break-normal leading-6 text-slate-300">{request.requester?.name || 'غير محدد'}</dd></div>
-                    <div className="min-w-0"><dt className="text-slate-500">رئيس القسم</dt><dd className="mt-1 break-normal leading-6 text-slate-300">{request.assigned_reviewer?.name || 'غير محدد'}</dd></div>
-                    <div className="min-w-0 min-[420px]:col-span-2"><dt className="text-slate-500">الصنف وقطعة الأرض</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-200">{firstItem?.item_description || firstItem?.item?.name || 'غير محدد'} <span className="font-mono text-cyan-300">({firstItem?.item_reference || 'بدون رقم'})</span></dd></div>
-                    <div className="min-w-0"><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 break-normal text-slate-300">{firstItem?.region || 'غير محددة'}</dd></div>
-                    <div className="min-w-0"><dt className="text-slate-500">الإجمالي المقترح</dt><dd className="mt-1 whitespace-nowrap font-mono font-bold text-emerald-300">{estimatedTotal.toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م</dd></div>
+                    <div className="min-w-0 min-[420px]:col-span-2"><dt className="text-slate-500">الصنف وقطعة الأرض</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-200">{itemNames.join('، ') || 'غير محدد'} <span className="font-mono text-cyan-300">({parcelsDisplay})</span></dd></div>
+                    <div className="min-w-0"><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 break-normal text-slate-300">{regionsDisplay}</dd></div>
+                    <div className="min-w-0"><dt className="text-slate-500">الكمية / العدد</dt><dd className="mt-1 font-mono font-bold text-amber-300">{quantitiesInfo.display}</dd></div>
+                    <div className="min-w-0 min-[420px]:col-span-2"><dt className="text-slate-500">الإجمالي المقترح</dt><dd className="mt-1 whitespace-nowrap font-mono font-bold text-emerald-300">{estimatedTotal.toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م</dd></div>
                   </dl>
                   <div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:grid-cols-3"><Button size="sm" variant="secondary" className="w-full whitespace-nowrap" onClick={() => setSelectedRequest(request)}>عرض التفاصيل</Button><Button size="sm" variant="success" className="w-full whitespace-nowrap" disabled={actionId === request.id} onClick={() => setReviewingRequest(request)}>مراجعة وإرسال</Button><Button size="sm" variant="danger" className="w-full whitespace-nowrap" disabled={actionId === request.id} onClick={() => void reject(request)}>رفض الطلب</Button></div>
                 </article>

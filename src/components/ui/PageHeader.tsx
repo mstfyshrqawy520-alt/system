@@ -51,27 +51,44 @@ export const PageHeader: React.FC = () => {
   const title = useMemo(() => getPageTitle(location.pathname), [location.pathname]);
   const roleLabel = getRoleLabel(getPrimaryRoleSlug(user));
 
+  const isRootPage = [
+    '/',
+    '/employee',
+    '/reviewer',
+    '/procurement',
+    '/accounting',
+    '/site-accountant',
+    '/general-manager',
+    '/admin',
+    '/warehouse',
+    '/site-engineer',
+    '/protected',
+  ].includes(location.pathname);
+
   return (
-    <div className="mb-4 border-b border-slate-800/80 pb-3" dir="rtl">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
+    <div className="mb-2.5 sm:mb-3.5 border-b border-slate-800/80 pb-2 sm:pb-2.5" dir="rtl">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
           <Breadcrumbs />
-          <div className="mt-2 flex min-w-0 items-start gap-2">
-            <h1 className="min-w-0 break-words text-base font-black text-slate-100 sm:text-lg">{title}</h1>
-            <span className="shrink-0 rounded-full border border-cyan-800/70 bg-cyan-950/50 px-2 py-1 text-[10px] font-bold text-cyan-300">{roleLabel}</span>
+          <div className="mt-1 flex min-w-0 items-center gap-2">
+            <h1 className="min-w-0 truncate text-sm font-black text-slate-100 sm:text-base lg:text-lg">
+              {title}
+            </h1>
+            <span className="shrink-0 rounded-full border border-cyan-800/70 bg-cyan-950/50 px-2 py-0.5 text-[10px] font-bold text-cyan-300">
+              {roleLabel}
+            </span>
           </div>
-          <p className="mt-1 text-[11px] text-slate-500">{getPageHint(title)}</p>
         </div>
-        {location.pathname !== '/' && location.pathname !== '/protected' && (
+
+        {!isRootPage && (
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/70 px-3 text-xs font-bold text-slate-300 hover:border-cyan-700 hover:text-white sm:w-auto"
+            className="inline-flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800/80 px-2.5 py-1 text-xs font-bold text-slate-300 hover:border-cyan-500/60 hover:text-white transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
             aria-label="العودة إلى الصفحة السابقة"
           >
-            <span aria-hidden="true">→</span>
+            <span aria-hidden="true" className="text-sm">‹</span>
             <span>رجوع</span>
-            <span aria-hidden="true">‹</span>
           </button>
         )}
       </div>

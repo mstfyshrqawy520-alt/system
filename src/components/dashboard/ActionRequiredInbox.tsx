@@ -351,9 +351,20 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
               const isOffice = item.request_type === 'OFFICE_SUPPLIES';
               const isSubmitting = directSubmittingId === item.id;
 
-              // Extract single parcel & region for the whole request card
-              const parcel = item.parcel_number || item.items_list?.[0]?.parcel || '';
-              const region = item.region || item.items_list?.[0]?.region || '';
+              // Aggregate all unique parcels & regions for this transaction
+              const allParcels = [
+                item.parcel_number,
+                ...(item.items_list || []).map((i) => i.parcel),
+              ].filter(Boolean) as string[];
+              const uniqueParcels = Array.from(new Set(allParcels.map((p) => String(p).trim()).filter(Boolean)));
+              const parcel = uniqueParcels.length > 0 ? uniqueParcels.join('، ') : '';
+
+              const allRegions = [
+                item.region,
+                ...(item.items_list || []).map((i) => i.region),
+              ].filter(Boolean) as string[];
+              const uniqueRegions = Array.from(new Set(allRegions.map((r) => String(r).trim()).filter(Boolean)));
+              const region = isOffice ? 'مقر الشركة' : (uniqueRegions.length > 0 ? uniqueRegions.join('، ') : '');
 
               // Deduplicate title: If title is identical to first item name, use justification/subtitle or clean category
               const firstItemDesc = item.items_list?.[0]?.description?.trim();
@@ -392,23 +403,17 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                         </span>
 
                         {isOffice ? (
-                          <span className="text-[11px] font-bold bg-indigo-950/90 text-indigo-300 border border-indigo-800/70 px-2 py-0.5 rounded-lg flex items-center gap-1">
-                            <span>🏢</span> مستلزمات مكتبية
-                          </span>
-                        ) : (parcel || region) ? (
-                          <span className="text-[11px] font-bold bg-amber-950/50 text-amber-300 border border-amber-700/50 px-2 py-0.5 rounded-lg flex items-center gap-1.5 shadow-sm">
-                            <span>🏗️</span>
-                            <span>قطعة {parcel || '—'}</span>
-                            {region && (
-                              <>
-                                <span className="text-amber-500/70">•</span>
-                                <span>{region}</span>
-                              </>
-                            )}
+                          <span className="text-[11px] font-bold bg-indigo-950/90 text-indigo-300 border border-indigo-800/70 px-2.5 py-1 rounded-xl flex items-center gap-1">
+                            <span>🏢</span> مستلزمات مكتبية للمقر
                           </span>
                         ) : (
-                          <span className="text-[11px] font-bold bg-slate-900 text-amber-300 border border-amber-800/50 px-2 py-0.5 rounded-lg flex items-center gap-1">
-                            <span>🏗️</span> مشتريات مواقع
+                          <span className="text-[11px] font-bold bg-amber-950/60 text-amber-300 border border-amber-700/60 px-2.5 py-1 rounded-xl flex items-center gap-1.5 shadow-sm">
+                            <span>🏗️</span>
+                            <span className="text-slate-400">قطعة:</span>
+                            <strong className="font-mono font-bold text-cyan-300">{parcel || '—'}</strong>
+                            <span className="text-amber-500/70">•</span>
+                            <span className="text-slate-400">المنطقة:</span>
+                            <strong className="font-bold text-amber-300">{region || '—'}</strong>
                           </span>
                         )}
 
@@ -442,8 +447,8 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                       </div>
                     )}
 
-                    {/* Line Items List (Clean, single-line per item, no repeated parcel/region) */}
-                    {item.items_list && item.items_list.length > 0 && (
+                    {/* Line Items List (Mandatory 4 Fields: الصنف والكمية) */}
+                    {item.items_list && item.items_list.length > 0 ? (
                       <div className="rounded-xl border border-slate-800/90 bg-slate-900/60 p-2.5 space-y-1.5 text-xs">
                         <div className="text-[11px] font-bold text-slate-300 flex items-center justify-between pb-1 border-b border-slate-800/60">
                           <span className="flex items-center gap-1.5 text-cyan-400 font-bold">
@@ -467,6 +472,24 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                               </span>
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-slate-800/90 bg-slate-900/60 p-2.5 space-y-1 text-xs">
+                        <div className="text-[11px] font-bold text-slate-300 flex items-center justify-between pb-1 border-b border-slate-800/60">
+                          <span className="flex items-center gap-1.5 text-cyan-400 font-bold">
+                            <span>📦</span> الصنف المطلوب:
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 text-xs py-1.5 px-2.5 rounded-lg bg-slate-950/60 border border-slate-800/70">
+                          <span className="font-semibold text-slate-100 truncate">
+                            {item.items_summary || displayTitle || 'بند المعاملة'}
+                          </span>
+                          {item.amount !== undefined && Number(item.amount) > 0 && (
+                            <span className="font-mono font-bold text-emerald-300 text-xs shrink-0">
+                              {Number(item.amount).toLocaleString('ar-EG')} ج.م
+                            </span>
+                          )}
                         </div>
                       </div>
                     )}

@@ -22,6 +22,7 @@ import PurchaseRequestTimeline from '../../components/procurement/PurchaseReques
 import RejectRequestDialog from '../../components/reviewer/RejectRequestDialog';
 import ErrorMessage from '../../components/ErrorMessage';
 import { getUnitLabel } from '../../utils/units';
+import { getSummaryParcels, getSummaryRegions, getSummaryQuantities } from '../../utils/formatRequestSummary';
 import { UnifiedNotesCard } from '../../components/common/UnifiedNotesCard';
 
 interface DraftItemState extends PurchaseRequestItemFormInput {
@@ -321,6 +322,7 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                   <th className="px-4 py-3 whitespace-nowrap font-bold">رقم الطلب</th>
                   <th className="px-4 py-3 whitespace-nowrap font-bold">الصنف المطلوب والكمية</th>
                   <th className="px-4 py-3 whitespace-nowrap font-bold">رقم قطعة الأرض</th>
+                  <th className="px-4 py-3 whitespace-nowrap font-bold">المنطقة</th>
                   <th className="px-4 py-3 whitespace-nowrap font-bold">تاريخ الاحتياج</th>
                   <th className="px-4 py-3 whitespace-nowrap font-bold">مقدم الطلب</th>
                   <th className="px-4 py-3 whitespace-nowrap font-bold">القسم</th>
@@ -334,6 +336,10 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                 {filteredRequests.map((request) => {
                   const firstItem = request.items?.[0];
                   const otherItemsCount = (request.items?.length || 0) - 1;
+                  const parcelsDisplay = getSummaryParcels(request);
+                  const regionsDisplay = getSummaryRegions(request);
+                  const quantitiesInfo = getSummaryQuantities(request.items);
+
                   return (
                     <tr key={request.id} className="border-t border-slate-800 text-slate-200 hover:bg-slate-900/40">
                       <td className="px-4 py-3 font-bold text-cyan-300 font-mono whitespace-nowrap">
@@ -346,7 +352,7 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                               {firstItem.item?.name || firstItem.item_description}
                             </div>
                             <div className="text-[11px] text-amber-300 font-mono mt-0.5">
-                              {firstItem.quantity} {getUnitLabel(firstItem.uom)}
+                              {quantitiesInfo.display}
                               {otherItemsCount > 0 && (
                                 <span className="mr-2 rounded bg-slate-800 border border-slate-700 px-1.5 py-0.5 text-[10px] text-cyan-300 font-sans">
                                   +{otherItemsCount} بنود أخرى
@@ -359,7 +365,10 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                         )}
                       </td>
                       <td className="px-4 py-3 font-mono text-cyan-300 whitespace-nowrap">
-                        {firstItem?.item_reference || '—'}
+                        {parcelsDisplay}
+                      </td>
+                      <td className="px-4 py-3 text-slate-300 whitespace-nowrap">
+                        {regionsDisplay}
                       </td>
                       <td className="px-4 py-3 font-mono font-bold text-amber-300 whitespace-nowrap">
                         {request.date_needed || '—'}
@@ -412,6 +421,10 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
             {filteredRequests.map((request) => {
               const firstItem = request.items?.[0];
               const otherItemsCount = (request.items?.length || 0) - 1;
+              const parcelsDisplay = getSummaryParcels(request);
+              const regionsDisplay = getSummaryRegions(request);
+              const quantitiesInfo = getSummaryQuantities(request.items);
+
               return (
                 <article
                   key={`mobile-gm-pr-${request.id}`}
@@ -427,15 +440,18 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                   </div>
 
                   {firstItem && (
-                    <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 space-y-1">
+                    <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 space-y-1.5">
                       <div className="text-xs text-slate-400">الصنف:</div>
                       <div className="font-bold text-slate-100 text-sm">{firstItem.item?.name || firstItem.item_description}</div>
-                      <div className="flex items-center justify-between text-xs pt-1">
+                      <div className="flex items-center justify-between text-xs pt-1 flex-wrap gap-2">
                         <span className="text-amber-300 font-mono font-bold">
-                          الكمية: {firstItem.quantity} {getUnitLabel(firstItem.uom)}
+                          الكمية: {quantitiesInfo.display}
                         </span>
                         <span className="text-cyan-300 font-mono">
-                          قطعة: {firstItem.item_reference || '—'}
+                          قطعة: {parcelsDisplay}
+                        </span>
+                        <span className="text-slate-300">
+                          المنطقة: <strong className="text-amber-300">{regionsDisplay}</strong>
                         </span>
                       </div>
                       {otherItemsCount > 0 && (

@@ -26,6 +26,7 @@ import SystemEventTimeline from '../../components/ui/SystemEventTimeline';
 import PurchaseRequestTimeline from '../../components/procurement/PurchaseRequestTimeline';
 import OfficeReceiptModal from '../../components/purchase-requests/OfficeReceiptModal';
 import { getUnitLabel } from '../../utils/units';
+import { getSummaryParcels, getSummaryRegions, getSummaryQuantities } from '../../utils/formatRequestSummary';
 import { UnifiedNotesCard } from '../../components/common/UnifiedNotesCard';
 
 const REQUESTER_EDITABLE_STATUSES = ['DRAFT', 'SUBMITTED', 'UNDER_REVIEW'];
@@ -127,6 +128,16 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
   const issuedPos = requestData.purchase_orders || [];
   const activeOfficePo = isOffice && issuedPos.length > 0 ? issuedPos[0] : null;
   const isOfficeReceiptConfirmed = activeOfficePo?.has_approved_receipt || false;
+
+  const itemNames = requestData.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
+  const itemsDisplay = itemNames.length === 0
+    ? '—'
+    : itemNames.length === 1
+      ? itemNames[0]
+      : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
+  const parcelsDisplay = getSummaryParcels(requestData);
+  const regionsDisplay = getSummaryRegions(requestData);
+  const quantitiesInfo = getSummaryQuantities(requestData.items);
 
   return (
     <div className="space-y-6 animate-fade-in" dir="rtl">
@@ -250,6 +261,43 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
           <Link to="/requests">
             <Button variant="secondary" size="sm">← العودة</Button>
           </Link>
+        </div>
+      </div>
+
+      {/* ── شريط البيانات الأساسية الأربعة الإلزامي (المنطقة، رقم القطعة، الأصناف، والكمية) ── */}
+      <div className="rounded-2xl border-2 border-amber-500/40 bg-gradient-to-r from-slate-900 via-amber-950/20 to-slate-900 p-3.5 sm:p-4 shadow-xl">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          {/* 1. رقم قطعة الأرض */}
+          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5">
+            <span className="text-[10px] font-bold text-slate-400 block">رقم قطعة الأرض:</span>
+            <span className="text-sm sm:text-base font-black font-mono text-cyan-300 block mt-0.5">
+              {parcelsDisplay}
+            </span>
+          </div>
+
+          {/* 2. المنطقة */}
+          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5">
+            <span className="text-[10px] font-bold text-slate-400 block">المنطقة الجغرافية:</span>
+            <span className="text-sm sm:text-base font-black text-amber-300 block mt-0.5">
+              {regionsDisplay}
+            </span>
+          </div>
+
+          {/* 3. الأصناف المطلوبة */}
+          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5">
+            <span className="text-[10px] font-bold text-slate-400 block">الأصناف المطلوبة ({requestData.items?.length || 0}):</span>
+            <span className="text-xs sm:text-sm font-black text-slate-100 block mt-0.5 truncate" title={itemNames.join('، ')}>
+              {itemsDisplay}
+            </span>
+          </div>
+
+          {/* 4. الكمية الإجمالية */}
+          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5">
+            <span className="text-[10px] font-bold text-slate-400 block">الكمية الإجمالية:</span>
+            <span className="text-sm sm:text-base font-black font-mono text-amber-300 block mt-0.5" title={quantitiesInfo.tooltip}>
+              {quantitiesInfo.display}
+            </span>
+          </div>
         </div>
       </div>
 

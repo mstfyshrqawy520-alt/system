@@ -16,6 +16,7 @@ import { Input, Select } from '../../components/ui/FormField';
 import TableFilterBar from '../../components/ui/TableFilterBar';
 import { getDefaultDateFrom, getTodayInputDate, isDefaultTodayRange } from '../../utils/dateFilters';
 import { getUnitLabel } from '../../utils/units';
+import { getSummaryParcels, getSummaryRegions, getSummaryQuantities } from '../../utils/formatRequestSummary';
 
 export const ApprovedPurchaseRequestsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -143,6 +144,7 @@ export const ApprovedPurchaseRequestsPage: React.FC = () => {
                 <TableHead className="whitespace-nowrap">القسم</TableHead>
                 <TableHead className="whitespace-nowrap">الصنف</TableHead>
                 <TableHead className="whitespace-nowrap">رقم قطعة الأرض</TableHead>
+                <TableHead className="whitespace-nowrap">المنطقة</TableHead>
                 <TableHead className="whitespace-nowrap">الكمية / العدد</TableHead>
                 <TableHead className="whitespace-nowrap">تاريخ الاحتياج</TableHead>
                 <TableHead className="whitespace-nowrap">المورد</TableHead>
@@ -154,10 +156,15 @@ export const ApprovedPurchaseRequestsPage: React.FC = () => {
             </TableHeader>
             <TableBody>
               {filteredRequests.map(r => {
-                const item = r.items?.[0];
-                const itemName = item?.item_description || item?.item?.name || '—';
-                const parcelNumber = item?.item_reference || '—';
-                const quantity = item ? `${item.quantity || '—'} ${getUnitLabel(item.uom)}` : '—';
+                const itemNames = r.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
+                const itemsDisplay = itemNames.length === 0
+                  ? '—'
+                  : itemNames.length === 1
+                    ? itemNames[0]
+                    : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
+                const parcelsDisplay = getSummaryParcels(r);
+                const regionsDisplay = getSummaryRegions(r);
+                const quantitiesInfo = getSummaryQuantities(r.items);
 
                 return (
                   <TableRow key={r.id}>
@@ -170,9 +177,14 @@ export const ApprovedPurchaseRequestsPage: React.FC = () => {
                       </span>
                     </TableCell>
                     <TableCell className="max-w-[160px] text-slate-300">{r.department?.name || '—'}</TableCell>
-                    <TableCell className="max-w-[180px] font-semibold text-slate-100 text-xs">{itemName}</TableCell>
-                    <TableCell className="font-mono text-cyan-300 text-xs whitespace-nowrap">{parcelNumber}</TableCell>
-                    <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">{quantity}</TableCell>
+                    <TableCell className="max-w-[180px] font-semibold text-slate-100 text-xs truncate">
+                      <span title={itemNames.join('، ')}>{itemsDisplay}</span>
+                    </TableCell>
+                    <TableCell className="font-mono text-cyan-300 text-xs whitespace-nowrap">{parcelsDisplay}</TableCell>
+                    <TableCell className="text-slate-300 text-xs whitespace-nowrap">{regionsDisplay}</TableCell>
+                    <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">
+                      <span title={quantitiesInfo.tooltip}>{quantitiesInfo.display}</span>
+                    </TableCell>
                     <TableCell className="font-mono font-bold text-amber-300 text-xs whitespace-nowrap">{r.date_needed || '—'}</TableCell>
                     <TableCell className="max-w-[180px] font-bold text-emerald-300">{r.direct_supplier?.company_name || r.selected_quote?.supplier?.company_name || '—'}</TableCell>
                     <TableCell className="max-w-[160px] text-slate-300">{r.requester?.name || '—'}</TableCell>
@@ -196,10 +208,10 @@ export const ApprovedPurchaseRequestsPage: React.FC = () => {
         </div>
         <div className="space-y-3 md:hidden">
           {filteredRequests.map(r => {
-            const item = r.items?.[0];
-            const itemName = item?.item_description || item?.item?.name || 'غير محدد';
-            const parcelNumber = item?.item_reference || '—';
-            const quantity = item ? `${item.quantity || '—'} ${getUnitLabel(item.uom)}` : '—';
+            const itemNames = r.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
+            const parcelsDisplay = getSummaryParcels(r);
+            const regionsDisplay = getSummaryRegions(r);
+            const quantitiesInfo = getSummaryQuantities(r.items);
 
             return (
               <article key={`mobile-approved-${r.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
@@ -212,8 +224,9 @@ export const ApprovedPurchaseRequestsPage: React.FC = () => {
                 <dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
                   <div className="min-w-0"><dt className="text-slate-500">القسم</dt><dd className="mt-1 break-normal text-slate-300">{r.department?.name || 'غير محدد'}</dd></div>
                   <div className="min-w-0"><dt className="text-slate-500">المورد</dt><dd className="mt-1 break-normal font-bold leading-6 text-emerald-300">{r.direct_supplier?.company_name || r.selected_quote?.supplier?.company_name || 'غير محدد'}</dd></div>
-                  <div className="min-w-0 min-[420px]:col-span-2"><dt className="text-slate-500">الصنف وقطعة الأرض</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{itemName} <span className="font-mono text-cyan-300">({parcelNumber})</span></dd></div>
-                  <div className="min-w-0"><dt className="text-slate-500">الكمية / العدد</dt><dd className="mt-1 font-mono font-bold text-amber-300">{quantity}</dd></div>
+                  <div className="min-w-0 min-[420px]:col-span-2"><dt className="text-slate-500">الصنف وقطعة الأرض</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{itemNames.join('، ') || 'غير محدد'} <span className="font-mono text-cyan-300">({parcelsDisplay})</span></dd></div>
+                  <div className="min-w-0"><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 break-normal text-slate-200">{regionsDisplay}</dd></div>
+                  <div className="min-w-0"><dt className="text-slate-500">الكمية / العدد</dt><dd className="mt-1 font-mono font-bold text-amber-300">{quantitiesInfo.display}</dd></div>
                   <div className="min-w-0"><dt className="text-slate-500">تاريخ الاحتياج</dt><dd className="mt-1 font-mono font-bold text-amber-300">{r.date_needed || 'غير محدد'}</dd></div>
                   <div className="min-w-0"><dt className="text-slate-500">صاحب الطلب</dt><dd className="mt-1 break-normal text-slate-300">{r.requester?.name || 'غير محدد'}</dd></div>
                   <div className="min-w-0"><dt className="text-slate-500">الحالة الحالية</dt><dd className="mt-1 break-normal text-cyan-200">{PR_STATUS_LABELS[r.status] || r.status}</dd></div>
