@@ -17,8 +17,25 @@ class NotificationResource extends JsonResource
 
         if ($this->notifiable_type === PurchaseRequest::class) {
             $data['purchase_request_id'] = $this->notifiable_id;
+            $pr = $this->relationLoaded('notifiable') ? $this->notifiable : PurchaseRequest::find($this->notifiable_id);
+            if ($pr) {
+                $firstItem = $pr->relationLoaded('items') ? $pr->items->first() : $pr->items()->first();
+                $data['parcel_reference'] = $pr->parcel_reference ?: ($firstItem?->item_reference ?: null);
+                $data['region'] = $pr->region ?: ($firstItem?->region ?: null);
+                $data['item_description'] = $firstItem?->item_description ?: ($firstItem?->item?->name ?: null);
+                $data['quantity'] = $firstItem ? (float) $firstItem->quantity . ($firstItem->uom ? ' ' . $firstItem->uom : '') : null;
+            }
         } elseif ($this->notifiable_type === PurchaseOrder::class) {
             $data['purchase_order_id'] = $this->notifiable_id;
+            $po = $this->relationLoaded('notifiable') ? $this->notifiable : PurchaseOrder::find($this->notifiable_id);
+            if ($po) {
+                $pr = $po->purchaseRequest;
+                $firstItem = $po->relationLoaded('items') ? $po->items->first() : $po->items()->first();
+                $data['parcel_reference'] = $pr?->parcel_reference ?: ($firstItem?->item_reference ?: null);
+                $data['region'] = $pr?->region ?: ($firstItem?->region ?: null);
+                $data['item_description'] = $firstItem?->item_description ?: ($firstItem?->item?->name ?: null);
+                $data['quantity'] = $firstItem ? (float) $firstItem->quantity . ($firstItem->uom ? ' ' . $firstItem->uom : '') : null;
+            }
         }
 
         if ($this->purchase_order_id) {

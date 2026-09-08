@@ -140,12 +140,12 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
   const quantitiesInfo = getSummaryQuantities(requestData.items);
 
   return (
-    <div className="space-y-6 animate-fade-in" dir="rtl">
+    <div className="space-y-3.5 pb-24 md:pb-6 animate-fade-in" dir="rtl">
       {/* Flash */}
       {flashMessage && (
-        <div className="bg-emerald-950/40 border border-emerald-800/80 text-emerald-300 px-4 py-3 rounded-xl text-xs font-semibold flex items-center justify-between">
-          <span>{flashMessage}</span>
-          <button onClick={() => setFlashMessage(null)} className="text-emerald-400 font-bold ml-2">✕</button>
+        <div className="bg-emerald-950/40 border border-emerald-800/80 text-emerald-300 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between shadow-md">
+          <span>✓ {flashMessage}</span>
+          <button onClick={() => setFlashMessage(null)} className="text-emerald-400 font-bold ml-2 cursor-pointer">✕</button>
         </div>
       )}
       <ErrorMessage error={error} onDismiss={() => setError(null)} />
@@ -198,7 +198,7 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
       )}
 
       {['SUBMITTED', 'UNDER_REVIEW'].includes(requestData.status) && (
-        <div className="rounded-xl border border-cyan-700/40 bg-cyan-950/25 px-4 py-3 text-xs text-cyan-200">
+        <div className="rounded-xl border border-cyan-700/40 bg-cyan-950/25 px-4 py-2.5 text-xs text-cyan-200">
           الطلب قابل للتعديل حاليًا؛ سيتم إغلاق التعديل فور اعتماد المراجع.
         </div>
       )}
@@ -345,36 +345,20 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
                 : 'يحدده المراجع عند الاعتماد'}
           </div>
         </div>
-        {!isOffice && (
-          <>
-            <div>
-              <div className="text-[10px] text-amber-400 font-semibold">رقم قطعة الأرض</div>
-              <div className="font-bold text-amber-300 font-mono mt-1">
-                {requestData.parcel_reference || requestData.items?.[0]?.item_reference || 'غير محدد'}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-amber-400 font-semibold">المنطقة</div>
-              <div className="font-bold text-slate-200 mt-1">
-                {requestData.region || requestData.items?.[0]?.region || 'غير محدد'}
-              </div>
-            </div>
-          </>
-        )}
         <div className="col-span-2 md:col-span-4">
           <div className="text-[10px] text-slate-400 font-semibold">ملاحظات</div>
           <div className="font-bold text-slate-200 mt-1">{requestData.notes || '-'}</div>
         </div>
       </Card>
 
-      <Card className="border-cyan-900/60 bg-slate-950/40">
+      <Card className="border-cyan-900/60 bg-slate-950/40 p-3 sm:p-4">
         <PurchaseRequestTimeline request={requestData} />
       </Card>
 
       {/* Line البنود */}
-      <div className="space-y-3">
-        <h3 className="flex items-center gap-2 text-sm font-bold text-slate-200">
-          <span>📦</span> بنود طلب الشراء
+      <div className="space-y-2.5">
+        <h3 className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-200">
+          <span>📦</span> بنود ومواد طلب الشراء التفصيلية
         </h3>
         <div className="hidden sm:block">
           <Table>
@@ -393,8 +377,8 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
               {requestData.items?.map((item, index) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-bold font-mono text-slate-400">{index + 1}</TableCell>
-                  <TableCell className="font-mono text-slate-300">{item.item_reference || requestData.parcel_reference || (isOffice ? 'مقر الشركة' : '—')}</TableCell>
-                  {!isOffice && <TableCell className="text-slate-300">{item.region || requestData.region || '—'}</TableCell>}
+                  <TableCell className="font-mono text-cyan-300">{item.item_reference || requestData.parcel_reference || (isOffice ? 'مقر الشركة' : '—')}</TableCell>
+                  {!isOffice && <TableCell className="text-amber-300">{item.region || requestData.region || '—'}</TableCell>}
                   <TableCell className="font-bold text-slate-100">{item.item_description}</TableCell>
                   <TableCell className="font-bold font-mono text-slate-200">
                     {parseFloat(item.quantity).toLocaleString()}
@@ -406,21 +390,27 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
             </TableBody>
           </Table>
         </div>
-        <div className="space-y-3 sm:hidden">
+        <div className="space-y-2.5 sm:hidden">
           {requestData.items?.length ? requestData.items.map((item, index) => (
-            <article key={`mobile-${item.id}`} className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
-              <div className="flex items-start justify-between gap-3 border-b border-slate-800 pb-3">
+            <article key={`mobile-${item.id}`} className="rounded-xl border border-slate-800 bg-slate-900/70 p-3 space-y-2">
+              <div className="flex items-start justify-between gap-3 border-b border-slate-800 pb-2">
                 <div className="min-w-0">
                   <p className="text-[10px] font-bold text-cyan-300">بند #{index + 1}</p>
-                  <p className="mt-1 break-words text-sm font-black text-slate-100">{item.item_description || 'بدون وصف'}</p>
+                  <p className="mt-0.5 break-words text-sm font-black text-slate-100">{item.item_description || 'بدون وصف'}</p>
                 </div>
-                <span className="shrink-0 font-mono text-xs font-bold text-slate-300">{item.item_reference || (isOffice ? 'مقر الشركة' : '—')}</span>
+                <span className="shrink-0 font-mono text-xs font-bold text-cyan-300">🏷️ {item.item_reference || (isOffice ? 'مقر الشركة' : '—')}</span>
               </div>
-              <dl className="mt-3 grid grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
-                {!isOffice && <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 text-slate-200">{item.region || '—'}</dd></div>}
-                <div><dt className="text-slate-500">الكمية</dt><dd className="mt-1 font-bold text-slate-200">{parseFloat(item.quantity).toLocaleString()} {getUnitLabel(item.uom)}</dd></div>
-                <div className="col-span-1 min-[420px]:col-span-2"><dt className="text-slate-500">المواصفات</dt><dd className="mt-1 break-words leading-6 text-slate-300">{item.specifications || '—'}</dd></div>
-              </dl>
+              <div className="flex items-center justify-between text-xs pt-0.5">
+                {!isOffice && <span className="text-amber-300 font-bold">📍 {item.region || '—'}</span>}
+                <span className="font-bold text-emerald-300 font-mono">
+                  ⚖️ {parseFloat(item.quantity).toLocaleString()} {getUnitLabel(item.uom)}
+                </span>
+              </div>
+              {item.specifications && (
+                <p className="text-[11px] text-slate-400 border-t border-slate-800/60 pt-1">
+                  المواصفات: {item.specifications}
+                </p>
+              )}
             </article>
           )) : (
             <div className="rounded-xl border border-dashed border-slate-700 px-3 py-6 text-center text-xs text-slate-400">لا توجد بنود مرتبطة بالطلب.</div>
@@ -430,7 +420,41 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
 
       <UnifiedNotesCard request={requestData} />
 
-      <SystemEventTimeline entity="purchase_request" entityId={requestData.id} />
+      {/* System Events: Collapsed by default */}
+      <SystemEventTimeline entity="purchase_request" entityId={requestData.id} defaultCollapsed={true} />
+
+      {/* Mobile Sticky Action Bar */}
+      {(canSubmit || canEdit || canDelete) && (
+        <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-between gap-2 border-t border-slate-800 bg-slate-950/95 p-3 shadow-2xl backdrop-blur sm:hidden">
+          {canSubmit && (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setIsSubmitModalOpen(true)}
+              className="flex-1 bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-black text-xs min-h-10"
+            >
+              🚀 إرسال للمراجعة
+            </Button>
+          )}
+          {canEdit && (
+            <Link to={`/requests/${requestData.id}/edit`} className="flex-1">
+              <Button variant="warning" size="md" className="w-full text-xs font-bold bg-amber-950 text-amber-300 border-amber-700 min-h-10">
+                ✏️ تعديل
+              </Button>
+            </Link>
+          )}
+          {canDelete && (
+            <Button
+              variant="danger"
+              size="md"
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="min-w-12 text-xs font-bold min-h-10"
+            >
+              🗑️
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Dialogs */}
       <SubmitRequestDialog

@@ -480,6 +480,43 @@ export const NotificationBell: React.FC = () => {
                       {n.message}
                     </p>
 
+                    {/* Operational Core 4 Fields Strip (القطعة، المنطقة، الصنف، الكمية) */}
+                    {(() => {
+                      const data = (n as any).data || {};
+                      let parcel = data.parcel_reference;
+                      let region = data.region;
+                      let item = data.item_description;
+                      let qty = data.quantity;
+
+                      if (!parcel && n.message) {
+                        const parcelMatch = n.message.match(/القطعة:\s*([^|•\n]+)/);
+                        if (parcelMatch) parcel = parcelMatch[1].trim();
+                      }
+                      if (!region && n.message) {
+                        const regionMatch = n.message.match(/المنطقة:\s*([^|•\n]+)/);
+                        if (regionMatch) region = regionMatch[1].trim();
+                      }
+                      if (!item && n.message) {
+                        const itemMatch = n.message.match(/الصنف:\s*([^|•\n]+)/);
+                        if (itemMatch) item = itemMatch[1].trim();
+                      }
+                      if (!qty && n.message) {
+                        const qtyMatch = n.message.match(/الكمية:\s*([^|•\n]+)/);
+                        if (qtyMatch) qty = qtyMatch[1].trim();
+                      }
+
+                      if (!parcel && !region && !item && !qty) return null;
+
+                      return (
+                        <div className="flex items-center gap-1.5 flex-wrap text-[10px] bg-slate-950/90 border border-slate-800 rounded-lg px-2 py-1 text-slate-300">
+                          {parcel && <span className="text-cyan-300 font-mono font-bold">🏷️ {parcel}</span>}
+                          {region && <span className="text-amber-300 font-bold">📍 {region}</span>}
+                          {item && <span className="text-slate-100 font-bold truncate max-w-[150px]" title={item}>📦 {item}</span>}
+                          {qty && <span className="text-emerald-300 font-mono font-bold">⚖️ {qty}</span>}
+                        </div>
+                      );
+                    })()}
+
                     <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                         isUnread

@@ -538,16 +538,41 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                     الحالة: {PR_STATUS_LABELS[selected.status]}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-900/60 text-xl font-black text-slate-300 hover:border-cyan-400 hover:text-white"
-                  onClick={() => {
-                    setSelected(null);
-                    setSearchParams({}, { replace: true });
-                  }}
-                >
-                  ×
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="primary"
+                    isLoading={actionLoading}
+                    onClick={() => void performAction('approve')}
+                    className="text-xs font-black bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-slate-950 shadow-md"
+                    title="اعتماد البنود المحددة فوراً"
+                  >
+                    ✓ اعتماد ({activeApprovedItems.length})
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="danger"
+                    isLoading={actionLoading}
+                    onClick={() => setIsRejectModalOpen(true)}
+                    className="text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white"
+                    title="رفض الطلب"
+                  >
+                    ✕ رفض
+                  </Button>
+                  <button
+                    type="button"
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-900/60 text-lg font-black text-slate-300 hover:border-cyan-400 hover:text-white cursor-pointer"
+                    onClick={() => {
+                      setSelected(null);
+                      setSearchParams({}, { replace: true });
+                    }}
+                    title="إغلاق النافذة"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
 
               {/* Request Info Cards */}

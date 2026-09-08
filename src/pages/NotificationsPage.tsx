@@ -787,6 +787,43 @@ export const NotificationsPage: React.FC = () => {
                         {notification.message}
                       </p>
 
+                      {/* Operational Core 4 Fields Strip (القطعة، المنطقة، الصنف، الكمية) */}
+                      {(() => {
+                        const data = (notification as any).data || {};
+                        let parcel = data.parcel_reference;
+                        let region = data.region;
+                        let item = data.item_description;
+                        let qty = data.quantity;
+
+                        if (!parcel && notification.message) {
+                          const parcelMatch = notification.message.match(/القطعة:\s*([^|•\n]+)/);
+                          if (parcelMatch) parcel = parcelMatch[1].trim();
+                        }
+                        if (!region && notification.message) {
+                          const regionMatch = notification.message.match(/المنطقة:\s*([^|•\n]+)/);
+                          if (regionMatch) region = regionMatch[1].trim();
+                        }
+                        if (!item && notification.message) {
+                          const itemMatch = notification.message.match(/الصنف:\s*([^|•\n]+)/);
+                          if (itemMatch) item = itemMatch[1].trim();
+                        }
+                        if (!qty && notification.message) {
+                          const qtyMatch = notification.message.match(/الكمية:\s*([^|•\n]+)/);
+                          if (qtyMatch) qty = qtyMatch[1].trim();
+                        }
+
+                        if (!parcel && !region && !item && !qty) return null;
+
+                        return (
+                          <div className="flex items-center gap-2 flex-wrap text-xs bg-slate-900/95 border border-slate-700/80 rounded-xl px-3 py-1.5 text-slate-200 shadow-sm my-1">
+                            {parcel && <span className="text-cyan-300 font-mono font-bold">🏷️ القطعة: {parcel}</span>}
+                            {region && <span className="text-amber-300 font-bold">📍 المنطقة: {region}</span>}
+                            {item && <span className="text-slate-100 font-bold">📦 الصنف: {item}</span>}
+                            {qty && <span className="text-emerald-300 font-mono font-bold">⚖️ الكمية: {qty}</span>}
+                          </div>
+                        );
+                      })()}
+
                       {/* Metadata row */}
                       <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-400 flex-wrap">
                         <span className="font-bold text-slate-300">{formatDateTime12h(notification.created_at)}</span>

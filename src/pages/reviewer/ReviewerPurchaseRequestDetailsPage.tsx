@@ -3,8 +3,15 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import ErrorMessage from '../../components/ErrorMessage';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import PurchaseRequestStatusBadge from '../../components/purchase-requests/PurchaseRequestStatusBadge';
+import ApproveRequestDialog from '../../components/reviewer/ApproveRequestDialog';
+import RejectRequestDialog from '../../components/reviewer/RejectRequestDialog';
 import { useAuth } from '../../context/AuthContext';
-import { getReviewerPurchaseRequestApi, startReviewApi } from '../../api/reviewer';
+import {
+  getReviewerPurchaseRequestApi,
+  startReviewApi,
+  approvePurchaseRequestApi,
+  rejectPurchaseRequestApi,
+} from '../../api/reviewer';
 import { ApiError } from '../../types/api';
 import { PurchaseRequest } from '../../types/purchaseRequest';
 import { parseApiError } from '../../utils/apiError';
@@ -23,32 +30,6 @@ const PRIORITY_LABELS: Record<string, string> = {
   URGENT: 'عاجلة',
 };
 
-const ACTION_LABELS: Record<string, string> = {
-  CREATED: 'إنشاء الطلب',
-  SUBMITTED: 'إرسال الطلب',
-  REVIEW_STARTED: 'بدء المراجعة',
-  APPROVED_BY_REVIEWER: 'اعتماد رئيس القسم',
-  PROCUREMENT_APPROVED: 'اعتماد المشتريات',
-  APPROVED_BY_PROCUREMENT: 'اعتماد مدير المشتريات',
-  REJECTED: 'رفض الطلب',
-  PROCUREMENT_REJECTED: 'رفض المشتريات',
-  REJECTED_BY_PROCUREMENT: 'رفض مدير المشتريات',
-  RETURNED_TO_PROCUREMENT: 'إعادة للمشتريات للتعديل',
-  HEADER_UPDATED: 'تحديث البيانات الأساسية',
-  ITEM_ADDED: 'إضافة صنف',
-  ITEM_UPDATED: 'تعديل صنف',
-  ITEM_REMOVED: 'حذف صنف',
-  QUANTITY_CHANGED: 'تغيير الكمية',
-  PO_CREATED: 'إنشاء أمر شراء',
-  PO_HEADER_UPDATED: 'تحديث أمر الشراء',
-  PO_ITEM_ADDED: 'إضافة صنف إلى أمر الشراء',
-  PO_ITEM_UPDATED: 'تعديل صنف في أمر الشراء',
-  PO_ITEM_REMOVED: 'حذف صنف من أمر الشراء',
-  PO_ISSUED: 'إصدار أمر الشراء',
-  ACCOUNTING_APPROVED: 'اعتماد الحسابات',
-  DELIVERY_STATUS_UPDATED: 'تحديث حالة التوريد',
-};
-
 export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -57,7 +38,13 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
   const [requestData, setRequestData] = useState<PurchaseRequest | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isStartingReview, setIsStartingReview] = useState<boolean>(false);
+  const [isMutating, setIsMutating] = useState<boolean>(false);
   const [error, setError] = useState<ApiError | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Modals
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
   const fetchRequest = async () => {
     if (!id) return;
@@ -82,11 +69,53 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
     setIsStartingReview(true);
     try {
       await startReviewApi(requestData.id);
-      navigate(`/reviewer/requests/${requestData.id}/review`);
+      await fetchRequest();
     } catch (err) {
       setError(parseApiError(err));
     } finally {
       setIsStartingReview(false);
+    }
+  };
+
+  const handleConfirmApprove = async (
+    comment?: string,
+    siteEngineerUserId?: number | null,
+    requiresWarehouseReceipt?: boolean
+  ) => {
+    if (!requestData) return;
+    setIsMutating(true);
+    setError(null);
+    try {
+      await approvePurchaseRequestApi(
+        requestData.id,
+        comment,
+        siteEngineerUserId,
+        requiresWarehouseReceipt
+      );
+      setIsApproveModalOpen(false);
+      setSuccessMessage('تم اعتماد طلب الشراء بنجاح وإرساله للمدير العام.');
+      await fetchRequest();
+    } catch (err) {
+      setError(parseApiError(err));
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const handleConfirmReject = async (comments: string) => {
+    if (!requestData) return;
+    setIsMutating(true);
+    setError(null);
+    try {
+      await rejectPurchaseRequestApi(requestData.id, comments);
+      setIsRejectModalOpen(false);
+      navigate('/reviewer/requests', {
+        state: { message: 'تم رفض طلب الشراء.' },
+      });
+    } catch (err) {
+      setError(parseApiError(err));
+    } finally {
+      setIsMutating(false);
     }
   };
 
@@ -111,6 +140,7 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
 
   const isSubmitted = requestData.status === 'SUBMITTED';
   const isUnderReview = requestData.status === 'UNDER_REVIEW';
+  const canReview = (isSubmitted || isUnderReview) && hasPermission('purchase_request.approve');
   const canEditBeforeApproval = isUnderReview && hasPermission('purchase_request.edit_during_review');
   const isLockedAfterApproval = !isSubmitted && !isUnderReview;
 
@@ -125,59 +155,94 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
   const quantitiesInfo = getSummaryQuantities(requestData.items);
 
   return (
-    <div className="space-y-6 animate-fade-in" dir="rtl">
+    <div className="space-y-3.5 pb-24 md:pb-6 animate-fade-in" dir="rtl">
+      {successMessage && (
+        <div className="bg-emerald-950/40 border border-emerald-800/80 text-emerald-300 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between shadow-md">
+          <span>✓ {successMessage}</span>
+          <button onClick={() => setSuccessMessage(null)} className="text-emerald-400 font-bold ml-2 cursor-pointer">✕</button>
+        </div>
+      )}
+
       <ErrorMessage error={error} onDismiss={() => setError(null)} />
 
       {isLockedAfterApproval && (
-        <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-xs text-slate-300">
+        <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2.5 text-xs text-slate-300">
           تم اعتماد المرحلة السابقة وإرسال الطلب إلى المرحلة التالية، لذلك تم إغلاق التعديل من جهة المراجع.
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-        <div>
-          <div className="flex items-center space-x-3 space-x-reverse">
-            <h1 className="text-xl font-black font-mono text-cyan-400">
-              {requestData.request_number}
-            </h1>
-            <PurchaseRequestStatusBadge status={requestData.status} />
-          </div>
+      {/* Header & Direct Actions Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <div className="flex items-center space-x-3 space-x-reverse flex-wrap gap-2">
+          <h1 className="text-lg sm:text-xl font-black font-mono text-cyan-400">
+            {requestData.request_number}
+          </h1>
+          <PurchaseRequestStatusBadge status={requestData.status} />
         </div>
 
-        {/* الإجراءات */}
-        <div className="flex items-center gap-2">
+        {/* Action Buttons: Direct Action without navigating or hunting */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {canReview && (
+            <Button
+              type="button"
+              variant="success"
+              size="sm"
+              onClick={() => setIsApproveModalOpen(true)}
+              disabled={isMutating}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-black shadow-md shadow-emerald-950/50 flex items-center gap-1 text-xs"
+              title="اعتماد الطلب فوراً من هنا"
+            >
+              <span>✓</span>
+              <span>اعتماد الطلب</span>
+            </Button>
+          )}
+
+          {canReview && hasPermission('purchase_request.reject') && (
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              onClick={() => setIsRejectModalOpen(true)}
+              disabled={isMutating}
+              className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
+            >
+              <span>✕</span>
+              <span>رفض</span>
+            </Button>
+          )}
+
           {isSubmitted && hasPermission('purchase_request.review') && (
             <Button
               type="button"
               variant="primary"
-              size="md"
+              size="sm"
               onClick={handleStartReview}
               isLoading={isStartingReview}
+              className="text-xs font-bold"
             >
-              بدء المراجعة &rarr;
+              بدء المراجعة
             </Button>
           )}
 
           {canEditBeforeApproval && (
             <Link to={`/reviewer/requests/${requestData.id}/review`}>
-              <Button variant="warning" size="md" className="bg-amber-950/60 text-amber-300 border-amber-800/60 hover:bg-amber-900/60">
-                مساحة العمل والتعديل &rarr;
+              <Button variant="warning" size="sm" className="bg-amber-950/60 text-amber-300 border-amber-800/60 hover:bg-amber-900/60 text-xs font-bold">
+                ✏️ تعديل البنود
               </Button>
             </Link>
           )}
 
           <Link to="/reviewer/requests">
-            <Button variant="secondary" size="md">
-              &rarr; القائمة
+            <Button variant="secondary" size="sm" className="text-xs">
+              ← قائمة الطلبات
             </Button>
           </Link>
         </div>
       </div>
 
       {/* ── شريط البيانات الأساسية الأربعة الإلزامي (المنطقة، رقم القطعة، الأصناف، والكمية) ── */}
-      <div className="rounded-2xl border-2 border-amber-500/40 bg-gradient-to-r from-slate-900 via-amber-950/20 to-slate-900 p-3.5 sm:p-4 shadow-xl">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+      <div className="rounded-2xl border-2 border-amber-500/40 bg-gradient-to-r from-slate-900 via-amber-950/20 to-slate-900 p-3 sm:p-3.5 shadow-lg">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
           <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5">
             <span className="text-[10px] font-bold text-slate-400 block">رقم قطعة الأرض:</span>
             <span className="text-sm sm:text-base font-black font-mono text-cyan-300 block mt-0.5">
@@ -208,60 +273,32 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Summary Metadata Grid */}
-      <Card className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-        <div>
-          <div className="text-[10px] text-slate-400 font-semibold">القسم</div>
-          <div className="font-bold text-slate-200 mt-1">
-            {requestData.department?.name} ({requestData.department?.code})
-          </div>
-        </div>
-
+      {/* Summary Operational Metadata (Dense & Compact - No Duplicate Region/Parcel) */}
+      <Card className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs p-3.5">
         <div>
           <div className="text-[10px] text-slate-400 font-semibold">القسم المستهدف</div>
-          <div className="font-bold text-cyan-300 mt-1">
+          <div className="font-bold text-cyan-300 mt-0.5">
             {requestData.target_department?.name || requestData.department?.name || 'غير محدد'}
           </div>
         </div>
 
         <div>
-          <div className="text-[10px] text-slate-400 font-semibold">مدير القسم</div>
-          <div className="font-bold text-slate-200 mt-1">
-            {requestData.target_department?.manager?.name || 'غير محدد'}
-          </div>
-        </div>
-
-        <div>
-          <div className="text-[10px] text-slate-400 font-semibold">مسؤول الاستلام بالموقع</div>
-          <div className="font-bold text-emerald-300 mt-1">
-            {requestData.site_engineer?.name || 'يحدده المراجع عند الاعتماد'}
-          </div>
-        </div>
-
-        <div>
           <div className="text-[10px] text-slate-400 font-semibold">مقدم الطلب</div>
-          <div className="font-bold text-slate-200 mt-1">
-            {requestData.requester?.name} ({requestData.requester?.email})
-          </div>
-        </div>
-
-        <div>
-          <div className="text-[10px] text-slate-400 font-semibold">درجة الأولوية</div>
-          <div className="font-bold text-slate-200 mt-1 uppercase font-mono">
-            {PRIORITY_LABELS[requestData.priority] || 'غير محددة'}
+          <div className="font-bold text-slate-200 mt-0.5">
+            {requestData.requester?.name}
           </div>
         </div>
 
         <div>
           <div className="text-[10px] text-slate-400 font-semibold">تاريخ الاحتياج</div>
-          <div className="font-bold text-slate-200 mt-1 font-mono">
+          <div className="font-bold text-amber-300 font-mono mt-0.5">
             {requestData.date_needed || '-'}
           </div>
         </div>
 
         <div>
-          <div className="text-[10px] text-slate-400 font-semibold">استلام المخزن (عم سلامة)</div>
-          <div className="mt-1 font-bold">
+          <div className="text-[10px] text-slate-400 font-semibold">استلام المخزن</div>
+          <div className="font-bold mt-0.5">
             {requestData.requires_warehouse_receipt !== false ? (
               <span className="text-emerald-400 text-xs font-bold">✅ يمر على المخزن</span>
             ) : (
@@ -272,9 +309,9 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
       </Card>
 
       {/* Line البنود Section */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-          <span>📦</span> عناصر طلب الشراء
+      <div className="space-y-2">
+        <h3 className="text-xs sm:text-sm font-bold text-slate-200 flex items-center gap-2">
+          <span>📦</span> عناصر طلب الشراء التفصيلية
         </h3>
 
         <div className="hidden min-w-0 md:block">
@@ -293,8 +330,8 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
               {requestData.items?.map((item, index) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-bold text-slate-400">{index + 1}</TableCell>
-                  <TableCell className="font-mono text-slate-300">{item.item_reference || '—'}</TableCell>
-                  <TableCell className="text-slate-300">{item.region || '—'}</TableCell>
+                  <TableCell className="font-mono text-cyan-300">{item.item_reference || '—'}</TableCell>
+                  <TableCell className="text-amber-300">{item.region || '—'}</TableCell>
                   <TableCell className="font-bold text-slate-100">{item.item_description}</TableCell>
                   <TableCell className="font-mono font-bold text-slate-200">
                     {parseFloat(item.quantity).toLocaleString()}
@@ -306,35 +343,24 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
           </Table>
         </div>
 
-        <div className="space-y-3 md:hidden">
+        <div className="space-y-2.5 md:hidden">
           {requestData.items?.map((item, index) => (
-            <article key={`mobile-reviewer-item-${item.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
-              <div className="flex min-w-0 items-start justify-between gap-3">
-                <span className="shrink-0 rounded-md bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-300">
+            <article key={`mobile-reviewer-item-${item.id}`} className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/80 p-3 space-y-2">
+              <div className="flex min-w-0 items-start justify-between gap-2 border-b border-slate-800/80 pb-2">
+                <span className="rounded-md bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-300">
                   بند {index + 1}
                 </span>
-                <span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">
-                  {item.item_reference || 'بدون رقم قطعة'}
+                <span className="font-mono text-xs font-black text-cyan-300">
+                  🏷️ {item.item_reference || 'بدون رقم قطعة'}
                 </span>
               </div>
-              <dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
-                <div className="min-w-0 min-[420px]:col-span-2">
-                  <dt className="text-slate-500">وصف العنصر</dt>
-                  <dd className="mt-1 break-normal font-bold leading-6 text-slate-100">
-                    {item.item_description}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-slate-500">المنطقة</dt>
-                  <dd className="mt-1 break-normal text-slate-300">{item.region || 'غير محددة'}</dd>
-                </div>
-                <div>
-                  <dt className="text-slate-500">الكمية والوحدة</dt>
-                  <dd className="mt-1 whitespace-nowrap font-mono text-slate-200">
-                    {parseFloat(item.quantity).toLocaleString()} {getUnitLabel(item.uom)}
-                  </dd>
-                </div>
-              </dl>
+              <p className="font-bold text-xs text-slate-100">{item.item_description}</p>
+              <div className="flex items-center justify-between text-xs pt-1">
+                <span className="text-amber-300">📍 {item.region || 'غير محددة'}</span>
+                <span className="font-mono font-bold text-emerald-300">
+                  ⚖️ {parseFloat(item.quantity).toLocaleString()} {getUnitLabel(item.uom)}
+                </span>
+              </div>
             </article>
           ))}
         </div>
@@ -342,7 +368,64 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
 
       <UnifiedNotesCard request={requestData} />
 
-      <SystemEventTimeline entity="purchase_request" entityId={requestData.id} />
+      {/* System Events: Collapsed by default to eliminate wasted space */}
+      <SystemEventTimeline entity="purchase_request" entityId={requestData.id} defaultCollapsed={true} />
+
+      {/* Mobile Sticky Action Bar: Instant decision making without scrolling */}
+      {canReview && (
+        <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-between gap-2 border-t border-slate-800 bg-slate-950/95 p-3 shadow-2xl backdrop-blur md:hidden">
+          <Button
+            type="button"
+            variant="success"
+            size="md"
+            onClick={() => setIsApproveModalOpen(true)}
+            disabled={isMutating}
+            className="flex-1 min-h-10 text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg"
+          >
+            ✓ اعتماد فوراً
+          </Button>
+
+          {hasPermission('purchase_request.reject') && (
+            <Button
+              type="button"
+              variant="danger"
+              size="md"
+              onClick={() => setIsRejectModalOpen(true)}
+              disabled={isMutating}
+              className="flex-1 min-h-10 text-xs font-bold"
+            >
+              ✕ رفض
+            </Button>
+          )}
+
+          {canEditBeforeApproval && (
+            <Link to={`/reviewer/requests/${requestData.id}/review`} className="flex-1">
+              <Button variant="warning" size="md" className="w-full min-h-10 text-xs font-bold bg-amber-950 text-amber-300 border-amber-700">
+                ✏️ تعديل
+              </Button>
+            </Link>
+          )}
+        </div>
+      )}
+
+      {/* Approve and Reject Dialogs */}
+      <ApproveRequestDialog
+        isOpen={isApproveModalOpen}
+        requestNumber={requestData.request_number}
+        initialSiteEngineerId={requestData.site_engineer_user_id || requestData.site_engineer?.id}
+        initialRequiresWarehouseReceipt={requestData.requires_warehouse_receipt !== false}
+        isApproving={isMutating}
+        onConfirm={handleConfirmApprove}
+        onCancel={() => setIsApproveModalOpen(false)}
+      />
+
+      <RejectRequestDialog
+        isOpen={isRejectModalOpen}
+        requestNumber={requestData.request_number}
+        isRejecting={isMutating}
+        onConfirm={handleConfirmReject}
+        onCancel={() => setIsRejectModalOpen(false)}
+      />
     </div>
   );
 };

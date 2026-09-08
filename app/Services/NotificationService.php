@@ -93,6 +93,41 @@ class NotificationService
         ];
     }
 
+    /**
+     * Format mandatory 4 core operational details (Parcel, Region, Item, Quantity) for notification messages.
+     */
+    public static function formatPrOperationalDetails(PurchaseRequest $pr): string
+    {
+        $items = $pr->relationLoaded('items') ? $pr->items : $pr->items()->get();
+        $firstItem = $items->first();
+
+        $parcel = $pr->parcel_reference ?: ($firstItem?->item_reference ?: '');
+        $region = $pr->region ?: ($firstItem?->region ?: '');
+        $itemDesc = $firstItem?->item_description ?: ($firstItem?->item?->name ?: '');
+        $qty = $firstItem ? (float) $firstItem->quantity . ($firstItem->uom ? ' ' . $firstItem->uom : '') : '';
+        $otherCount = $items->count() > 1 ? ' (+' . ($items->count() - 1) . ' أصناف أخرى)' : '';
+
+        $parts = [];
+        if ($parcel !== '') {
+            $parts[] = "القطعة: {$parcel}";
+        }
+        if ($region !== '') {
+            $parts[] = "المنطقة: {$region}";
+        }
+        if ($itemDesc !== '') {
+            $parts[] = "الصنف: {$itemDesc}{$otherCount}";
+        }
+        if ($qty !== '') {
+            $parts[] = "الكمية: {$qty}";
+        }
+
+        if (empty($parts)) {
+            return '';
+        }
+
+        return ' • ' . implode(' | ', $parts);
+    }
+
     public function createNotification(User|int $recipient, string $type, string $title, string $message, Model $notifiable): ?Notification
     {
         $userId = $recipient instanceof User ? $recipient->id : (int) $recipient;
@@ -110,6 +145,19 @@ class NotificationService
 
         if (! $this->isProcurementNotifiable($notifiable)) {
             return null;
+        }
+
+        // Automatically ensure mandatory 4 operational data points are present in the notification message
+        if ($notifiable instanceof PurchaseRequest && !str_contains($message, 'القطعة:') && !str_contains($message, 'الصنف:')) {
+            $message .= self::formatPrOperationalDetails($notifiable);
+        } elseif ($notifiable instanceof PurchaseOrder && !str_contains($message, 'القطعة:') && !str_contains($message, 'الصنف:')) {
+            if ($notifiable->purchaseRequest) {
+                $message .= self::formatPrOperationalDetails($notifiable->purchaseRequest);
+            }
+        } elseif ($notifiable instanceof PurchaseReceipt && !str_contains($message, 'القطعة:') && !str_contains($message, 'الصنف:')) {
+            if ($notifiable->purchaseOrder?->purchaseRequest) {
+                $message .= self::formatPrOperationalDetails($notifiable->purchaseOrder->purchaseRequest);
+            }
         }
 
         return Notification::firstOrCreate(

@@ -13,6 +13,7 @@ interface Props {
   entity: 'purchase_request' | 'purchase_order';
   entityId: number;
   title?: string;
+  defaultCollapsed?: boolean;
 }
 
 const ACTION_LABELS: Record<string, string> = {
@@ -48,10 +49,16 @@ const stateLabel = (state?: string | null) => {
   return labels[state] || state;
 };
 
-export const SystemEventTimeline: React.FC<Props> = ({ entity, entityId, title = 'السجل الزمني للأحداث' }) => {
+export const SystemEventTimeline: React.FC<Props> = ({
+  entity,
+  entityId,
+  title = 'السجل الزمني للأحداث',
+  defaultCollapsed = false,
+}) => {
   const [events, setEvents] = useState<SystemEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(!defaultCollapsed);
 
   useEffect(() => {
     let active = true;
@@ -74,35 +81,59 @@ export const SystemEventTimeline: React.FC<Props> = ({ entity, entityId, title =
 
   return (
     <div dir="rtl">
-      <Card className="space-y-4">
-      <div className="border-b border-slate-800 pb-3">
-        <h2 className="text-sm font-black text-slate-100">{title}</h2>
-        <p className="mt-1 text-[11px] text-slate-500">مسار انتقال حالة الطلب فقط — كل مرحلة مكتملة عليها علامة صح.</p>
+      <Card className="p-3.5 space-y-3">
+      <div
+        className="flex items-center justify-between cursor-pointer select-none"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-sm">⏱️</span>
+          <h2 className="text-xs font-black text-slate-200">{title}</h2>
+          {transitionEvents.length > 0 && (
+            <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-400">
+              {transitionEvents.length} أحداث
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
+        >
+          <span>{isExpanded ? 'طي السجل ▲' : 'عرض السجل الزمني ▼'}</span>
+        </button>
       </div>
-      {loading && <TableSkeleton rows={4} columns={3} message="جاري تحميل سجل الأحداث الزمني..." />}
-      {!loading && error && <ErrorMessage error={error} />}
-      {!loading && !error && transitionEvents.length === 0 && <p className="text-xs text-slate-500">لا توجد انتقالات حالة مسجلة لهذا السجل حتى الآن.</p>}
-      {!loading && !error && transitionEvents.length > 0 && (
-        <div className="relative space-y-4 before:absolute before:right-[7px] before:top-2 before:h-[calc(100%-8px)] before:w-px before:bg-slate-700">
-          {transitionEvents.map((event) => (
-            <div key={event.id} className="relative pr-7">
-              <span className="absolute right-0 top-1.5 flex h-4 w-4 items-center justify-center rounded-full border-4 border-slate-900 bg-emerald-400 text-[8px] font-black text-slate-950">✓</span>
-              <div className="flex flex-col gap-1.5 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-black text-cyan-300">{ACTION_LABELS[event.action] || event.action}</span>
-                  <time className="text-[10px] font-semibold text-slate-500" dir="ltr">{formatDateTime(event)}</time>
-                </div>
-                <div className="text-[11px] text-slate-300">المنفذ: <span className="font-bold text-slate-100">{event.actor?.name || 'النظام'}</span></div>
-                {event.description && <p className="text-xs leading-5 text-slate-400">{event.description}</p>}
-                {(event.from_state || event.to_state) && (
-                  <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold">
-                    {event.from_state && <span className="rounded-md bg-slate-800 px-2 py-1 text-slate-400">من: {stateLabel(event.from_state)}</span>}
-                    {event.to_state && <span className="rounded-md bg-cyan-950/60 px-2 py-1 text-cyan-300">إلى: {stateLabel(event.to_state)}</span>}
+
+      {isExpanded && (
+        <div className="pt-2 border-t border-slate-800/80 space-y-3 animate-fade-in">
+          <p className="text-[11px] text-slate-500">مسار انتقال حالة الطلب فقط — كل مرحلة مكتملة عليها علامة صح.</p>
+          {loading && <TableSkeleton rows={3} columns={3} message="جاري تحميل سجل الأحداث الزمني..." />}
+          {!loading && error && <ErrorMessage error={error} />}
+          {!loading && !error && transitionEvents.length === 0 && (
+            <p className="text-xs text-slate-500">لا توجد انتقالات حالة مسجلة لهذا السجل حتى الآن.</p>
+          )}
+          {!loading && !error && transitionEvents.length > 0 && (
+            <div className="relative space-y-3 before:absolute before:right-[7px] before:top-2 before:h-[calc(100%-8px)] before:w-px before:bg-slate-700">
+              {transitionEvents.map((event) => (
+                <div key={event.id} className="relative pr-7">
+                  <span className="absolute right-0 top-1.5 flex h-4 w-4 items-center justify-center rounded-full border-4 border-slate-900 bg-emerald-400 text-[8px] font-black text-slate-950">✓</span>
+                  <div className="flex flex-col gap-1 rounded-xl border border-slate-800 bg-slate-950/40 p-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-black text-cyan-300">{ACTION_LABELS[event.action] || event.action}</span>
+                      <time className="text-[10px] font-semibold text-slate-500" dir="ltr">{formatDateTime(event)}</time>
+                    </div>
+                    <div className="text-[11px] text-slate-300">المنفذ: <span className="font-bold text-slate-100">{event.actor?.name || 'النظام'}</span></div>
+                    {event.description && <p className="text-xs leading-5 text-slate-400">{event.description}</p>}
+                    {(event.from_state || event.to_state) && (
+                      <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold">
+                        {event.from_state && <span className="rounded-md bg-slate-800 px-2 py-1 text-slate-400">من: {stateLabel(event.from_state)}</span>}
+                        {event.to_state && <span className="rounded-md bg-cyan-950/60 px-2 py-1 text-cyan-300">إلى: {stateLabel(event.to_state)}</span>}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
       </Card>

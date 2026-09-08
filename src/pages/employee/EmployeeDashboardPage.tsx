@@ -133,9 +133,9 @@ export const EmployeeDashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-3.5" dir="rtl">
       {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-2.5">
         <div>
           <h1 className="text-xl font-black text-slate-100 flex items-center gap-2 tracking-tight">
             <span>📊</span> لوحة الموظف

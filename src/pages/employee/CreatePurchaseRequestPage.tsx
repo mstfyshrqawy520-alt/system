@@ -395,12 +395,12 @@ const CreatePurchaseRequestPage: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 pb-24" dir="rtl">
+    <div className="mx-auto max-w-6xl space-y-3 pb-24" dir="rtl">
       {/* Sticky Action Header on Scroll */}
-      <div className="sticky top-2 z-40 rounded-2xl border border-slate-700/80 bg-slate-950/90 p-3.5 shadow-2xl backdrop-blur-md transition-all">
+      <div className="sticky top-2 z-40 rounded-2xl border border-slate-700/80 bg-slate-950/90 p-3 shadow-2xl backdrop-blur-md transition-all">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-cyan-500/40 text-xl shadow-inner shrink-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-cyan-500/40 text-lg shadow-inner shrink-0">
               ✍️
             </div>
             <div>
@@ -436,83 +436,58 @@ const CreatePurchaseRequestPage: React.FC = () => {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-800/80 bg-rose-950/40 p-4 text-xs font-bold text-rose-200 shadow-lg" role="alert">
+        <div className="rounded-xl border border-rose-800/80 bg-rose-950/40 p-3 text-xs font-bold text-rose-200 shadow-lg" role="alert">
           ⚠️ {error}
         </div>
       )}
 
-      {/* Request Type Selector Card */}
-      <Card className="space-y-3 border-amber-900/40 bg-slate-900/90 p-5 shadow-xl">
-        <div className="flex items-center justify-between">
-          <label className="block text-xs font-bold text-slate-200">
-            نوع الطلب والغرض منه <span className="text-rose-400">*</span>
-          </label>
-          <span className="text-[11px] text-slate-400">
-            الافتراضي: <strong className="text-amber-300">مشتريات مشروعات ومواقع</strong>
+      {/* Request Type Segmented Bar (Ultra-Compact & Clear) */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/95 p-2.5 sm:p-3 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-slate-300">نوع الطلب والغرض منه:</span>
+          <span className="text-[10px] text-slate-500">
+            (الافتراضي: مشتريات مواقع)
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Option 1 (Right in RTL): Project Purchases - Primary Default */}
+        <div className="flex items-center gap-2 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80">
           <button
             type="button"
             onClick={() => setData({ ...data, request_type: 'PROJECT' })}
-            className={`flex flex-col text-right p-4 rounded-xl border transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
               !isOffice
-                ? 'bg-amber-950/70 border-amber-500 ring-2 ring-amber-500/30 text-slate-100 shadow-lg shadow-amber-950/50'
-                : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
             }`}
           >
-            <div className="flex items-center justify-between w-full mb-1.5">
-              <div className="flex items-center gap-2">
-                <span className="text-base font-bold text-amber-300 flex items-center gap-1.5">
-                  <span>🏗️</span> مشتريات مشروعات ومواقع
-                </span>
-                <span className="text-[10px] bg-amber-950 px-1.5 py-0.5 rounded text-amber-400 border border-amber-800/60 font-semibold">
-                  (الافتراضي)
-                </span>
-              </div>
-              {!isOffice && (
-                <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full">
-                  ✓ محدد
-                </span>
-              )}
-            </div>
+            <span>🏗️</span>
+            <span>مشتريات مشروعات ومواقع</span>
           </button>
 
-          {/* Option 2 (Left in RTL): Office Supplies */}
           <button
             type="button"
             onClick={() => setData({ ...data, request_type: 'OFFICE_SUPPLIES' })}
-            className={`flex flex-col text-right p-4 rounded-xl border transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
               isOffice
-                ? 'bg-indigo-950/70 border-indigo-500 ring-2 ring-indigo-500/30 text-slate-100 shadow-lg shadow-indigo-950/50'
-                : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
             }`}
           >
-            <div className="flex items-center justify-between w-full mb-1.5">
-              <span className="text-base flex items-center gap-2 font-bold text-indigo-300">
-                <span>🏢</span> مستلزمات مكتبية وإدارية
-              </span>
-              {isOffice && (
-                <span className="text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 px-2 py-0.5 rounded-full">
-                  ✓ محدد
-                </span>
-              )}
-            </div>
+            <span>🏢</span>
+            <span>مستلزمات مكتبية وإدارية</span>
           </button>
         </div>
-      </Card>
+      </div>
 
       {/* Card 1: Basic Request Info */}
-      <Card className="space-y-5 border-slate-800 bg-slate-900/90 p-5 sm:p-6 shadow-xl">
-        <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
-          <h2 className="text-sm font-black text-slate-100 flex items-center gap-2">
+      <Card className="space-y-3.5 border-slate-800 bg-slate-900/90 p-3.5 sm:p-4 shadow-xl">
+        <div className="border-b border-slate-800 pb-2.5 flex items-center justify-between">
+          <h2 className="text-xs sm:text-sm font-black text-slate-100 flex items-center gap-2">
             <span className="text-cyan-400">📋</span> 1. بيانات الطلب والجهة المعالجة
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <FormField label="القسم المستهدف" required error={showValidation ? validation.targetDepartment : undefined}>
             <Select
               id="pr-target-department"
@@ -628,8 +603,8 @@ const CreatePurchaseRequestPage: React.FC = () => {
 
         {/* Project Land Parcel & Region Selection (Single per PR) */}
         {!isOffice && (
-          <div className="rounded-xl border border-amber-800/60 bg-amber-950/20 p-4 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-800/40 pb-2.5">
+          <div className="rounded-xl border border-amber-800/60 bg-amber-950/20 p-3 space-y-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-b border-amber-800/40 pb-2">
               <div className="flex items-center gap-2">
                 <span className="text-base">🏗️</span>
                 <div>
@@ -679,7 +654,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
               </FormField>
             )}
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FormField
                 label="رقم قطعة الأرض"
                 required
@@ -743,13 +718,13 @@ const CreatePurchaseRequestPage: React.FC = () => {
       </Card>
 
       {/* Card 2: Items List */}
-      <Card className="space-y-4 border-slate-800 bg-slate-900/90 p-4 sm:p-6 shadow-xl">
-        <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-3">
+      <Card className="space-y-3 border-slate-800 bg-slate-900/90 p-3.5 sm:p-4 shadow-xl">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-2.5">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-black text-slate-100 flex items-center gap-2">
+            <h2 className="text-xs sm:text-sm font-black text-slate-100 flex items-center gap-2">
               <span className="text-cyan-400">📦</span> 2. بنود ومواد الطلب
             </h2>
-            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-950 border border-cyan-800/60 text-cyan-300">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-800/60 text-cyan-300">
               {data.items.length} {data.items.length === 1 ? 'بند' : 'بنود'}
             </span>
           </div>
@@ -759,18 +734,16 @@ const CreatePurchaseRequestPage: React.FC = () => {
             variant="primary"
             size="sm"
             onClick={addItem}
-            className="text-xs bg-cyan-600 hover:bg-cyan-500 border-cyan-500 font-bold px-3 py-1.5 flex items-center gap-1.5 shadow-md shadow-cyan-950/40"
+            className="text-xs bg-cyan-600 hover:bg-cyan-500 border-cyan-500 font-bold px-3 py-1 flex items-center gap-1.5 shadow-md shadow-cyan-950/40"
           >
             <span>+</span> إضافة صنف جديد
           </Button>
         </div>
 
-
-
         {/* ========================================================= */}
         {/* 1. MOBILE VIEW (Touch-Friendly Responsive Cards)          */}
         {/* ========================================================= */}
-        <div className="block md:hidden space-y-3.5">
+        <div className="block md:hidden space-y-2.5">
           {data.items.map((item, index) => {
             const itemErr = validation.items[index];
             const hasItemError = Boolean(itemErr && (itemErr.description || itemErr.quantity));
@@ -779,16 +752,16 @@ const CreatePurchaseRequestPage: React.FC = () => {
               <div
                 key={index}
                 id={`pr-item-card-mobile-${index}`}
-                className={`rounded-2xl border-2 p-4 space-y-3.5 shadow-lg transition-all ${
+                className={`rounded-xl border p-3 space-y-2 shadow-sm transition-all ${
                   hasItemError && showValidation
                     ? 'bg-rose-950/30 border-rose-500/80 shadow-rose-950/40'
                     : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
                 }`}
               >
                 {/* Header: Index & Quick Actions */}
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-mono font-black text-xs shadow-sm">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-mono font-black text-xs">
                       #{index + 1}
                     </span>
                     <span className="text-xs font-black text-slate-100">
@@ -800,21 +773,21 @@ const CreatePurchaseRequestPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => duplicateItem(index)}
-                      className="px-2.5 py-1 text-xs text-slate-300 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 rounded-lg flex items-center gap-1 cursor-pointer transition select-none shadow-sm"
+                      className="px-2 py-0.5 text-xs text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center gap-1 cursor-pointer transition select-none shadow-xs"
                       title="نسخ وتكرار هذا البند بنفس البيانات"
                     >
                       <span>📋</span>
-                      <span className="text-[11px] font-bold">نسخ</span>
+                      <span className="text-[10px] font-bold">نسخ</span>
                     </button>
                     {data.items.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeItem(index)}
-                        className="px-2.5 py-1 text-xs text-rose-300 bg-rose-950/60 hover:bg-rose-900/80 active:bg-rose-800 border border-rose-800/80 rounded-lg flex items-center gap-1 cursor-pointer transition select-none shadow-sm"
+                        className="px-2 py-0.5 text-xs text-rose-300 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-800/80 rounded-lg flex items-center gap-1 cursor-pointer transition select-none shadow-xs"
                         title="حذف هذا البند"
                       >
                         <span>🗑️</span>
-                        <span className="text-[11px] font-bold">حذف</span>
+                        <span className="text-[10px] font-bold">حذف</span>
                       </button>
                     )}
                   </div>
@@ -822,31 +795,31 @@ const CreatePurchaseRequestPage: React.FC = () => {
 
                 {/* Description */}
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-200 flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-slate-300 flex items-center justify-between">
                     <span>وصف الصنف / المادة: <span className="text-rose-400">*</span></span>
                   </label>
                   <input
                     type="text"
                     value={item.item_description}
                     onChange={(e) => updateItem(index, { item_description: e.target.value })}
-                    placeholder={isOffice ? 'مثال: ورق A4 80جم، حبر HP...' : 'مثال: حديد تسليح 16 مم، خرسانة جاهزة...'}
-                    className={`w-full rounded-xl bg-slate-950 border px-3 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 ${
+                    placeholder={isOffice ? 'مثال: ورق A4 80جم، حبر HP...' : 'مثال: حديد تسليح 16 مم، خرسانة...'}
+                    className={`w-full rounded-lg bg-slate-950 border px-2.5 py-1.5 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 ${
                       itemErr?.description && (showValidation || item.item_description.length > 0)
                         ? 'border-rose-500 focus:ring-rose-500'
                         : 'border-slate-700 focus:border-cyan-400 focus:ring-cyan-500/30'
                     }`}
                   />
                   {itemErr?.description && showValidation && (
-                    <span className="text-[11px] text-rose-400 block font-semibold">
+                    <span className="text-[10px] text-rose-400 block font-semibold">
                       ⚠️ {itemErr.description}
                     </span>
                   )}
                 </div>
 
                 {/* Quantity & Unit Row */}
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-200">
+                    <label className="text-[11px] font-bold text-slate-300">
                       الكمية: <span className="text-rose-400">*</span>
                     </label>
                     <input
@@ -857,25 +830,25 @@ const CreatePurchaseRequestPage: React.FC = () => {
                       onFocus={(e) => e.target.select()}
                       onChange={(e) => updateItem(index, { quantity: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
                       placeholder="الكمية..."
-                      className={`w-full rounded-xl bg-slate-950 border px-3 py-2.5 text-sm font-mono font-bold text-amber-300 placeholder-slate-500 focus:outline-none focus:ring-2 ${
+                      className={`w-full rounded-lg bg-slate-950 border px-2.5 py-1.5 text-xs sm:text-sm font-mono font-bold text-amber-300 placeholder-slate-500 focus:outline-none focus:ring-1 ${
                         itemErr?.quantity && showValidation
                           ? 'border-rose-500 focus:ring-rose-500'
                           : 'border-slate-700 focus:border-cyan-400 focus:ring-cyan-500/30'
                       }`}
                     />
                     {itemErr?.quantity && showValidation && (
-                      <span className="text-[11px] text-rose-400 block font-semibold">
+                      <span className="text-[10px] text-rose-400 block font-semibold">
                         ⚠️ الكمية مطلوبة
                       </span>
                     )}
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-200">الوحدة:</label>
+                    <label className="text-[11px] font-bold text-slate-300">الوحدة:</label>
                     <select
                       value={item.uom}
                       onChange={(e) => updateItem(index, { uom: e.target.value })}
-                      className="w-full h-[42px] rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-400"
+                      className="w-full h-[34px] rounded-lg bg-slate-950 border border-slate-700 px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-cyan-400"
                     >
                       {UNIT_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -888,7 +861,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
 
                 {/* Technical Specifications */}
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-400">
+                  <label className="text-[11px] font-bold text-slate-400">
                     المواصفات الفنية (اختياري):
                   </label>
                   <input
@@ -896,7 +869,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
                     value={item.specifications || ''}
                     onChange={(e) => updateItem(index, { specifications: e.target.value })}
                     placeholder="ماركة، دقة، عيار، أبعاد..."
-                    className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                    className="w-full rounded-lg bg-slate-950 border border-slate-700 px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400"
                   />
                 </div>
               </div>
