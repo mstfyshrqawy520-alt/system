@@ -142,9 +142,15 @@ export const ReviewerDashboardPage: React.FC = () => {
           parcel: it.item_reference,
           region: it.region,
         })),
+        requires_warehouse_receipt: req.requires_warehouse_receipt ?? true,
         onDirectApprove: hasPermission('purchase_request.review')
-          ? async (_item: any, comment?: string, siteEngineerUserId?: number | null) => {
-              await approvePurchaseRequestApi(req.id, comment, siteEngineerUserId);
+          ? async (
+              _item: any,
+              comment?: string,
+              siteEngineerUserId?: number | null,
+              requiresWarehouseReceipt?: boolean
+            ) => {
+              await approvePurchaseRequestApi(req.id, comment, siteEngineerUserId, requiresWarehouseReceipt);
               await fetchRequests(true);
             }
           : undefined,

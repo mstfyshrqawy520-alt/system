@@ -43,9 +43,15 @@ export interface ActionInboxItem {
   items_summary?: string;
   items_count?: number;
   items_list?: ActionInboxItemDetail[];
+  requires_warehouse_receipt?: boolean;
 
   // --- Direct Action Callbacks ---
-  onDirectApprove?: (item: ActionInboxItem, comment?: string, siteEngineerUserId?: number | null) => Promise<void> | void;
+  onDirectApprove?: (
+    item: ActionInboxItem,
+    comment?: string,
+    siteEngineerUserId?: number | null,
+    requiresWarehouseReceipt?: boolean
+  ) => Promise<void> | void;
   onDirectReject?: (item: ActionInboxItem, reason: string) => Promise<void> | void;
   onDirectSubmit?: (item: ActionInboxItem) => Promise<void> | void;
   directApproveLabel?: string;
@@ -148,6 +154,8 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
     }
   }, [approveModal.isOpen, approveModal.item, isReviewer]);
 
+  const [requiresWarehouseReceipt, setRequiresWarehouseReceipt] = useState<boolean>(true);
+
   const [rejectModal, setRejectModal] = useState<{
     isOpen: boolean;
     item: ActionInboxItem | null;
@@ -176,6 +184,7 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
     const needsModal = item.requireApproveModal ?? (isReviewer && item.type === 'PR');
     if (needsModal) {
       setSelectedEngineerId('');
+      setRequiresWarehouseReceipt(item.requires_warehouse_receipt ?? true);
       setReceiverError(null);
       setApproveModal({ isOpen: true, item, comment: '', isSubmitting: false });
     } else {
@@ -222,9 +231,10 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
       await approveModal.item.onDirectApprove(
         approveModal.item,
         approveModal.comment,
-        isReviewer && selectedEngineerId ? Number(selectedEngineerId) : undefined
+        isReviewer && selectedEngineerId ? Number(selectedEngineerId) : undefined,
+        isReviewer ? requiresWarehouseReceipt : undefined
       );
-      showToast(`تم اعتماد ${approveModal.item.code} وتحديد مسؤول الاستلام بنجاح ✅`, 'success');
+      showToast(`تم اعتماد ${approveModal.item.code} وتحديد مسار الاستلام بنجاح ✅`, 'success');
       setApproveModal({ isOpen: false, item: null, comment: '', isSubmitting: false });
       onItemActionComplete?.();
     } catch (err: any) {
@@ -623,54 +633,89 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
           </div>
 
           {approveModal.item?.type === 'PR' && isReviewer && (
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                مهندس الموقع / مسؤول استلام المواد بالموقع <span className="text-rose-400">*</span>
-              </label>
-              {isLoadingReceivers ? (
-                <div className="text-slate-400 text-xs py-2">جاري تحميل قائمة المهندسين والمستلمين...</div>
-              ) : (
-                <select
-                  value={selectedEngineerId}
-                  onChange={(e) => {
-                    setSelectedEngineerId(e.target.value ? Number(e.target.value) : '');
-                    setReceiverError(null);
-                  }}
-                  className={`w-full rounded-xl border p-2.5 text-xs text-slate-100 outline-none font-bold transition-all ${
-                    receiverError
-                      ? 'border-rose-500 bg-rose-950/40 ring-1 ring-rose-500 focus:border-rose-400'
-                      : 'border-slate-700 bg-slate-950 focus:border-emerald-400'
-                  }`}
-                >
-                  <option value="">-- اختر مهندس الموقع --</option>
-                  {receiverOptions.siteEngineers.length > 0 && (
-                    <optgroup label="👷 مهندسو الموقع الأساسيون">
-                      {receiverOptions.siteEngineers.map((eng) => (
-                        <option key={`se-${eng.id}`} value={eng.id}>
-                          {eng.name} {eng.department_name ? `(${eng.department_name})` : ''}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {receiverOptions.otherUsers.length > 0 && (
-                    <optgroup label="👥 مستخدمو النظام الآخرون (تفويض أي دور آخر)">
-                      {receiverOptions.otherUsers.map((u) => (
-                        <option key={`other-${u.id}`} value={u.id}>
-                          {u.name} — {u.role_name || 'مستخدم'} {u.department_name ? `(${u.department_name})` : ''}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                </select>
-              )}
-              {receiverError && (
-                <p className="mt-1.5 flex items-center gap-1 text-xs text-rose-400 font-bold">
-                  <span>⚠️</span> {receiverError}
+            <div className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  مهندس الموقع / مسؤول استلام المواد بالموقع <span className="text-rose-400">*</span>
+                </label>
+                {isLoadingReceivers ? (
+                  <div className="text-slate-400 text-xs py-2">جاري تحميل قائمة المهندسين والمستلمين...</div>
+                ) : (
+                  <select
+                    value={selectedEngineerId}
+                    onChange={(e) => {
+                      setSelectedEngineerId(e.target.value ? Number(e.target.value) : '');
+                      setReceiverError(null);
+                    }}
+                    className={`w-full rounded-xl border p-2.5 text-xs text-slate-100 outline-none font-bold transition-all ${
+                      receiverError
+                        ? 'border-rose-500 bg-rose-950/40 ring-1 ring-rose-500 focus:border-rose-400'
+                        : 'border-slate-700 bg-slate-950 focus:border-emerald-400'
+                    }`}
+                  >
+                    <option value="">-- اختر مهندس الموقع --</option>
+                    {receiverOptions.siteEngineers.length > 0 && (
+                      <optgroup label="👷 مهندسو الموقع الأساسيون">
+                        {receiverOptions.siteEngineers.map((eng) => (
+                          <option key={`se-${eng.id}`} value={eng.id}>
+                            {eng.name} {eng.department_name ? `(${eng.department_name})` : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {receiverOptions.otherUsers.length > 0 && (
+                      <optgroup label="👥 مستخدمو النظام الآخرون (تفويض أي دور آخر)">
+                        {receiverOptions.otherUsers.map((u) => (
+                          <option key={`other-${u.id}`} value={u.id}>
+                            {u.name} — {u.role_name || 'مستخدم'} {u.department_name ? `(${u.department_name})` : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                )}
+                {receiverError && (
+                  <p className="mt-1.5 flex items-center gap-1 text-xs text-rose-400 font-bold">
+                    <span>⚠️</span> {receiverError}
+                  </p>
+                )}
+                <p className="mt-1 text-[11px] text-slate-400">
+                  الشخص المختار سيتولى مراجعة إذن الاستلام واعتماده بالموقع فور توريد الأصناف.
                 </p>
-              )}
-              <p className="mt-1 text-[11px] text-slate-400">
-                الشخص المختار سيتولى مراجعة إذن الاستلام واعتماده بالموقع فور توريد الأصناف.
-              </p>
+              </div>
+
+              {/* خيار استلام وفحص المخزن (عم سلامة) */}
+              <div className="rounded-xl border border-slate-700/80 bg-slate-950/80 p-3.5 space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-start gap-2.5">
+                    <span className="text-xl shrink-0 mt-0.5">🏬</span>
+                    <div>
+                      <span className="font-bold text-slate-100 text-xs block">
+                        استلام وفحص بالمخزن (عم سلامة)
+                      </span>
+                      <span className="text-[11px] text-slate-400 block mt-0.5 leading-relaxed">
+                        {requiresWarehouseReceipt
+                          ? 'نعم (الافتراضي) — يمر أمر الشراء على عم سلامة في المخزن لاستلام البضاعة وفحصها وإصدار إذن الاستلام.'
+                          : 'لا (توريد مباشر) — يتم توريد البضاعة مباشرة للموقع لمهندس الموقع دون المرور على المخزن أو إشعار عم سلامة.'}
+                      </span>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={requiresWarehouseReceipt}
+                      onChange={(e) => setRequiresWarehouseReceipt(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                </div>
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-800 text-[11px]">
+                  <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${requiresWarehouseReceipt ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-amber-950 text-amber-300 border border-amber-800'}`}>
+                    {requiresWarehouseReceipt ? '✅ يمر على عم سلامة في المخزن' : '⚡ توريد مباشر للموقع (يتخطى عم سلامة)'}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
 
