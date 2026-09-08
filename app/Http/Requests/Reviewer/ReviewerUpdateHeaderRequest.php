@@ -20,6 +20,7 @@ class ReviewerUpdateHeaderRequest extends FormRequest
             'parcel_reference' => ['sometimes', 'nullable', 'string', 'max:255'],
             'region' => ['sometimes', 'nullable', 'string', 'max:255'],
             'land_parcel_id' => ['sometimes', 'nullable', 'integer', 'exists:land_parcels,id'],
+            'requires_warehouse_receipt' => ['sometimes', 'nullable', 'boolean'],
         ];
     }
 }

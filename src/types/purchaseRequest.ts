@@ -203,6 +203,7 @@ export interface PurchaseRequest {
   status: PurchaseRequestStatus;
   procurement_route?: 'UNDECIDED' | 'DIRECT' | 'QUOTES' | string;
   direct_supplier_id?: number | null;
+  requires_warehouse_receipt?: boolean;
   target_department_id?: number | null;
   reviewer_user_id?: number | null;
   department_id?: number | null;

@@ -214,6 +214,17 @@ export const ReviewerPurchaseRequestDetailsPage: React.FC = () => {
             {requestData.date_needed || '-'}
           </div>
         </div>
+
+        <div>
+          <div className="text-[10px] text-slate-400 font-semibold">استلام المخزن (عم سلامة)</div>
+          <div className="mt-1 font-bold">
+            {requestData.requires_warehouse_receipt !== false ? (
+              <span className="text-emerald-400 text-xs font-bold">✅ يمر على المخزن</span>
+            ) : (
+              <span className="text-amber-400 text-xs font-bold">⚡ توريد مباشر (بدون مخزن)</span>
+            )}
+          </div>
+        </div>
       </Card>
 
       {/* Line البنود Section */}

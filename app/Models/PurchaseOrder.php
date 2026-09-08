@@ -55,6 +55,13 @@ class PurchaseOrder extends Model
         return $this->belongsTo(PurchaseRequest::class, 'purchase_request_id');
     }
 
+    public function requiresWarehouseReceipt(): bool
+    {
+        $this->loadMissing('purchaseRequest');
+
+        return $this->purchaseRequest?->requiresWarehouseReceipt() ?? true;
+    }
+
     public function isBuildingsDirectDelivery(): bool
     {
         $this->loadMissing([

@@ -557,7 +557,7 @@ class PurchaseOrderService
             }
 
             // Notify Warehouse Keepers when a purchase order is issued and delivered to warehouse
-            if (! $lockedPo->isBuildingsDirectDelivery() && ! $lockedPo->purchaseRequest?->isOfficeRequest()) {
+            if ($lockedPo->requiresWarehouseReceipt()) {
                 $warehouseKeepers = User::whereHas('roles', fn ($q) => $q->where('slug', 'warehouse_keeper'))
                     ->where('is_active', true)
                     ->get();
@@ -572,11 +572,11 @@ class PurchaseOrderService
                     "تم إصدار أمر الشراء {$lockedPo->po_number} بانتظار استلام الأصناف وفحصها وإصدار إذن الاستلام.",
                     $lockedPo
                 );
-            }
-
-            // If this purchase order is for Buildings direct delivery, route directly to site engineer
-            if ($lockedPo->isBuildingsDirectDelivery()) {
-                app(PurchaseReceiptService::class)->createDirectSiteReceiptForBuildings($lockedPo);
+            } else {
+                // If this purchase order bypasses the warehouse, route directly to site engineer
+                if (! $lockedPo->purchaseRequest?->isOfficeRequest()) {
+                    app(PurchaseReceiptService::class)->createDirectSiteReceiptForBuildings($lockedPo);
+                }
             }
 
             return $lockedPo->fresh(['purchaseRequest.requester', 'purchaseRequest.department', 'purchaseRequest.assignedReviewer', 'purchaseRequest.approvalHistory.actor', 'selectedQuote', 'supplier', 'createdBy', 'items.item']);

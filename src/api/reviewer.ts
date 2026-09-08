@@ -6,6 +6,10 @@ export interface UpdateReviewHeaderPayload {
   priority?: PurchaseRequestPriority;
   date_needed?: string;
   notes?: string;
+  parcel_reference?: string | null;
+  region?: string | null;
+  land_parcel_id?: number | null;
+  requires_warehouse_receipt?: boolean;
 }
 
 export interface ReviewItemPayload {
@@ -88,11 +92,16 @@ export const deleteReviewItemApi = async (id: number, itemId: number): Promise<P
 export const approvePurchaseRequestApi = async (
   id: number,
   comment?: string,
-  siteEngineerUserId?: number | null
+  siteEngineerUserId?: number | null,
+  requiresWarehouseReceipt?: boolean | null
 ): Promise<PurchaseRequest> => {
   const response = await apiClient.post<{ message: string; data: PurchaseRequest }>(
     `/reviewer/purchase-requests/${id}/approve`,
-    { comment, site_engineer_user_id: siteEngineerUserId }
+    {
+      comment,
+      site_engineer_user_id: siteEngineerUserId,
+      requires_warehouse_receipt: requiresWarehouseReceipt,
+    }
   );
   return response.data.data;
 };

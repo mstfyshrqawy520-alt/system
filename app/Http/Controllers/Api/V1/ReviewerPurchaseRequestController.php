@@ -195,11 +195,16 @@ class ReviewerPurchaseRequestController extends Controller
             return response()->json(['message' => 'Only pending purchase requests can be approved.'], 409);
         }
 
+        $requiresWarehouseReceipt = $request->has('requires_warehouse_receipt')
+            ? $request->boolean('requires_warehouse_receipt')
+            : null;
+
         $approvedPr = $this->reviewerService->approveRequest(
             $request->user(),
             $pr,
             $request->validated('comment'),
-            $request->validated('site_engineer_user_id')
+            $request->validated('site_engineer_user_id'),
+            $requiresWarehouseReceipt
         );
 
         return response()->json([

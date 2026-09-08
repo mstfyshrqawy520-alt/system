@@ -124,6 +124,7 @@ class PurchaseReceiptWorkflowTest extends TestCase
             'status' => 'APPROVED_BY_PROCUREMENT',
             'total_estimated_cost' => 5000,
             'date_needed' => now()->toDateString(),
+            'requires_warehouse_receipt' => false,
         ]);
 
         $buildingsPo = PurchaseOrder::create([
@@ -164,7 +165,7 @@ class PurchaseReceiptWorkflowTest extends TestCase
             );
             $this->fail('Warehouse receipt creation should have been rejected for Buildings order.');
         } catch (\RuntimeException $e) {
-            $this->assertStringContainsString('لا يمكن لأمين المخزن استلام طلبات قسم المباني', $e->getMessage());
+            $this->assertStringContainsString('لا يمكن لأمين المخزن استلام هذا الطلب', $e->getMessage());
         }
 
         // 3. Auto-sync generates SITE_DIRECT receipt for site engineer
@@ -208,6 +209,7 @@ class PurchaseReceiptWorkflowTest extends TestCase
             'status' => 'APPROVED_BY_PROCUREMENT',
             'total_estimated_cost' => 3000,
             'date_needed' => now()->toDateString(),
+            'requires_warehouse_receipt' => false,
         ]);
 
         $draftPo = PurchaseOrder::create([

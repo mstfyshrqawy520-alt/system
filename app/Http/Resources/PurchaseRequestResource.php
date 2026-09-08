@@ -24,6 +24,7 @@ class PurchaseRequestResource extends JsonResource
             'status' => $this->status,
             'procurement_route' => $this->procurement_route,
             'direct_supplier_id' => $this->direct_supplier_id,
+            'requires_warehouse_receipt' => (bool) ($this->requires_warehouse_receipt ?? true),
             'total_estimated_cost' => number_format((float) $this->total_estimated_cost, 2, '.', ''),
             'purchase_order_issued' => (int) ($this->issued_purchase_orders_count ?? 0) > 0,
             'priority' => $this->priority,

@@ -165,15 +165,15 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
     }
   };
 
-  const handleApprove = async (comments?: string, siteEngineerUserId?: number | null) => {
+  const handleApprove = async (comments?: string, siteEngineerUserId?: number | null, requiresWarehouseReceipt?: boolean) => {
     if (!id) return;
     setIsMutating(true);
     setError(null);
     try {
-      await approvePurchaseRequestApi(parseInt(id, 10), comments || '', siteEngineerUserId);
+      await approvePurchaseRequestApi(parseInt(id, 10), comments || '', siteEngineerUserId, requiresWarehouseReceipt);
       setIsApproveModalOpen(false);
       navigate('/reviewer/requests', {
-        state: { message: '✅ تم اعتماد طلب الشراء وتحديد مسؤول الاستلام وإرساله إلى المدير التنفيذي.' },
+        state: { message: '✅ تم اعتماد طلب الشراء وتحديد مسار الاستلام وإرساله إلى المدير التنفيذي.' },
       });
     } catch (err) {
       setError(parseApiError(err));
@@ -279,11 +279,21 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
           </p>
         </div>
 
-        <Card className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs border-cyan-900/50 bg-cyan-950/10">
+        <Card className="grid grid-cols-2 md:grid-cols-7 gap-3 text-xs border-cyan-900/50 bg-cyan-950/10">
           <div><div className="text-[10px] text-slate-400 font-semibold">القسم المستهدف</div><div className="mt-1 font-bold text-cyan-300">{requestData.target_department?.name || requestData.department?.name || 'غير محدد'}</div></div>
           <div><div className="text-[10px] text-amber-400 font-semibold">تاريخ الاحتياج ⏳</div><div className="mt-1 font-mono font-bold text-amber-300">{requestData.date_needed || 'غير محدد'}</div></div>
           <div><div className="text-[10px] text-slate-400 font-semibold">مدير القسم</div><div className="mt-1 font-bold text-slate-200">{requestData.target_department?.manager?.name || 'غير محدد'}</div></div>
           <div><div className="text-[10px] text-slate-400 font-semibold">مسؤول الاستلام بالموقع</div><div className="mt-1 font-bold text-emerald-300">{requestData.site_engineer?.name || 'يحدده المراجع عند الاعتماد'}</div></div>
+          <div>
+            <div className="text-[10px] text-slate-400 font-semibold">استلام المخزن (عم سلامة)</div>
+            <div className="mt-1 font-bold">
+              {requestData.requires_warehouse_receipt !== false ? (
+                <span className="text-emerald-400 text-[11px] font-bold">✅ يمر على المخزن</span>
+              ) : (
+                <span className="text-amber-400 text-[11px] font-bold">⚡ توريد مباشر</span>
+              )}
+            </div>
+          </div>
           <div><div className="text-[10px] text-slate-400 font-semibold">رقم قطعة الأرض</div><div className="mt-1 font-mono font-bold text-amber-300">{requestData.parcel_reference || requestData.items?.[0]?.item_reference || 'غير محدد'}</div></div>
           <div><div className="text-[10px] text-slate-400 font-semibold">المنطقة</div><div className="mt-1 font-bold text-slate-200">{requestData.region || requestData.items?.[0]?.region || 'غير محددة'}</div></div>
         </Card>
@@ -590,6 +600,7 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
         isOpen={isApproveModalOpen}
         requestNumber={requestData.request_number}
         initialSiteEngineerId={requestData.site_engineer?.id || requestData.site_engineer_user_id || requestData.target_department?.site_engineer?.id || null}
+        initialRequiresWarehouseReceipt={requestData.requires_warehouse_receipt ?? true}
         isApproving={isMutating}
         onConfirm={handleApprove}
         onCancel={() => setIsApproveModalOpen(false)}

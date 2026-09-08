@@ -16,6 +16,7 @@ class ReviewerApproveRequest extends FormRequest
     {
         return [
             'comment' => ['nullable', 'string', 'max:1000'],
+            'requires_warehouse_receipt' => ['nullable', 'boolean'],
             'site_engineer_user_id' => [
                 'nullable',
                 'integer',

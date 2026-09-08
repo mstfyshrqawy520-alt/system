@@ -570,4 +570,54 @@ class ReviewerPurchaseRequestTest extends TestCase
         $hrDetailResponse->assertOk();
         $this->assertSame($targetedPr->id, $hrDetailResponse->json('data.id'));
     }
+
+    public function test_reviewer_can_control_whether_warehouse_receipt_is_required_or_bypassed(): void
+    {
+        // 1. By default, requires_warehouse_receipt is true on creation
+        $this->assertTrue($this->itSubmittedPr->requiresWarehouseReceipt());
+
+        // 2. Reviewer approves with requires_warehouse_receipt = false (direct delivery / bypass warehouse)
+        $response = $this->actingAs($this->itReviewer, 'sanctum')
+            ->postJson("/api/v1/reviewer/purchase-requests/{$this->itSubmittedPr->id}/approve", [
+                'comment' => 'توريد مباشر للموقع لا يتطلب استلام عم سلامة بالمخزن.',
+                'site_engineer_user_id' => $this->itSiteEngineer->id,
+                'requires_warehouse_receipt' => false,
+            ]);
+
+        $response->assertOk();
+        $this->assertFalse($response->json('data.requires_warehouse_receipt'));
+
+        $this->itSubmittedPr->refresh();
+        $this->assertFalse($this->itSubmittedPr->requires_warehouse_receipt);
+        $this->assertFalse($this->itSubmittedPr->requiresWarehouseReceipt());
+
+        // 3. Another PR approved with default / true
+        $pr2 = PurchaseRequest::create([
+            'request_number' => 'PR-2026-88888',
+            'user_id' => $this->employee->id,
+            'department_id' => $this->itDept->id,
+            'reviewer_user_id' => $this->itReviewer->id,
+            'priority' => 'NORMAL',
+            'status' => 'SUBMITTED',
+            'total_estimated_cost' => 1000,
+        ]);
+        $pr2->items()->create([
+            'item_description' => 'أصناف مخزنية',
+            'quantity' => 5,
+            'uom' => 'PCS',
+        ]);
+
+        $response2 = $this->actingAs($this->itReviewer, 'sanctum')
+            ->postJson("/api/v1/reviewer/purchase-requests/{$pr2->id}/approve", [
+                'comment' => 'استلام مخزني عادي عبر عم سلامة.',
+                'site_engineer_user_id' => $this->itSiteEngineer->id,
+                'requires_warehouse_receipt' => true,
+            ]);
+
+        $response2->assertOk();
+        $this->assertTrue($response2->json('data.requires_warehouse_receipt'));
+        $pr2->refresh();
+        $this->assertTrue($pr2->requires_warehouse_receipt);
+        $this->assertTrue($pr2->requiresWarehouseReceipt());
+    }
 }

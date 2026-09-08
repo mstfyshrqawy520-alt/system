@@ -243,7 +243,7 @@ class ReviewerPurchaseRequestService
                 throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.');
             }
 
-            $allowedFields = ['priority', 'date_needed', 'notes', 'parcel_reference', 'region', 'land_parcel_id'];
+            $allowedFields = ['priority', 'date_needed', 'notes', 'parcel_reference', 'region', 'land_parcel_id', 'requires_warehouse_receipt'];
             $updateFields = [];
 
             foreach ($allowedFields as $field) {
@@ -459,7 +459,7 @@ class ReviewerPurchaseRequestService
     /**
      * Approve Purchase Request (UNDER_REVIEW -> PENDING_EXECUTIVE_APPROVAL).
      */
-    public function approveRequest(User $reviewer, PurchaseRequest $request, ?string $comment, ?int $siteEngineerUserId = null): PurchaseRequest
+    public function approveRequest(User $reviewer, PurchaseRequest $request, ?string $comment, ?int $siteEngineerUserId = null, ?bool $requiresWarehouseReceipt = null): PurchaseRequest
     {
         if (! $this->canUserReviewRequest($reviewer, $request)) {
             throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('This action is unauthorized.');
@@ -475,7 +475,7 @@ class ReviewerPurchaseRequestService
             ]);
         }
 
-        return DB::transaction(function () use ($reviewer, $request, $comment, $siteEngineerUserId) {
+        return DB::transaction(function () use ($reviewer, $request, $comment, $siteEngineerUserId, $requiresWarehouseReceipt) {
             $pr = PurchaseRequest::where('id', $request->id)->lockForUpdate()->firstOrFail();
             if (! in_array($pr->status, ['UNDER_REVIEW', 'SUBMITTED'], true)) {
                 throw new \RuntimeException('تم اعتماد طلب الشراء بالفعل أو لم يعد في حالة انتظار اعتماد المراجع.');
@@ -509,6 +509,10 @@ class ReviewerPurchaseRequestService
                 'reviewer_user_id' => $pr->reviewer_user_id ?: $reviewer->id,
                 'site_engineer_user_id' => $engineerUser->id,
             ];
+
+            if ($requiresWarehouseReceipt !== null) {
+                $updateData['requires_warehouse_receipt'] = $requiresWarehouseReceipt;
+            }
 
             $pr->update($updateData);
 

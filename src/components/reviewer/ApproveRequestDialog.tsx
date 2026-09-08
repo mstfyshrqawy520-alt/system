@@ -9,8 +9,9 @@ interface Props {
   isOpen: boolean;
   requestNumber: string;
   initialSiteEngineerId?: number | null;
+  initialRequiresWarehouseReceipt?: boolean;
   isApproving: boolean;
-  onConfirm: (comment?: string, siteEngineerUserId?: number | null) => void;
+  onConfirm: (comment?: string, siteEngineerUserId?: number | null, requiresWarehouseReceipt?: boolean) => void;
   onCancel: () => void;
 }
 
@@ -18,6 +19,7 @@ export const ApproveRequestDialog: React.FC<Props> = ({
   isOpen,
   requestNumber,
   initialSiteEngineerId,
+  initialRequiresWarehouseReceipt = true,
   isApproving,
   onConfirm,
   onCancel,
@@ -25,6 +27,9 @@ export const ApproveRequestDialog: React.FC<Props> = ({
   const [comment, setComment] = useState('');
   const [selectedEngineerId, setSelectedEngineerId] = useState<number | ''>(
     initialSiteEngineerId || ''
+  );
+  const [requiresWarehouseReceipt, setRequiresWarehouseReceipt] = useState<boolean>(
+    initialRequiresWarehouseReceipt ?? true
   );
   const [siteEngineers, setSiteEngineers] = useState<SiteEngineerReceiverOption[]>([]);
   const [otherUsers, setOtherUsers] = useState<SiteEngineerReceiverOption[]>([]);
@@ -34,6 +39,7 @@ export const ApproveRequestDialog: React.FC<Props> = ({
   useEffect(() => {
     if (isOpen) {
       setSelectedEngineerId(initialSiteEngineerId || '');
+      setRequiresWarehouseReceipt(initialRequiresWarehouseReceipt ?? true);
       setIsLoadingOptions(true);
       setSelectionError(null);
       getSiteEngineerReceiverOptionsApi()
@@ -50,9 +56,10 @@ export const ApproveRequestDialog: React.FC<Props> = ({
     } else {
       setComment('');
       setSelectedEngineerId('');
+      setRequiresWarehouseReceipt(true);
       setSelectionError(null);
     }
-  }, [isOpen, initialSiteEngineerId]);
+  }, [isOpen, initialSiteEngineerId, initialRequiresWarehouseReceipt]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +68,7 @@ export const ApproveRequestDialog: React.FC<Props> = ({
       return;
     }
     setSelectionError(null);
-    onConfirm(comment || undefined, Number(selectedEngineerId));
+    onConfirm(comment || undefined, Number(selectedEngineerId), requiresWarehouseReceipt);
   };
 
   return (
@@ -132,6 +139,39 @@ export const ApproveRequestDialog: React.FC<Props> = ({
             الشخص المختار سيتولى مراجعة إذن الاستلام واعتماده بالموقع فور توريد الأصناف من المورد.
           </p>
         </FormField>
+
+        {/* خيار استلام وفحص المخزن (عم سلامة) */}
+        <div className="rounded-xl border border-slate-700/80 bg-slate-800/60 p-3.5 space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <span className="text-xl shrink-0 mt-0.5">🏬</span>
+              <div>
+                <span className="font-bold text-slate-100 text-xs block">
+                  استلام وفحص بالمخزن (عم سلامة)
+                </span>
+                <span className="text-[11px] text-slate-400 block mt-0.5">
+                  {requiresWarehouseReceipt
+                    ? 'نعم (الافتراضي) — يمر أمر الشراء على عم سلامة في المخزن لاستلام البضاعة وفحصها وإصدار إذن الاستلام.'
+                    : 'لا (توريد مباشر) — يتم توريد البضاعة مباشرة للموقع لمهندس الموقع دون المرور على المخزن أو إشعار عم سلامة.'}
+                </span>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+              <input
+                type="checkbox"
+                checked={requiresWarehouseReceipt}
+                onChange={(e) => setRequiresWarehouseReceipt(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+            </label>
+          </div>
+          <div className="flex items-center gap-2 pt-2 border-t border-slate-700/50 text-[11px]">
+            <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${requiresWarehouseReceipt ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-amber-950 text-amber-300 border border-amber-800'}`}>
+              {requiresWarehouseReceipt ? '✅ يمر على عم سلامة في المخزن' : '⚡ توريد مباشر للموقع (يتخطى عم سلامة)'}
+            </span>
+          </div>
+        </div>
 
         <FormField label="ملاحظات الاعتماد (اختياري)">
           <Textarea

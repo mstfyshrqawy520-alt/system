@@ -25,12 +25,9 @@ class PurchaseReceiptService
         ])
             ->where('status', 'ISSUED')
             ->whereDoesntHave('receipts', fn ($query) => $query->whereIn('status', ['PENDING_SITE_ENGINEER', 'APPROVED']))
-            ->whereDoesntHave('purchaseRequest', function ($prQuery) {
-                $prQuery->where('request_type', 'OFFICE_SUPPLIES')
-                    ->orWhereHas('targetDepartment', fn ($q) => $q->where('code', 'BUILDINGS'))
-                    ->orWhereHas('department', fn ($q) => $q->where('code', 'BUILDINGS'))
-                    ->orWhereHas('assignedReviewer.department', fn ($q) => $q->where('code', 'BUILDINGS'))
-                    ->orWhereHas('assignedReviewer', fn ($q) => $q->where('email', 'hatem@gmail.com'));
+            ->whereHas('purchaseRequest', function ($prQuery) {
+                $prQuery->where('requires_warehouse_receipt', true)
+                    ->where('request_type', '!=', 'OFFICE_SUPPLIES');
             })
             ->orderByDesc('updated_at')
             ->paginate($perPage);
@@ -75,8 +72,8 @@ class PurchaseReceiptService
     ): PurchaseReceipt {
         $purchaseOrder->loadMissing(['purchaseRequest.targetDepartment', 'purchaseRequest.department', 'purchaseRequest.assignedReviewer.department', 'items']);
 
-        if ($purchaseOrder->isBuildingsDirectDelivery()) {
-            throw new \RuntimeException('لا يمكن لأمين المخزن استلام طلبات قسم المباني؛ حيث يتم توريدها واستلامها في الموقع مباشرة عبر مهندس الموقع.');
+        if (! $purchaseOrder->requiresWarehouseReceipt()) {
+            throw new \RuntimeException('لا يمكن لأمين المخزن استلام هذا الطلب؛ حيث تم تحديده من قبل المراجع كتوريد مباشر لا يتطلب المرور على المخزن.');
         }
 
         if ($purchaseOrder->purchaseRequest?->isOfficeRequest()) {
@@ -477,7 +474,7 @@ class PurchaseReceiptService
             ->get();
 
         foreach ($pendingPos as $po) {
-            if ($po->isBuildingsDirectDelivery()) {
+            if (! $po->requiresWarehouseReceipt()) {
                 $this->createDirectSiteReceiptForBuildings($po);
             }
         }

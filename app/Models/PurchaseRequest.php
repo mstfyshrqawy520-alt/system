@@ -55,6 +55,7 @@ class PurchaseRequest extends Model
         'target_department_id',
         'reviewer_user_id',
         'site_engineer_user_id',
+        'requires_warehouse_receipt',
         'selected_quote_id',
         'priority',
         'status',
@@ -83,17 +84,19 @@ class PurchaseRequest extends Model
         return ! $this->isOfficeRequest();
     }
 
-    public function isBuildingsDirectDelivery(): bool
+    public function requiresWarehouseReceipt(): bool
     {
-        $this->loadMissing(['department', 'targetDepartment', 'assignedReviewer.department']);
-        $deptCode = $this->targetDepartment?->code ?? $this->department?->code;
-        $reviewerDeptCode = $this->assignedReviewer?->department?->code;
-
-        if ($deptCode === 'BUILDINGS' || $reviewerDeptCode === 'BUILDINGS') {
-            return true;
+        if ($this->isOfficeRequest()) {
+            return false;
         }
 
-        if ($this->assignedReviewer?->email === 'hatem@gmail.com') {
+        return (bool) ($this->requires_warehouse_receipt ?? true);
+    }
+
+    public function isBuildingsDirectDelivery(): bool
+    {
+        // If reviewer explicitly configured warehouse receipt requirement, respect it
+        if (! $this->requiresWarehouseReceipt()) {
             return true;
         }
 
@@ -103,6 +106,7 @@ class PurchaseRequest extends Model
     protected function casts(): array
     {
         return [
+            'requires_warehouse_receipt' => 'boolean',
             'total_estimated_cost' => 'decimal:2',
             'date_needed' => 'date',
 

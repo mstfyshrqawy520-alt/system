@@ -88,14 +88,14 @@ export const ReviewerRequestsPage: React.FC = () => {
 
   useRealtimeRefresh(() => fetchRequests(searchFilters, true));
 
-  const handleConfirmApprove = async (comment?: string, siteEngineerUserId?: number | null) => {
+  const handleConfirmApprove = async (comment?: string, siteEngineerUserId?: number | null, requiresWarehouseReceipt?: boolean) => {
     if (!requestToApprove) return;
     setIsApproving(true);
     setError(null);
     setSuccessMsg(null);
     try {
-      await approvePurchaseRequestApi(requestToApprove.id, comment, siteEngineerUserId);
-      setSuccessMsg(`✅ تم اعتماد طلب الشراء رقم ${requestToApprove.request_number} وتحديد مسؤول الاستلام بنجاح.`);
+      await approvePurchaseRequestApi(requestToApprove.id, comment, siteEngineerUserId, requiresWarehouseReceipt);
+      setSuccessMsg(`✅ تم اعتماد طلب الشراء رقم ${requestToApprove.request_number} وتحديد مسار الاستلام بنجاح.`);
       setRequestToApprove(null);
       emitAppDataUpdated();
       await fetchRequests(searchFilters, true);
@@ -374,6 +374,7 @@ export const ReviewerRequestsPage: React.FC = () => {
         isOpen={requestToApprove !== null}
         requestNumber={requestToApprove?.request_number || ''}
         initialSiteEngineerId={requestToApprove?.site_engineer?.id || requestToApprove?.site_engineer_user_id || requestToApprove?.target_department?.site_engineer?.id || null}
+        initialRequiresWarehouseReceipt={requestToApprove?.requires_warehouse_receipt ?? true}
         isApproving={isApproving}
         onConfirm={handleConfirmApprove}
         onCancel={() => setRequestToApprove(null)}
