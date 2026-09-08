@@ -369,12 +369,23 @@ class PurchaseReceiptService
                 'comments' => $notes ?: 'أكد مقدم الطلب استلام المستلزمات المكتبية بالكامل.',
             ]);
 
+            $notificationService = app(NotificationService::class);
+            $accountants = $notificationService->resolveUsersWithPermission('purchase_order.view_accounting');
+
             $receipt->purchaseOrder->loadMissing('purchaseRequest.department');
             $deptCode = $receipt->purchaseOrder->purchaseRequest?->department?->code;
-            $buffetAccountants = User::whereHas('roles', fn ($q) => $q->where('slug', 'buffet_accountant'))
-                ->where('is_active', true)
-                ->get();
-            $targetAccountants = $buffetAccountants->isNotEmpty() ? $buffetAccountants : $accountants;
+            $deptAccountants = collect();
+            if ($deptCode) {
+                foreach (\App\Services\SupplierInvoiceService::ACCOUNTANT_DEPARTMENT_MAPPINGS as $roleSlug => $deptCodes) {
+                    if (in_array($deptCode, $deptCodes, true)) {
+                        $deptAccountants = User::whereHas('roles', fn ($q) => $q->where('slug', $roleSlug))
+                            ->where('is_active', true)
+                            ->get();
+                        break;
+                    }
+                }
+            }
+            $targetAccountants = $deptAccountants->isNotEmpty() ? $deptAccountants : $accountants;
 
             $notificationService->queueAccountingWithPurchaseOrderAndReceipt(
                 $targetAccountants,

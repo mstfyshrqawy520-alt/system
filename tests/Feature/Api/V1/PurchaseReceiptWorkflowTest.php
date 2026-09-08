@@ -23,6 +23,7 @@ class PurchaseReceiptWorkflowTest extends TestCase
     private User $warehouse;
     private User $siteEngineer;
     private User $accountant;
+    private User $siteAccountant;
     private PurchaseOrder $purchaseOrder;
 
     protected function setUp(): void
@@ -33,6 +34,7 @@ class PurchaseReceiptWorkflowTest extends TestCase
         $this->warehouse = $this->makeUser('warehouse@test', 'أمين المخزن', 'warehouse_keeper', $department->id);
         $this->siteEngineer = $this->makeUser('site@test', 'مهندس الموقع', 'site_engineer', $department->id);
         $this->accountant = $this->makeUser('accounting@test', 'الحسابات', 'accountant', $department->id);
+        $this->siteAccountant = $this->makeUser('site-acct@test', 'حسابات التنفيذ', 'site_accountant', $department->id);
         $employee = $this->makeUser('employee-receipt@test', 'الموظف', 'employee', $department->id);
         $supplier = Supplier::create(['code' => 'RECEIPT-SUP', 'company_name' => 'مورد الاستلام', 'is_active' => true]);
 
@@ -88,8 +90,9 @@ class PurchaseReceiptWorkflowTest extends TestCase
         $approved = app(PurchaseReceiptService::class)->approveBySiteEngineer($this->siteEngineer, $receipt, 'تمت مطابقة الاستلام بالموقع.');
         $this->assertSame('APPROVED', $approved->status);
         $this->assertSame('DELIVERED', $this->purchaseOrder->fresh()->delivery_status);
+        // Department accountant (site_accountant) should receive the notification for EXECUTION dept
         $this->assertDatabaseHas('notifications', [
-            'user_id' => $this->accountant->id,
+            'user_id' => $this->siteAccountant->id,
             'type' => 'purchase_order_and_receipt_ready_accounting',
         ]);
     }
@@ -188,8 +191,9 @@ class PurchaseReceiptWorkflowTest extends TestCase
 
         $this->assertSame('APPROVED', $approvedReceipt->status);
         $this->assertSame('DELIVERED', $buildingsPo->fresh()->delivery_status);
+        // BUILDINGS maps to site_accountant in ACCOUNTANT_DEPARTMENT_MAPPINGS
         $this->assertDatabaseHas('notifications', [
-            'user_id' => $this->accountant->id,
+            'user_id' => $this->siteAccountant->id,
             'type' => 'purchase_order_and_receipt_ready_accounting',
         ]);
     }
