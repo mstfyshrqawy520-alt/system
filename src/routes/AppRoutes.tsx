@@ -22,6 +22,7 @@ const PurchaseOrderDetailsPage = React.lazy(() => import("../pages/procurement/P
 const ProcurementManagerPage = React.lazy(() => import("../pages/procurement/ProcurementManagerPage"));
 const ProcurementReportsPage = React.lazy(() => import("../pages/procurement/ProcurementReportsPage"));
 const UniversalReportsPage = React.lazy(() => import("../pages/reports/UniversalReportsPage"));
+const SiteAccountantDashboardPage = React.lazy(() => import("../pages/accounting/SiteAccountantDashboardPage"));
 const AccountingDashboardPage = React.lazy(() => import("../pages/accounting/AccountingDashboardPage"));
 const AccountingPurchaseOrdersPage = React.lazy(() => import("../pages/accounting/AccountingPurchaseOrdersPage"));
 const AccountingPurchaseRequestsPage = React.lazy(() => import("../pages/accounting/AccountingPurchaseRequestsPage"));
@@ -144,6 +145,11 @@ export const AppRoutes: React.FC = () => {
                     <Route path="/accounting/supplier-finance" element={<SupplierFinanceWorkspacePage />} />
                     <Route path="/accounting/supplier-payments" element={<SupplierFinanceWorkspacePage />} />
                     <Route path="/accounting/supplier-accounts" element={<SupplierFinanceWorkspacePage />} />
+                </Route>
+
+                {/* ── Site Accountant Dedicated Dashboard ─────────────────────── */}
+                <Route element={<RoleRoute allowedRoles={["site_accountant", "admin"]} />}>
+                    <Route path="/site-accountant" element={<SiteAccountantDashboardPage />} />
                 </Route>
 
                 {/* ── Financial Director (Accountant) Only Routes ─────────────── */}

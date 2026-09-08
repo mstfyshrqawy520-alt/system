@@ -125,6 +125,8 @@ export interface SupplierInvoice {
   purchase_receipt?: ApprovedReceipt | null;
   payment_allocations?: SupplierPaymentAllocation[];
   land_allocations?: SupplierInvoiceLandAllocation[];
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface SupplierPayment {
