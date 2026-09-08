@@ -50,10 +50,11 @@ class AccountingPurchaseOrderController extends Controller
             'receipts.receiver',
         ])->findOrFail((int) $id);
 
-        if ($request->user()?->hasRole('site_accountant') && ! $request->user()?->hasRole('accountant') && ! $request->user()?->hasRole('admin')) {
+        $allowedCodes = app(\App\Services\SupplierInvoiceService::class)->getAllowedDepartmentCodesForAccountant($request->user());
+        if ($allowedCodes !== null) {
             $deptCode = $po->purchaseRequest?->department?->code;
-            if (! in_array($deptCode, ['EXECUTION', 'FINISHING', 'BUILDINGS'], true)) {
-                abort(403, 'غير مصرح بعرض أمر شراء خارج نطاق التنفيذ والتشطيبات والمباني.');
+            if (! in_array($deptCode, $allowedCodes, true)) {
+                abort(403, 'غير مصرح بعرض أمر شراء خارج نطاق اختصاصك المحاسبي.');
             }
         }
 

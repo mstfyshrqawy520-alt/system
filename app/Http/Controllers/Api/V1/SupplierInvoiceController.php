@@ -52,10 +52,11 @@ class SupplierInvoiceController extends Controller
         ]);
 
         $po = PurchaseOrder::with('purchaseRequest.department')->findOrFail($validated['purchase_order_id']);
-        if ($this->service->isRestrictedSiteAccountant($request->user())) {
+        $allowedCodes = $this->service->getAllowedDepartmentCodesForAccountant($request->user());
+        if ($allowedCodes !== null) {
             $deptCode = $po->purchaseRequest?->department?->code;
-            if (! in_array($deptCode, SupplierInvoiceService::SITE_ACCOUNTANT_DEPARTMENT_CODES, true)) {
-                return response()->json(['message' => 'غير مصرح بتسجيل فواتير لأقسام خارج نطاق التنفيذ والتشطيبات والمباني.'], 403);
+            if (! in_array($deptCode, $allowedCodes, true)) {
+                return response()->json(['message' => 'غير مصرح بتسجيل فواتير لأقسام خارج نطاق اختصاصك المحاسبي.'], 403);
             }
         }
 

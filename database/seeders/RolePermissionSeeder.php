@@ -186,6 +186,38 @@ class RolePermissionSeeder extends Seeder
                     'purchase_request.submit',
                 ],
             ],
+            'licenses_accountant' => [
+                'name' => 'Licenses Accountant',
+                'description' => 'حسابات - تسجيل فواتير الموردين ومطابقة أذونات الاستلام لقسم التراخيص (المهندس أحمد)',
+                'permissions' => [
+                    'accounting.invoice.view',
+                    'accounting.invoice.create',
+                    'accounting.invoice.match',
+                    'supplier.account.view',
+                    'purchase_order.view',
+                    'purchase_order.view_accounting',
+                    'purchase_request.create',
+                    'purchase_request.view_own',
+                    'purchase_request.edit_own',
+                    'purchase_request.submit',
+                ],
+            ],
+            'buffet_accountant' => [
+                'name' => 'Buffet Accountant',
+                'description' => 'حسابات - تسجيل فواتير الموردين ومطابقة أذونات الاستلام للمكتبيات والبوفيه (المهندسة شروق)',
+                'permissions' => [
+                    'accounting.invoice.view',
+                    'accounting.invoice.create',
+                    'accounting.invoice.match',
+                    'supplier.account.view',
+                    'purchase_order.view',
+                    'purchase_order.view_accounting',
+                    'purchase_request.create',
+                    'purchase_request.view_own',
+                    'purchase_request.edit_own',
+                    'purchase_request.submit',
+                ],
+            ],
             'general_manager' => [
                 'name' => 'General Manager',
                 'description' => 'Executive decision maker for purchase requests and viewer of issued purchase orders',
@@ -206,7 +238,7 @@ class RolePermissionSeeder extends Seeder
             ],
         ];
 
-        $requestCreatorRoles = ['reviewer', 'site_engineer', 'warehouse_keeper', 'procurement_manager', 'accountant', 'general_manager', 'site_accountant'];
+        $requestCreatorRoles = ['reviewer', 'site_engineer', 'warehouse_keeper', 'procurement_manager', 'accountant', 'general_manager', 'site_accountant', 'licenses_accountant', 'buffet_accountant'];
         $requestCreatorPermissions = ['purchase_request.create', 'purchase_request.view_own', 'purchase_request.edit_own', 'purchase_request.submit'];
         $receiptPermissions = ['purchase_receipt.view_assigned', 'purchase_receipt.edit', 'purchase_receipt.approve'];
 

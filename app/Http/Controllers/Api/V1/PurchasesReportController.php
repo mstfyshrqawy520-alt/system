@@ -18,6 +18,8 @@ class PurchasesReportController extends Controller
     private const ALLOWED_ROLES = [
         'accountant',
         'site_accountant',
+        'licenses_accountant',
+        'buffet_accountant',
         'general_manager',
         'procurement_manager',
         'admin',
@@ -99,7 +101,7 @@ class PurchasesReportController extends Controller
         }
 
         // 3. Query all Purchase Orders in the period with items, receipts and supplier invoices
-        $isSiteAccountant = $user->hasRole('site_accountant') && ! $user->hasRole('accountant') && ! $user->hasRole('admin');
+        $allowedDepartmentCodes = app(\App\Services\SupplierInvoiceService::class)->getAllowedDepartmentCodesForAccountant($user);
 
         $ordersQuery = PurchaseOrder::query()
             ->with([
@@ -114,9 +116,9 @@ class PurchasesReportController extends Controller
                 'supplierInvoices.createdBy',
             ])
             ->whereNotIn('status', ['REJECTED', 'PO_DRAFT'])
-            ->when($isSiteAccountant, function ($q) {
-                $q->whereHas('purchaseRequest.department', function ($dq) {
-                    $dq->whereIn('code', ['EXECUTION', 'FINISHING', 'BUILDINGS']);
+            ->when($allowedDepartmentCodes !== null, function ($q) use ($allowedDepartmentCodes) {
+                $q->whereHas('purchaseRequest.department', function ($dq) use ($allowedDepartmentCodes) {
+                    $dq->whereIn('code', $allowedDepartmentCodes);
                 });
             });
 

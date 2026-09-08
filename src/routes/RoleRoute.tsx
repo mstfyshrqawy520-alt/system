@@ -42,7 +42,7 @@ export const RoleRoute: React.FC<RoleRouteProps> = ({ allowedRoles, children }) 
     const poMatch = location.pathname.match(/^\/(?:procurement|accounting|general-manager)\/purchase-orders\/(\d+)/);
     if (poMatch) {
       const poId = poMatch[1];
-      if (hasRole('accountant') || hasRole('site_accountant')) {
+      if (hasRole('accountant') || hasRole('site_accountant') || hasRole('licenses_accountant') || hasRole('buffet_accountant')) {
         return <Navigate to={`/accounting/purchase-orders/${poId}${location.search}`} replace />;
       }
       if (hasRole('general_manager')) {

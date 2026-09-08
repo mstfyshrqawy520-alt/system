@@ -33,9 +33,9 @@ class ProcurementAnalyticsController extends Controller
         [$startDate, $endDate, $dateLabel] = $this->resolveDateRange($request);
 
         $user = $request->user();
-        $isSiteAccountant = $user?->hasRole('site_accountant') && ! $user?->hasRole('accountant') && ! $user?->hasRole('admin');
+        $allowedDepartmentCodes = app(\App\Services\SupplierInvoiceService::class)->getAllowedDepartmentCodesForAccountant($user);
 
-        $cacheKey = 'procurement:analytics:v4:' . ($isSiteAccountant ? 'site_acc_' . ($user->id ?? 0) . ':' : '') . md5(json_encode($request->all()));
+        $cacheKey = 'procurement:analytics:v4:' . ($allowedDepartmentCodes !== null ? 'dept_acc_' . ($user->id ?? 0) . ':' : '') . md5(json_encode($request->all()));
 
         if (Cache::has($cacheKey)) {
             return response()->json(Cache::get($cacheKey));
@@ -46,9 +46,9 @@ class ProcurementAnalyticsController extends Controller
             ->select(['id', 'po_number', 'purchase_request_id', 'supplier_id', 'created_by_user_id', 'status', 'grand_total', 'delivery_status', 'delivery_date', 'actual_delivery_date', 'created_at', 'updated_at'])
             ->when($startDate !== null, fn ($query) => $query->where('created_at', '>=', $startDate))
             ->when($endDate !== null, fn ($query) => $query->where('created_at', '<=', $endDate))
-            ->when($isSiteAccountant, function ($q) {
-                $q->whereHas('purchaseRequest.department', function ($dq) {
-                    $dq->whereIn('code', ['EXECUTION', 'FINISHING', 'BUILDINGS']);
+            ->when($allowedDepartmentCodes !== null, function ($q) use ($allowedDepartmentCodes) {
+                $q->whereHas('purchaseRequest.department', function ($dq) use ($allowedDepartmentCodes) {
+                    $dq->whereIn('code', $allowedDepartmentCodes);
                 });
             });
 
@@ -71,9 +71,9 @@ class ProcurementAnalyticsController extends Controller
             })
             ->when($startDate !== null, fn ($query) => $query->where('created_at', '>=', $startDate))
             ->when($endDate !== null, fn ($query) => $query->where('created_at', '<=', $endDate))
-            ->when($isSiteAccountant, function ($q) {
-                $q->whereHas('department', function ($dq) {
-                    $dq->whereIn('code', ['EXECUTION', 'FINISHING', 'BUILDINGS']);
+            ->when($allowedDepartmentCodes !== null, function ($q) use ($allowedDepartmentCodes) {
+                $q->whereHas('department', function ($dq) use ($allowedDepartmentCodes) {
+                    $dq->whereIn('code', $allowedDepartmentCodes);
                 });
             });
 
@@ -159,9 +159,11 @@ class ProcurementAnalyticsController extends Controller
 
         $departmentMetrics = DB::table('purchase_orders as po')
             ->leftJoin('purchase_requests as pr', 'pr.id', '=', 'po.purchase_request_id')
+            ->leftJoin('departments as d', 'd.id', '=', 'pr.department_id')
             ->leftJoin('users as creator', 'creator.id', '=', 'po.created_by_user_id')
             ->when($startDate !== null, fn ($query) => $query->where('po.created_at', '>=', $startDate))
             ->when($endDate !== null, fn ($query) => $query->where('po.created_at', '<=', $endDate))
+            ->when($allowedDepartmentCodes !== null, fn ($query) => $query->whereIn('d.code', $allowedDepartmentCodes))
             ->selectRaw('COALESCE(pr.department_id, creator.department_id, 0) as department_id, COUNT(*) as row_count, COALESCE(SUM(po.grand_total), 0) as total_value')
             ->groupByRaw('COALESCE(pr.department_id, creator.department_id, 0)')
             ->get();

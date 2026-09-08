@@ -540,14 +540,18 @@ class PurchaseOrderService
 
             $lockedPo->loadMissing('purchaseRequest.department');
             $deptCode = $lockedPo->purchaseRequest?->department?->code;
-            if (in_array($deptCode, ['EXECUTION', 'FINISHING', 'BUILDINGS'], true)) {
-                $siteAccountants = User::whereHas('roles', fn ($q) => $q->where('slug', 'site_accountant'))
-                    ->where('is_active', true)
-                    ->get();
-                $allAccountants = $accountants->merge($siteAccountants)->unique('id');
-            } else {
-                $allAccountants = $accountants;
+            $deptAccountants = collect();
+            if ($deptCode) {
+                foreach (\App\Services\SupplierInvoiceService::ACCOUNTANT_DEPARTMENT_MAPPINGS as $roleSlug => $deptCodes) {
+                    if (in_array($deptCode, $deptCodes, true)) {
+                        $deptAccountants = User::whereHas('roles', fn ($q) => $q->where('slug', $roleSlug))
+                            ->where('is_active', true)
+                            ->get();
+                        break;
+                    }
+                }
             }
+            $allAccountants = $accountants->merge($deptAccountants)->unique('id');
 
             $notificationService->queueUsers(
                 $allAccountants,

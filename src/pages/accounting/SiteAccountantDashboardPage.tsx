@@ -33,7 +33,7 @@ const receiptValue = (receipt: ApprovedReceipt) =>
   }, 0);
 
 export const SiteAccountantDashboardPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const [receipts, setReceipts] = useState<ApprovedReceipt[]>([]);
   const [invoices, setInvoices] = useState<SupplierInvoice[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
@@ -82,6 +82,37 @@ export const SiteAccountantDashboardPage: React.FC = () => {
     [ownRequests]
   );
 
+  const accountantScope = useMemo(() => {
+    if (hasRole('licenses_accountant')) {
+      return {
+        dashboardTitle: 'لوحة حسابات التراخيص',
+        defaultName: 'المهندس أحمد',
+        deptBadge: 'قسم التراخيص',
+        inboxTitle: 'المهام والإجراءات العاجلة المطلوبة منك الآن',
+        defaultDeptName: 'قسم التراخيص',
+        scopeDescription: 'متابعة أذونات استلام وأوامر شراء التراخيص، تسجيل فواتير الموردين، وإصدار طلبات الشراء.',
+      };
+    }
+    if (hasRole('buffet_accountant')) {
+      return {
+        dashboardTitle: 'لوحة حسابات المكتبيات والبوفيه',
+        defaultName: 'المهندسة شروق',
+        deptBadge: 'قسم المكتبيات والبوفيه',
+        inboxTitle: 'المهام والإجراءات العاجلة المطلوبة منكِ الآن',
+        defaultDeptName: 'المكتبيات والبوفيه',
+        scopeDescription: 'متابعة أذونات استلام وأوامر شراء المكتبيات والبوفيه، تسجيل فواتير الموردين، وإصدار طلبات الشراء.',
+      };
+    }
+    return {
+      dashboardTitle: 'لوحة متابعة الحسابات',
+      defaultName: 'حبيبة',
+      deptBadge: 'أقسام التنفيذ والتشطيبات والمباني',
+      inboxTitle: 'المهام والإجراءات العاجلة المطلوبة منكِ الآن',
+      defaultDeptName: 'التنفيذ والتشطيبات والمباني',
+      scopeDescription: 'متابعة المهام والإجراءات العاجلة، تسجيل فواتير الموردين، ومطابقة أذونات الاستلام وإصدار طلبات الشراء.',
+    };
+  }, [user, hasRole]);
+
   // Build Action Required Inbox Items
   const actionInboxItems: ActionInboxItem[] = useMemo(() => {
     const items: ActionInboxItem[] = [];
@@ -95,7 +126,7 @@ export const SiteAccountantDashboardPage: React.FC = () => {
         code: receipt.receipt_number,
         title: 'إذن استلام معتمد بانتظار تسجيل الفاتورة',
         subtitle: receipt.purchase_order?.supplier?.company_name || 'مورد غير محدد',
-        department: receipt.purchase_order?.purchase_request?.department?.name || 'التنفيذ والتشطيبات والمباني',
+        department: receipt.purchase_order?.purchase_request?.department?.name || accountantScope.defaultDeptName,
         supplier: receipt.purchase_order?.supplier?.company_name,
         amount: receiptValue(receipt),
         urgency: 'HIGH',
@@ -196,16 +227,16 @@ export const SiteAccountantDashboardPage: React.FC = () => {
           </span>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-black text-slate-100">لوحة متابعة الحسابات</h1>
+              <h1 className="text-xl font-black text-slate-100">{accountantScope.dashboardTitle}</h1>
               <span className="rounded-xl border border-cyan-500/50 bg-cyan-950/80 px-2.5 py-0.5 text-[11px] font-black text-cyan-300">
-                م/ {user?.name || 'حبيبة'}
+                {user?.name || accountantScope.defaultName}
               </span>
               <span className="rounded-xl border border-amber-700/50 bg-amber-950/40 px-2 py-0.5 text-[10px] font-bold text-amber-300">
-                أقسام التنفيذ والتشطيبات والمباني
+                {accountantScope.deptBadge}
               </span>
             </div>
             <p className="mt-1 text-xs text-slate-400">
-              متابعة المهام والإجراءات العاجلة، تسجيل فواتير الموردين، ومطابقة أذونات الاستلام وإصدار طلبات الشراء.
+              {accountantScope.scopeDescription}
             </p>
           </div>
         </div>
@@ -238,7 +269,7 @@ export const SiteAccountantDashboardPage: React.FC = () => {
 
       {/* Action Required Inbox (الأخبار والمهام العاجلة المطلوبة فوراً) */}
       <ActionRequiredInbox
-        title="المهام والإجراءات العاجلة المطلوبة منكِ الآن"
+        title={accountantScope.inboxTitle}
         description="أذونات استلام معتمدة جاهزة للفوترة، وفواتير مسجلة تنتظر المطابقة، ومسودات طلباتك."
         roleName="قسم الحسابات"
         items={actionInboxItems}
@@ -377,7 +408,7 @@ export const SiteAccountantDashboardPage: React.FC = () => {
                 <span>📑</span> فواتير الموردين المسجلة ({invoices.length})
               </h2>
               <p className="mt-0.5 text-xs text-slate-400">
-                الفواتير المسجلة الخاصة بأقسام التنفيذ والتشطيبات والمباني وحالة المطابقة الثلاثية.
+                الفواتير المسجلة الخاصة بـ {accountantScope.deptBadge} وحالة المطابقة الثلاثية.
               </p>
             </div>
             <Link to="/accounting/supplier-finance">
@@ -466,7 +497,7 @@ export const SiteAccountantDashboardPage: React.FC = () => {
                 <span>📋</span> أوامر الشراء الصادرة ({purchaseOrders.length})
               </h2>
               <p className="mt-0.5 text-xs text-slate-400">
-                أوامر الشراء المعتمدة التابعة لأقسام التنفيذ والتشطيبات والمباني لمتابعة توريداتها.
+                أوامر الشراء المعتمدة التابعة لـ {accountantScope.deptBadge} لمتابعة توريداتها.
               </p>
             </div>
             <Link to="/accounting/purchase-orders">

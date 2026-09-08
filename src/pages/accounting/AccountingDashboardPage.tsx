@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getAccountingPurchaseOrdersApi, getAccountingPurchaseOrderApi, approveAccountingPurchaseOrderApi } from '../../api/accounting';
 import { getDirectAccountingPurchaseRequestsApi, approveDirectAccountingPurchaseRequestApi } from '../../api/accountingPurchaseRequests';
-import { getApprovedReceiptsForAccountingApi, getSupplierAccountsApi, ApprovedReceipt, SupplierAccountSummary } from '../../api/supplierFinance';
+import { getSupplierAccountsApi, SupplierAccountSummary } from '../../api/supplierFinance';
 import { getPendingQuoteRequestsApi } from '../../api/purchaseQuotes';
 import { PurchaseOrder } from '../../types/purchaseOrder';
 import { PurchaseRequest } from '../../types/purchaseRequest';
@@ -19,7 +19,6 @@ export const AccountingDashboardPage: React.FC = () => {
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
   const [directPrs, setDirectPrs] = useState<PurchaseRequest[]>([]);
   const [quoteRequests, setQuoteRequests] = useState<PurchaseRequest[]>([]);
-  const [receipts, setReceipts] = useState<ApprovedReceipt[]>([]);
   const [accounts, setAccounts] = useState<SupplierAccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPo, setSelectedPo] = useState<PurchaseOrder | null>(null);
@@ -40,16 +39,14 @@ export const AccountingDashboardPage: React.FC = () => {
   const loadData = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [posData, directData, receiptsData, accountsData, quotesData] = await Promise.all([
+      const [posData, directData, accountsData, quotesData] = await Promise.all([
         getAccountingPurchaseOrdersApi().catch(() => []),
         getDirectAccountingPurchaseRequestsApi().catch(() => []),
-        getApprovedReceiptsForAccountingApi().catch(() => []),
         getSupplierAccountsApi().catch(() => []),
         getPendingQuoteRequestsApi().catch(() => []),
       ]);
       setPos(posData);
       setDirectPrs(directData);
-      setReceipts(receiptsData);
       setAccounts(accountsData);
       setQuoteRequests(quotesData);
     } finally {
@@ -72,7 +69,7 @@ export const AccountingDashboardPage: React.FC = () => {
   const totalIssuedEgp = issuedPos.reduce((acc, x) => acc + Number(x.grand_total || 0), 0);
   const upcomingDeliveriesCount = pos.filter(x => x.delivery_status === 'NOT_STARTED' || x.delivery_status === 'PARTIAL').length;
   const overdueOrIndebtedAccounts = accounts.filter(a => a.balance > 0);
-  const totalAccountingTasks = directPrs.length + pendingReviewPos.length + receipts.length;
+  const totalAccountingTasks = directPrs.length + pendingReviewPos.length;
 
   const deliverySegments = [
     { label: 'تم الإصدار', value: issuedPos.length, color: '#22c55e' },
@@ -144,20 +141,6 @@ export const AccountingDashboardPage: React.FC = () => {
               await loadData(true);
             },
             directApproveLabel: 'اعتماد مالي فوري لأمر الشراء',
-          })),
-          ...receipts.map((rec) => ({
-            id: `rec-${rec.id}`,
-            rawId: rec.id,
-            type: 'RECEIPT' as const,
-            code: rec.receipt_number || `إذن استلام #${rec.id}`,
-            title: rec.purchase_order?.supplier?.company_name || 'إذن استلام بضائع وتوريد',
-            amount: rec.purchase_order?.grand_total ? Number(rec.purchase_order.grand_total) : undefined,
-            urgency: 'NORMAL' as const,
-            reason: 'إذن استلام معتمد بانتظار تسجيل وسداد فاتورة المورد',
-            actionUrl: `/accounting/supplier-payments?purchase_receipt_id=${rec.id}`,
-            actionLabel: 'تسجيل وسداد الفاتورة',
-            timeAgo: rec.received_at ? rec.received_at.slice(0, 10) : undefined,
-            created_at: (rec as any).created_at || rec.received_at || undefined,
           })),
           ...directPrs.map((pr: any) => ({
             id: `pr-${pr.id}`,

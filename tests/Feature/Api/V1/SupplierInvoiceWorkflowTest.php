@@ -368,6 +368,145 @@ class SupplierInvoiceWorkflowTest extends TestCase
         $response->assertStatus(403);
     }
 
+    public function test_licenses_accountant_only_sees_and_creates_invoices_for_licenses_department(): void
+    {
+        $licensesAccountant = $this->makeUser('ahmed-test@test', 'المهندس أحمد', 'licenses_accountant');
+        $licensesDept = Department::firstOrCreate(['code' => 'LICENSES'], ['name' => 'التراخيص', 'is_active' => true]);
+        $executionDept = Department::firstOrCreate(['code' => 'EXECUTION'], ['name' => 'التنفيذ', 'is_active' => true]);
+
+        $employee = $this->makeUser('emp-lic@test', 'موظف التراخيص', 'employee');
+        $prLicenses = PurchaseRequest::create([
+            'request_number' => 'PR-LIC-TEST',
+            'user_id' => $employee->id,
+            'department_id' => $licensesDept->id,
+            'site_engineer_user_id' => $this->siteEngineer->id,
+            'priority' => 'NORMAL',
+            'status' => 'APPROVED_BY_PROCUREMENT',
+            'total_estimated_cost' => 500,
+            'date_needed' => '2026-08-01',
+        ]);
+        $orderLicenses = PurchaseOrder::create([
+            'po_number' => 'PO-LIC-TEST',
+            'purchase_request_id' => $prLicenses->id,
+            'supplier_id' => $this->supplier->id,
+            'created_by_user_id' => $employee->id,
+            'status' => 'ISSUED',
+            'subtotal' => 500,
+            'grand_total' => 500,
+            'delivery_status' => 'NOT_STARTED',
+        ]);
+        $orderLicenses->items()->create([
+            'item_description' => 'رسوم تراخيص',
+            'quantity' => 1,
+            'uom' => 'PCS',
+            'unit_price' => 500,
+            'line_total' => 500,
+        ]);
+        $receiptLicenses = $this->approveReceipt($orderLicenses, 1);
+
+        $prExecution = PurchaseRequest::create([
+            'request_number' => 'PR-EXE-TEST',
+            'user_id' => $employee->id,
+            'department_id' => $executionDept->id,
+            'site_engineer_user_id' => $this->siteEngineer->id,
+            'priority' => 'NORMAL',
+            'status' => 'APPROVED_BY_PROCUREMENT',
+            'total_estimated_cost' => 800,
+            'date_needed' => '2026-08-01',
+        ]);
+        $orderExecution = PurchaseOrder::create([
+            'po_number' => 'PO-EXE-TEST',
+            'purchase_request_id' => $prExecution->id,
+            'supplier_id' => $this->supplier->id,
+            'created_by_user_id' => $employee->id,
+            'status' => 'ISSUED',
+            'subtotal' => 800,
+            'grand_total' => 800,
+            'delivery_status' => 'NOT_STARTED',
+        ]);
+        $orderExecution->items()->create([
+            'item_description' => 'أسمنت',
+            'quantity' => 8,
+            'uom' => 'BAG',
+            'unit_price' => 100,
+            'line_total' => 800,
+        ]);
+        $receiptExecution = $this->approveReceipt($orderExecution, 8);
+
+        $service = app(SupplierInvoiceService::class);
+        $receipts = $service->approvedReceipts(100, $licensesAccountant);
+        $this->assertTrue($receipts->contains('id', $receiptLicenses->id));
+        $this->assertFalse($receipts->contains('id', $receiptExecution->id));
+
+        // Attempt to create invoice for Execution order as Ahmed (should be 403)
+        $forbiddenRes = $this->actingAs($licensesAccountant, 'sanctum')->postJson('/api/v1/accounting/invoices', [
+            'purchase_order_id' => $orderExecution->id,
+            'purchase_receipt_id' => $receiptExecution->id,
+            'invoice_number' => 'INV-EXE-FORBIDDEN',
+            'amount' => 800,
+        ]);
+        $forbiddenRes->assertStatus(403);
+
+        // Can create invoice for Licenses order
+        $allowedRes = $this->actingAs($licensesAccountant, 'sanctum')->postJson('/api/v1/accounting/invoices', [
+            'purchase_order_id' => $orderLicenses->id,
+            'purchase_receipt_id' => $receiptLicenses->id,
+            'invoice_number' => 'INV-LIC-ALLOWED',
+            'amount' => 500,
+        ]);
+        $allowedRes->assertStatus(201);
+    }
+
+    public function test_buffet_accountant_only_sees_and_creates_invoices_for_buffet_department(): void
+    {
+        $buffetAccountant = $this->makeUser('shorouk-test@test', 'المهندسة شروق', 'buffet_accountant');
+        $buffetDept = Department::firstOrCreate(['code' => 'BUFFET'], ['name' => 'البوفيه', 'is_active' => true]);
+        $licensesDept = Department::firstOrCreate(['code' => 'LICENSES'], ['name' => 'التراخيص', 'is_active' => true]);
+
+        $employee = $this->makeUser('emp-buf2@test', 'موظف بوفيه', 'employee');
+        $prBuffet = PurchaseRequest::create([
+            'request_number' => 'PR-BUF-TEST',
+            'user_id' => $employee->id,
+            'department_id' => $buffetDept->id,
+            'site_engineer_user_id' => $this->siteEngineer->id,
+            'priority' => 'NORMAL',
+            'status' => 'APPROVED_BY_PROCUREMENT',
+            'total_estimated_cost' => 200,
+            'date_needed' => '2026-08-01',
+        ]);
+        $orderBuffet = PurchaseOrder::create([
+            'po_number' => 'PO-BUF-TEST',
+            'purchase_request_id' => $prBuffet->id,
+            'supplier_id' => $this->supplier->id,
+            'created_by_user_id' => $employee->id,
+            'status' => 'ISSUED',
+            'subtotal' => 200,
+            'grand_total' => 200,
+            'delivery_status' => 'NOT_STARTED',
+        ]);
+        $orderBuffet->items()->create([
+            'item_description' => 'مستلزمات مكتب وبوفيه',
+            'quantity' => 2,
+            'uom' => 'PCS',
+            'unit_price' => 100,
+            'line_total' => 200,
+        ]);
+        $receiptBuffet = $this->approveReceipt($orderBuffet, 2);
+
+        $service = app(SupplierInvoiceService::class);
+        $receipts = $service->approvedReceipts(100, $buffetAccountant);
+        $this->assertTrue($receipts->contains('id', $receiptBuffet->id));
+
+        // Allowed to create invoice for Buffet
+        $allowedRes = $this->actingAs($buffetAccountant, 'sanctum')->postJson('/api/v1/accounting/invoices', [
+            'purchase_order_id' => $orderBuffet->id,
+            'purchase_receipt_id' => $receiptBuffet->id,
+            'invoice_number' => 'INV-BUF-ALLOWED',
+            'amount' => 200,
+        ]);
+        $allowedRes->assertStatus(201);
+    }
+
     private function makeUser(string $email, string $name, string $roleSlug): User
     {
         $user = User::create([

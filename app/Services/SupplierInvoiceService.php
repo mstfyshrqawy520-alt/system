@@ -15,15 +15,55 @@ use Illuminate\Validation\ValidationException;
 
 class SupplierInvoiceService
 {
+    public const ACCOUNTANT_DEPARTMENT_MAPPINGS = [
+        'site_accountant' => ['EXECUTION', 'FINISHING', 'BUILDINGS'],
+        'licenses_accountant' => ['LICENSES'],
+        'buffet_accountant' => ['BUFFET'],
+    ];
+
     public const SITE_ACCOUNTANT_DEPARTMENT_CODES = ['EXECUTION', 'FINISHING', 'BUILDINGS'];
 
-    public function isRestrictedSiteAccountant(?User $user): bool
+    public function getDepartmentAccountantRole(?User $user): ?string
     {
         if (! $user) {
+            return null;
+        }
+
+        foreach (array_keys(self::ACCOUNTANT_DEPARTMENT_MAPPINGS) as $role) {
+            if ($user->hasRole($role)) {
+                return $role;
+            }
+        }
+
+        return null;
+    }
+
+    public function isRestrictedDepartmentAccountant(?User $user): bool
+    {
+        if (! $user || $user->hasRole('admin')) {
             return false;
         }
 
-        return $user->hasRole('site_accountant') && ! $user->hasRole('accountant') && ! $user->hasRole('admin');
+        return $this->getDepartmentAccountantRole($user) !== null;
+    }
+
+    public function isRestrictedSiteAccountant(?User $user): bool
+    {
+        return $this->isRestrictedDepartmentAccountant($user);
+    }
+
+    public function getAllowedDepartmentCodesForAccountant(?User $user): ?array
+    {
+        if (! $user || $user->hasRole('admin')) {
+            return null;
+        }
+
+        $role = $this->getDepartmentAccountantRole($user);
+        if ($role && isset(self::ACCOUNTANT_DEPARTMENT_MAPPINGS[$role])) {
+            return self::ACCOUNTANT_DEPARTMENT_MAPPINGS[$role];
+        }
+
+        return null;
     }
 
     public function approvedReceipts(int $limit = 100, ?User $user = null)
@@ -49,9 +89,9 @@ class SupplierInvoiceService
             ->whereDoesntHave('supplierInvoices', function ($query) {
                 $query->whereIn('status', ['DRAFT', 'OPEN', 'PARTIALLY_PAID', 'PAID']);
             })
-            ->when($this->isRestrictedSiteAccountant($user), function ($query) {
-                $query->whereHas('purchaseOrder.purchaseRequest.department', function ($dq) {
-                    $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+            ->when($this->getAllowedDepartmentCodesForAccountant($user), function ($query, $allowedCodes) {
+                $query->whereHas('purchaseOrder.purchaseRequest.department', function ($dq) use ($allowedCodes) {
+                    $dq->whereIn('code', $allowedCodes);
                 });
             })
             ->orderByDesc('site_engineer_approved_at')
@@ -69,9 +109,9 @@ class SupplierInvoiceService
             'landAllocations.parcel',
         ])
             ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
-            ->when($this->isRestrictedSiteAccountant($user), function ($query) {
-                $query->whereHas('purchaseOrder.purchaseRequest.department', function ($dq) {
-                    $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+            ->when($this->getAllowedDepartmentCodesForAccountant($user), function ($query, $allowedCodes) {
+                $query->whereHas('purchaseOrder.purchaseRequest.department', function ($dq) use ($allowedCodes) {
+                    $dq->whereIn('code', $allowedCodes);
                 });
             })
             ->orderByDesc('invoice_date')
@@ -100,6 +140,16 @@ class SupplierInvoiceService
         if ($receipt->status !== 'APPROVED') {
             throw new \RuntimeException('لا يمكن تسجيل فاتورة قبل اعتماد إذن الاستلام من مهندس الموقع.');
         }
+
+        $allowedCodes = $this->getAllowedDepartmentCodesForAccountant($accountant);
+        if ($allowedCodes !== null) {
+            $purchaseOrder->loadMissing('purchaseRequest.department');
+            $deptCode = $purchaseOrder->purchaseRequest?->department?->code;
+            if ($deptCode && ! in_array($deptCode, $allowedCodes, true)) {
+                throw new \RuntimeException('غير مصرح لك بتسجيل فواتير لهذا القسم.');
+            }
+        }
+
         if ($amount <= 0) {
             throw ValidationException::withMessages(['amount' => ['قيمة الفاتورة يجب أن تكون أكبر من صفر.']]);
         }
@@ -298,16 +348,16 @@ class SupplierInvoiceService
 
     public function supplierAccounts(int $limit = 200, ?User $user = null): array
     {
-        $isRestricted = $this->isRestrictedSiteAccountant($user);
+        $allowedCodes = $this->getAllowedDepartmentCodesForAccountant($user);
 
         return Supplier::query()
             ->where('is_active', true)
-            ->when($isRestricted, function ($query) {
-                $query->where(function ($sq) {
-                    $sq->whereHas('purchaseOrders.purchaseRequest.department', function ($dq) {
-                        $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
-                    })->orWhereHas('invoices.purchaseOrder.purchaseRequest.department', function ($dq) {
-                        $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+            ->when($allowedCodes !== null, function ($query) use ($allowedCodes) {
+                $query->where(function ($sq) use ($allowedCodes) {
+                    $sq->whereHas('purchaseOrders.purchaseRequest.department', function ($dq) use ($allowedCodes) {
+                        $dq->whereIn('code', $allowedCodes);
+                    })->orWhereHas('invoices.purchaseOrder.purchaseRequest.department', function ($dq) use ($allowedCodes) {
+                        $dq->whereIn('code', $allowedCodes);
                     });
                 });
             })
@@ -321,27 +371,27 @@ class SupplierInvoiceService
 
     public function supplierAccount(Supplier $supplier, ?User $user = null): array
     {
-        $isRestricted = $this->isRestrictedSiteAccountant($user);
+        $allowedCodes = $this->getAllowedDepartmentCodesForAccountant($user);
 
         $supplier->load([
             'purchaseOrders' => fn ($query) => $query
-                ->when($isRestricted, function ($q) {
-                    $q->whereHas('purchaseRequest.department', function ($dq) {
-                        $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+                ->when($allowedCodes !== null, function ($q) use ($allowedCodes) {
+                    $q->whereHas('purchaseRequest.department', function ($dq) use ($allowedCodes) {
+                        $dq->whereIn('code', $allowedCodes);
                     });
                 })
                 ->orderByDesc('created_at'),
             'invoices' => fn ($query) => $query
-                ->when($isRestricted, function ($q) {
-                    $q->whereHas('purchaseOrder.purchaseRequest.department', function ($dq) {
-                        $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+                ->when($allowedCodes !== null, function ($q) use ($allowedCodes) {
+                    $q->whereHas('purchaseOrder.purchaseRequest.department', function ($dq) use ($allowedCodes) {
+                        $dq->whereIn('code', $allowedCodes);
                     });
                 })
                 ->with(['purchaseOrder', 'purchaseReceipt', 'paymentAllocations.payment', 'landAllocations.parcel']),
             'payments' => fn ($query) => $query
-                ->when($isRestricted, function ($q) {
-                    $q->whereHas('allocations.invoice.purchaseOrder.purchaseRequest.department', function ($dq) {
-                        $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+                ->when($allowedCodes !== null, function ($q) use ($allowedCodes) {
+                    $q->whereHas('allocations.invoice.purchaseOrder.purchaseRequest.department', function ($dq) use ($allowedCodes) {
+                        $dq->whereIn('code', $allowedCodes);
                     });
                 })
                 ->orderByDesc('payment_date'),
@@ -390,24 +440,25 @@ class SupplierInvoiceService
 
     private function supplierSummary(Supplier $supplier, ?User $user = null): array
     {
-        $isRestricted = $this->isRestrictedSiteAccountant($user);
+        $allowedCodes = $this->getAllowedDepartmentCodesForAccountant($user);
+        $isRestricted = $allowedCodes !== null;
 
         $openingBalance = $isRestricted ? 0 : (float) ($supplier->opening_balance ?? 0);
 
         $invoicesQuery = SupplierInvoice::where('supplier_id', $supplier->id)
             ->where('status', '!=', 'DRAFT')
-            ->when($isRestricted, function ($q) {
-                $q->whereHas('purchaseOrder.purchaseRequest.department', function ($dq) {
-                    $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+            ->when($isRestricted, function ($q) use ($allowedCodes) {
+                $q->whereHas('purchaseOrder.purchaseRequest.department', function ($dq) use ($allowedCodes) {
+                    $dq->whereIn('code', $allowedCodes);
                 });
             });
 
         $totalInvoiced = (float) (clone $invoicesQuery)->sum('amount');
 
         $paymentsQuery = SupplierPayment::where('supplier_id', $supplier->id)
-            ->when($isRestricted, function ($q) {
-                $q->whereHas('allocations.invoice.purchaseOrder.purchaseRequest.department', function ($dq) {
-                    $dq->whereIn('code', self::SITE_ACCOUNTANT_DEPARTMENT_CODES);
+            ->when($isRestricted, function ($q) use ($allowedCodes) {
+                $q->whereHas('allocations.invoice.purchaseOrder.purchaseRequest.department', function ($dq) use ($allowedCodes) {
+                    $dq->whereIn('code', $allowedCodes);
                 });
             });
 

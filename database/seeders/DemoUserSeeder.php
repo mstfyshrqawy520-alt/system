@@ -53,6 +53,8 @@ class DemoUserSeeder extends Seeder
             'procurement_manager' => Role::where('slug', 'procurement_manager')->firstOrFail(),
             'accountant' => Role::where('slug', 'accountant')->firstOrFail(),
             'site_accountant' => Role::where('slug', 'site_accountant')->firstOrFail(),
+            'licenses_accountant' => Role::where('slug', 'licenses_accountant')->firstOrFail(),
+            'buffet_accountant' => Role::where('slug', 'buffet_accountant')->firstOrFail(),
             'general_manager' => Role::where('slug', 'general_manager')->firstOrFail(),
             'admin' => Role::where('slug', 'admin')->firstOrFail(),
             'warehouse_keeper' => Role::where('slug', 'warehouse_keeper')->firstOrFail(),
@@ -67,10 +69,12 @@ class DemoUserSeeder extends Seeder
             ['email' => 'mostafa@gmail.com', 'name' => 'م. مصطفى', 'role' => 'reviewer', 'department_id' => $licensesDept->id],
             ['email' => 'amr@gmail.com', 'name' => 'أ. عمرو', 'role' => 'reviewer', 'department_id' => $buffetDept->id],
 
-            // Procurement, Financial Director, Site Accountant (Habiba), General Manager, Admin, Warehouse
+            // Procurement, Financial Director, Department Accountants, General Manager, Admin, Warehouse
             ['email' => 'ahmed@gmail.com', 'name' => 'المهندس أحمد بدوي', 'role' => 'procurement_manager', 'department_id' => $executionDept->id],
             ['email' => 'hasan@gmail.com', 'name' => 'حسن (المدير المالي)', 'role' => 'accountant', 'department_id' => $executionDept->id],
             ['email' => 'habiba@gmail.com', 'name' => 'حبيبة', 'role' => 'site_accountant', 'department_id' => $executionDept->id],
+            ['email' => 'ahmed.licenses@gmail.com', 'name' => 'المهندس أحمد', 'role' => 'licenses_accountant', 'department_id' => $licensesDept->id],
+            ['email' => 'shorouk@gmail.com', 'name' => 'المهندسة شروق', 'role' => 'buffet_accountant', 'department_id' => $buffetDept->id],
             ['email' => 'mohamed@gmail.com', 'name' => 'المهندس محمد عبدالكريم', 'role' => 'general_manager', 'department_id' => $executionDept->id],
             ['email' => 'admin@gmail.com', 'name' => 'Admin', 'role' => 'admin', 'department_id' => $executionDept->id],
             ['email' => 'salam@gmail.com', 'name' => 'عم سلامة', 'role' => 'warehouse_keeper', 'department_id' => $executionDept->id],

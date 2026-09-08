@@ -16,11 +16,13 @@ class AccountingPurchaseOrderService
      */
     public function getAccountingPurchaseOrders(int $perPage = 15, ?User $user = null): LengthAwarePaginator
     {
+        $allowedCodes = $user ? app(SupplierInvoiceService::class)->getAllowedDepartmentCodesForAccountant($user) : null;
+
         return PurchaseOrder::with(['purchaseRequest.requester', 'purchaseRequest.department', 'purchaseRequest.assignedReviewer', 'purchaseRequest.approvalHistory.actor', 'supplier', 'createdBy', 'accountingReviewer', 'items.item:id,name,sku'])
             ->whereIn('status', ['ISSUED', 'PENDING_ACCOUNTING_REVIEW', 'APPROVED_BY_ACCOUNTING', 'RETURNED_TO_PROCUREMENT'])
-            ->when($user && $user->hasRole('site_accountant') && ! $user->hasRole('accountant') && ! $user->hasRole('admin'), function ($query) {
-                $query->whereHas('purchaseRequest.department', function ($dq) {
-                    $dq->whereIn('code', ['EXECUTION', 'FINISHING', 'BUILDINGS']);
+            ->when($allowedCodes !== null, function ($query) use ($allowedCodes) {
+                $query->whereHas('purchaseRequest.department', function ($dq) use ($allowedCodes) {
+                    $dq->whereIn('code', $allowedCodes);
                 });
             })
             ->orderBy('updated_at', 'desc')

@@ -78,7 +78,7 @@ export const AppRoutes: React.FC = () => {
                 <Route path="/preferences" element={<UserPreferencesPage />} />
 
                 {/* ── Shared Purchase Request Routes for all operational roles ── */}
-                <Route element={<RoleRoute allowedRoles={["employee", "reviewer", "warehouse_keeper", "site_engineer", "procurement_manager", "accountant", "site_accountant", "general_manager"]} />}>
+                <Route element={<RoleRoute allowedRoles={["employee", "reviewer", "warehouse_keeper", "site_engineer", "procurement_manager", "accountant", "site_accountant", "licenses_accountant", "buffet_accountant", "general_manager"]} />}>
                     <Route path="/requests" element={<PurchaseRequestsPage />} />
                     <Route path="/requests/create" element={<CreatePurchaseRequestPage />} />
                     <Route path="/requests/:id" element={<PurchaseRequestDetailsPage />} />
@@ -138,8 +138,8 @@ export const AppRoutes: React.FC = () => {
                     <Route path="/procurement/*" element={<ProcurementManagerPage />} />
                 </Route>
 
-                {/* ── Accounting & Site Accountant Shared Routes ────────────── */}
-                <Route element={<RoleRoute allowedRoles={["accountant", "site_accountant"]} />}>
+                {/* ── Accounting & Department Accountants Shared Routes ────────────── */}
+                <Route element={<RoleRoute allowedRoles={["accountant", "site_accountant", "licenses_accountant", "buffet_accountant"]} />}>
                     <Route path="/accounting/purchase-orders" element={<AccountingPurchaseOrdersPage />} />
                     <Route path="/accounting/purchase-orders/:id" element={<AccountingPurchaseOrderDetailsPage />} />
                     <Route path="/accounting/supplier-finance" element={<SupplierFinanceWorkspacePage />} />
@@ -148,8 +148,8 @@ export const AppRoutes: React.FC = () => {
                     <Route path="/accounting/reports" element={<UniversalReportsPage />} />
                 </Route>
 
-                {/* ── Site Accountant Dedicated Dashboard ─────────────────────── */}
-                <Route element={<RoleRoute allowedRoles={["site_accountant", "admin"]} />}>
+                {/* ── Department Accountants Dedicated Dashboard ─────────────────────── */}
+                <Route element={<RoleRoute allowedRoles={["site_accountant", "licenses_accountant", "buffet_accountant", "admin"]} />}>
                     <Route path="/site-accountant" element={<SiteAccountantDashboardPage />} />
                 </Route>
 
@@ -173,7 +173,7 @@ export const AppRoutes: React.FC = () => {
                 </Route>
 
                 {/* Direct alias & shared routes */}
-                <Route element={<RoleRoute allowedRoles={["accountant", "site_accountant", "general_manager", "procurement_manager", "admin"]} />}>
+                <Route element={<RoleRoute allowedRoles={["accountant", "site_accountant", "licenses_accountant", "buffet_accountant", "general_manager", "procurement_manager", "admin"]} />}>
                     <Route path="/reports" element={<UniversalReportsPage />} />
                 </Route>
                 <Route path="/purchase-quotes" element={<PurchaseQuotesDecisionPage mode="recommend" />} />
