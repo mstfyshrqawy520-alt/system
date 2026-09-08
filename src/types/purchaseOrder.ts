@@ -143,6 +143,7 @@ export interface PurchaseOrder {
   created_at?: string | null;
   updated_at?: string | null;
   items?: PurchaseOrderItem[];
+  receipts?: LinkedReceiptSummary[];
   approval_history?: Array<{
     action: string;
     from_state: string;
@@ -154,6 +155,40 @@ export interface PurchaseOrder {
       name: string;
     } | null;
   }>;
+}
+
+export interface LinkedReceiptItem {
+  id: number;
+  purchase_order_item_id?: number | null;
+  ordered_quantity: string | number;
+  received_quantity: string | number;
+  notes?: string | null;
+  purchase_order_item?: {
+    id: number;
+    item_description: string;
+    item_name?: string | null;
+    uom?: string | null;
+    unit_price?: string | number;
+  } | null;
+}
+
+export interface LinkedReceiptSummary {
+  id: number;
+  receipt_number: string;
+  receipt_type?: string | null;
+  status: string;
+  received_at?: string | null;
+  warehouse_submitted_at?: string | null;
+  site_engineer_approved_at?: string | null;
+  warehouse_notes?: string | null;
+  site_engineer_notes?: string | null;
+  receiver_notes?: string | null;
+  photo_url?: string | null;
+  photo_name?: string | null;
+  warehouse_keeper?: { id: number; name: string } | null;
+  site_engineer?: { id: number; name: string } | null;
+  receiver?: { id: number; name: string } | null;
+  items?: LinkedReceiptItem[];
 }
 
 export interface PurchaseOrderPayload {

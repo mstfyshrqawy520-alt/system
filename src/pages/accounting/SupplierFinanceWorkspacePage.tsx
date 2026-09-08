@@ -1,11 +1,20 @@
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { SupplierAccountsPage } from './SupplierAccountsPage';
 import { SupplierPaymentsPage } from './SupplierPaymentsPage';
 
 export const SupplierFinanceWorkspacePage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const currentTab = searchParams.get('tab') || 'accounts';
+  const location = useLocation();
+
+  const isPaymentsTarget =
+    location.pathname.includes('supplier-payments') ||
+    searchParams.has('purchase_receipt_id') ||
+    searchParams.has('po') ||
+    searchParams.has('payment_id');
+
+  const defaultTab = isPaymentsTarget ? 'payments' : 'accounts';
+  const currentTab = searchParams.get('tab') || defaultTab;
 
   const setTab = (tab: 'accounts' | 'payments') => {
     const next = new URLSearchParams(searchParams);

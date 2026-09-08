@@ -84,6 +84,52 @@ class PurchaseOrderResource extends JsonResource
             'created_at' => $this->created_at ? $this->created_at->toIso8601String() : null,
             'updated_at' => $this->updated_at ? $this->updated_at->toIso8601String() : null,
             'items' => PurchaseOrderItemResource::collection($this->whenLoaded('items')),
+            'receipts' => $this->whenLoaded('receipts', function () {
+                return $this->receipts->map(function ($receipt) {
+                    return [
+                        'id' => $receipt->id,
+                        'receipt_number' => $receipt->receipt_number,
+                        'receipt_type' => $receipt->receipt_type,
+                        'status' => $receipt->status,
+                        'received_at' => $receipt->received_at ? $receipt->received_at->format('Y-m-d') : null,
+                        'warehouse_submitted_at' => $receipt->warehouse_submitted_at ? $receipt->warehouse_submitted_at->toIso8601String() : null,
+                        'site_engineer_approved_at' => $receipt->site_engineer_approved_at ? $receipt->site_engineer_approved_at->toIso8601String() : null,
+                        'warehouse_notes' => $receipt->warehouse_notes,
+                        'site_engineer_notes' => $receipt->site_engineer_notes,
+                        'receiver_notes' => $receipt->receiver_notes,
+                        'photo_url' => $receipt->photo_url,
+                        'photo_name' => $receipt->photo_name,
+                        'warehouse_keeper' => $receipt->relationLoaded('warehouseKeeper') && $receipt->warehouseKeeper ? [
+                            'id' => $receipt->warehouseKeeper->id,
+                            'name' => $receipt->warehouseKeeper->name,
+                        ] : null,
+                        'site_engineer' => $receipt->relationLoaded('siteEngineer') && $receipt->siteEngineer ? [
+                            'id' => $receipt->siteEngineer->id,
+                            'name' => $receipt->siteEngineer->name,
+                        ] : null,
+                        'receiver' => $receipt->relationLoaded('receiver') && $receipt->receiver ? [
+                            'id' => $receipt->receiver->id,
+                            'name' => $receipt->receiver->name,
+                        ] : null,
+                        'items' => $receipt->relationLoaded('items') ? $receipt->items->map(function ($item) {
+                            return [
+                                'id' => $item->id,
+                                'purchase_order_item_id' => $item->purchase_order_item_id,
+                                'ordered_quantity' => (string) $item->ordered_quantity,
+                                'received_quantity' => (string) $item->received_quantity,
+                                'notes' => $item->notes,
+                                'purchase_order_item' => $item->relationLoaded('purchaseOrderItem') && $item->purchaseOrderItem ? [
+                                    'id' => $item->purchaseOrderItem->id,
+                                    'item_description' => $item->purchaseOrderItem->item_description,
+                                    'item_name' => $item->purchaseOrderItem->item_name,
+                                    'uom' => $item->purchaseOrderItem->uom,
+                                    'unit_price' => (string) $item->purchaseOrderItem->unit_price,
+                                ] : null,
+                            ];
+                        }) : [],
+                    ];
+                });
+            }),
         ];
     }
 }

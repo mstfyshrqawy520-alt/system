@@ -33,6 +33,10 @@ class GeneralManagerPurchaseOrderService
             'accountingReviewer',
             'items.item',
             'approvalHistory.actor',
+            'receipts.items.purchaseOrderItem',
+            'receipts.warehouseKeeper',
+            'receipts.siteEngineer',
+            'receipts.receiver',
         ])->findOrFail($id);
     }
 }

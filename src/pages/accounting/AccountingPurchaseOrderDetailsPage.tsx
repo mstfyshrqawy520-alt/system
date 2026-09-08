@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { getAccountingPurchaseOrderApi } from '../../api/accounting';
+import { getPurchaseReceiptByIdApi, getReceiptPhotoUrl } from '../../api/purchaseReceipts';
 import Badge from '../../components/procurement/PurchaseOrderStatusBadge';
-import { PurchaseOrder } from '../../types/purchaseOrder';
+import { PurchaseOrder, LinkedReceiptSummary } from '../../types/purchaseOrder';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
@@ -10,20 +11,56 @@ import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import { getUnitLabel } from '../../utils/units';
 import PrintablePO from '../../components/procurement/PrintablePO';
 import { UnifiedNotesCard } from '../../components/common/UnifiedNotesCard';
+import { Modal } from '../../components/ui/Modal';
 
 export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [po, setPo] = useState<PurchaseOrder | null>(null);
-  const [printPo, setPrintPo] = useState<PurchaseOrder | null>(null);
+  const [searchParams] = useSearchParams();
+  const queryReceiptId = Number(searchParams.get('receipt_id') || 0);
 
-  const load = () => id && getAccountingPurchaseOrderApi(parseInt(id, 10)).then(setPo);
+  const [po, setPo] = useState<PurchaseOrder | null>(null);
+  const [extraReceipts, setExtraReceipts] = useState<LinkedReceiptSummary[]>([]);
+  const [printPo, setPrintPo] = useState<PurchaseOrder | null>(null);
+  const [previewPhoto, setPreviewPhoto] = useState<{ url: string; title: string } | null>(null);
+
+  const load = async () => {
+    if (!id) return;
+    try {
+      const poData = await getAccountingPurchaseOrderApi(parseInt(id, 10));
+      setPo(poData);
+
+      // If queryReceiptId is specified and not present in poData.receipts, fetch directly
+      if (queryReceiptId > 0 && (!poData.receipts || !poData.receipts.some((r) => r.id === queryReceiptId))) {
+        try {
+          const fetchedReceipt = await getPurchaseReceiptByIdApi(queryReceiptId);
+          if (fetchedReceipt) {
+            setExtraReceipts([fetchedReceipt as unknown as LinkedReceiptSummary]);
+          }
+        } catch (err) {
+          console.warn('Failed to load extra receipt from query param', err);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load PO details', err);
+    }
+  };
 
   useEffect(() => {
-    load();
-  }, [id]);
+    void load();
+  }, [id, queryReceiptId]);
+
+  const allReceipts = useMemo(() => {
+    const list = [...(po?.receipts || [])];
+    extraReceipts.forEach((er) => {
+      if (!list.some((r) => r.id === er.id)) {
+        list.push(er);
+      }
+    });
+    return list;
+  }, [po?.receipts, extraReceipts]);
 
   if (!po) {
-    return <div className="text-cyan-400 animate-pulse text-xs p-6" dir="rtl">جاري تحميل بيانات أمر الشراء...</div>;
+    return <div className="text-cyan-400 animate-pulse text-xs p-6" dir="rtl">جاري تحميل بيانات أمر الشراء وإذن الاستلام...</div>;
   }
 
   const handleExportJson = () => {
@@ -37,7 +74,7 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in" dir="rtl">
+    <div className="space-y-6 animate-fade-in pb-12" dir="rtl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div className="flex items-center gap-3 flex-wrap">
@@ -49,11 +86,11 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
             EGP / ج.م
           </span>
           <span className="bg-blue-900/40 text-blue-300 border border-blue-700/50 px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1">
-            👁️ للاطلاع المالي فقط (Read-Only)
+            👁️ للاطلاع المالي والمطابقة (Read-Only)
           </span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Link to={`/accounting/supplier-payments?po=${po.po_number || po.id}`}>
+          <Link to={`/accounting/supplier-payments?tab=payments&po=${po.po_number || po.id}${queryReceiptId ? `&purchase_receipt_id=${queryReceiptId}` : ''}`}>
             <Button variant="primary" size="sm" className="font-bold shadow-md shadow-cyan-900/40">
               <span>🧾 تسجيل فاتورة وسداد مستحقات</span>
               <span className="mr-1">←</span>
@@ -84,13 +121,17 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <span className="text-2xl">💳</span>
           <div>
-            <h4 className="text-sm font-bold text-cyan-300">أمر الشراء جاهز للمطابقة وتسجيل الفواتير</h4>
+            <h4 className="text-sm font-bold text-cyan-300">
+              أمر الشراء وإذن الاستلام جاهزان للمطابقة والتسجيل المحاسبي
+            </h4>
             <p className="text-xs text-slate-400 mt-0.5">
-              يمكنك الانتقال فوراً لشاشة فواتير ودفعات الموردين لتسجيل فاتورة المورد وتوزيع المصروف على قطع الأراضي.
+              {allReceipts.length > 0
+                ? `تم ربط أمر الشراء بـ (${allReceipts.length}) إذن استلام بضائع معتمد. يمكنك فحص الكميات ومطابقتها قبل إصدار السداد.`
+                : 'يمكنك الانتقال فوراً لشاشة فواتير ودفعات الموردين لتسجيل فاتورة المورد وتوزيع المصروف.'}
             </p>
           </div>
         </div>
-        <Link to={`/accounting/supplier-payments?po=${po.po_number || po.id}`}>
+        <Link to={`/accounting/supplier-payments?tab=payments&po=${po.po_number || po.id}${queryReceiptId ? `&purchase_receipt_id=${queryReceiptId}` : ''}`}>
           <Button variant="primary" size="sm" className="whitespace-nowrap font-black">
             تسجيل الفاتورة والدفعات ←
           </Button>
@@ -127,7 +168,7 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
 
       {/* Items Table */}
       <Card className="space-y-4">
-        <h3 className="text-sm font-bold text-slate-200">📦 بنود أمر الشراء</h3>
+        <h3 className="text-sm font-bold text-slate-200">📦 بنود أمر الشراء (المطلوبة من المورد)</h3>
         <Table>
           <TableHeader>
             <TableRow>
@@ -190,6 +231,232 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
         </div>
       </Card>
 
+      {/* ── Linked Goods Receipt Notes (إذن الاستلام) Section ── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📦</span>
+            <h2 className="text-base font-black text-slate-100">
+              أذونات الاستلام وفحص البضاعة (GRN)
+            </h2>
+            {allReceipts.length > 0 && (
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-950 text-cyan-300 border border-cyan-800/80">
+                {allReceipts.length} إذن استلام مقترن
+              </span>
+            )}
+          </div>
+        </div>
+
+        {allReceipts.length > 0 ? (
+          allReceipts.map((receipt) => {
+            const isHighlighted = queryReceiptId === receipt.id;
+            const photoUrl = getReceiptPhotoUrl(receipt);
+
+            return (
+              <Card
+                key={receipt.id}
+                className={`p-5 space-y-4 transition-all border ${
+                  isHighlighted
+                    ? 'border-cyan-400/90 bg-slate-900 shadow-xl shadow-cyan-950/40 ring-1 ring-cyan-400/50'
+                    : 'border-slate-800 bg-slate-950/80'
+                }`}
+              >
+                {/* Receipt Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="font-mono text-base font-black text-cyan-300 bg-slate-900 border border-slate-700/80 px-2.5 py-1 rounded-xl">
+                      {receipt.receipt_number}
+                    </span>
+
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                        receipt.status === 'APPROVED'
+                          ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/80'
+                          : 'bg-amber-950/80 text-amber-300 border-amber-700/80'
+                      }`}
+                    >
+                      {receipt.status === 'APPROVED'
+                        ? '✅ تم الفحص والاستلام واعتماده'
+                        : `⏳ حالة الإذن: ${receipt.status}`}
+                    </span>
+
+                    <span className="bg-slate-900 text-slate-300 border border-slate-700/80 px-2 py-0.5 rounded-lg text-xs font-semibold">
+                      {receipt.receipt_type === 'REQUESTER_OFFICE'
+                        ? '🏢 استلام مكتبي'
+                        : receipt.receipt_type === 'SITE_DIRECT'
+                        ? '🏗️ استلام موقع مباشر'
+                        : '🏭 استلام مستودع'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link
+                      to={`/accounting/supplier-payments?tab=payments&purchase_receipt_id=${receipt.id}&po=${po.po_number || po.id}`}
+                    >
+                      <Button variant="primary" size="sm" className="font-bold shadow-sm">
+                        <span>🧾 تسجيل فاتورة وسداد هذا الإذن</span>
+                        <span className="mr-1">←</span>
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Receipt Meta Details */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs bg-slate-900/60 p-3 rounded-xl border border-slate-800/60">
+                  <div>
+                    <span className="text-slate-400 block font-semibold">تاريخ الاستلام:</span>
+                    <span className="text-slate-100 font-medium">
+                      {receipt.received_at || receipt.warehouse_submitted_at
+                        ? new Date(receipt.received_at || receipt.warehouse_submitted_at!).toLocaleDateString('ar-EG')
+                        : '—'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 block font-semibold">أمين المستودع (المستلم):</span>
+                    <span className="text-cyan-300 font-bold">
+                      {receipt.warehouse_keeper?.name || '—'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 block font-semibold">مهندس الموقع المعتمد:</span>
+                    <span className="text-emerald-300 font-bold">
+                      {receipt.site_engineer?.name || '—'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 block font-semibold">تاريخ اعتماد الموقع:</span>
+                    <span className="text-slate-100 font-medium">
+                      {receipt.site_engineer_approved_at
+                        ? new Date(receipt.site_engineer_approved_at).toLocaleDateString('ar-EG')
+                        : '—'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                {(receipt.warehouse_notes || receipt.site_engineer_notes || receipt.receiver_notes) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    {receipt.warehouse_notes && (
+                      <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                        <span className="text-amber-400 font-bold block mb-1">📝 ملاحظات أمين المستودع:</span>
+                        <p className="text-slate-300 leading-relaxed">{receipt.warehouse_notes}</p>
+                      </div>
+                    )}
+                    {receipt.site_engineer_notes && (
+                      <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                        <span className="text-cyan-400 font-bold block mb-1">🏗️ ملاحظات مهندس الموقع:</span>
+                        <p className="text-slate-300 leading-relaxed">{receipt.site_engineer_notes}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Items Received Table */}
+                {receipt.items && receipt.items.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold text-slate-300">📦 البنود المستلمة ومطابقتها بأمر الشراء:</h4>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>#</TableHead>
+                            <TableHead>اسم الصنف / البيان</TableHead>
+                            <TableHead>الكمية المطلوبة بالـ PO</TableHead>
+                            <TableHead>الكمية المستلمة فعلياً</TableHead>
+                            <TableHead>حالة المطابقة</TableHead>
+                            <TableHead>ملاحظات الاستلام</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {receipt.items.map((rItem, idx) => {
+                            const reqQty = Number(rItem.ordered_quantity || 0);
+                            const recQty = Number(rItem.received_quantity || 0);
+                            const isComplete = recQty >= reqQty && reqQty > 0;
+
+                            return (
+                              <TableRow key={rItem.id || idx}>
+                                <TableCell className="font-mono text-cyan-400 text-xs">{idx + 1}</TableCell>
+                                <TableCell className="font-bold text-slate-100 text-xs">
+                                  {rItem.purchase_order_item?.item_name || rItem.purchase_order_item?.item_description || '—'}
+                                </TableCell>
+                                <TableCell className="font-mono text-slate-300 text-xs">
+                                  {reqQty} {rItem.purchase_order_item?.uom ? getUnitLabel(rItem.purchase_order_item.uom) : ''}
+                                </TableCell>
+                                <TableCell className="font-mono text-emerald-400 font-bold text-xs">
+                                  {recQty} {rItem.purchase_order_item?.uom ? getUnitLabel(rItem.purchase_order_item.uom) : ''}
+                                </TableCell>
+                                <TableCell className="text-xs">
+                                  {isComplete ? (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800/80 px-2 py-0.5 text-[11px] font-bold">
+                                      ✓ مطابق 100%
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-950 text-amber-300 border border-amber-800/80 px-2 py-0.5 text-[11px] font-bold">
+                                      ⚠️ استلام جزئي ({recQty}/{reqQty})
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-slate-400 text-xs">
+                                  {rItem.notes || '—'}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Photo Attachment Preview */}
+                {photoUrl && (
+                  <div className="pt-2 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={photoUrl}
+                        alt={receipt.receipt_number}
+                        className="h-16 w-20 object-cover rounded-lg border border-slate-700 shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => setPreviewPhoto({ url: photoUrl, title: `مستند إذن الاستلام ${receipt.receipt_number}` })}
+                      />
+                      <div>
+                        <span className="text-xs font-bold text-slate-200 block">
+                          📎 صورة إذن الاستلام / الفاتورة الورقية
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          تم تصويرها وإرفاقها من قبل موقع العمل / المستودع
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setPreviewPhoto({ url: photoUrl, title: `مستند إذن الاستلام ${receipt.receipt_number}` })}
+                      className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer bg-slate-900 border border-slate-700/80 px-3 py-1.5 rounded-xl transition-colors self-start sm:self-center"
+                    >
+                      <span>🔍 تكبير ومعاينة المستند</span>
+                    </button>
+                  </div>
+                )}
+              </Card>
+            );
+          })
+        ) : (
+          <Card className="p-4 bg-slate-900/50 border border-slate-800 flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">⏳</span>
+              <div>
+                <span className="font-bold text-slate-300 block">إذن الاستلام (GRN) لم يصدر بعد</span>
+                <span className="text-slate-400 text-[11px]">في انتظار استلام الأصناف بواسطة أمين المستودع أو مهندس الموقع.</span>
+              </div>
+            </div>
+            <span className="text-slate-500 font-mono text-[11px]">بانتظار التوريد</span>
+          </Card>
+        )}
+      </div>
+
       <UnifiedNotesCard purchaseOrder={po} />
 
       {/* Printable PO Modal */}
@@ -199,8 +466,41 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
           onClose={() => setPrintPo(null)}
         />
       )}
+
+      {/* Document Photo Preview Modal */}
+      {previewPhoto && (
+        <Modal
+          isOpen={Boolean(previewPhoto)}
+          onClose={() => setPreviewPhoto(null)}
+          title={previewPhoto.title}
+          size="xl"
+        >
+          <div className="flex flex-col items-center justify-center p-2 space-y-4">
+            <img
+              src={previewPhoto.url}
+              alt={previewPhoto.title}
+              className="max-h-[75vh] w-auto object-contain rounded-xl border border-slate-700 shadow-2xl"
+            />
+            <div className="flex items-center justify-end w-full gap-2 pt-2 border-t border-slate-800">
+              <a
+                href={previewPhoto.url}
+                target="_blank"
+                rel="noreferrer"
+                download
+                className="px-4 py-2 bg-cyan-700 hover:bg-cyan-600 text-white rounded-xl text-xs font-bold transition-colors"
+              >
+                تحميل الصورة 💾
+              </a>
+              <Button variant="secondary" size="sm" onClick={() => setPreviewPhoto(null)}>
+                إغلاق
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
 
 export default AccountingPurchaseOrderDetailsPage;
+

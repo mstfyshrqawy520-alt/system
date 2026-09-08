@@ -34,8 +34,21 @@ class AccountingPurchaseOrderController extends Controller
      */
     public function show(Request $request, string|int $id): PurchaseOrderResource
     {
-        $po = PurchaseOrder::with(['purchaseRequest.requester', 'purchaseRequest.department', 'purchaseRequest.assignedReviewer', 'purchaseRequest.approvalHistory.actor', 'supplier', 'createdBy', 'accountingReviewer', 'items.item', 'approvalHistory.actor'])
-            ->findOrFail((int) $id);
+        $po = PurchaseOrder::with([
+            'purchaseRequest.requester',
+            'purchaseRequest.department',
+            'purchaseRequest.assignedReviewer',
+            'purchaseRequest.approvalHistory.actor',
+            'supplier',
+            'createdBy',
+            'accountingReviewer',
+            'items.item',
+            'approvalHistory.actor',
+            'receipts.items.purchaseOrderItem',
+            'receipts.warehouseKeeper',
+            'receipts.siteEngineer',
+            'receipts.receiver',
+        ])->findOrFail((int) $id);
 
         return new PurchaseOrderResource($po);
     }

@@ -188,13 +188,13 @@ export const resolveNotificationAction = (
     const poId = info.poId || notification.purchase_order_id || data.purchase_order_id;
     if (roleSlugs.includes('accountant')) {
       return {
-        url: receiptId
-          ? `/accounting/supplier-payments?purchase_receipt_id=${receiptId}`
-          : (poId ? `/accounting/purchase-orders/${poId}` : '/accounting/supplier-payments'),
-        actionLabel: 'تسجيل الفاتورة وسداد المستحقات',
+        url: poId
+          ? `/accounting/purchase-orders/${poId}${receiptId ? `?receipt_id=${receiptId}` : ''}`
+          : (receiptId ? `/accounting/supplier-payments?tab=payments&purchase_receipt_id=${receiptId}` : '/accounting/purchase-orders'),
+        actionLabel: 'فتح أمر الشراء وإذن الاستلام',
         icon: '⚡',
         badgeLabel: 'مطلوب إجراء',
-        docType: 'RECEIPT',
+        docType: 'PO',
         docNumber: info.docNumber,
         isActionable: true,
         priority: 'HIGH',
@@ -212,9 +212,7 @@ export const resolveNotificationAction = (
       const poId = poMatch[1];
       if (roleSlugs.includes('accountant')) {
         const receiptId = info.receiptId || notification.purchase_receipt_id || data.purchase_receipt_id;
-        targetUrl = (type.includes('ready_accounting') || title.includes('للحسابات') || receiptId)
-          ? `/accounting/supplier-payments?purchase_receipt_id=${receiptId || ''}`
-          : `/accounting/purchase-orders/${poId}`;
+        targetUrl = `/accounting/purchase-orders/${poId}${receiptId ? `?receipt_id=${receiptId}` : ''}`;
       } else if (roleSlugs.includes('general_manager')) {
         targetUrl = `/general-manager/purchase-orders/${poId}`;
       } else if (!roleSlugs.includes('procurement_manager') && !roleSlugs.includes('admin')) {
