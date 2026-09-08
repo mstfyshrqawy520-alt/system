@@ -31,7 +31,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => getStoredUser<User>());
   const [token, setTokenState] = useState<string | null>(() => getToken());
-  const [isLoading, setIsLoading] = useState<boolean>(() => !getStoredUser() && !getToken());
+  const [isLoading, setIsLoading] = useState<boolean>(() => Boolean(getToken() && !getStoredUser()));
   const [sessionExpired, setSessionExpired] = useState<boolean>(hasSessionExpired());
 
   const handleUnauthenticated = () => {

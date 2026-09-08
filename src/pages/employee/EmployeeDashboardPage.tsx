@@ -283,7 +283,7 @@ export const EmployeeDashboardPage: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="🔍 بحث برقم الطلب، الصنف، القطعة..."
+              placeholder="🔍 بحث بالرقم أو الصنف..."
               className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400"
             />
           </div>

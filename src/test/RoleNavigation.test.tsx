@@ -74,6 +74,9 @@ const assertHiddenLinks = (labels: string[]) => {
 describe("Role-based navigation and redirect flow", () => {
     beforeEach(() => {
         vi.restoreAllMocks();
+        cleanup();
+        authStorage.removeToken();
+        authStorage.removeStoredUser();
     });
 
     it("1. Employee sees only employee navigation plus notifications and profile", async () => {
@@ -228,7 +231,7 @@ describe("Role-based navigation and redirect flow", () => {
             [["reviewer"], "/reviewer"],
             [["procurement_manager"], "/procurement"],
             [["accountant"], "/accounting"],
-            [["general_manager"], "/general-manager/purchase-requests"],
+            [["general_manager"], "/general-manager"],
             [["admin"], "/admin"],
             [
                 [
@@ -245,8 +248,11 @@ describe("Role-based navigation and redirect flow", () => {
 
         for (const [roles, expectedPath] of cases) {
             cleanup();
+            authStorage.removeStoredUser();
+            authStorage.removeToken();
             vi.restoreAllMocks();
             vi.spyOn(authStorage, "getToken").mockReturnValue("mock_token");
+            vi.spyOn(authStorage, "getStoredUser").mockReturnValue(null);
             vi.spyOn(authApi, "getMeApi").mockResolvedValue(makeUser(roles));
 
             render(
@@ -287,9 +293,9 @@ describe("Role-based navigation and redirect flow", () => {
                                 }
                             />
                             <Route
-                                path="/general-manager/purchase-requests"
+                                path="/general-manager"
                                 element={
-                                    <div data-testid="gm-requests-home">GM Requests Home</div>
+                                    <div data-testid="gm-home">GM Home</div>
                                 }
                             />
 
@@ -311,7 +317,7 @@ describe("Role-based navigation and redirect flow", () => {
                 "/reviewer": "reviewer-home",
                 "/procurement": "procurement-home",
                 "/accounting": "accounting-home",
-                "/general-manager/purchase-requests": "gm-requests-home",
+                "/general-manager": "gm-home",
 
                 "/admin": "admin-home",
             };

@@ -411,10 +411,18 @@ export const AuthenticatedLayout: React.FC = () => {
                             </button>
                         </div>
 
-                        {/* Mobile Toggle Button */}
-                        <div className="md:hidden flex items-center gap-2">
+                        {/* Mobile Toggle Button & User Quick Nav */}
+                        <div className="md:hidden flex items-center gap-1.5 sm:gap-2">
                             <GlobalSearchBar />
                             <NotificationBell />
+                            <Link
+                                to="/profile"
+                                aria-label={user?.name ? `حساب ${user.name}` : 'حساب المستخدم'}
+                                title={user?.name || 'حساب المستخدم'}
+                                className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-600/20 border border-cyan-500/40 text-cyan-300 font-bold text-xs hover:bg-cyan-600/30 transition-all shrink-0"
+                            >
+                                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                            </Link>
                             <button
                                 type="button"
                                 onClick={() => { setMobileMenuOpen(!mobileMenuOpen); setSidebarOpen(true); }}
@@ -463,9 +471,19 @@ export const AuthenticatedLayout: React.FC = () => {
                         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">
                             القائمة الرئيسية
                         </span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800/60">
-                            {primaryRoleLabel}
-                        </span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800/60">
+                                {primaryRoleLabel}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={closeMobileMenu}
+                                className="md:hidden flex items-center justify-center w-7 h-7 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 hover:text-rose-300 hover:border-rose-500/60 hover:bg-rose-950/40 transition-colors"
+                                aria-label="إغلاق القائمة"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
                     </div>
                     <nav
                         className="space-y-1.5 pb-16 md:pb-0"
@@ -549,7 +567,7 @@ export const AuthenticatedLayout: React.FC = () => {
             {/* PWA Install Banner */}
             <InstallPrompt />
 
-            <footer className="mx-auto w-full max-w-[1800px] px-2 pb-3 text-center text-[10px] text-slate-500 sm:px-3 lg:px-4">
+            <footer className="hidden sm:block mx-auto w-full max-w-[1800px] px-2 pb-3 text-center text-[10px] text-slate-500 sm:px-3 lg:px-4">
                 شركة اشبيلية للتطوير العقاري والمقاولات · منظومة المشتريات التشغيلية · <a href="https://ishbilia.dev" target="_blank" rel="noreferrer" className="text-[#d4b36a] hover:text-[#f0d695]">الموقع الرسمي</a> · <a href="https://web.facebook.com/Ishbilia.realestate?locale=ar_AR" target="_blank" rel="noreferrer" className="text-[#d4b36a] hover:text-[#f0d695]">صفحة Facebook</a>
             </footer>
         </div>

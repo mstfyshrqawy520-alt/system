@@ -95,11 +95,11 @@ describe("Admin Frontend Feature Suite", () => {
 
         await waitFor(() => {
             expect(
-                screen.getByRole("heading", { name: "لوحة تحكم الإدارة" }),
+                screen.getByRole("heading", { name: /لوحة تحكم/ }),
             ).toBeInTheDocument();
         });
         expect(
-            screen.getByText("حالة وحدات إدارة النظام"),
+            screen.getByText(/مركز الإجراءات والعمليات الإدارية السريعة/),
         ).toBeInTheDocument();
     });
 

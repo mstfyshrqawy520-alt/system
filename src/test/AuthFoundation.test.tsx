@@ -126,7 +126,7 @@ describe('LoginPage Component', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByPlaceholderText('user@ashbiliya.com')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/user@ashbiliya\.com/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /تسجيل الدخول/i })).toBeInTheDocument();
   });

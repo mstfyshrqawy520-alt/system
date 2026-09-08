@@ -347,7 +347,7 @@ export const NotificationBell: React.FC = () => {
       {/* Interactive Notifications Dropdown */}
       {dropdownOpen && (
         <div
-          className="fixed inset-x-3 top-14 sm:inset-auto sm:left-0 sm:top-12 z-50 sm:w-96 rounded-2xl border border-slate-700/80 bg-slate-900 shadow-2xl shadow-black/90 overflow-hidden animate-fade-in text-right"
+          className="fixed inset-x-3 top-[4.25rem] sm:inset-auto sm:left-0 sm:top-12 z-50 sm:w-96 max-h-[calc(100dvh-5rem)] rounded-2xl border border-slate-700/80 bg-slate-900 shadow-2xl shadow-black/90 overflow-hidden animate-fade-in text-right flex flex-col"
           dir="rtl"
         >
           {/* Header with Close and Mark All buttons */}

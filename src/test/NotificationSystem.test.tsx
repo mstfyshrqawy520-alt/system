@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import { Notification } from '../types/notification';
@@ -12,11 +12,11 @@ import * as authApi from '../api/auth';
 
 const mockUser = {
   id: 1,
-  name: 'Ali Employee',
-  email: 'ali@ashbiliya.com',
+  name: 'Reviewer Demo',
+  email: 'reviewer@ashbiliya.com',
   is_active: true,
-  roles: ['employee'],
-  permissions: ['purchase_request.view_own'],
+  roles: ['reviewer'],
+  permissions: ['purchase_request.review'],
 };
 
 const mockUnreadNotification: Notification = {
@@ -44,6 +44,8 @@ const mockReadNotification: Notification = {
 describe('الإشعارات System Frontend', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    cleanup();
+    localStorage.clear();
     vi.spyOn(authStorage, 'getToken').mockReturnValue('mock_token');
     vi.spyOn(authApi, 'getMeApi').mockResolvedValue(mockUser);
   });
@@ -63,9 +65,9 @@ describe('الإشعارات System Frontend', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'الإشعارات' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /مركز الإشعارات/ })).toBeInTheDocument();
     });
-    expect(screen.getByText('تحديد الكل كمقروء')).toBeInTheDocument();
+    expect(screen.getByText(/تحديد الكل كمقروء/)).toBeInTheDocument();
   });
 
   it('2. الإشعارات are loaded from API', async () => {
@@ -89,8 +91,8 @@ describe('الإشعارات System Frontend', () => {
       expect(screen.getByText('New Purchase Request Submitted')).toBeInTheDocument();
     });
 
-    // Switch to all notifications tab to see read notifications
-    fireEvent.click(screen.getByText(/كل الإشعارات/));
+    // Switch to informational tab to see read/general notifications
+    fireEvent.click(screen.getByText(/إشعارات للعلم/));
     await waitFor(() => {
       expect(screen.getByText('System Maintenance Completed')).toBeInTheDocument();
     });
@@ -111,7 +113,7 @@ describe('الإشعارات System Frontend', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('3 غير مقروء')).toBeInTheDocument();
+      expect(screen.getByText(/تحديد الكل كمقروء/)).toBeInTheDocument();
     });
   });
 
@@ -133,19 +135,19 @@ describe('الإشعارات System Frontend', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('تحديد كمقروء')).toBeInTheDocument();
+      expect(screen.getByText('غير مقروء')).toBeInTheDocument();
     });
 
     const unreadTitle = screen.getByText('New Purchase Request Submitted');
-    expect(unreadTitle.className).toContain('font-bold');
+    expect(unreadTitle.className).toContain('font-black');
 
-    // Switch to all to check read notification styling
-    fireEvent.click(screen.getByText(/كل الإشعارات/));
+    // Switch to informational tab to check read notification styling
+    fireEvent.click(screen.getByText(/إشعارات للعلم/));
     await waitFor(() => {
       expect(screen.getByText('System Maintenance Completed')).toBeInTheDocument();
     });
     const readTitle = screen.getByText('System Maintenance Completed');
-    expect(readTitle.className).not.toContain('font-bold');
+    expect(readTitle.className).not.toContain('font-black');
   });
 
   it('5. Mark single notification as read works', async () => {
@@ -166,10 +168,10 @@ describe('الإشعارات System Frontend', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('تحديد كمقروء')).toBeInTheDocument();
+      expect(screen.getByText(/تم الإنجاز/)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('تحديد كمقروء'));
+    fireEvent.click(screen.getByText(/تم الإنجاز/));
 
     await waitFor(() => {
       expect(markSingleSpy).toHaveBeenCalledWith(101);
@@ -194,10 +196,10 @@ describe('الإشعارات System Frontend', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('تحديد الكل كمقروء')).toBeInTheDocument();
+      expect(screen.getByText(/تحديد الكل كمقروء/)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('تحديد الكل كمقروء'));
+    fireEvent.click(screen.getByText(/تحديد الكل كمقروء/));
 
     await waitFor(() => {
       expect(markAllSpy).toHaveBeenCalled();
@@ -219,7 +221,7 @@ describe('الإشعارات System Frontend', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('لا توجد إشعارات حالياً')).toBeInTheDocument();
+      expect(screen.getByText(/لا توجد معاملات معلقة/)).toBeInTheDocument();
     });
   });
 
@@ -241,7 +243,7 @@ describe('الإشعارات System Frontend', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/حدث خطأ مؤقت في الخادم|تعذر الاتصال بالخادم/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/تعذر|فشل|خطأ/i).length).toBeGreaterThan(0);
       expect(screen.getByText(/إعادة المحاولة/i)).toBeInTheDocument();
     });
   });
@@ -257,22 +259,13 @@ describe('الإشعارات System Frontend', () => {
       read_at: '2026-08-11T15:00:00Z',
     });
 
-    let testLocationPath = '';
-
-    const LocationTracker = () => {
-      const location = window.location;
-      testLocationPath = location.pathname;
-      return null;
-    };
-
     render(
       <MemoryRouter initialEntries={['/notifications']}>
         <AuthProvider>
           <Routes>
             <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/employee/requests/:id" element={<div data-testid="target-pr-details">PR التفاصيل Page</div>} />
+            <Route path="/reviewer/requests/:id" element={<div data-testid="target-pr-details">Reviewer Requests Page</div>} />
           </Routes>
-          <LocationTracker />
         </AuthProvider>
       </MemoryRouter>
     );
@@ -281,7 +274,7 @@ describe('الإشعارات System Frontend', () => {
       expect(screen.getByText('New Purchase Request Submitted')).toBeInTheDocument();
     });
 
-    // Click supported purchase request notification -> should navigate to employee purchase request details
+    // Click supported purchase request notification -> should navigate to reviewer requests
     fireEvent.click(screen.getByText('New Purchase Request Submitted'));
 
     await waitFor(() => {

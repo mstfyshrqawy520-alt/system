@@ -263,7 +263,7 @@ describe('Employee Pages Integration', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/لوحة الموظف/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/لوحة الموظف/i).length).toBeGreaterThan(0);
     });
     expect(screen.getAllByText('PR-2026-00010')[0]).toBeInTheDocument();
   });
@@ -327,16 +327,17 @@ describe('Employee Pages Integration', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText(/مثال: حديد تسليح/i)).toBeInTheDocument();
+      expect(screen.getAllByPlaceholderText(/مثال: حديد تسليح/i).length).toBeGreaterThan(0);
     });
 
-    fireEvent.change(screen.getByPlaceholderText(/مثال: حديد تسليح/i), {
+    const descInputs = screen.getAllByPlaceholderText(/مثال: حديد تسليح/i);
+    fireEvent.change(descInputs[0], {
       target: { value: 'Test Computer Monitor' },
     });
-    fireEvent.change(screen.getByPlaceholderText(/مثال: 256 أو A-14/i), {
+    fireEvent.change(screen.getByPlaceholderText(/قطعة 256/i), {
       target: { value: 'UI-PART-002' },
     });
-    fireEvent.change(screen.getByPlaceholderText(/مثال: المنطقة السابعة/i), {
+    fireEvent.change(screen.getByPlaceholderText(/المنطقة السابعة/i), {
       target: { value: 'المنطقة السابعة والعشرون' },
     });
 
@@ -346,7 +347,7 @@ describe('Employee Pages Integration', () => {
       expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({
         target_department_id: 1,
       }));
-      expect(submitSpy).toHaveBeenCalledWith(mockDraftRequest.id);
+      expect(submitSpy).toHaveBeenCalledWith(mockDraftRequest.id, expect.anything());
     });
   });
 

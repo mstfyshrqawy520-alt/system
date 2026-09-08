@@ -490,7 +490,7 @@ export const NotificationsPage: React.FC = () => {
         </div>
       </div>
 
-      {error && <ErrorMessage error={error} />}
+      {error && <ErrorMessage error={error} onRetry={loadNotificationsData} />}
 
       {/* Push Notification Device Settings Prompt */}
       <PushNotificationPrompt variant="card" />
