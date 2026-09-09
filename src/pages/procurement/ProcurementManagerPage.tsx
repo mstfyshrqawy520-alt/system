@@ -122,7 +122,7 @@ export const ProcurementManagerPage: React.FC = () => {
   const [queueSearch, setQueueSearch] = usePersistedState('procurement.queue-search.v1', '');
   const [queueDepartment, setQueueDepartment] = usePersistedState('procurement.queue-department.v1', 'ALL');
   const [queueRoute, setQueueRoute] = usePersistedState('procurement.queue-route.v1', 'ALL');
-  const [queueStage, setQueueStage] = usePersistedState('procurement.queue-stage.v1', 'ALL');
+  const [queueStage, setQueueStage] = useState<string>('ALL');
   const [queueDateFrom, setQueueDateFrom] = usePersistedState('procurement.queue-date-from.v1', defaultDateFrom);
   const [queueDateTo, setQueueDateTo] = usePersistedState('procurement.queue-date-to.v1', today);
   const [poSearch, setPoSearch] = usePersistedState('procurement.po-search.v1', '');
@@ -161,6 +161,12 @@ export const ProcurementManagerPage: React.FC = () => {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
+
+  useEffect(() => {
+    try {
+      localStorage.removeItem('procurement.queue-stage.v1');
+    } catch (_) {}
+  }, []);
 
   useEffect(() => {
     const path = location.pathname;
