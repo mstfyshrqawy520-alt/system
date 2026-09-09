@@ -53,7 +53,7 @@ export const SystemEventTimeline: React.FC<Props> = ({
   entity,
   entityId,
   title = 'السجل الزمني للأحداث',
-  defaultCollapsed = false,
+  defaultCollapsed = true,
 }) => {
   const [events, setEvents] = useState<SystemEvent[]>([]);
   const [loading, setLoading] = useState(true);

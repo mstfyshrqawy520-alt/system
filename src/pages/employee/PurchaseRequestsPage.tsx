@@ -147,9 +147,9 @@ export const PurchaseRequestsPage: React.FC = () => {
   const hasResultFilters = Boolean(searchQuery.trim() || dateFrom !== defaultDateFrom || dateTo !== todayInputDate || activeFilter !== 'ALL' || needsActionOnly);
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-3.5" dir="rtl">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-3">
         <div>
           <h1 className="text-xl font-black text-slate-100 flex items-center gap-2">
             <span>📋</span> طلبات الشراء الخاصة بي
@@ -171,16 +171,16 @@ export const PurchaseRequestsPage: React.FC = () => {
       <ErrorMessage error={error} onDismiss={() => setError(null)} />
 
       {/* البحث السريع + التصفية */}
-      <div className="space-y-3">
-        <div className="rounded-2xl border border-cyan-500/30 bg-slate-900/80 p-3 shadow-lg sm:p-4">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <label htmlFor="purchase-request-quick-search" className="text-sm font-black text-slate-100">بحث سريع في الطلبات</label>
+      <div className="space-y-2.5">
+        <div className="rounded-2xl border border-cyan-500/30 bg-slate-900/80 p-2.5 shadow-md sm:p-3">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <label htmlFor="purchase-request-quick-search" className="text-xs font-black text-slate-100">بحث سريع في الطلبات</label>
             {searchQuery.trim() && (
-              <button type="button" onClick={() => setSearchQuery('')} className="min-h-9 shrink-0 rounded-lg px-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/10" aria-label="مسح البحث">مسح</button>
+              <button type="button" onClick={() => setSearchQuery('')} className="min-h-7 shrink-0 rounded-lg px-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/10 cursor-pointer" aria-label="مسح البحث">مسح</button>
             )}
           </div>
           <div className="relative">
-            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-lg text-cyan-300" aria-hidden="true">⌕</span>
+            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-base text-cyan-300" aria-hidden="true">⌕</span>
             <input
               id="purchase-request-quick-search"
               type="search"
@@ -190,11 +190,10 @@ export const PurchaseRequestsPage: React.FC = () => {
               placeholder="ابحث برقم الطلب، الموظف، القسم، الصنف، قطعة الأرض أو المنطقة..."
               enterKeyHint="search"
               autoComplete="off"
-              className="min-h-12 w-full min-w-0 rounded-xl border border-cyan-500/40 bg-slate-950/80 px-10 py-3 text-sm text-slate-100 placeholder:text-xs placeholder:text-slate-500 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+              className="min-h-10 w-full min-w-0 rounded-xl border border-cyan-500/40 bg-slate-950/80 pr-9 pl-4 py-2 text-xs text-slate-100 placeholder:text-xs placeholder:text-slate-500 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
               aria-label="البحث السريع في طلبات الشراء"
             />
           </div>
-          <p className="mt-2 text-[11px] leading-5 text-slate-500">يتم البحث تلقائيًا أثناء الكتابة، والنتائج تشمل رقم الطلب واسم مقدم الطلب والقسم والصنف ورقم قطعة الأرض والمنطقة.</p>
         </div>
 
         <TableFilterBar

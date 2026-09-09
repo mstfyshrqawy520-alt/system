@@ -95,7 +95,7 @@ export const PurchaseOrderDetailsPage: React.FC = () => {
   };
 
   return (
-    <div className="procurement-reference-page space-y-6 pb-24 md:pb-0 animate-fade-in" dir="rtl">
+    <div className="procurement-reference-page space-y-3.5 pb-24 md:pb-6 animate-fade-in" dir="rtl">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>

@@ -343,71 +343,46 @@ export const PurchaseRequestForm: React.FC<Props> = ({
   }, [catalogItems]);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in" dir="rtl">
+    <form onSubmit={handleSubmit} className="space-y-3.5 animate-fade-in" dir="rtl">
       <ErrorMessage error={error} onDismiss={() => setError(null)} />
 
-      {/* Request Type Selector */}
-      <Card className="space-y-3">
-        <div className="flex items-center justify-between">
-          <label className="block text-xs font-bold text-slate-300">
-            نوع الطلب والغرض منه <span className="text-rose-400">*</span>
-          </label>
-          <span className="text-[11px] text-slate-400">
-            الافتراضي: <strong className="text-amber-300">مشتريات مشروعات ومواقع</strong>
+      {/* Request Type Segmented Bar (Ultra-Compact & Clear) */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/95 p-2.5 sm:p-3 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-slate-300">نوع الطلب والغرض منه:</span>
+          <span className="text-[10px] text-slate-500">
+            (الافتراضي: مشتريات مواقع)
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Option 1: Projects (Default) */}
+        <div className="flex items-center gap-2 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80">
           <button
             type="button"
             onClick={() => setRequestType('PROJECT')}
-            className={`flex flex-col text-right p-3.5 rounded-xl border transition-all ${
-              requestType === 'PROJECT'
-                ? 'bg-amber-950/60 border-amber-500 ring-2 ring-amber-500/30 text-slate-100 shadow-lg shadow-amber-950/40'
-                : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+              requestType !== 'OFFICE_SUPPLIES'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
             }`}
           >
-            <div className="flex items-center justify-between w-full mb-1.5">
-              <div className="flex items-center gap-2">
-                <span className="text-base font-bold text-amber-300 flex items-center gap-1.5">
-                  <span>🏗️</span> مشتريات مشروعات ومواقع
-                </span>
-                <span className="text-[10px] bg-amber-950 px-1.5 py-0.5 rounded text-amber-400 border border-amber-800/60 font-semibold">
-                  (الافتراضي)
-                </span>
-              </div>
-              {requestType === 'PROJECT' && (
-                <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full">
-                  ✓ محدد
-                </span>
-              )}
-            </div>
+            <span>🏗️</span>
+            <span>مشتريات مشروعات ومواقع</span>
           </button>
 
-          {/* Option 2: Office Supplies */}
           <button
             type="button"
             onClick={() => setRequestType('OFFICE_SUPPLIES')}
-            className={`flex flex-col text-right p-3.5 rounded-xl border transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
               requestType === 'OFFICE_SUPPLIES'
-                ? 'bg-indigo-950/60 border-indigo-500 ring-2 ring-indigo-500/30 text-slate-100 shadow-lg shadow-indigo-950/40'
-                : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
             }`}
           >
-            <div className="flex items-center justify-between w-full mb-1.5">
-              <span className="text-base flex items-center gap-2 font-bold text-indigo-300">
-                <span>🏢</span> مستلزمات مكتبية وإدارية
-              </span>
-              {requestType === 'OFFICE_SUPPLIES' && (
-                <span className="text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 px-2 py-0.5 rounded-full">
-                  ✓ محدد
-                </span>
-              )}
-            </div>
+            <span>🏢</span>
+            <span>مستلزمات مكتبية وإدارية</span>
           </button>
         </div>
-      </Card>
+      </div>
 
       {/* Header Fields */}
       <Card className="space-y-4">

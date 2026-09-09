@@ -147,7 +147,7 @@ export const ReviewerRequestsPage: React.FC = () => {
   const countFor = (status: string) => requests.filter((request) => request.status === status).length;
 
   return (
-    <div className="space-y-6 animate-fade-in" dir="rtl">
+    <div className="space-y-3.5 animate-fade-in" dir="rtl">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div>
           <h1 className="text-xl font-black text-slate-100 flex items-center gap-2">📋 طلبات الشراء للمراجعة</h1>

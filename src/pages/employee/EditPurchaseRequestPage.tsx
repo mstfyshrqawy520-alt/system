@@ -75,12 +75,11 @@ export const EditPurchaseRequestPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-3.5" dir="rtl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div>
-                    <h1 className="text-xl font-black text-slate-100 flex items-center gap-2">
-
+          <h1 className="text-xl font-black text-slate-100 flex items-center gap-2">
             <span>✏️</span>
             تعديل طلب الشراء ({requestData?.request_number})
           </h1>

@@ -233,7 +233,7 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
   const isConflictError = error?.status === 409;
 
   return (
-    <div className="space-y-6 pb-24 md:pb-0 animate-fade-in" dir="rtl">
+    <div className="space-y-3.5 pb-24 md:pb-6 animate-fade-in" dir="rtl">
       {/* Flash */}
       {successMessage && (
         <div className="bg-emerald-950/40 border border-emerald-800/80 text-emerald-300 px-4 py-3 rounded-xl text-xs font-semibold flex items-center justify-between">
