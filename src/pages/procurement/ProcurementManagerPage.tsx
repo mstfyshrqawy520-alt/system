@@ -153,6 +153,14 @@ export const ProcurementManagerPage: React.FC = () => {
   const [directAccountingRequest, setDirectAccountingRequest] = useState<PurchaseRequest | null>(null);
   const [directAccountingSubmitting, setDirectAccountingSubmitting] = useState(false);
   const [selectedPrForDetails, setSelectedPrForDetails] = useState<PurchaseRequest | null>(null);
+  const [successBanner, setSuccessBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (location.state && (location.state as { successMessage?: string }).successMessage) {
+      setSuccessBanner((location.state as { successMessage?: string }).successMessage || null);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const path = location.pathname;
@@ -478,6 +486,22 @@ export const ProcurementManagerPage: React.FC = () => {
         </div>
       </div>
 
+      {successBanner && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/40 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200 shadow-lg shadow-emerald-950/40">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">✅</span>
+            <span className="font-bold">{successBanner}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSuccessBanner(null)}
+            className="text-emerald-400 hover:text-emerald-200 text-xs font-bold px-2 py-1 rounded-lg border border-emerald-500/30 hover:bg-emerald-900/40 transition-colors"
+          >
+            إغلاق ✕
+          </button>
+        </div>
+      )}
+
       {pageError && <ErrorMessage error={pageError} onDismiss={() => setPageError(null)} onRetry={() => void loadData()} />}
 
       {/* ── اختصارات الإجراءات السريعة (Quick Launcher Bar) ── */}
@@ -787,7 +811,7 @@ export const ProcurementManagerPage: React.FC = () => {
                           <Button
                             variant="primary"
                             size="sm"
-                            onClick={() => navigate(`/procurement/purchase-orders/create?pr=${request.id}${getSelectedQuote(request)?.id ? `&quote=${getSelectedQuote(request)?.id}` : ''}`)}
+                            onClick={() => navigate(`/procurement/purchase-orders/create?pr=${request.id}${getSelectedQuote(request)?.id ? `&quote=${getSelectedQuote(request)?.id}` : ''}&returnUrl=${encodeURIComponent('/procurement')}`, { state: { returnTo: '/procurement' } })}
                             className="font-bold bg-emerald-600 hover:bg-emerald-500 text-slate-950 shadow-md shadow-emerald-900/30"
                           >
                             📑 إنشاء أمر الشراء
@@ -814,7 +838,7 @@ export const ProcurementManagerPage: React.FC = () => {
       {activeTab === 2 && (
         <section className="space-y-4">
           <div className="flex items-center justify-between"><h2 className="text-base font-bold text-amber-300">أسعار اعتمدها المدير التنفيذي — جاهزة لإنشاء أمر شراء ({selectedQuotePrs.length})</h2><span className="text-xs text-slate-400">المورد والسعر ورقم قطعة الأرض مأخوذة من الطلب والعرض المعتمد</span></div>
-          <div className="hidden min-w-0 md:block"><Table><TableHeader><TableRow><TableHead className="whitespace-nowrap">رقم الطلب</TableHead><TableHead className="whitespace-nowrap">الصنف</TableHead><TableHead className="whitespace-nowrap">رقم قطعة الأرض</TableHead><TableHead className="whitespace-nowrap">المنطقة</TableHead><TableHead className="whitespace-nowrap">المورد المختار</TableHead><TableHead className="whitespace-nowrap">تاريخ الاحتياج</TableHead><TableHead className="whitespace-nowrap">سعر الوحدة</TableHead><TableHead className="whitespace-nowrap">الإجمالي</TableHead><TableHead className="whitespace-nowrap">الإجراء</TableHead></TableRow></TableHeader><TableBody>{selectedQuotePrs.length === 0 ? <TableRow><TableCell colSpan={9} className="py-10 text-center text-slate-400">لا توجد أسعار معتمدة تنتظر إنشاء أمر شراء.</TableCell></TableRow> : selectedQuotePrs.map((request) => { const item = request.items?.[0]; const quote = getSelectedQuote(request); return <TableRow key={request.id}><TableCell className="whitespace-nowrap font-mono font-bold text-cyan-300">{request.request_number}</TableCell><TableCell className="max-w-[180px]">{item?.item_description || item?.item?.name || '—'}</TableCell><TableCell className="whitespace-nowrap font-mono text-cyan-300">{item?.item_reference || '—'}</TableCell><TableCell>{item?.region || '—'}</TableCell><TableCell className="max-w-[180px] font-bold">{quote?.supplier?.company_name || '—'}</TableCell><TableCell className="whitespace-nowrap font-mono font-bold text-amber-300">{request.date_needed || '—'}</TableCell><TableCell className="whitespace-nowrap font-mono font-bold text-amber-300">{quote?.unit_price || '—'} ج.م</TableCell><TableCell className="whitespace-nowrap font-mono font-bold text-emerald-300">{quote?.total_amount || '—'} ج.م</TableCell><TableCell><Button variant="primary" size="sm" className="whitespace-nowrap" onClick={() => navigate(`/procurement/purchase-orders/create?pr=${request.id}&quote=${quote?.id || ''}`)}>إنشاء أمر شراء</Button></TableCell></TableRow>; })}</TableBody></Table></div><div className="space-y-3 md:hidden">{selectedQuotePrs.length === 0 ? <div className="rounded-xl border border-dashed border-slate-800 p-8 text-center text-xs text-slate-400">لا توجد أسعار معتمدة تنتظر إنشاء أمر شراء.</div> : selectedQuotePrs.map((request) => { const item = request.items?.[0]; const quote = getSelectedQuote(request); return <article key={`mobile-approved-quote-${request.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4"><div className="flex min-w-0 items-start justify-between gap-3"><span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">{request.request_number}</span><span className="shrink-0 text-[11px] text-amber-300">سعر معتمد</span></div><dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2"><div className="min-[420px]:col-span-2"><dt className="text-slate-500">الصنف</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{item?.item_description || item?.item?.name || 'غير محدد'}</dd></div><div><dt className="text-slate-500">قطعة الأرض</dt><dd className="mt-1 break-normal font-mono text-cyan-300">{item?.item_reference || '—'}</dd></div><div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 break-normal text-slate-300">{item?.region || 'غير محددة'}</dd></div><div><dt className="text-slate-500">تاريخ الاحتياج</dt><dd className="mt-1 font-mono font-bold text-amber-300">{request.date_needed || '—'}</dd></div><div><dt className="text-slate-500">المورد المختار</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{quote?.supplier?.company_name || 'غير محدد'}</dd></div><div><dt className="text-slate-500">سعر الوحدة</dt><dd className="mt-1 whitespace-nowrap font-mono font-bold text-amber-300">{quote?.unit_price || '—'} ج.م</dd></div><div className="min-[420px]:col-span-2"><dt className="text-slate-500">الإجمالي</dt><dd className="mt-1 whitespace-nowrap font-mono font-bold text-emerald-300">{quote?.total_amount || '—'} ج.م</dd></div></dl><Button variant="primary" size="sm" className="mt-4 w-full whitespace-nowrap" onClick={() => navigate(`/procurement/purchase-orders/create?pr=${request.id}&quote=${quote?.id || ''}`)}>إنشاء أمر شراء</Button></article>; })}</div>
+          <div className="hidden min-w-0 md:block"><Table><TableHeader><TableRow><TableHead className="whitespace-nowrap">رقم الطلب</TableHead><TableHead className="whitespace-nowrap">الصنف</TableHead><TableHead className="whitespace-nowrap">رقم قطعة الأرض</TableHead><TableHead className="whitespace-nowrap">المنطقة</TableHead><TableHead className="whitespace-nowrap">المورد المختار</TableHead><TableHead className="whitespace-nowrap">تاريخ الاحتياج</TableHead><TableHead className="whitespace-nowrap">سعر الوحدة</TableHead><TableHead className="whitespace-nowrap">الإجمالي</TableHead><TableHead className="whitespace-nowrap">الإجراء</TableHead></TableRow></TableHeader><TableBody>{selectedQuotePrs.length === 0 ? <TableRow><TableCell colSpan={9} className="py-10 text-center text-slate-400">لا توجد أسعار معتمدة تنتظر إنشاء أمر شراء.</TableCell></TableRow> : selectedQuotePrs.map((request) => { const item = request.items?.[0]; const quote = getSelectedQuote(request); return <TableRow key={request.id}><TableCell className="whitespace-nowrap font-mono font-bold text-cyan-300">{request.request_number}</TableCell><TableCell className="max-w-[180px]">{item?.item_description || item?.item?.name || '—'}</TableCell><TableCell className="whitespace-nowrap font-mono text-cyan-300">{item?.item_reference || '—'}</TableCell><TableCell>{item?.region || '—'}</TableCell><TableCell className="max-w-[180px] font-bold">{quote?.supplier?.company_name || '—'}</TableCell><TableCell className="whitespace-nowrap font-mono font-bold text-amber-300">{request.date_needed || '—'}</TableCell><TableCell className="whitespace-nowrap font-mono font-bold text-amber-300">{quote?.unit_price || '—'} ج.م</TableCell><TableCell className="whitespace-nowrap font-mono font-bold text-emerald-300">{quote?.total_amount || '—'} ج.م</TableCell><TableCell><Button variant="primary" size="sm" className="whitespace-nowrap" onClick={() => navigate(`/procurement/purchase-orders/create?pr=${request.id}&quote=${quote?.id || ''}&returnUrl=${encodeURIComponent('/procurement?tab=approved-quotes')}`, { state: { returnTo: '/procurement?tab=approved-quotes' } })}>إنشاء أمر شراء</Button></TableCell></TableRow>; })}</TableBody></Table></div><div className="space-y-3 md:hidden">{selectedQuotePrs.length === 0 ? <div className="rounded-xl border border-dashed border-slate-800 p-8 text-center text-xs text-slate-400">لا توجد أسعار معتمدة تنتظر إنشاء أمر شراء.</div> : selectedQuotePrs.map((request) => { const item = request.items?.[0]; const quote = getSelectedQuote(request); return <article key={`mobile-approved-quote-${request.id}`} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4"><div className="flex min-w-0 items-start justify-between gap-3"><span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">{request.request_number}</span><span className="shrink-0 text-[11px] text-amber-300">سعر معتمد</span></div><dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2"><div className="min-[420px]:col-span-2"><dt className="text-slate-500">الصنف</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{item?.item_description || item?.item?.name || 'غير محدد'}</dd></div><div><dt className="text-slate-500">قطعة الأرض</dt><dd className="mt-1 break-normal font-mono text-cyan-300">{item?.item_reference || '—'}</dd></div><div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 break-normal text-slate-300">{item?.region || 'غير محددة'}</dd></div><div><dt className="text-slate-500">تاريخ الاحتياج</dt><dd className="mt-1 font-mono font-bold text-amber-300">{request.date_needed || '—'}</dd></div><div><dt className="text-slate-500">المورد المختار</dt><dd className="mt-1 break-normal font-bold leading-6 text-slate-100">{quote?.supplier?.company_name || 'غير محدد'}</dd></div><div><dt className="text-slate-500">سعر الوحدة</dt><dd className="mt-1 whitespace-nowrap font-mono font-bold text-amber-300">{quote?.unit_price || '—'} ج.م</dd></div><div className="min-[420px]:col-span-2"><dt className="text-slate-500">الإجمالي</dt><dd className="mt-1 whitespace-nowrap font-mono font-bold text-emerald-300">{quote?.total_amount || '—'} ج.م</dd></div></dl><Button variant="primary" size="sm" className="mt-4 w-full whitespace-nowrap" onClick={() => navigate(`/procurement/purchase-orders/create?pr=${request.id}&quote=${quote?.id || ''}&returnUrl=${encodeURIComponent('/procurement?tab=approved-quotes')}`, { state: { returnTo: '/procurement?tab=approved-quotes' } })}>إنشاء أمر شراء</Button></article>; })}</div>
         </section>
       )}
 
@@ -956,7 +980,7 @@ export const ProcurementManagerPage: React.FC = () => {
         onClose={() => setSelectedPrForDetails(null)}
         onCreatePo={(prId) => {
           setSelectedPrForDetails(null);
-          navigate(`/procurement/purchase-orders/create?pr=${prId}`);
+          navigate(`/procurement/purchase-orders/create?pr=${prId}&returnUrl=${encodeURIComponent('/procurement')}`, { state: { returnTo: '/procurement' } });
         }}
       />
     </div>

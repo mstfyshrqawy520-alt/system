@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { getApprovedPurchaseRequestApi } from '../../api/procurement';
 import { getSuppliersApi } from '../../api/suppliers';
 import { createPurchaseOrderApi, submitPurchaseOrderApi } from '../../api/purchaseOrders';
@@ -40,6 +40,7 @@ interface PoItemInput {
 export const CreatePurchaseOrderPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const prId = Number(searchParams.get('pr'));
   const quoteId = Number(searchParams.get('quote'));
 
@@ -220,7 +221,12 @@ export const CreatePurchaseOrderPage: React.FC = () => {
       if (po?.status === 'PO_DRAFT' || po?.status === 'RETURNED_TO_PROCUREMENT') {
         await submitPurchaseOrderApi(po.id);
       }
-      navigate('/procurement/purchase-orders');
+      const returnUrl = searchParams.get('returnUrl') || (location.state as { returnTo?: string })?.returnTo || '/procurement';
+      navigate(returnUrl, {
+        state: {
+          successMessage: `تم إصدار أمر الشراء ${po?.po_number ? `#${po.po_number}` : ''} بنجاح. يمكنك مواصلة باقي الطلبات.`,
+        },
+      });
     } catch (err) {
       const parsed = parseApiError(err);
       setError(parsed.message);
@@ -292,7 +298,14 @@ export const CreatePurchaseOrderPage: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-2 space-x-reverse">
-          <Button variant="secondary" size="sm" onClick={() => navigate(-1)}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              const returnUrl = searchParams.get('returnUrl') || (location.state as { returnTo?: string })?.returnTo || '/procurement';
+              navigate(returnUrl);
+            }}
+          >
             &rarr; رجوع
           </Button>
           <button
