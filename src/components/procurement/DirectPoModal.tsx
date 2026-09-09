@@ -43,7 +43,6 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
   const [supplierId, setSupplierId] = useState<string>('');
   const [departmentId, setDepartmentId] = useState<string>('');
   const [siteEngineerId, setSiteEngineerId] = useState<string>('');
-  const [priority, setPriority] = useState<'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'>('NORMAL');
   const [deliveryDate, setDeliveryDate] = useState(() => {
     const now = new Date();
     const offset = now.getTimezoneOffset() * 60000;
@@ -174,7 +173,6 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
         supplier_id: Number(supplierId),
         department_id: Number(departmentId),
         site_engineer_user_id: Number(siteEngineerId),
-        priority,
         delivery_date: deliveryDate || undefined,
         items: items.map(item => ({
           item_id: item.item_id || null,
@@ -263,12 +261,6 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
             <label className="block text-xs font-bold text-slate-200">
               تاريخ الحاجة
               <input type="date" value={deliveryDate} onChange={event => setDeliveryDate(event.target.value)} className="mt-1 h-10 w-full rounded-md border border-cyan-500/80 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-cyan-300" />
-            </label>
-            <label className="block text-xs font-bold text-slate-200">
-              الأولوية
-              <select value={priority} onChange={event => setPriority(event.target.value as typeof priority)} className="mt-1 h-10 w-full rounded-md border border-cyan-500/80 bg-[#0b1424] px-3 text-xs text-slate-100 outline-none focus:border-cyan-300">
-                <option value="NORMAL">عادي</option><option value="LOW">منخفض</option><option value="HIGH">عالي</option><option value="URGENT">عاجل</option>
-              </select>
             </label>
           </div>
 

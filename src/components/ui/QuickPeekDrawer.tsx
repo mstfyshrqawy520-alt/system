@@ -147,10 +147,6 @@ export const QuickPeekDrawer: React.FC<QuickPeekDrawerProps> = ({
                         <span className="text-[10px] font-bold text-slate-500 block">تاريخ الحاجة</span>
                         <span className="text-xs font-mono font-bold text-cyan-300 mt-0.5 block">{prData.date_needed || 'غير محدد'}</span>
                       </div>
-                      <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
-                        <span className="text-[10px] font-bold text-slate-500 block">الأولوية</span>
-                        <span className="text-xs font-bold text-amber-300 mt-0.5 block">{prData.priority || 'عادية'}</span>
-                      </div>
                     </>
                   )}
 

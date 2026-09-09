@@ -121,7 +121,6 @@ export const ProcurementManagerPage: React.FC = () => {
   const [queueDepartment, setQueueDepartment] = usePersistedState('procurement.queue-department.v1', 'ALL');
   const [queueRoute, setQueueRoute] = usePersistedState('procurement.queue-route.v1', 'ALL');
   const [queueStage, setQueueStage] = usePersistedState('procurement.queue-stage.v1', 'ALL');
-  const [queuePriority, setQueuePriority] = usePersistedState('procurement.queue-priority.v1', 'ALL');
   const [queueDateFrom, setQueueDateFrom] = usePersistedState('procurement.queue-date-from.v1', defaultDateFrom);
   const [queueDateTo, setQueueDateTo] = usePersistedState('procurement.queue-date-to.v1', today);
   const [poSearch, setPoSearch] = usePersistedState('procurement.po-search.v1', '');
@@ -381,12 +380,11 @@ export const ProcurementManagerPage: React.FC = () => {
     const matchesDept = queueDepartment === 'ALL' || request.department?.id === Number(queueDepartment) || request.department?.name === queueDepartment;
     const matchesRoute = queueRoute === 'ALL' || (queueRoute === 'UNDECIDED' && !request.procurement_route) || request.procurement_route === queueRoute;
     const matchesStage = queueStage === 'ALL' || stage === queueStage;
-    const matchesPriority = queuePriority === 'ALL' || request.priority === queuePriority;
     const reqDate = String(request.created_at || '').slice(0, 10);
     const matchesDate = (!queueDateFrom || reqDate >= queueDateFrom) && (!queueDateTo || reqDate <= queueDateTo);
 
-    return matchesSearch && matchesDept && matchesRoute && matchesStage && matchesPriority && matchesDate;
-  }), [queueRows, queueSearch, queueDepartment, queueRoute, queueStage, queuePriority, queueDateFrom, queueDateTo]);
+    return matchesSearch && matchesDept && matchesRoute && matchesStage && matchesDate;
+  }), [queueRows, queueSearch, queueDepartment, queueRoute, queueStage, queueDateFrom, queueDateTo]);
 
   const filteredPos = pos;
   const filteredSuppliers = suppliers.filter(s => {
@@ -600,14 +598,13 @@ export const ProcurementManagerPage: React.FC = () => {
               { label: 'القسم المصدر', value: queueDepartment, onChange: setQueueDepartment, options: [{ value: 'ALL', label: 'كل الأقسام' }, ...departmentOptions] },
               { label: 'مسار الشراء', value: queueRoute, onChange: setQueueRoute, options: [{ value: 'ALL', label: 'كل المسارات' }, { value: 'UNDECIDED', label: 'لم يتم تحديده' }, { value: 'DIRECT', label: 'شراء مباشر' }, { value: 'QUOTES', label: 'عروض أسعار' }] },
               { label: 'مرحلة التنفيذ', value: queueStage, onChange: setQueueStage, options: [{ value: 'ALL', label: 'كل المراحل' }, { value: 'PENDING_ROUTE', label: QUEUE_STAGE_LABELS.PENDING_ROUTE }, { value: 'QUOTE_SETUP', label: QUEUE_STAGE_LABELS.QUOTE_SETUP }, { value: 'READY_FOR_PO', label: QUEUE_STAGE_LABELS.READY_FOR_PO }] },
-              { label: 'الأولوية', value: queuePriority, onChange: setQueuePriority, options: [{ value: 'ALL', label: 'كل الأولويات' }, { value: 'URGENT', label: 'عاجل جدًا' }, { value: 'HIGH', label: 'عالي' }, { value: 'NORMAL', label: 'عادي' }, { value: 'LOW', label: 'منخفض' }] },
             ]}
             dateFrom={queueDateFrom}
             dateTo={queueDateTo}
             onDateFromChange={setQueueDateFrom}
             onDateToChange={setQueueDateTo}
-            onClear={() => { setQueueSearch(''); setQueueDepartment('ALL'); setQueueRoute('ALL'); setQueueStage('ALL'); setQueuePriority('ALL'); setQueueDateFrom(defaultDateFrom); setQueueDateTo(today); }}
-            hasActiveFilters={Boolean(queueSearch || queueDepartment !== 'ALL' || queueRoute !== 'ALL' || queueStage !== 'ALL' || queuePriority !== 'ALL' || queueDateFrom !== defaultDateFrom || queueDateTo !== today)}
+            onClear={() => { setQueueSearch(''); setQueueDepartment('ALL'); setQueueRoute('ALL'); setQueueStage('ALL'); setQueueDateFrom(defaultDateFrom); setQueueDateTo(today); }}
+            hasActiveFilters={Boolean(queueSearch || queueDepartment !== 'ALL' || queueRoute !== 'ALL' || queueStage !== 'ALL' || queueDateFrom !== defaultDateFrom || queueDateTo !== today)}
             resultCount={filteredQueueRows.length}
             totalCount={queueRows.length}
             resultLabel="طلب"

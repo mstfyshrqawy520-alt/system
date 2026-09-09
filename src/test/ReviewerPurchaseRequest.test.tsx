@@ -81,7 +81,7 @@ describe('Reviewer purchase request frontend', () => {
     expect(screen.getAllByLabelText('رقم الطلب').length).toBeGreaterThan(0);
     expect(screen.getAllByLabelText('اسم مقدم الطلب').length).toBeGreaterThan(0);
     expect(screen.getAllByLabelText('الحالة').length).toBeGreaterThan(0);
-    expect(screen.getAllByLabelText('الأولوية').length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText('الأولوية')).not.toBeInTheDocument();
     expect(screen.getAllByLabelText('من تاريخ الطلب').length).toBeGreaterThan(0);
     expect(screen.getAllByLabelText('إلى تاريخ الطلب').length).toBeGreaterThan(0);
   });

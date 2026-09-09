@@ -1,5 +1,5 @@
 import React from 'react';
-import { CreatePurchaseRequestPayload, PR_PRIORITY_LABELS } from '../../types/purchaseRequest';
+import { CreatePurchaseRequestPayload } from '../../types/purchaseRequest';
 import { Button } from '../ui/Button';
 
 interface ChecklistItem {
@@ -97,10 +97,6 @@ export const PRWizardStep4: React.FC<Props> = ({ data, onSubmit, isSubmitting, i
 
       {/* Summary */}
       <div className="grid grid-cols-2 gap-3 text-xs">
-        <div className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-3">
-          <div className="text-[10px] text-slate-400 font-semibold">الأولوية</div>
-          <div className="font-bold text-slate-100 mt-1">{PR_PRIORITY_LABELS[data.priority || 'NORMAL']}</div>
-        </div>
         <div className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-3">
           <div className="text-[10px] text-slate-400 font-semibold">عدد البنود</div>
           <div className="font-bold text-slate-100 mt-1">{items.length}</div>

@@ -18,7 +18,6 @@ class StoreDirectPurchaseOrderRequest extends FormRequest
             'department_id' => ['required', 'integer', 'exists:departments,id'],
             'site_engineer_user_id' => ['required', 'integer', 'exists:users,id'],
             'delivery_date' => ['nullable', 'date'],
-            'priority' => ['nullable', 'string', 'in:LOW,NORMAL,HIGH,URGENT'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_id' => ['nullable', 'integer', 'exists:items,id'],

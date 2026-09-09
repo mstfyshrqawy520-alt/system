@@ -14,7 +14,6 @@ class ReviewerUpdateHeaderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'priority' => ['sometimes', 'required', 'string', 'in:LOW,NORMAL,HIGH,URGENT'],
             'date_needed' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
             'parcel_reference' => ['sometimes', 'nullable', 'string', 'max:255'],

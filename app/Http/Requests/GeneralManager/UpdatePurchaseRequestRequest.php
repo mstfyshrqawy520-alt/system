@@ -14,7 +14,6 @@ class UpdatePurchaseRequestRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'priority' => ['sometimes', 'string', 'in:LOW,NORMAL,HIGH,URGENT'],
             'date_needed' => ['sometimes', 'nullable', 'date'],
             'notes' => ['sometimes', 'nullable', 'string'],
             'comment' => ['sometimes', 'nullable', 'string', 'max:2000'],

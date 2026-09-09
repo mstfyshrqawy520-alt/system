@@ -322,10 +322,6 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
           <div className="font-bold text-slate-200 mt-1">{PR_STATUS_LABELS[requestData.status] || requestData.status}</div>
         </div>
         <div>
-          <div className="text-[10px] text-slate-400 font-semibold">الأولوية</div>
-          <div className="font-bold text-slate-200 mt-1 uppercase font-mono">{requestData.priority}</div>
-        </div>
-        <div>
           <div className="text-[10px] text-slate-400 font-semibold">تاريخ الاحتياج</div>
           <div className="font-bold text-slate-200 mt-1 font-mono">{requestData.date_needed || '-'}</div>
         </div>

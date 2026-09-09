@@ -23,7 +23,6 @@ class StorePurchaseRequestRequest extends FormRequest
             'reviewer_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'site_engineer_user_id' => ['nullable', 'integer', 'exists:users,id'],
 
-            'priority' => ['nullable', 'string', 'in:LOW,NORMAL,HIGH,URGENT'],
             'date_needed' => ['nullable', 'date'],
         
             'notes' => ['nullable', 'string'],

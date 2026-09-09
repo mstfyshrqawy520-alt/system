@@ -212,7 +212,7 @@ export interface PurchaseRequest {
   purchase_order_issued?: boolean;
   issued_purchase_orders_count?: number;
   purchase_orders_count?: number;
-  priority: PurchaseRequestPriority;
+  priority?: PurchaseRequestPriority;
   date_needed?: string | null;
 
   notes?: string | null;

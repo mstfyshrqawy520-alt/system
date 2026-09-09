@@ -21,7 +21,6 @@ class UpdatePurchaseRequestRequest extends FormRequest
             'land_parcel_id' => ['nullable', 'integer', 'exists:land_parcels,id'],
             'target_department_id' => ['sometimes', 'integer', 'exists:departments,id'],
             'site_engineer_user_id' => ['nullable', 'integer', 'exists:users,id'],
-            'priority' => ['nullable', 'string', 'in:LOW,NORMAL,HIGH,URGENT'],
             'date_needed' => ['nullable', 'date'],
     
             'notes' => ['nullable', 'string'],

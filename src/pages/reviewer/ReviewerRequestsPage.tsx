@@ -19,7 +19,6 @@ const INITIAL_FILTERS: ReviewerRequestFilters = {
   request_number: '',
   requester_name: '',
   status: '',
-  priority: '',
   item_reference: '',
   region: '',
   from_date: getDefaultDateFrom(),
@@ -32,12 +31,7 @@ const formatDate = (value?: string | null) => {
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString('ar-EG');
 };
 
-const priorityLabels: Record<string, string> = {
-  LOW: 'منخفضة',
-  NORMAL: 'عادية',
-  HIGH: 'مرتفعة',
-  URGENT: 'عاجلة',
-};
+
 
 const REVIEWER_PENDING_STATUSES = new Set(['SUBMITTED', 'UNDER_REVIEW']);
 const REVIEWER_APPROVED_STATUSES = new Set([
@@ -187,13 +181,7 @@ export const ReviewerRequestsPage: React.FC = () => {
               {Object.entries(PR_STATUS_LABELS).filter(([status]) => status !== 'DRAFT').map(([status, label]) => <option key={status} value={status}>{label}</option>)}
             </select>
           </label>
-          <label className="space-y-1">
-            <span className="block text-[11px] font-semibold text-slate-400">الأولوية</span>
-            <select value={searchFilters.priority || ''} onChange={(event) => updateFilter('priority', event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-cyan-500">
-              <option value="">كل الأولويات</option>
-              {Object.entries(priorityLabels).map(([priority, label]) => <option key={priority} value={priority}>{label}</option>)}
-            </select>
-          </label>
+
           <label className="space-y-1">
             <span className="block text-[11px] font-semibold text-slate-400">من تاريخ الطلب</span>
             <input type="date" value={searchFilters.from_date || ''} onChange={(event) => updateFilter('from_date', event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-cyan-500" />
@@ -246,7 +234,6 @@ export const ReviewerRequestsPage: React.FC = () => {
               <TableHead>المنطقة</TableHead>
               <TableHead>الكمية / العدد</TableHead>
               <TableHead>تاريخ الاحتياج</TableHead>
-              <TableHead>الأولوية</TableHead>
               <TableHead>تاريخ الطلب</TableHead>
               <TableHead>الحالة</TableHead>
               <TableHead className="text-center">الإجراءات</TableHead>
@@ -285,7 +272,6 @@ export const ReviewerRequestsPage: React.FC = () => {
                     </div>
                   </TableCell>
                   <TableCell className="font-mono font-bold text-amber-300 whitespace-nowrap">{request.date_needed || '—'}</TableCell>
-                  <TableCell>{priorityLabels[request.priority || 'NORMAL'] || request.priority || 'عادية'}</TableCell>
                   <TableCell className="whitespace-nowrap">{formatDate(request.created_at)}</TableCell>
                   <TableCell><PurchaseRequestStatusBadge status={request.status} /></TableCell>
                   <TableCell className="text-center">
@@ -345,7 +331,6 @@ export const ReviewerRequestsPage: React.FC = () => {
                   <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 font-bold text-slate-200">{regionsDisplay}</dd></div>
                   <div><dt className="text-slate-500">تاريخ الاحتياج</dt><dd className="mt-1 font-mono font-bold text-amber-300">{request.date_needed || 'غير محدد'}</dd></div>
                   <div><dt className="text-slate-500">مقدم الطلب</dt><dd className="mt-1 font-bold text-slate-200">{request.requester?.name || 'غير محدد'}</dd></div>
-                  <div><dt className="text-slate-500">الأولوية</dt><dd className="mt-1 font-bold text-slate-200">{priorityLabels[request.priority || 'NORMAL'] || 'عادية'}</dd></div>
                   <div><dt className="text-slate-500">تاريخ الطلب</dt><dd className="mt-1 font-mono text-slate-300">{formatDate(request.created_at)}</dd></div>
                   <div><dt className="text-slate-500">القسم</dt><dd className="mt-1 font-bold text-slate-200">{request.department?.name || 'غير محدد'}</dd></div>
                 </dl>

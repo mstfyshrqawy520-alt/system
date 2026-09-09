@@ -32,7 +32,6 @@ class ReviewerPurchaseRequestController extends Controller
             'request_number' => ['nullable', 'string', 'max:35'],
             'requester_name' => ['nullable', 'string', 'max:150'],
             'status' => ['nullable', 'string', 'max:60'],
-            'priority' => ['nullable', Rule::in(['LOW', 'NORMAL', 'HIGH', 'URGENT'])],
             'from_date' => ['nullable', 'date'],
             'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
         ]);

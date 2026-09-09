@@ -1,9 +1,8 @@
 import apiClient from './client';
-import { PurchaseRequest, PurchaseRequestPriority } from '../types/purchaseRequest';
+import { PurchaseRequest } from '../types/purchaseRequest';
 
 export interface UpdateReviewHeaderPayload {
   title?: string;
-  priority?: PurchaseRequestPriority;
   date_needed?: string;
   notes?: string;
   parcel_reference?: string | null;
@@ -27,7 +26,6 @@ export interface ReviewerRequestFilters {
   request_number?: string;
   requester_name?: string;
   status?: string;
-  priority?: PurchaseRequestPriority | '';
   item_reference?: string;
   region?: string;
   from_date?: string;

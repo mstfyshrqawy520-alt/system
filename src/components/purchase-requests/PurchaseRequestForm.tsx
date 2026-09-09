@@ -12,7 +12,6 @@ import {
   CreatePurchaseRequestPayload,
   PurchaseRequest,
   PurchaseRequestItemFormInput,
-  PurchaseRequestPriority,
   PurchaseRequestType,
   DepartmentOption,
   SiteEngineerReceiverOption,
@@ -67,7 +66,6 @@ export const PurchaseRequestForm: React.FC<Props> = ({
   const [isLoadingDepartments, setIsLoadingDepartments] = useState<boolean>(true);
 
   const [targetDepartmentId, setTargetDepartmentId] = useState<number | ''>(initialData?.target_department_id || initialData?.department?.id || '');
-  const [priority, setPriority] = useState<PurchaseRequestPriority>(initialData?.priority || 'NORMAL');
   const [dateNeeded, setDateNeeded] = useState<string>(() => {
     const today = getTodayDateInputValue();
     if (!initialData?.date_needed) return today;
@@ -304,7 +302,6 @@ export const PurchaseRequestForm: React.FC<Props> = ({
         land_parcel_id: !isOffice && landParcelId ? Number(landParcelId) : undefined,
         target_department_id: Number(targetDepartmentId),
         site_engineer_user_id: isOffice ? undefined : (siteEngineerUserId ? Number(siteEngineerUserId) : undefined),
-        priority,
         date_needed: dateNeeded || undefined,
         notes: notes.trim() || undefined,
         items: items.map((item) => ({
@@ -562,18 +559,6 @@ export const PurchaseRequestForm: React.FC<Props> = ({
               </div>
             </div>
           )}
-
-          <FormField label="درجة الأولوية">
-            <Select
-              value={priority}
-              onChange={(e) => setPriority(e.target.value as PurchaseRequestPriority)}
-            >
-              <option value="NORMAL">عادي</option>
-              <option value="LOW">منخفض</option>
-              <option value="HIGH">عالي</option>
-              <option value="URGENT">عاجل جداً</option>
-            </Select>
-          </FormField>
 
           <FormField label="تاريخ الحاجة والتوريد" error={fieldErrors.dateNeeded}>
             <Input

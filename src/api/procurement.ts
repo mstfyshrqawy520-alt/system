@@ -111,7 +111,6 @@ export interface DirectPoPayload {
   supplier_id: number;
   department_id: number;
   site_engineer_user_id: number;
-  priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   delivery_date?: string;
   notes?: string;
   items: Array<{

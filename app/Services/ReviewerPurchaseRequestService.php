@@ -144,9 +144,6 @@ class ReviewerPurchaseRequestService
         if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
-        if (! empty($filters['priority'])) {
-            $query->where('priority', $filters['priority']);
-        }
         if (! empty($filters['item_reference'])) {
             $query->whereHas('items', function ($itemQuery) use ($filters): void {
                 $itemQuery->where('item_reference', 'like', '%' . $filters['item_reference'] . '%');
@@ -243,7 +240,7 @@ class ReviewerPurchaseRequestService
                 throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.');
             }
 
-            $allowedFields = ['priority', 'date_needed', 'notes', 'parcel_reference', 'region', 'land_parcel_id', 'requires_warehouse_receipt'];
+            $allowedFields = ['date_needed', 'notes', 'parcel_reference', 'region', 'land_parcel_id', 'requires_warehouse_receipt'];
             $updateFields = [];
 
             foreach ($allowedFields as $field) {

@@ -73,7 +73,7 @@ class GeneralManagerPurchaseRequestService
             $oldState = $pr->status;
             $updateFields = [];
 
-            foreach (['priority', 'date_needed', 'notes'] as $field) {
+            foreach (['date_needed', 'notes'] as $field) {
                 if (array_key_exists($field, $data) && (string) ($pr->{$field} ?? '') !== (string) ($data[$field] ?? '')) {
                     $updateFields[$field] = $data[$field];
                 }

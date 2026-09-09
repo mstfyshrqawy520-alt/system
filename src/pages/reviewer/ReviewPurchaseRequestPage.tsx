@@ -19,7 +19,7 @@ import {
   updateReviewItemApi,
 } from '../../api/reviewer';
 import { ApiError } from '../../types/api';
-import { PR_ACTION_LABELS, PR_STATUS_LABELS, PurchaseRequest, PurchaseRequestPriority } from '../../types/purchaseRequest';
+import { PR_ACTION_LABELS, PR_STATUS_LABELS, PurchaseRequest } from '../../types/purchaseRequest';
 import { parseApiError } from '../../utils/apiError';
 import { getUnitLabel } from '../../utils/units';
 import { Button } from '../../components/ui/Button';
@@ -40,7 +40,6 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Editable header state
-  const [headerPriority, setHeaderPriority] = useState<PurchaseRequestPriority>('NORMAL');
   const [headerDateNeeded, setHeaderDateNeeded] = useState('');
   const [headerNotes, setHeaderNotes] = useState('');
 
@@ -56,7 +55,6 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
     try {
       const data = await getReviewerPurchaseRequestApi(parseInt(id, 10));
       setRequestData(data);
-      setHeaderPriority(data.priority);
       setHeaderDateNeeded(data.date_needed || '');
       setHeaderNotes(data.notes || '');
     } catch (err) {
@@ -78,7 +76,6 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
     setSuccessMessage(null);
     try {
       const updated = await updateReviewHeaderApi(parseInt(id, 10), {
-        priority: headerPriority,
         date_needed: headerDateNeeded || undefined,
         notes: headerNotes || undefined,
       });
@@ -98,7 +95,6 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
     try {
       const updated = await startReviewApi(parseInt(id, 10));
       setRequestData(updated);
-      setHeaderPriority(updated.priority);
       setHeaderDateNeeded(updated.date_needed || '');
       setHeaderNotes(updated.notes || '');
       setSuccessMessage('بدأت المراجعة.');
@@ -357,14 +353,6 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            <FormField label="الأولوية">
-              <Select disabled={!canEdit} value={headerPriority} onChange={e => setHeaderPriority(e.target.value as PurchaseRequestPriority)}>
-                <option value="NORMAL">عادي</option>
-                <option value="LOW">منخفض</option>
-                <option value="HIGH">عالي</option>
-                <option value="URGENT">عاجل</option>
-              </Select>
-            </FormField>
             <FormField label="تاريخ الاحتياج">
               <Input type="date" disabled={!canEdit} value={headerDateNeeded} onChange={e => setHeaderDateNeeded(e.target.value)} />
             </FormField>

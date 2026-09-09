@@ -295,10 +295,6 @@ export const PurchaseQuotesModal: React.FC<PurchaseQuotesModalProps> = ({
               <span className="text-slate-500">مهندس الموقع</span>
               <div className="mt-1 font-bold text-slate-100">{request.site_engineer?.name || '—'}</div>
             </div>
-            <div>
-              <span className="text-slate-500">الأولوية</span>
-              <div className="mt-1 font-bold text-slate-100">{request.priority || '—'}</div>
-            </div>
           </div>
           {/* Mobile-first Cards for phones */}
           <div className="mt-4 space-y-2.5 sm:hidden">

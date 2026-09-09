@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { FormField, Input, Select, Textarea, SearchableSelect } from '../ui/FormField';
-import { CreatePurchaseRequestPayload, DepartmentOption, PurchaseRequestPriority } from '../../types/purchaseRequest';
+import { CreatePurchaseRequestPayload, DepartmentOption } from '../../types/purchaseRequest';
 
 interface Props {
   data: CreatePurchaseRequestPayload;
@@ -179,19 +179,7 @@ export const PRWizardStep1: React.FC<Props> = ({
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <FormField label="الأولوية">
-          <Select
-            id="pr-priority"
-            value={data.priority || 'NORMAL'}
-            onChange={event => onChange({ ...data, priority: event.target.value as PurchaseRequestPriority })}
-          >
-            <option value="LOW">منخفض</option>
-            <option value="NORMAL">عادي</option>
-            <option value="HIGH">عالي</option>
-            <option value="URGENT">عاجل</option>
-          </Select>
-        </FormField>
+      <div>
         <FormField label="تاريخ الاحتياج" required error={errors.dateNeeded}>
           <Input
             id="pr-date-needed"

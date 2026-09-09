@@ -11,8 +11,6 @@ import { Button } from '../../components/ui/Button';
 import {
   PurchaseRequest,
   PurchaseRequestItemFormInput,
-  PurchaseRequestPriority,
-  PR_PRIORITY_LABELS,
   PR_STATUS_LABELS,
 } from '../../types/purchaseRequest';
 import { parseApiError } from '../../utils/apiError';
@@ -47,7 +45,6 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
   const [selected, setSelected] = useState<PurchaseRequest | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [routeFilter, setRouteFilter] = useState('ALL');
-  const [draftPriority, setDraftPriority] = useState<PurchaseRequestPriority>('NORMAL');
   const [draftNotes, setDraftNotes] = useState('');
   const [draftItems, setDraftItems] = useState<DraftItemState[]>([]);
   const [comment, setComment] = useState('');
@@ -125,7 +122,6 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
 
   const openRequest = (request: PurchaseRequest) => {
     setSelected(request);
-    setDraftPriority(request.priority || 'NORMAL');
     setDraftNotes(request.notes || '');
     setDraftItems(toDraftItems(request));
     setComment('');
@@ -189,7 +185,6 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
     try {
       const isModified =
         activeApprovedItems.length !== (selected.items || []).length ||
-        draftPriority !== (selected.priority || 'NORMAL') ||
         draftNotes !== (selected.notes || '') ||
         activeApprovedItems.some((item, i) => {
           const original = selected.items?.[i];
@@ -216,7 +211,6 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
         }));
 
         await updateGeneralManagerPurchaseRequestApi(selected.id, {
-          priority: draftPriority,
           notes: draftNotes,
           items: cleanedItems,
           comment:
@@ -602,22 +596,8 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
               {/* Timeline */}
               <PurchaseRequestTimeline request={selected} />
 
-              {/* Priority & Comment */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <label className="text-xs font-bold text-slate-300">
-                  الأولوية
-                  <select
-                    value={draftPriority}
-                    onChange={(event) => setDraftPriority(event.target.value as PurchaseRequestPriority)}
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-                  >
-                    {Object.entries(PR_PRIORITY_LABELS).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+              {/* Comment */}
+              <div>
                 <label className="text-xs font-bold text-slate-300">
                   تعليق أو توجيه المدير العام
                   <textarea
