@@ -97,4 +97,53 @@ describe('DirectAccountingReviewModal', () => {
     expect(screen.getByText(/مراجعة وتعديل البيانات المالية — PR-TEST-101/)).toBeInTheDocument();
     expect(screen.getByText('اعتماد وإرسال للمشتريات')).toBeInTheDocument();
   });
+
+  it('opens and closes repeatedly without changing hook order or crashing', () => {
+    const { rerender } = render(
+      <DirectAccountingReviewModal
+        isOpen={false}
+        request={null}
+        suppliers={mockSuppliers}
+        onClose={() => undefined}
+        onConfirm={() => undefined}
+      />
+    );
+
+    // Open with request
+    rerender(
+      <DirectAccountingReviewModal
+        isOpen={true}
+        request={mockRequest}
+        suppliers={mockSuppliers}
+        onClose={() => undefined}
+        onConfirm={() => undefined}
+      />
+    );
+
+    expect(screen.getByText(/إدخال البيانات المالية — PR-TEST-101/)).toBeInTheDocument();
+
+    // Close
+    rerender(
+      <DirectAccountingReviewModal
+        isOpen={false}
+        request={null}
+        suppliers={mockSuppliers}
+        onClose={() => undefined}
+        onConfirm={() => undefined}
+      />
+    );
+
+    // Reopen
+    rerender(
+      <DirectAccountingReviewModal
+        isOpen={true}
+        request={mockRequest}
+        suppliers={mockSuppliers}
+        onClose={() => undefined}
+        onConfirm={() => undefined}
+      />
+    );
+
+    expect(screen.getByText(/إدخال البيانات المالية — PR-TEST-101/)).toBeInTheDocument();
+  });
 });

@@ -13,6 +13,44 @@ export interface ModalProps {
   closeOnEscape?: boolean;
 }
 
+class ModalErrorBoundary extends React.Component<{ onClose: () => void; children: React.ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('خطأ داخل النافذة المنبثقة:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="py-8 px-4 text-center space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-full bg-rose-950/60 border border-rose-600/40 flex items-center justify-center text-rose-400 text-xl font-bold">
+            ⚠️
+          </div>
+          <p className="text-sm font-bold text-rose-200">
+            حدث خطأ أثناء عرض محتويات هذه النافذة.
+          </p>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
+            لم تتأثر بياناتك، يمكنك إغلاق النافذة والمحاولة مرة أخرى.
+          </p>
+          <button
+            type="button"
+            onClick={this.props.onClose}
+            className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700"
+          >
+            إغلاق النافذة
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
@@ -127,7 +165,9 @@ export const Modal: React.FC<ModalProps> = ({
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-6 sm:py-6 text-slate-200">
-          {children}
+          <ModalErrorBoundary onClose={onClose}>
+            {children}
+          </ModalErrorBoundary>
         </div>
 
         {footer && (

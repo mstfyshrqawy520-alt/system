@@ -57,6 +57,8 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
   const [items, setItems] = useState<EditableFinancialItem[]>([]);
   const [notes, setNotes] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [globalSupplierId, setGlobalSupplierId] = useState<string>('');
+  const [globalOneTimeName, setGlobalOneTimeName] = useState<string>('');
 
   const safeSuppliers = Array.isArray(suppliers) ? suppliers : [];
 
@@ -66,7 +68,11 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
   );
 
   useEffect(() => {
-    if (!isOpen || !request) return;
+    if (!isOpen || !request) {
+      setGlobalSupplierId('');
+      setGlobalOneTimeName('');
+      return;
+    }
 
     const rawItems = Array.isArray(request.items) ? request.items : [];
     setItems(rawItems.map((item) => ({
@@ -81,6 +87,8 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
     })));
     setNotes(request.notes || '');
     setValidationError(null);
+    setGlobalSupplierId('');
+    setGlobalOneTimeName('');
   }, [isOpen, request?.id]);
 
   const grandTotal = useMemo(
@@ -105,8 +113,6 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
     return Array.from(groups.entries()).map(([sid, data]) => ({ supplierId: sid, ...data }));
   }, [items, activeSuppliers]);
 
-  if (!isOpen || !request) return null;
-
   const updateItem = (index: number, field: 'quantity' | 'unit_price', value: string) => {
     const parsedValue = value === '' ? '' : Number(value);
     setItems((current) => current.map((item, itemIndex) => (
@@ -122,9 +128,6 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
     )));
     setValidationError(null);
   };
-
-  const [globalSupplierId, setGlobalSupplierId] = useState<string>('');
-  const [globalOneTimeName, setGlobalOneTimeName] = useState<string>('');
 
   const applySupplierToAll = (supplierId: number | '', oneTimeName?: string) => {
     setItems((current) =>
@@ -176,6 +179,8 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
       notes: notes.trim() || null,
     });
   };
+
+  if (!isOpen || !request) return null;
 
   return (
     <Modal
