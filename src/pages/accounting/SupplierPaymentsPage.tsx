@@ -684,18 +684,24 @@ export const SupplierPaymentsPage: React.FC = () => {
             {/* Modal Footer */}
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
               <Button type="button" variant="secondary" className="min-h-10 text-xs" onClick={() => setDocumentPreview(null)}>إغلاق</Button>
-              <Button
-                type="button"
-                variant="primary"
-                className="min-h-10 text-xs font-bold"
-                onClick={() => {
-                  const receipt = documentPreview;
-                  setDocumentPreview(null);
-                  openInvoiceForm(receipt);
-                }}
-              >
-                تسجيل فاتورة المورد
-              </Button>
+              {isDepartmentAccountant ? (
+                <Button
+                  type="button"
+                  variant="primary"
+                  className="min-h-10 text-xs font-bold"
+                  onClick={() => {
+                    const receipt = documentPreview;
+                    setDocumentPreview(null);
+                    openInvoiceForm(receipt);
+                  }}
+                >
+                  تسجيل فاتورة المورد
+                </Button>
+              ) : (
+                <span className="inline-flex items-center justify-center rounded-xl bg-slate-800/80 border border-slate-700/60 px-3 py-2 text-xs font-bold text-slate-400">
+                  مسند لمحاسب القسم المختص للتسجيل
+                </span>
+              )}
             </div>
           </div>
         </div>,

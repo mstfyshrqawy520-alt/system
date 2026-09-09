@@ -51,6 +51,13 @@ class SupplierInvoiceController extends Controller
             'land_allocations.*.notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
+        $user = $request->user();
+        if ($user && $user->hasRole('accountant') && ! $user->hasRole('admin') && ! $this->service->isRestrictedDepartmentAccountant($user)) {
+            return response()->json([
+                'message' => 'غير مصرح للمدير المالي بتسجيل الفواتير؛ تسجيل الفواتير مسند لمحاسب القسم التابع له أمر الشراء فقط.',
+            ], 403);
+        }
+
         $po = PurchaseOrder::with('purchaseRequest.department')->findOrFail($validated['purchase_order_id']);
         $allowedCodes = $this->service->getAllowedDepartmentCodesForAccountant($request->user());
         if ($allowedCodes !== null) {

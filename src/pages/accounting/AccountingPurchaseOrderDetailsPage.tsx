@@ -12,6 +12,7 @@ import { getUnitLabel } from '../../utils/units';
 import PrintablePO from '../../components/procurement/PrintablePO';
 import { UnifiedNotesCard } from '../../components/common/UnifiedNotesCard';
 import { Modal } from '../../components/ui/Modal';
+import { useAuth } from '../../context/AuthContext';
 
 export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +23,9 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
   const [extraReceipts, setExtraReceipts] = useState<LinkedReceiptSummary[]>([]);
   const [printPo, setPrintPo] = useState<PurchaseOrder | null>(null);
   const [previewPhoto, setPreviewPhoto] = useState<{ url: string; title: string } | null>(null);
+  const { hasRole } = useAuth();
+  const isDepartmentAccountant = hasRole('site_accountant') || hasRole('licenses_accountant') || hasRole('buffet_accountant');
+  const isFinancialDirector = hasRole('accountant') && !isDepartmentAccountant && !hasRole('admin');
 
   const load = async () => {
     if (!id) return;
@@ -90,12 +94,21 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
           </span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Link to={`/accounting/supplier-payments?tab=payments&po=${po.po_number || po.id}${queryReceiptId ? `&purchase_receipt_id=${queryReceiptId}` : ''}`}>
-            <Button variant="primary" size="sm" className="font-bold shadow-md shadow-cyan-900/40">
-              <span>🧾 تسجيل فاتورة وسداد مستحقات</span>
-              <span className="mr-1">←</span>
-            </Button>
-          </Link>
+          {isDepartmentAccountant ? (
+            <Link to={`/accounting/supplier-payments?tab=payments&po=${po.po_number || po.id}${queryReceiptId ? `&purchase_receipt_id=${queryReceiptId}` : ''}`}>
+              <Button variant="primary" size="sm" className="font-bold shadow-md shadow-cyan-900/40">
+                <span>🧾 تسجيل فاتورة الاستلام</span>
+                <span className="mr-1">←</span>
+              </Button>
+            </Link>
+          ) : (
+            <Link to={`/accounting/supplier-payments?tab=payments&po=${po.po_number || po.id}`}>
+              <Button variant="primary" size="sm" className="font-bold shadow-md shadow-cyan-900/40">
+                <span>💳 فواتير وسداد دفعات المورد</span>
+                <span className="mr-1">←</span>
+              </Button>
+            </Link>
+          )}
           <button
             onClick={() => setPrintPo(po)}
             className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
@@ -117,26 +130,49 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
       </div>
 
       {/* Operational Invoice & Payment Banner */}
-      <div className="rounded-2xl border border-cyan-500/60 bg-gradient-to-r from-slate-900 via-cyan-950/20 to-slate-900 p-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">💳</span>
-          <div>
-            <h4 className="text-sm font-bold text-cyan-300">
-              أمر الشراء وإذن الاستلام جاهزان للمطابقة والتسجيل المحاسبي
-            </h4>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {allReceipts.length > 0
-                ? `تم ربط أمر الشراء بـ (${allReceipts.length}) إذن استلام بضائع معتمد. يمكنك فحص الكميات ومطابقتها قبل إصدار السداد.`
-                : 'يمكنك الانتقال فوراً لشاشة فواتير ودفعات الموردين لتسجيل فاتورة المورد وتوزيع المصروف.'}
-            </p>
+      {isFinancialDirector ? (
+        <div className="rounded-2xl border border-cyan-500/40 bg-gradient-to-r from-slate-900 via-cyan-950/20 to-slate-900 p-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">💳</span>
+            <div>
+              <h4 className="text-sm font-bold text-cyan-300">
+                أمر الشراء وإذن الاستلام معتمدان — مسند لمحاسب القسم لتسجيل الفاتورة
+              </h4>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {allReceipts.length > 0
+                  ? `تم ربط أمر الشراء بـ (${allReceipts.length}) إذن استلام معتمد. يقوم محاسب القسم المختص بتسجيل فاتورة المورد، وبصفتك المدير المالي يمكنك متابعة كشف الحساب وسداد الدفعات.`
+                  : 'يمكنك الانتقال لشاشة فواتير ودفعات الموردين لمتابعة الأرصدة وسداد الدفعات المستحقة.'}
+              </p>
+            </div>
           </div>
+          <Link to={`/accounting/supplier-payments?tab=payments&po=${po.po_number || po.id}`}>
+            <Button variant="secondary" size="sm" className="whitespace-nowrap font-bold text-cyan-300 border-cyan-700/60 hover:bg-slate-800">
+              متابعة حساب المورد والدفعات ←
+            </Button>
+          </Link>
         </div>
-        <Link to={`/accounting/supplier-payments?tab=payments&po=${po.po_number || po.id}${queryReceiptId ? `&purchase_receipt_id=${queryReceiptId}` : ''}`}>
-          <Button variant="primary" size="sm" className="whitespace-nowrap font-black">
-            تسجيل الفاتورة والدفعات ←
-          </Button>
-        </Link>
-      </div>
+      ) : (
+        <div className="rounded-2xl border border-cyan-500/60 bg-gradient-to-r from-slate-900 via-cyan-950/20 to-slate-900 p-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🧾</span>
+            <div>
+              <h4 className="text-sm font-bold text-cyan-300">
+                أمر الشراء وإذن الاستلام جاهزان لتسجيل فاتورة المورد
+              </h4>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {allReceipts.length > 0
+                  ? `تم اعتماد (${allReceipts.length}) إذن استلام بضائع. يمكنك بصفتك محاسب القسم مراجعة البنود والكميات وتسجيل فاتورة المورد وترحيل التكاليف.`
+                  : 'يمكنك الانتقال لشاشة فواتير الموردين لتسجيل فاتورة المورد فور صدور إذن الاستلام.'}
+              </p>
+            </div>
+          </div>
+          <Link to={`/accounting/supplier-payments?tab=payments&po=${po.po_number || po.id}${queryReceiptId ? `&purchase_receipt_id=${queryReceiptId}` : ''}`}>
+            <Button variant="primary" size="sm" className="whitespace-nowrap font-black">
+              تسجيل الفاتورة والدفعات ←
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* المورد & PR Metadata Card */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
@@ -355,14 +391,30 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Link
-                      to={`/accounting/supplier-payments?tab=payments&purchase_receipt_id=${receipt.id}&po=${po.po_number || po.id}`}
-                    >
-                      <Button variant="primary" size="sm" className="font-bold shadow-sm w-full sm:w-auto">
-                        <span>🧾 تسجيل فاتورة وسداد هذا الإذن</span>
-                        <span className="mr-1">←</span>
-                      </Button>
-                    </Link>
+                    {isDepartmentAccountant ? (
+                      <Link
+                        to={`/accounting/supplier-payments?tab=payments&purchase_receipt_id=${receipt.id}&po=${po.po_number || po.id}`}
+                      >
+                        <Button variant="primary" size="sm" className="font-bold shadow-sm w-full sm:w-auto">
+                          <span>🧾 تسجيل فاتورة هذا الإذن</span>
+                          <span className="mr-1">←</span>
+                        </Button>
+                      </Link>
+                    ) : (
+                      <>
+                        <span className="rounded-xl bg-slate-900/90 border border-slate-700/80 px-3 py-1.5 text-xs font-bold text-slate-400 flex items-center gap-1.5">
+                          <span>👤</span>
+                          <span>مسند لمحاسب القسم لتسجيل الفاتورة</span>
+                        </span>
+                        <Link
+                          to={`/accounting/supplier-payments?tab=payments&po=${po.po_number || po.id}`}
+                        >
+                          <Button variant="secondary" size="sm" className="text-xs font-semibold text-cyan-300 border-cyan-800/60 hover:bg-slate-800">
+                            متابعة الدفعات ←
+                          </Button>
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </div>
 

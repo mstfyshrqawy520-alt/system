@@ -18,6 +18,7 @@ import { getTodayInputDate } from '../../utils/dateFilters';
 import { createPortal } from 'react-dom';
 import { getSupplierQuoteArchiveApi } from '../../api/purchaseQuotes';
 import { PurchaseRequestQuote } from '../../types/purchaseRequest';
+import { useAuth } from '../../context/AuthContext';
 
 const today = getTodayInputDate;
 const money = (value: string | number | null | undefined) => `${Number(value || 0).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م`;
@@ -41,6 +42,8 @@ const SupplierAccountDedicatedPage: React.FC<{
 }> = ({ selected, onBack, onRecordPayment }) => {
   const [quotes, setQuotes] = useState<PurchaseRequestQuote[]>([]);
   const [quotesLoading, setQuotesLoading] = useState<boolean>(true);
+  const { hasRole } = useAuth();
+  const isDepartmentAccountant = hasRole('site_accountant') || hasRole('licenses_accountant') || hasRole('buffet_accountant');
 
   useEffect(() => {
     setQuotesLoading(true);
@@ -132,11 +135,13 @@ const SupplierAccountDedicatedPage: React.FC<{
             <span>تسجيل دفعة سداد</span>
           </Button>
 
-          <Link to={`/accounting/supplier-payments?supplier_id=${selected.supplier.id}`}>
-            <Button size="sm" variant="primary" className="font-bold">
-              <span>🧾</span> تسجيل فاتورة جديدة
-            </Button>
-          </Link>
+          {isDepartmentAccountant && (
+            <Link to={`/accounting/supplier-payments?supplier_id=${selected.supplier.id}`}>
+              <Button size="sm" variant="primary" className="font-bold">
+                <span>🧾</span> تسجيل فاتورة جديدة
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
