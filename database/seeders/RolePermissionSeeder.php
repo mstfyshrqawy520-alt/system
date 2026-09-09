@@ -150,6 +150,9 @@ class RolePermissionSeeder extends Seeder
                     'supplier.view',
                     'supplier.create',
                     'supplier.edit',
+                    'purchase_receipt.view_assigned',
+                    'purchase_receipt.edit',
+                    'purchase_receipt.approve',
                 ],
             ],
             'accountant' => [

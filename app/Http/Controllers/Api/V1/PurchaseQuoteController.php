@@ -34,9 +34,24 @@ class PurchaseQuoteController extends Controller
 
     public function create(Request $request, int $purchaseRequestId): PurchaseRequestResource
     {
+        $rawQuotes = $request->input('quotes', []);
+        if (is_array($rawQuotes)) {
+            foreach ($rawQuotes as $index => $q) {
+                if (empty($q['supplier_id']) && !empty($q['one_time_supplier_name'])) {
+                    $sup = \App\Models\Supplier::firstOrCreate(
+                        ['company_name' => trim($q['one_time_supplier_name'])],
+                        ['contact_name' => 'مورد لعملية واحدة', 'is_active' => true, 'opening_balance' => 0]
+                    );
+                    $rawQuotes[$index]['supplier_id'] = $sup->id;
+                }
+            }
+            $request->merge(['quotes' => $rawQuotes]);
+        }
+
         $validated = $request->validate([
             'quotes' => ['required', 'array', 'min:2'],
             'quotes.*.supplier_id' => ['required', 'integer', 'exists:suppliers,id'],
+            'quotes.*.one_time_supplier_name' => ['nullable', 'string', 'max:150'],
             'quotes.*.unit_price' => ['nullable', 'numeric', 'gt:0'],
             'quotes.*.total_amount' => ['required', 'numeric', 'gt:0'],
             'quotes.*.notes' => ['nullable', 'string', 'max:2000'],

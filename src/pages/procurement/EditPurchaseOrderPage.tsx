@@ -13,6 +13,7 @@ import { PurchaseOrder, المورد } from '../../types/purchaseOrder';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import { parseApiError } from '../../utils/apiError';
+import { SupplierSelectWithQuickAdd } from '../../components/common/SupplierSelectWithQuickAdd';
 
 export const EditPurchaseOrderPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +23,7 @@ export const EditPurchaseOrderPage: React.FC = () => {
   const [suppliers, setSuppliers] = useState<المورد[]>([]);
 
   const [supplierId, setSupplierId] = useState<string>('');
+  const [oneTimeSupplierName, setOneTimeSupplierName] = useState<string>('');
   const [paymentTerms, setPaymentTerms] = useState<string>('');
   const [deliveryDate, setDeliveryDate] = useState<string>('');
   const [budgetCode, setBudgetCode] = useState<string>('');
@@ -149,7 +151,8 @@ export const EditPurchaseOrderPage: React.FC = () => {
     setError(null);
     try {
       const updated = await updatePurchaseOrderApi(po.id, {
-        supplier_id: Number(supplierId),
+        supplier_id: supplierId ? Number(supplierId) : undefined,
+        one_time_supplier_name: oneTimeSupplierName.trim() || undefined,
         payment_terms: paymentTerms || undefined,
         delivery_date: deliveryDate || undefined,
         budget_code: budgetCode || undefined,
@@ -171,7 +174,8 @@ export const EditPurchaseOrderPage: React.FC = () => {
     setError(null);
     try {
       await updatePurchaseOrderApi(po.id, {
-        supplier_id: Number(supplierId),
+        supplier_id: supplierId ? Number(supplierId) : undefined,
+        one_time_supplier_name: oneTimeSupplierName.trim() || undefined,
         payment_terms: paymentTerms || undefined,
         delivery_date: deliveryDate || undefined,
         budget_code: budgetCode || undefined,
@@ -225,17 +229,21 @@ export const EditPurchaseOrderPage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">المورد المعتمد *</label>
-            <select
+            <SupplierSelectWithQuickAdd
+              suppliers={suppliers}
+              selectedSupplierId={supplierId}
+              onSelectSupplierId={(val) => setSupplierId(val)}
+              oneTimeSupplierName={oneTimeSupplierName}
+              onChangeOneTimeSupplierName={(name) => setOneTimeSupplierName(name)}
+              onSupplierCreated={(newSup) => {
+                setSuppliers((prev) => [...prev, newSup]);
+                setSupplierId(String(newSup.id));
+                setOneTimeSupplierName('');
+              }}
               disabled={!isEditable}
-              value={supplierId}
-              onChange={e => setSupplierId(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-cyan-500"
-            >
-              {suppliers.map(s => (
-                <option key={s.id} value={s.id}>{s.company_name} ({s.code})</option>
-              ))}
-            </select>
+              label="المورد المعتمد"
+              required
+            />
           </div>
 
           <div>

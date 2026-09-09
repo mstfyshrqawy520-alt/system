@@ -108,21 +108,22 @@ export interface ProcurementAnalyticsResponse {
 }
 
 export interface DirectPoPayload {
-  supplier_id: number;
+  supplier_id?: number;
+  one_time_supplier_name?: string;
   department_id: number;
   site_engineer_user_id: number;
   delivery_date?: string;
   notes?: string;
   items: Array<{
     item_id?: number | null;
+    supplier_id?: number;
+    one_time_supplier_name?: string;
     item_description: string;
     item_reference?: string;
     region?: string;
     quantity: number;
     uom?: string;
     unit_price: number;
-
-
     specifications?: string;
   }>;
 }
@@ -182,9 +183,11 @@ export const getApprovedPurchaseRequestApi = async (id: number): Promise<Purchas
 /** Procurement Manager chooses quotes or direct accounting review. */
 export interface DirectAccountingFinancialData {
   supplier_id?: number;
+  one_time_supplier_name?: string;
   items: Array<{
     pr_item_id: number;
-    supplier_id: number;
+    supplier_id?: number;
+    one_time_supplier_name?: string;
     quantity: number;
     unit_price: number;
   }>;
@@ -210,13 +213,14 @@ export const getPurchaseRequestQuotesApi = async (id: number): Promise<PurchaseR
 
 export const createPurchaseQuotesApi = async (
   id: number,
-  quotes: Array<{ supplier_id: number; unit_price: number; total_amount: number; notes?: string; file?: File | null }>,
+  quotes: Array<{ supplier_id?: number; one_time_supplier_name?: string; unit_price: number; total_amount: number; notes?: string; file?: File | null }>,
 ): Promise<PurchaseRequest> => {
   const hasFiles = quotes.some(q => q.file instanceof File);
   if (hasFiles) {
     const formData = new FormData();
     quotes.forEach((quote, index) => {
-      formData.append(`quotes[${index}][supplier_id]`, String(quote.supplier_id));
+      if (quote.supplier_id) formData.append(`quotes[${index}][supplier_id]`, String(quote.supplier_id));
+      if (quote.one_time_supplier_name) formData.append(`quotes[${index}][one_time_supplier_name]`, quote.one_time_supplier_name);
       formData.append(`quotes[${index}][unit_price]`, String(quote.unit_price));
       formData.append(`quotes[${index}][total_amount]`, String(quote.total_amount));
       if (quote.notes) formData.append(`quotes[${index}][notes]`, quote.notes);

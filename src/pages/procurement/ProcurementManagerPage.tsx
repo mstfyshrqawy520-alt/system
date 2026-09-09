@@ -27,6 +27,7 @@ import SupplierModal from '../../components/procurement/SupplierModal';
 import DirectPoModal from '../../components/procurement/DirectPoModal';
 import DirectAccountingReviewModal from '../../components/procurement/DirectAccountingReviewModal';
 import PurchaseQuotesModal from '../../components/procurement/PurchaseQuotesModal';
+import { PrDetailsModal } from '../../components/procurement/PrDetailsModal';
 import ProcurementCharts from '../../components/procurement/ProcurementCharts';
 import { getUnitLabel } from '../../utils/units';
 import { getSummaryParcels, getSummaryRegions, getSummaryQuantities } from '../../utils/formatRequestSummary';
@@ -151,6 +152,7 @@ export const ProcurementManagerPage: React.FC = () => {
   const [reportPrintOpen, setReportPrintOpen] = useState(false);
   const [directAccountingRequest, setDirectAccountingRequest] = useState<PurchaseRequest | null>(null);
   const [directAccountingSubmitting, setDirectAccountingSubmitting] = useState(false);
+  const [selectedPrForDetails, setSelectedPrForDetails] = useState<PurchaseRequest | null>(null);
 
   useEffect(() => {
     const path = location.pathname;
@@ -616,131 +618,196 @@ export const ProcurementManagerPage: React.FC = () => {
             resultLabel="طلب"
           />
 
-          <div className="hidden overflow-x-auto rounded-xl border border-slate-800/80 sm:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>رقم الطلب</TableHead>
-                  <TableHead>المرحلة الحالية</TableHead>
-                  <TableHead>مسار الشراء</TableHead>
-                  <TableHead>القسم المصدر</TableHead>
-                  <TableHead>القسم المستهدف</TableHead>
-                  <TableHead>الصنف / الكمية</TableHead>
-                  <TableHead>رقم قطعة الأرض</TableHead>
-                  <TableHead>المنطقة</TableHead>
-                  <TableHead>المورد</TableHead>
-                  <TableHead>تاريخ الاحتياج</TableHead>
-                  <TableHead>مقدم الطلب</TableHead>
-                  <TableHead>رئيس القسم</TableHead>
-                  <TableHead>تاريخ الطلب</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead className="text-center">الإجراء</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredQueueRows.length === 0 ? (
-                  <TableRow><TableCell colSpan={15} className="py-10 text-center text-slate-400">{queueRows.length ? 'لم نجد طلبات مطابقة للفلاتر الحالية.' : 'لا توجد طلبات واردة للمشتريات ضمن الفترة المحددة.'}</TableCell></TableRow>
-                ) : filteredQueueRows.map(({ request, stage }) => {
-                  const itemNames = request.items?.map((item) => item.item?.name || item.item_description).filter(Boolean).join('، ') || '—';
-                  const parcelsDisplay = getSummaryParcels(request);
-                  const regionsDisplay = getSummaryRegions(request);
-                  const quantitiesInfo = getSummaryQuantities(request.items);
-                  const supplier = request.direct_supplier?.company_name || getSelectedQuote(request)?.supplier?.company_name || '—';
-                  const stageClass = stage === 'PENDING_ROUTE' ? 'bg-cyan-400/15 text-cyan-300' : stage === 'QUOTE_SETUP' ? 'bg-amber-400/15 text-amber-300' : 'bg-emerald-400/15 text-emerald-300';
-                  const route = request.procurement_route === 'DIRECT' ? 'شراء مباشر' : request.procurement_route === 'QUOTES' ? 'عروض أسعار' : 'لم يحدد';
-                  return (
-                    <TableRow key={`${stage}-${request.id}`}>
-                      <TableCell className="font-mono font-bold text-cyan-300">{request.request_number}</TableCell>
-                      <TableCell><span className={`whitespace-nowrap rounded-full px-2 py-1 text-[10px] font-bold ${stageClass}`}>{QUEUE_STAGE_LABELS[stage]}</span></TableCell>
-                      <TableCell><span className="whitespace-nowrap font-bold text-slate-200">{route}</span></TableCell>
-                      <TableCell>{request.department?.name || (request.requester as any)?.department?.name || request.target_department?.name || 'غير محدد'}</TableCell>
-                      <TableCell className="font-bold text-cyan-300">{request.target_department?.name || request.department?.name || 'غير محدد'}</TableCell>
-                      <TableCell>
-                        <div className="max-w-[230px] font-bold text-slate-100">{itemNames}</div>
-                        <div className="mt-1 text-xs text-amber-300 font-mono font-semibold" title={quantitiesInfo.tooltip}>
+          {/* Unified Cards View - 100% width, ZERO horizontal scroll */}
+          {filteredQueueRows.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 p-12 text-center text-slate-400">
+              <span className="text-3xl block mb-2">📋</span>
+              <p className="text-sm font-bold text-slate-300">
+                {queueRows.length ? 'لم نجد طلبات مطابقة للفلاتر الحالية.' : 'لا توجد طلبات واردة للمشتريات ضمن الفترة المحددة.'}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">جرّب مسح الفلاتر أو تغيير نطاق البحث.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredQueueRows.map(({ request, stage }) => {
+                const itemNames = request.items?.map((item) => item.item?.name || item.item_description).filter(Boolean).join('، ') || '—';
+                const parcelsDisplay = getSummaryParcels(request);
+                const regionsDisplay = getSummaryRegions(request);
+                const quantitiesInfo = getSummaryQuantities(request.items);
+                const supplier = request.direct_supplier?.company_name || getSelectedQuote(request)?.supplier?.company_name;
+                const stageClass = stage === 'PENDING_ROUTE' 
+                  ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' 
+                  : stage === 'QUOTE_SETUP' 
+                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' 
+                  : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+                const route = request.procurement_route === 'DIRECT' 
+                  ? 'شراء مباشر' 
+                  : request.procurement_route === 'QUOTES' 
+                  ? 'عروض أسعار' 
+                  : 'لم يحدد المسار';
+
+                return (
+                  <article
+                    key={`${stage}-${request.id}`}
+                    className="rounded-2xl border border-slate-800/90 bg-gradient-to-b from-slate-900/90 to-slate-950/90 p-4 sm:p-5 shadow-lg hover:border-slate-700 transition-all space-y-4"
+                  >
+                    {/* Header Row */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3.5">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <span className="font-mono text-base font-black text-cyan-300">
+                          {request.request_number}
+                        </span>
+                        <span className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${stageClass}`}>
+                          {QUEUE_STAGE_LABELS[stage]}
+                        </span>
+                        <span className="rounded-full bg-slate-800 border border-slate-700 px-2.5 py-0.5 text-xs font-bold text-slate-300">
+                          {route}
+                        </span>
+                        {request.priority && request.priority !== 'NORMAL' && (
+                          <span className="rounded-full bg-rose-500/20 border border-rose-500/40 px-2 py-0.5 text-[11px] font-bold text-rose-300">
+                            عاجل
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 self-start sm:self-auto">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPrForDetails(request)}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-600/50 bg-cyan-950/40 hover:bg-cyan-900/60 px-3 py-1.5 text-xs font-bold text-cyan-200 transition-colors shadow-sm cursor-pointer"
+                        >
+                          <span>👁️</span>
+                          <span>عرض تفاصيل الطلب كاملة</span>
+                        </button>
+                        <span className="font-mono text-xs text-slate-400">
+                          {fmtDate(request.created_at)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Content Grid - 100% width, no horizontal scrolling */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                      {/* Column 1: Departments */}
+                      <div className="rounded-xl border border-slate-800/60 bg-slate-950/50 p-3 space-y-1.5">
+                        <div className="text-[11px] text-slate-400 font-semibold">الجهة والقسم:</div>
+                        <div className="font-bold text-slate-200 truncate" title={request.department?.name || 'غير محدد'}>
+                          المصدر: <span className="text-slate-100">{request.department?.name || (request.requester as any)?.department?.name || 'غير محدد'}</span>
+                        </div>
+                        <div className="font-bold text-cyan-300 truncate" title={request.target_department?.name || 'غير محدد'}>
+                          المستهدف: <span>{request.target_department?.name || request.department?.name || 'غير محدد'}</span>
+                        </div>
+                      </div>
+
+                      {/* Column 2: Requester & Reviewer */}
+                      <div className="rounded-xl border border-slate-800/60 bg-slate-950/50 p-3 space-y-1.5">
+                        <div className="text-[11px] text-slate-400 font-semibold">مقدم الطلب ورئيس القسم:</div>
+                        <div className="text-slate-300 truncate">
+                          مقدم الطلب: <strong className="text-slate-100 font-semibold">{request.requester?.name || '—'}</strong>
+                        </div>
+                        <div className="text-slate-300 truncate">
+                          المراجع: <strong className="text-slate-200 font-semibold">{reviewerName(request, departments)}</strong>
+                        </div>
+                      </div>
+
+                      {/* Column 3: Items & Quantities */}
+                      <div className="rounded-xl border border-slate-800/60 bg-slate-950/50 p-3 space-y-1.5">
+                        <div className="text-[11px] text-slate-400 font-semibold">الأصناف والكميات:</div>
+                        <div className="font-bold text-slate-100 line-clamp-1" title={itemNames}>
+                          {itemNames}
+                        </div>
+                        <div className="text-amber-300 font-mono font-bold" title={quantitiesInfo.tooltip}>
                           {quantitiesInfo.display}
                           {quantitiesInfo.subtext && <span className="text-[10px] text-slate-400 font-normal mr-1">{quantitiesInfo.subtext}</span>}
                         </div>
-                      </TableCell>
-                      <TableCell className="font-mono text-cyan-300 whitespace-nowrap">{parcelsDisplay}</TableCell>
-                      <TableCell className="whitespace-nowrap">{regionsDisplay}</TableCell>
-                      <TableCell className="font-bold text-emerald-300">{supplier}</TableCell>
-                      <TableCell className="font-mono font-bold text-amber-300 whitespace-nowrap">{request.date_needed || '—'}</TableCell>
-                      <TableCell>{request.requester?.name || '—'}</TableCell>
-                      <TableCell>{reviewerName(request, departments)}</TableCell>
-                      <TableCell className="font-mono">{fmtDate(request.created_at)}</TableCell>
-                      <TableCell><span className="whitespace-nowrap">{statusLabel(request.status)}</span></TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex min-w-[280px] flex-wrap justify-center gap-2">
-                          {stage === 'PENDING_ROUTE' && <>
-                            <Button variant="primary" size="sm" onClick={() => void handleStartQuotes(request)}>بدء عروض الأسعار</Button>
-                            <Button variant="secondary" size="sm" onClick={() => setDirectAccountingRequest(request)}>إرسال للحسابات بدون عروض</Button>
-                            <Button variant="danger" size="sm" onClick={() => void handleReject(request.id)}>رفض</Button>
-                          </>}
-                          {stage === 'QUOTE_SETUP' && <Button variant="primary" size="sm" onClick={() => setQuoteRequest(request)}>إدخال عروض الأسعار</Button>}
-                          {stage === 'READY_FOR_PO' && <Button variant="primary" size="sm" onClick={() => navigate(`/procurement/purchase-orders/create?pr=${request.id}${getSelectedQuote(request)?.id ? `&quote=${getSelectedQuote(request)?.id}` : ''}`)}>إنشاء أمر شراء</Button>}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                      </div>
 
-          <div className="space-y-3 sm:hidden">
-            {filteredQueueRows.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-700 px-3 py-8 text-center text-xs text-slate-400">{queueRows.length ? 'لم نجد طلبات مطابقة للفلاتر الحالية.' : 'لا توجد طلبات واردة للمشتريات ضمن الفترة المحددة.'}</div>
-            ) : filteredQueueRows.map(({ request, stage }) => {
-              const itemNames = request.items?.map((item) => item.item?.name || item.item_description).filter(Boolean).join('، ') || '—';
-              const parcelsDisplay = getSummaryParcels(request);
-              const regionsDisplay = getSummaryRegions(request);
-              const quantitiesInfo = getSummaryQuantities(request.items);
-              const supplier = request.direct_supplier?.company_name || getSelectedQuote(request)?.supplier?.company_name || '—';
-              const stageClass = stage === 'PENDING_ROUTE' ? 'bg-cyan-400/15 text-cyan-300' : stage === 'QUOTE_SETUP' ? 'bg-amber-400/15 text-amber-300' : 'bg-emerald-400/15 text-emerald-300';
-              const route = request.procurement_route === 'DIRECT' ? 'شراء مباشر' : request.procurement_route === 'QUOTES' ? 'عروض أسعار' : 'لم يحدد';
-              return (
-                <article key={`mobile-${stage}-${request.id}`} className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
-                  <div className="flex items-start justify-between gap-3 border-b border-slate-800 pb-3">
-                    <div className="min-w-0">
-                      <p className="text-[10px] text-slate-500">رقم الطلب</p>
-                      <p className="mt-1 break-words font-mono text-sm font-black text-cyan-300">{request.request_number}</p>
+                      {/* Column 4: Location & Delivery Date */}
+                      <div className="rounded-xl border border-slate-800/60 bg-slate-950/50 p-3 space-y-1.5">
+                        <div className="text-[11px] text-slate-400 font-semibold">الموقع والموعد:</div>
+                        <div className="text-slate-300 truncate">
+                          الموقع: <strong className="font-mono text-cyan-300">{parcelsDisplay}</strong> {regionsDisplay !== '—' && `• ${regionsDisplay}`}
+                        </div>
+                        <div className="text-slate-300">
+                          تاريخ الاحتياج: <strong className="font-mono text-amber-300 font-bold">{request.date_needed || '—'}</strong>
+                        </div>
+                        {supplier && (
+                          <div className="text-emerald-300 truncate font-semibold">
+                            المورد: {supplier}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold ${stageClass}`}>{QUEUE_STAGE_LABELS[stage]}</span>
-                  </div>
-                  <dl className="mt-3 grid grid-cols-1 gap-3 text-xs min-[420px]:grid-cols-2">
-                    <div><dt className="text-slate-500">مسار الشراء</dt><dd className="mt-1 font-bold text-slate-200">{route}</dd></div>
-                    <div><dt className="text-slate-500">تاريخ الاحتياج</dt><dd className="mt-1 font-mono font-bold text-amber-300">{request.date_needed || '—'}</dd></div>
-                    <div><dt className="text-slate-500">تاريخ الطلب</dt><dd className="mt-1 font-mono text-slate-300">{fmtDate(request.created_at)}</dd></div>
-                    <div><dt className="text-slate-500">القسم المصدر</dt><dd className="mt-1 break-words text-slate-200">{request.department?.name || (request.requester as any)?.department?.name || request.target_department?.name || 'غير محدد'}</dd></div>
-                    <div><dt className="text-slate-500">القسم المستهدف</dt><dd className="mt-1 break-words font-bold text-cyan-300">{request.target_department?.name || request.department?.name || 'غير محدد'}</dd></div>
-                    <div><dt className="text-slate-500">مقدم الطلب</dt><dd className="mt-1 break-words text-slate-200">{request.requester?.name || '—'}</dd></div>
-                    <div><dt className="text-slate-500">رئيس القسم</dt><dd className="mt-1 break-words text-slate-200">{reviewerName(request, departments)}</dd></div>
-                    <div className="col-span-1 min-[420px]:col-span-2">
-                      <dt className="text-slate-500">الصنف والكمية</dt>
-                      <dd className="mt-1 break-words font-bold text-slate-100" title={quantitiesInfo.tooltip}>
-                        {itemNames}
-                        <span className="font-mono text-amber-300 font-bold mr-1.5"> — {quantitiesInfo.display}</span>
-                        {quantitiesInfo.subtext && <span className="text-[10px] text-slate-400 font-normal mr-1">{quantitiesInfo.subtext}</span>}
-                      </dd>
+
+                    {/* Action Bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/60">
+                      <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                        <span>الحالة: <strong className="text-slate-200">{statusLabel(request.status)}</strong></span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {stage === 'PENDING_ROUTE' && (
+                          <>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => void handleStartQuotes(request)}
+                              className="font-bold shadow-md shadow-cyan-900/30"
+                            >
+                              🎯 بدء عروض الأسعار
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => setDirectAccountingRequest(request)}
+                              className="font-bold border-amber-700/60 text-amber-200 hover:bg-amber-950/50"
+                            >
+                              ⚡ إرسال للحسابات بدون عروض
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => void handleReject(request.id)}
+                            >
+                              رفض
+                            </Button>
+                          </>
+                        )}
+                        {stage === 'QUOTE_SETUP' && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => setQuoteRequest(request)}
+                            className="font-bold bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-900/30"
+                          >
+                            📝 إدخال عروض الأسعار
+                          </Button>
+                        )}
+                        {stage === 'READY_FOR_PO' && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => navigate(`/procurement/purchase-orders/create?pr=${request.id}${getSelectedQuote(request)?.id ? `&quote=${getSelectedQuote(request)?.id}` : ''}`)}
+                            className="font-bold bg-emerald-600 hover:bg-emerald-500 text-slate-950 shadow-md shadow-emerald-900/30"
+                          >
+                            📑 إنشاء أمر الشراء
+                          </Button>
+                        )}
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setSelectedPrForDetails(request)}
+                          className="text-xs"
+                        >
+                          🔍 التفاصيل الكاملة
+                        </Button>
+                      </div>
                     </div>
-                    <div><dt className="text-slate-500">رقم قطعة الأرض</dt><dd className="mt-1 break-words font-mono text-cyan-300">{parcelsDisplay}</dd></div>
-                    <div><dt className="text-slate-500">المنطقة</dt><dd className="mt-1 break-words text-slate-200">{regionsDisplay}</dd></div>
-                    <div className="col-span-1 min-[420px]:col-span-2"><dt className="text-slate-500">المورد</dt><dd className="mt-1 break-words font-bold text-emerald-300">{supplier}</dd></div>
-                  </dl>
-                  <div className="mt-4 grid grid-cols-1 gap-2">
-                    {stage === 'PENDING_ROUTE' && <>
-                      <Button variant="primary" size="sm" className="w-full" onClick={() => void handleStartQuotes(request)}>بدء عروض الأسعار</Button>
-                      <Button variant="secondary" size="sm" className="w-full" onClick={() => setDirectAccountingRequest(request)}>إرسال للحسابات بدون عروض</Button>
-                      <Button variant="danger" size="sm" className="w-full" onClick={() => void handleReject(request.id)}>رفض</Button>
-                    </>}
-                    {stage === 'QUOTE_SETUP' && <Button variant="primary" size="sm" className="w-full" onClick={() => setQuoteRequest(request)}>إدخال عروض الأسعار</Button>}
-                    {stage === 'READY_FOR_PO' && <Button variant="primary" size="sm" className="w-full" onClick={() => navigate(`/procurement/purchase-orders/create?pr=${request.id}${getSelectedQuote(request)?.id ? `&quote=${getSelectedQuote(request)?.id}` : ''}`)}>إنشاء أمر شراء</Button>}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </section>
       )}
 
@@ -883,6 +950,15 @@ export const ProcurementManagerPage: React.FC = () => {
         isLoading={deletingSupplier}
       />
       <ReportPrintModal data={analytics} isOpen={reportPrintOpen} onClose={() => setReportPrintOpen(false)} />
+      <PrDetailsModal
+        pr={selectedPrForDetails}
+        isOpen={Boolean(selectedPrForDetails)}
+        onClose={() => setSelectedPrForDetails(null)}
+        onCreatePo={(prId) => {
+          setSelectedPrForDetails(null);
+          navigate(`/procurement/purchase-orders/create?pr=${prId}`);
+        }}
+      />
     </div>
   );
 };

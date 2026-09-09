@@ -193,7 +193,8 @@ export interface LinkedReceiptSummary {
 
 export interface PurchaseOrderPayload {
   purchase_request_id?: number;
-  supplier_id: number;
+  supplier_id?: number;
+  one_time_supplier_name?: string;
   payment_terms?: string;
   delivery_terms?: string;
   delivery_date?: string;

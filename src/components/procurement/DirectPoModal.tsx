@@ -6,6 +6,7 @@ import { Supplier } from '../../types/purchaseOrder';
 import { parseApiError } from '../../utils/apiError';
 import { DEFAULT_PR_UNIT_CODES, getUnitOptions } from '../../utils/units';
 import { SearchableSelect } from '../ui/FormField';
+import { SupplierSelectWithQuickAdd } from '../common/SupplierSelectWithQuickAdd';
 
 interface ItemRow {
   item_id?: number | null;
@@ -41,6 +42,7 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
   const [departments, setDepartments] = useState<ProcurementDepartmentOption[]>([]);
   const [siteEngineers, setSiteEngineers] = useState<ProcurementSiteEngineerOption[]>([]);
   const [supplierId, setSupplierId] = useState<string>('');
+  const [oneTimeSupplierName, setOneTimeSupplierName] = useState<string>('');
   const [departmentId, setDepartmentId] = useState<string>('');
   const [siteEngineerId, setSiteEngineerId] = useState<string>('');
   const [deliveryDate, setDeliveryDate] = useState(() => {
@@ -70,15 +72,6 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
     [items],
   );
 
-  const supplierOptions = useMemo(() => {
-    return suppliers.map((s) => ({
-      value: String(s.id),
-      label: s.company_name,
-      subLabel: s.code || undefined,
-      searchTerms: [s.phone || '', s.tax_number || '', s.commercial_register || ''].filter(Boolean),
-    }));
-  }, [suppliers]);
-
   const departmentOptions = useMemo(() => {
     return departments.map((d) => ({
       value: String(d.id),
@@ -88,11 +81,22 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
   }, [departments]);
 
   const engineerOptions = useMemo(() => {
-    return siteEngineers.map((e) => ({
-      value: String(e.id),
-      label: e.name,
-      subLabel: e.department_name || undefined,
-    }));
+    const sorted = [...siteEngineers].sort((a, b) => {
+      const aIsBadawy = a.id === 6 || a.name.includes('بدوي');
+      const bIsBadawy = b.id === 6 || b.name.includes('بدوي');
+      if (aIsBadawy) return -1;
+      if (bIsBadawy) return 1;
+      return a.name.localeCompare(b.name, 'ar');
+    });
+
+    return sorted.map((e) => {
+      const isBadawy = e.id === 6 || e.name.includes('بدوي');
+      return {
+        value: String(e.id),
+        label: isBadawy ? `⭐ ${e.name} (المهندس أحمد بدوي / مستلم)` : e.name,
+        subLabel: e.department_name || undefined,
+      };
+    });
   }, [siteEngineers]);
 
   const selectedDepartment = useMemo(() => {
@@ -139,6 +143,7 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
     }
   };
 
+
   const updateItem = (index: number, field: keyof ItemRow, value: string | number) => {
     setItems(current => current.map((item, itemIndex) => (
       itemIndex === index ? { ...item, [field]: value } : item
@@ -156,8 +161,8 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!supplierId || !departmentId || !siteEngineerId) {
-      setError('يرجى ملء كافة الحقول الإلزامية واختيار المورد والقسم ومهندس الموقع.');
+    if ((!supplierId && !oneTimeSupplierName.trim()) || !departmentId || !siteEngineerId) {
+      setError('يرجى ملء كافة الحقول الإلزامية واختيار المورد والقسم ومهندس الموقع / المستلم.');
       return;
     }
     const invalidItems = items.some(item => !item.item_description.trim() || Number(item.quantity) <= 0 || Number(item.unit_price) <= 0);
@@ -170,7 +175,8 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
     setError(null);
     try {
       const result = await createDirectPoApi({
-        supplier_id: Number(supplierId),
+        supplier_id: supplierId ? Number(supplierId) : undefined,
+        one_time_supplier_name: oneTimeSupplierName.trim() || undefined,
         department_id: Number(departmentId),
         site_engineer_user_id: Number(siteEngineerId),
         delivery_date: deliveryDate || undefined,
@@ -202,7 +208,7 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
             <span className="text-xl text-emerald-400">▣</span>
             <div className="min-w-0">
               <h2 className="text-sm sm:text-base font-black text-emerald-400 break-words">إنشاء طلب شراء مباشر</h2>
-              <p className="mt-0.5 hidden sm:block text-[11px] text-slate-400">يرسل أولًا للحسابات ثم للمدير التنفيذي قبل إنشاء أمر الشراء</p>
+              <p className="mt-0.5 hidden sm:block text-[11px] text-slate-400">يرسل أولًا للمدير التنفيذي ثم للحسابات قبل إنشاء أمر الشراء</p>
             </div>
           </div>
           <button type="button" onClick={onClose} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-900/60 text-2xl font-black leading-none text-slate-300 transition-colors hover:border-cyan-400 hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/70" aria-label="إغلاق النافذة" title="إغلاق النافذة">×</button>
@@ -213,16 +219,19 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
 
           <div className="grid grid-cols-1 gap-3 sm:gap-4 px-3 pt-4 sm:px-5 sm:pt-5 md:grid-cols-2 lg:grid-cols-3">
             <div>
-              <label className="block text-xs font-bold text-slate-200 mb-1">
-                اختر المورد <span className="text-rose-400">*</span>
-              </label>
-              <SearchableSelect
-                options={supplierOptions}
-                value={supplierId}
-                onChange={(val) => setSupplierId(String(val))}
-                placeholder="اختر أو ابحث عن المورد..."
-                searchPlaceholder="ابحث باسم المورد أو الكود..."
-                emptyMessage="لا يوجد مورد بهذا الاسم"
+              <SupplierSelectWithQuickAdd
+                suppliers={suppliers}
+                selectedSupplierId={supplierId}
+                onSelectSupplierId={(val) => setSupplierId(val)}
+                oneTimeSupplierName={oneTimeSupplierName}
+                onChangeOneTimeSupplierName={(name) => setOneTimeSupplierName(name)}
+                onSupplierCreated={(newSup) => {
+                  setSuppliers((prev) => [...prev, newSup]);
+                  setSupplierId(String(newSup.id));
+                  setOneTimeSupplierName('');
+                }}
+                required
+                label="المورد المطلوب"
               />
             </div>
             <div>
@@ -241,11 +250,11 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-bold text-slate-200">
-                  مهندس الموقع المسؤول <span className="text-rose-400">*</span>
+                  المستلم المسؤول (مهندس الموقع / م. أحمد بدوي) <span className="text-rose-400">*</span>
                 </label>
                 {selectedDepartmentEngineer && (
                   <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded">
-                    ✓ تم التحديد تلقائياً
+                    ✓ اقتراح القسم
                   </span>
                 )}
               </div>
@@ -253,9 +262,9 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
                 options={engineerOptions}
                 value={siteEngineerId}
                 onChange={(val) => setSiteEngineerId(String(val))}
-                placeholder={departmentId ? 'اختر مهندس الموقع...' : 'اختر القسم أولاً ليتم التحديد تلقائياً'}
-                searchPlaceholder="ابحث باسم مهندس الموقع..."
-                emptyMessage="لا يوجد مهندس بهذا الاسم"
+                placeholder="اختر المستلم (المهندس أحمد بدوي أو مهندس الموقع)..."
+                searchPlaceholder="ابحث باسم المستلم أو مهندس الموقع..."
+                emptyMessage="لا يوجد مستلم بهذا الاسم"
               />
             </div>
             <label className="block text-xs font-bold text-slate-200">

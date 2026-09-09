@@ -10,6 +10,7 @@ import { getUnitLabel } from '../../utils/units';
 
 type QuoteDraft = {
   supplier_id: string;
+  one_time_supplier_name?: string;
   unit_price: string;
   total_amount: string;
   notes: string;
@@ -21,6 +22,7 @@ const DEFAULT_QUOTES = 3;
 
 const createEmptyQuote = (supplierId = ''): QuoteDraft => ({
   supplier_id: supplierId,
+  one_time_supplier_name: '',
   unit_price: '',
   total_amount: '',
   notes: '',
@@ -179,9 +181,9 @@ export const PurchaseQuotesModal: React.FC<PurchaseQuotesModalProps> = ({
       setError(`يجب إدخال ${quoteCountLabel(MIN_QUOTES)} على الأقل. يمكنك البدء بثلاثة عروض ثم حذف عرض عند الحاجة.`);
       return;
     }
-    const supplierIds = drafts.map((draft) => Number(draft.supplier_id));
-    if (supplierIds.some((id) => !id) || new Set(supplierIds).size !== drafts.length) {
-      setError(`اختر موردًا مختلفًا لكل عرض من العروض (${quoteCountLabel(drafts.length)}).`);
+    const supplierKeys = drafts.map((draft) => (draft.supplier_id ? `id:${draft.supplier_id}` : (draft.one_time_supplier_name?.trim() ? `name:${draft.one_time_supplier_name.trim()}` : '')));
+    if (supplierKeys.some((key) => !key) || new Set(supplierKeys).size !== drafts.length) {
+      setError(`اختر موردًا أو اكتب اسم مورد لعملية واحدة مختلفًا لكل عرض من العروض (${quoteCountLabel(drafts.length)}).`);
       return;
     }
     if (
@@ -217,7 +219,8 @@ export const PurchaseQuotesModal: React.FC<PurchaseQuotesModalProps> = ({
       await createPurchaseQuotesApi(
         request.id,
         drafts.map((draft) => ({
-          supplier_id: Number(draft.supplier_id),
+          supplier_id: draft.supplier_id ? Number(draft.supplier_id) : undefined,
+          one_time_supplier_name: draft.one_time_supplier_name?.trim() || undefined,
           unit_price: Number(draft.unit_price),
           total_amount: Number(draft.total_amount),
           notes: draft.notes || undefined,
@@ -410,13 +413,20 @@ export const PurchaseQuotesModal: React.FC<PurchaseQuotesModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-[1.4fr_0.8fr_0.8fr_1.6fr]">
-                  <label className="text-xs font-bold text-slate-300">
-                    اسم المورد
-                    <div className="mt-1 flex gap-2">
+                  <div className="text-xs font-bold text-slate-300 space-y-1">
+                    <label className="block">اسم المورد</label>
+                    <div className="flex gap-2">
                       <select
                         value={draft.supplier_id}
-                        onChange={(event) => updateDraft(index, 'supplier_id', event.target.value)}
-                        className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-400"
+                        onChange={(event) => {
+                          const val = event.target.value;
+                          updateDraft(index, 'supplier_id', val);
+                          if (val) updateDraft(index, 'one_time_supplier_name', '');
+                        }}
+                        disabled={Boolean(draft.one_time_supplier_name?.trim())}
+                        className={`min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-400 ${
+                          draft.one_time_supplier_name?.trim() ? 'opacity-40' : ''
+                        }`}
                       >
                         <option value="">اختر المورد</option>
                         {activeSuppliers.map((supplier) => (
@@ -439,7 +449,27 @@ export const PurchaseQuotesModal: React.FC<PurchaseQuotesModalProps> = ({
                         + مورد جديد
                       </button>
                     </div>
-                  </label>
+                    <div className="pt-0.5">
+                      <input
+                        type="text"
+                        value={draft.one_time_supplier_name || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateDraft(index, 'one_time_supplier_name', val);
+                          if (val.trim()) {
+                            updateDraft(index, 'supplier_id', '');
+                          }
+                        }}
+                        placeholder="أو اكتب اسم مورد لعملية واحدة فقط (One-time)..."
+                        className="w-full bg-slate-950/90 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-xs text-amber-200 placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                      />
+                      {draft.one_time_supplier_name?.trim() && (
+                        <p className="text-[10px] text-amber-400 mt-0.5">
+                          ✓ سيتم اعتماد هذا الاسم كمورد لعملية واحدة فقط
+                        </p>
+                      )}
+                    </div>
+                  </div>
 
                   <label className="text-xs font-bold text-slate-300">
                     سعر الوحدة بالجنيه المصري

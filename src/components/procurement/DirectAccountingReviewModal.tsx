@@ -5,6 +5,7 @@ import { PurchaseRequest, PR_PRIORITY_LABELS } from '../../types/purchaseRequest
 import { المورد } from '../../types/purchaseOrder';
 import { DirectAccountingFinancialData } from '../../api/procurement';
 import { getUnitLabel } from '../../utils/units';
+import { SupplierSelectWithQuickAdd } from '../common/SupplierSelectWithQuickAdd';
 
 interface DirectAccountingReviewModalProps {
   request: PurchaseRequest | null;
@@ -19,6 +20,7 @@ interface DirectAccountingReviewModalProps {
 type EditableFinancialItem = {
   pr_item_id: number;
   supplier_id: number | '';
+  one_time_supplier_name?: string;
   item_reference?: string | null;
   region?: string | null;
   item_description: string;
@@ -26,6 +28,7 @@ type EditableFinancialItem = {
   quantity: number | string;
   unit_price: number | string;
 };
+
 
 const formatAmount = (value: number | string | null | undefined) =>
   Number(value || 0).toLocaleString('ar-EG', {
@@ -115,9 +118,26 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
     setValidationError(null);
   };
 
-  const applySupplierToAll = (supplierId: number | '') => {
-    setItems((current) => current.map((item) => ({ ...item, supplier_id: supplierId })));
+  const [globalSupplierId, setGlobalSupplierId] = useState<string>('');
+  const [globalOneTimeName, setGlobalOneTimeName] = useState<string>('');
+
+  const applySupplierToAll = (supplierId: number | '', oneTimeName?: string) => {
+    setItems((current) =>
+      current.map((item) => ({
+        ...item,
+        supplier_id: supplierId,
+        one_time_supplier_name: oneTimeName || undefined,
+      }))
+    );
     setValidationError(null);
+  };
+
+  const handleApplyGlobalSupplier = () => {
+    if (!globalSupplierId && !globalOneTimeName.trim()) {
+      setValidationError('يرجى اختيار مورد أو كتابة اسم مورد لعملية واحدة أولاً.');
+      return;
+    }
+    applySupplierToAll(globalSupplierId ? Number(globalSupplierId) : '', globalOneTimeName.trim());
   };
 
   const handleConfirm = () => {
@@ -125,8 +145,8 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
       setValidationError('لا توجد بنود مالية مرتبطة بهذا الطلب.');
       return;
     }
-    if (items.some((item) => !item.supplier_id)) {
-      setValidationError('يجب اختيار المورد لكل بند من بنود الطلب.');
+    if (items.some((item) => !item.supplier_id && !item.one_time_supplier_name?.trim())) {
+      setValidationError('يجب اختيار المورد أو تحديد مورد لعملية واحدة لكل بند من بنود الطلب.');
       return;
     }
     if (items.some((item) => !Number.isFinite(Number(item.quantity)) || Number(item.quantity) <= 0)) {
@@ -139,9 +159,12 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
     }
 
     onConfirm({
+      supplier_id: globalSupplierId ? Number(globalSupplierId) : undefined,
+      one_time_supplier_name: globalOneTimeName.trim() || undefined,
       items: items.map((item) => ({
         pr_item_id: item.pr_item_id,
-        supplier_id: Number(item.supplier_id),
+        supplier_id: item.supplier_id ? Number(item.supplier_id) : undefined,
+        one_time_supplier_name: item.one_time_supplier_name || undefined,
         quantity: Number(item.quantity),
         unit_price: Number(item.unit_price),
       })),
@@ -202,31 +225,37 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
         </div>
 
         {/* Quick supplier apply */}
-        <div className="rounded-lg border border-emerald-500/40 bg-emerald-950/20 p-3">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/20 p-4 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <p className="text-xs font-bold text-emerald-200">تطبيق مورد واحد على جميع البنود</p>
-              <p className="mt-0.5 text-[10px] text-slate-400">اختر مورد لتطبيقه على كل البنود دفعة واحدة، أو اختر مورد مختلف لكل بند من الجدول أدناه</p>
+              <p className="text-xs font-bold text-emerald-200">تطبيق مورد على جميع البنود دفعة واحدة</p>
+              <p className="mt-0.5 text-[11px] text-slate-400">
+                يمكنك اختيار مورد معتمد، أو إضافة مورد جديد، أو كتابة اسم مورد لعملية واحدة فقط وتطبيقه على كل البنود.
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <select
-                onChange={(event) => {
-                  if (event.target.value) {
-                    applySupplierToAll(Number(event.target.value));
-                    event.target.value = '';
-                  }
-                }}
-                disabled={isSubmitting}
-                className="h-9 w-64 rounded-md border border-emerald-500/60 bg-[#0b1424] px-2 text-xs text-slate-100 outline-none focus:border-emerald-300 disabled:opacity-60"
-              >
-                <option value="">تطبيق مورد على الكل...</option>
-                {activeSuppliers.map((supplier) => (
-                  <option key={supplier.id} value={supplier.id}>
-                    {supplier.company_name}{supplier.code ? ` — ${supplier.code}` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleApplyGlobalSupplier}
+              disabled={isSubmitting || (!globalSupplierId && !globalOneTimeName.trim())}
+              className="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold shrink-0"
+            >
+              ✓ تطبيق على جميع البنود
+            </Button>
+          </div>
+          <div className="max-w-xl">
+            <SupplierSelectWithQuickAdd
+              suppliers={suppliers}
+              selectedSupplierId={globalSupplierId}
+              onSelectSupplierId={(val) => setGlobalSupplierId(val)}
+              oneTimeSupplierName={globalOneTimeName}
+              onChangeOneTimeSupplierName={(name) => setGlobalOneTimeName(name)}
+              onSupplierCreated={(newSup) => {
+                setGlobalSupplierId(String(newSup.id));
+                setGlobalOneTimeName('');
+              }}
+              label="المورد المقترح للبنود"
+            />
           </div>
         </div>
 
@@ -281,24 +310,42 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                     <td className="border-t border-slate-800 px-3 py-3 text-center font-mono text-slate-400">{index + 1}</td>
                     <td className="border-t border-slate-800 px-3 py-3 font-bold text-slate-100">{item.item_description || '—'}</td>
                     <td className="border-t border-slate-800 px-2 py-2">
-                      <select
-                        aria-label={`مورد البند ${index + 1}`}
-                        value={item.supplier_id}
-                        onChange={(event) => updateItemSupplier(index, event.target.value)}
-                        disabled={isSubmitting}
-                        className={`h-9 w-44 rounded-md border px-2 text-[11px] outline-none disabled:opacity-60 ${
-                          item.supplier_id
-                            ? 'border-emerald-500/60 bg-[#0b1424] text-slate-100 focus:border-emerald-300'
-                            : 'border-rose-500/60 bg-rose-950/20 text-rose-300 focus:border-rose-300'
-                        }`}
-                      >
-                        <option value="">اختر المورد...</option>
-                        {activeSuppliers.map((supplier) => (
-                          <option key={supplier.id} value={supplier.id}>
-                            {supplier.company_name}{supplier.code ? ` — ${supplier.code}` : ''}
-                          </option>
-                        ))}
-                      </select>
+                      {item.one_time_supplier_name ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-2 py-1 rounded bg-amber-500/20 text-amber-300 font-bold text-[10px] border border-amber-500/40 truncate max-w-[150px]">
+                            ⚡ {item.one_time_supplier_name}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setItems(cur => cur.map((it, idx) => idx === index ? { ...it, one_time_supplier_name: undefined } : it));
+                            }}
+                            className="text-[10px] text-slate-400 hover:text-rose-400"
+                            title="إلغاء المورد المخصص"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ) : (
+                        <select
+                          aria-label={`مورد البند ${index + 1}`}
+                          value={item.supplier_id}
+                          onChange={(event) => updateItemSupplier(index, event.target.value)}
+                          disabled={isSubmitting}
+                          className={`h-9 w-44 rounded-md border px-2 text-[11px] outline-none disabled:opacity-60 ${
+                            item.supplier_id
+                              ? 'border-emerald-500/60 bg-[#0b1424] text-slate-100 focus:border-emerald-300'
+                              : 'border-rose-500/60 bg-rose-950/20 text-rose-300 focus:border-rose-300'
+                          }`}
+                        >
+                          <option value="">اختر المورد...</option>
+                          {activeSuppliers.map((supplier) => (
+                            <option key={supplier.id} value={supplier.id}>
+                              {supplier.company_name}{supplier.code ? ` — ${supplier.code}` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </td>
                     <td className="border-t border-slate-800 px-3 py-2 text-center">
                       <div className="flex items-center justify-center gap-1.5">

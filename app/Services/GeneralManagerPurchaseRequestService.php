@@ -31,9 +31,6 @@ class GeneralManagerPurchaseRequestService
                 'selectedQuote.supplier',
             ])
             ->where('status', self::PENDING_STATUS)
-            ->where(function ($query): void {
-                $query->whereNull('procurement_route')->orWhere('procurement_route', '!=', 'DIRECT');
-            })
             ->orderByDesc('updated_at')
             ->paginate(min(max($perPage, 1), 100));
     }
@@ -55,9 +52,6 @@ class GeneralManagerPurchaseRequestService
                 'selectedQuote.supplier',
             ])
             ->where('status', self::PENDING_STATUS)
-            ->where(function ($query): void {
-                $query->whereNull('procurement_route')->orWhere('procurement_route', '!=', 'DIRECT');
-            })
             ->findOrFail($id);
     }
 
@@ -175,8 +169,10 @@ class GeneralManagerPurchaseRequestService
             if ($pr->status !== self::PENDING_STATUS) {
                 throw new \RuntimeException('تم اتخاذ قرار بشأن طلب الشراء بالفعل أو لم يعد بانتظار المدير التنفيذي.');
             }
+            $isDirect = $pr->procurement_route === 'DIRECT';
+            $nextStatus = $isDirect ? 'PENDING_ACCOUNTING_APPROVAL' : 'PENDING_PROCUREMENT_APPROVAL';
             $pr->update([
-                'status' => 'PENDING_PROCUREMENT_APPROVAL',
+                'status' => $nextStatus,
             ]);
 
             app(NotificationService::class)->markEntityNotificationsAsRead($pr);
@@ -187,20 +183,20 @@ class GeneralManagerPurchaseRequestService
                 'actor_user_id' => $executive->id,
                 'action' => 'APPROVED_BY_EXECUTIVE',
                 'from_state' => self::PENDING_STATUS,
-                'to_state' => 'PENDING_PROCUREMENT_APPROVAL',
-                'comments' => $comment ?? 'تم اعتماد الطلب من المدير التنفيذي وإرساله للمشتريات.',
+                'to_state' => $nextStatus,
+                'comments' => $comment ?? ($isDirect ? 'اعتمد المدير التنفيذي المهندس محمد طلب الشراء المباشر وحوله إلى الإدارة المالية للموافقة.' : 'تم اعتماد الطلب من المدير التنفيذي وإرساله للمشتريات.'),
             ]);
 
             app(SystemEventService::class)->recordAction(
                 $pr,
                 'APPROVED_BY_EXECUTIVE',
-                'اعتمد المدير التنفيذي طلب الشراء وأرسله إلى مدير المشتريات.',
+                $isDirect ? 'اعتمد المدير التنفيذي طلب الشراء المباشر وحوله إلى الإدارة المالية.' : 'اعتمد المدير التنفيذي طلب الشراء وأرسله إلى مدير المشتريات.',
                 [
                     'event_type' => 'purchase_request.approved_by_executive',
                     'from_state' => self::PENDING_STATUS,
-                    'to_state' => 'PENDING_PROCUREMENT_APPROVAL',
+                    'to_state' => $nextStatus,
                     'actor_user_id' => $executive->id,
-                    'metadata' => ['comment' => $comment],
+                    'metadata' => ['comment' => $comment, 'is_direct' => $isDirect],
                 ]
             );
 
@@ -208,10 +204,22 @@ class GeneralManagerPurchaseRequestService
                 $pr->user_id,
                 'purchase_request_approved_by_executive',
                 'تم اعتماد طلب الشراء تنفيذيًا',
-                "اعتمد المدير التنفيذي طلب الشراء {$pr->request_number} وأرسله إلى المشتريات.",
+                "اعتمد المدير التنفيذي طلب الشراء {$pr->request_number}.",
                 $pr
             );
-            $this->notifyProcurement($pr, 'اعتمد المدير التنفيذي طلب الشراء، وهو بانتظار إجراء مدير المشتريات.');
+
+            if ($isDirect) {
+                $notificationService = app(NotificationService::class);
+                $notificationService->queueUsers(
+                    $notificationService->resolveUsersWithPermission('purchase_request.accounting_view'),
+                    'purchase_request_pending_accounting_approval',
+                    'طلب شراء مباشر معتمد تنفيذيًا بانتظار الموافقة المالية',
+                    "اعتمد المدير التنفيذي المهندس محمد الطلب المباشر {$pr->request_number}، وهو الآن بانتظار موافقة المدير المالي / الحسابات.",
+                    $pr
+                );
+            } else {
+                $this->notifyProcurement($pr, 'اعتمد المدير التنفيذي طلب الشراء، وهو بانتظار إجراء مدير المشتريات.');
+            }
 
             return $pr->fresh(['requester', 'department', 'assignedReviewer', 'siteEngineer', 'items.item', 'approvalHistory']);
         });

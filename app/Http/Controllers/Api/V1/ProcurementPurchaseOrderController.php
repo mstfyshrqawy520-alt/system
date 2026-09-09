@@ -83,12 +83,25 @@ class ProcurementPurchaseOrderController extends Controller
     {
         $financialData = $request->input('financial_data');
         if (is_array($financialData)) {
+            if (empty($financialData['supplier_id']) && !empty($financialData['one_time_supplier_name'])) {
+                $sup = \App\Models\Supplier::firstOrCreate(
+                    ['company_name' => trim($financialData['one_time_supplier_name'])],
+                    ['contact_name' => 'مورد لعملية واحدة', 'is_active' => true, 'opening_balance' => 0]
+                );
+                $financialData['supplier_id'] = $sup->id;
+            }
             $globalSupplierId = $financialData['supplier_id'] ?? null;
             $items = $financialData['items'] ?? null;
             if (is_array($items)) {
                 $firstItemSupplier = null;
                 foreach ($items as $idx => $item) {
-                    if (!empty($item['supplier_id'])) {
+                    if (empty($item['supplier_id']) && !empty($item['one_time_supplier_name'])) {
+                        $sup = \App\Models\Supplier::firstOrCreate(
+                            ['company_name' => trim($item['one_time_supplier_name'])],
+                            ['contact_name' => 'مورد لعملية واحدة', 'is_active' => true, 'opening_balance' => 0]
+                        );
+                        $items[$idx]['supplier_id'] = $sup->id;
+                    } elseif (!empty($item['supplier_id'])) {
                         $firstItemSupplier ??= $item['supplier_id'];
                     } elseif ($globalSupplierId) {
                         $items[$idx]['supplier_id'] = $globalSupplierId;
@@ -262,6 +275,14 @@ class ProcurementPurchaseOrderController extends Controller
         $prId = (int) $request->validated('purchase_request_id');
         $supplierId = (int) $request->validated('supplier_id');
 
+        if (!$supplierId && $request->filled('one_time_supplier_name')) {
+            $supplier = \App\Models\Supplier::firstOrCreate(
+                ['company_name' => trim($request->input('one_time_supplier_name'))],
+                ['contact_name' => 'مورد لعملية واحدة', 'is_active' => true, 'opening_balance' => 0]
+            );
+            $supplierId = $supplier->id;
+        }
+
         try {
             $po = $this->poService->createPoFromPr(
                 $request->user(),
@@ -280,6 +301,7 @@ class ProcurementPurchaseOrderController extends Controller
             ->response()
             ->setStatusCode(201);
     }
+
 
     /**
      * Update draft Purchase Order header details.
@@ -393,11 +415,32 @@ class ProcurementPurchaseOrderController extends Controller
         $engineerIsAssigned = \App\Models\User::query()
             ->whereKey($validated['site_engineer_user_id'])
             ->where('is_active', true)
-            ->whereHas('roles', fn ($query) => $query->where('slug', 'site_engineer'))
             ->exists();
 
         if (! $engineerIsAssigned) {
-            return response()->json(['message' => 'يجب اختيار مهندس موقع نشط من قائمة مهندسي الموقع.'], 422);
+            return response()->json(['message' => 'يجب اختيار مستلم نشط من مستخدمي النظام.'], 422);
+        }
+
+        if (empty($validated['supplier_id']) && !empty($validated['one_time_supplier_name'])) {
+            $supplier = \App\Models\Supplier::firstOrCreate(
+                ['company_name' => trim($validated['one_time_supplier_name'])],
+                ['contact_name' => 'مورد لعملية واحدة', 'is_active' => true, 'opening_balance' => 0]
+            );
+            $validated['supplier_id'] = $supplier->id;
+        }
+
+        if (!empty($validated['items']) && is_array($validated['items'])) {
+            foreach ($validated['items'] as $idx => $item) {
+                if (empty($item['supplier_id']) && !empty($item['one_time_supplier_name'])) {
+                    $sup = \App\Models\Supplier::firstOrCreate(
+                        ['company_name' => trim($item['one_time_supplier_name'])],
+                        ['contact_name' => 'مورد لعملية واحدة', 'is_active' => true, 'opening_balance' => 0]
+                    );
+                    $validated['items'][$idx]['supplier_id'] = $sup->id;
+                } elseif (empty($item['supplier_id']) && !empty($validated['supplier_id'])) {
+                    $validated['items'][$idx]['supplier_id'] = $validated['supplier_id'];
+                }
+            }
         }
 
         try {
@@ -410,7 +453,7 @@ class ProcurementPurchaseOrderController extends Controller
         }
 
         return response()->json([
-            'message' => 'تم إنشاء طلب الشراء المباشر وإرساله إلى الحسابات للموافقة المالية.',
+            'message' => 'تم إنشاء طلب الشراء المباشر وإرساله إلى المدير التنفيذي للاعتماد.',
             'data' => new PurchaseRequestResource($pr),
         ], 201);
     }

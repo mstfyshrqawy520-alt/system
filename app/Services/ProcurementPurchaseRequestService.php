@@ -286,7 +286,7 @@ class ProcurementPurchaseRequestService
             }
 
             $pr->update([
-                'status' => 'PENDING_ACCOUNTING_APPROVAL',
+                'status' => 'PENDING_EXECUTIVE_APPROVAL',
                 'procurement_route' => 'DIRECT',
                 'direct_supplier_id' => $primarySupplierId,
                 'total_estimated_cost' => round($grandTotal, 2),
@@ -299,30 +299,30 @@ class ProcurementPurchaseRequestService
                 'target_type' => PurchaseRequest::class,
                 'target_id' => $pr->id,
                 'actor_user_id' => $procurementManager->id,
-                'action' => 'DIRECT_ACCOUNTING_REVIEW_REQUIRED',
+                'action' => 'DIRECT_EXECUTIVE_REVIEW_REQUIRED',
                 'from_state' => 'PENDING_PROCUREMENT_APPROVAL',
-                'to_state' => 'PENDING_ACCOUNTING_APPROVAL',
-                'comments' => $comment ?? 'أدخل مدير المشتريات البيانات المالية واختار المورد ثم أرسل الطلب إلى الحسابات للموافقة.',
+                'to_state' => 'PENDING_EXECUTIVE_APPROVAL',
+                'comments' => $comment ?? 'أدخل مدير المشتريات البيانات المالية واختار المورد ثم أرسل الطلب إلى المدير التنفيذي المهندس محمد للاعتماد.',
             ]);
 
             AuditLog::create([
                 'user_id' => $procurementManager->id,
                 'entity_type' => PurchaseRequest::class,
                 'entity_id' => $pr->id,
-                'action' => 'DIRECT_ACCOUNTING_REVIEW_REQUIRED',
+                'action' => 'DIRECT_EXECUTIVE_REVIEW_REQUIRED',
                 'field_name' => 'status',
                 'old_value' => 'PENDING_PROCUREMENT_APPROVAL',
-                'new_value' => 'PENDING_ACCOUNTING_APPROVAL',
+                'new_value' => 'PENDING_EXECUTIVE_APPROVAL',
             ]);
 
             app(SystemEventService::class)->recordAction(
                 $pr,
-                'DIRECT_ACCOUNTING_REVIEW_REQUIRED',
-                'أدخل مدير المشتريات البيانات المالية واختار المورد وأرسل الطلب إلى الحسابات بدون عروض أسعار.',
+                'DIRECT_EXECUTIVE_REVIEW_REQUIRED',
+                'أدخل مدير المشتريات البيانات المالية واختار المورد وأرسل طلب الشراء المباشر إلى المدير التنفيذي المهندس محمد للاعتماد.',
                 [
-                    'event_type' => 'purchase_request.direct_accounting_review_required',
+                    'event_type' => 'purchase_request.direct_executive_review_required',
                     'from_state' => 'PENDING_PROCUREMENT_APPROVAL',
-                    'to_state' => 'PENDING_ACCOUNTING_APPROVAL',
+                    'to_state' => 'PENDING_EXECUTIVE_APPROVAL',
                     'actor_user_id' => $procurementManager->id,
                     'metadata' => ['comment' => $comment, 'requires_quotes' => false, 'supplier_ids' => $uniqueSupplierIds, 'total_estimated_cost' => round($grandTotal, 2)],
                 ]
@@ -330,10 +330,10 @@ class ProcurementPurchaseRequestService
 
             $notificationService = app(NotificationService::class);
             $notificationService->queueUsers(
-                $notificationService->resolveUsersWithPermission('purchase_request.accounting_view'),
-                'purchase_request_pending_accounting_approval',
-                'طلب بانتظار الموافقة المالية',
-                "أرسل مدير المشتريات الطلب {$pr->request_number} إلى الحسابات بدون عروض أسعار بعد إدخال البيانات المالية. يرجى الموافقة أو الرفض.",
+                $notificationService->resolveUsersWithPermission('purchase_request.approve_executive'),
+                'purchase_request_pending_executive_approval',
+                'طلب شراء مباشر بانتظار اعتماد المدير التنفيذي',
+                "أرسل مدير المشتريات الطلب المباشر {$pr->request_number} بعد تحديد المورد والأسعار إلى المدير التنفيذي المهندس محمد للاعتماد.",
                 $pr
             );
 
@@ -362,7 +362,7 @@ class ProcurementPurchaseRequestService
                 'site_engineer_user_id' => $data['site_engineer_user_id'],
                 'direct_supplier_id' => $data['supplier_id'],
                 'procurement_route' => 'DIRECT',
-                'status' => 'PENDING_ACCOUNTING_APPROVAL',
+                'status' => 'PENDING_EXECUTIVE_APPROVAL',
                 'priority' => $data['priority'] ?? 'NORMAL',
                 'date_needed' => $data['delivery_date'] ?? null,
                 'total_estimated_cost' => round($total, 2),
@@ -392,8 +392,8 @@ class ProcurementPurchaseRequestService
                 'actor_user_id' => $procurementManager->id,
                 'action' => 'DIRECT_PURCHASE_REQUEST_CREATED',
                 'from_state' => 'DRAFT',
-                'to_state' => 'PENDING_ACCOUNTING_APPROVAL',
-                'comments' => 'أنشأ مدير المشتريات طلب شراء مباشرًا وأرسله إلى الحسابات للموافقة المالية.',
+                'to_state' => 'PENDING_EXECUTIVE_APPROVAL',
+                'comments' => 'أنشأ مدير المشتريات طلب شراء مباشرًا وأرسله إلى المدير التنفيذي المهندس محمد للاعتماد.',
             ]);
 
             AuditLog::create([
@@ -403,17 +403,17 @@ class ProcurementPurchaseRequestService
                 'action' => 'DIRECT_PURCHASE_REQUEST_CREATED',
                 'field_name' => 'status',
                 'old_value' => 'DRAFT',
-                'new_value' => 'PENDING_ACCOUNTING_APPROVAL',
+                'new_value' => 'PENDING_EXECUTIVE_APPROVAL',
             ]);
 
             app(SystemEventService::class)->recordAction(
                 $pr,
                 'DIRECT_PURCHASE_REQUEST_CREATED',
-                'أنشأ مدير المشتريات طلب شراء مباشرًا وأرسله إلى الحسابات.',
+                'أنشأ مدير المشتريات طلب شراء مباشرًا وأرسله إلى المدير التنفيذي المهندس محمد للاعتماد.',
                 [
                     'event_type' => 'purchase_request.direct_created',
                     'from_state' => 'DRAFT',
-                    'to_state' => 'PENDING_ACCOUNTING_APPROVAL',
+                    'to_state' => 'PENDING_EXECUTIVE_APPROVAL',
                     'actor_user_id' => $procurementManager->id,
                     'metadata' => ['supplier_id' => $data['supplier_id'], 'total' => round($total, 2)],
                 ]
@@ -421,10 +421,10 @@ class ProcurementPurchaseRequestService
 
             $notificationService = app(NotificationService::class);
             $notificationService->queueUsers(
-                $notificationService->resolveUsersWithPermission('purchase_request.accounting_view'),
-                'purchase_request_pending_accounting_approval',
-                'طلب شراء مباشر بانتظار الحسابات',
-                "أنشأ مدير المشتريات الطلب المباشر {$pr->request_number}. يرجى مراجعة التفاصيل المالية والموافقة أو الرفض.",
+                $notificationService->resolveUsersWithPermission('purchase_request.approve_executive'),
+                'purchase_request_pending_executive_approval',
+                'طلب شراء مباشر بانتظار اعتماد المدير التنفيذي',
+                "أنشأ مدير المشتريات الطلب المباشر {$pr->request_number} وهو بانتظار اعتماد المدير التنفيذي المهندس محمد.",
                 $pr
             );
 

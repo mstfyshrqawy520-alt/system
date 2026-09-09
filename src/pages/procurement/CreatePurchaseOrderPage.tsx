@@ -16,6 +16,7 @@ import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { getUnitLabel } from '../../utils/units';
 import { tafqeetCurrency } from '../../utils/tafqeet';
 import { UnifiedNotesCard } from '../../components/common/UnifiedNotesCard';
+import { SupplierSelectWithQuickAdd } from '../../components/common/SupplierSelectWithQuickAdd';
 
 const getLocalDateIso = () => {
   const now = new Date();
@@ -45,6 +46,7 @@ export const CreatePurchaseOrderPage: React.FC = () => {
   const [pr, setPr] = useState<PurchaseRequest | null>(null);
   const [suppliers, setSuppliers] = useState<المورد[]>([]);
   const [supplierId, setSupplierId] = useState<string>('');
+  const [oneTimeSupplierName, setOneTimeSupplierName] = useState<string>('');
   const [paymentTerms, setPaymentTerms] = useState<string>('دفع عند الاستلام');
   const [deliveryDate, setDeliveryDate] = useState<string>(getLocalDateIso());
   const [budgetCode, setBudgetCode] = useState<string>('');
@@ -175,8 +177,8 @@ export const CreatePurchaseOrderPage: React.FC = () => {
       setError('لا يوجد طلب شراء معتمد محدد. يمكنك اختيار أمر شراء مباشر.');
       return;
     }
-    if (!supplierId) {
-      setError('يرجى اختيار المورد من القائمة');
+    if (!supplierId && !oneTimeSupplierName.trim()) {
+      setError('يرجى اختيار المورد من القائمة أو إدخال اسم مورد لعملية واحدة');
       return;
     }
     if (poItems.some(item => !item.item_reference.trim() || !item.region.trim())) {
@@ -196,7 +198,8 @@ export const CreatePurchaseOrderPage: React.FC = () => {
     try {
       const po = await createPurchaseOrderApi({
         purchase_request_id: prId,
-        supplier_id: Number(supplierId),
+        supplier_id: supplierId ? Number(supplierId) : undefined,
+        one_time_supplier_name: oneTimeSupplierName.trim() || undefined,
         payment_terms: paymentTerms || undefined,
         delivery_date: deliveryDate || undefined,
         budget_code: budgetCode || undefined,
@@ -441,19 +444,20 @@ export const CreatePurchaseOrderPage: React.FC = () => {
           {/* المورد and Header Options */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">اختر المورد المعتمد *</label>
-              <SearchableSelect
-                options={supplierOptions}
-                value={supplierId ? Number(supplierId) : ''}
-                onChange={(val) => handleSupplierSelect(val ? String(val) : '')}
-                placeholder="-- ابحث عن المورد بالاسم أو الكود أو الهاتف --"
-                searchPlaceholder="اكتب اسم المورد أو الكود للبحث الفوري..."
+              <SupplierSelectWithQuickAdd
+                suppliers={suppliers}
+                selectedSupplierId={supplierId}
+                onSelectSupplierId={handleSupplierSelect}
+                oneTimeSupplierName={oneTimeSupplierName}
+                onChangeOneTimeSupplierName={(name) => setOneTimeSupplierName(name)}
+                onSupplierCreated={(newSup) => {
+                  setSuppliers((prev) => [...prev, newSup]);
+                  handleSupplierSelect(String(newSup.id));
+                }}
                 disabled={Boolean(pr?.selected_quote?.id || (pr?.procurement_route === 'DIRECT' && !hasMultipleDirectSuppliers))}
-                emptyMessage="لا يوجد مورد بهذا الاسم"
+                label="اختر المورد المعتمد"
+                required
               />
-              {suppliers.length === 0 && (
-                <p className="text-[11px] text-rose-400 mt-1">لا يوجد موردون نشطون متاحون حالياً بالنظام.</p>
-              )}
             </div>
 
             <div>

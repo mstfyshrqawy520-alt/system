@@ -16,7 +16,8 @@ class CreatePurchaseOrderRequest extends FormRequest
     {
         return [
             'purchase_request_id' => ['required', 'integer', 'exists:purchase_requests,id'],
-            'supplier_id' => ['required', 'integer', 'exists:suppliers,id'],
+            'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
+            'one_time_supplier_name' => ['nullable', 'string', 'max:150'],
             'payment_terms' => ['nullable', 'string', 'max:150'],
             'delivery_terms' => ['nullable', 'string', 'max:150'],
             'delivery_date' => ['nullable', 'date'],
@@ -40,6 +41,13 @@ class CreatePurchaseOrderRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             $supplierId = $this->input('supplier_id');
+            $oneTimeName = trim((string) $this->input('one_time_supplier_name', ''));
+
+            if (empty($supplierId) && empty($oneTimeName)) {
+                $validator->errors()->add('supplier_id', 'يجب اختيار مورد معتمد أو إدخال اسم مورد لعملية واحدة فقط.');
+                return;
+            }
+
             if ($supplierId) {
                 $supplier = Supplier::find($supplierId);
                 if ($supplier && ! $supplier->is_active) {
