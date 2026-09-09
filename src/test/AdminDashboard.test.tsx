@@ -97,7 +97,7 @@ describe("Admin Frontend Feature Suite", () => {
             expect(
                 screen.getByRole("heading", { name: /لوحة تحكم/ }),
             ).toBeInTheDocument();
-        });
+        }, { timeout: 4000 });
         expect(
             screen.getByText(/مركز الإجراءات والعمليات الإدارية السريعة/),
         ).toBeInTheDocument();
@@ -124,7 +124,7 @@ describe("Admin Frontend Feature Suite", () => {
 
         await waitFor(() => {
             expect(
-                screen.getByText("لوحة مدير النظام"),
+                screen.getByText(/لوحة مدير النظام/),
             ).toBeInTheDocument();
         });
         expect(

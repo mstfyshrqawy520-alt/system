@@ -19,7 +19,7 @@ interface SupplierSelectWithQuickAddProps {
 }
 
 export const SupplierSelectWithQuickAdd: React.FC<SupplierSelectWithQuickAddProps> = ({
-  suppliers,
+  suppliers = [],
   selectedSupplierId = '',
   onSelectSupplierId,
   oneTimeSupplierName = '',
@@ -34,11 +34,12 @@ export const SupplierSelectWithQuickAdd: React.FC<SupplierSelectWithQuickAddProp
 }) => {
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
 
-  const activeSuppliers = suppliers.filter((s) => s.is_active !== false);
+  const safeSuppliers = Array.isArray(suppliers) ? suppliers : [];
+  const activeSuppliers = safeSuppliers.filter((s) => Boolean(s && s.is_active !== false));
 
   const supplierOptions = activeSuppliers.map((s) => ({
     value: s.id,
-    label: s.company_name,
+    label: s.company_name || `مورد #${s.id}`,
     badge: s.code || `SUP-${s.id}`,
     subLabel: s.phone ? `هاتف: ${s.phone}` : undefined,
     searchTerms: [s.company_name, s.code || '', s.phone || '', s.email || ''].filter(Boolean),

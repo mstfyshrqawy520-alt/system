@@ -45,9 +45,9 @@ class FullEndToEndWorkflowTest extends TestCase
         $this->seed(RolePermissionSeeder::class);
 
         // 3. Create Department
-                $this->department = Department::create([
-            'code' => 'IT-DEPT',
-            'name' => 'Information Technology',
+        $this->department = Department::create([
+            'code' => 'EXECUTION',
+            'name' => 'التنفيذ',
             'is_active' => true,
         ]);
         $requesterDepartment = Department::create([
@@ -69,7 +69,7 @@ class FullEndToEndWorkflowTest extends TestCase
             'name' => 'Ahmad Employee',
             'email' => 'ahmad@ashbiliya.com',
             'password' => bcrypt('Password123!'),
-'department_id' => $requesterDepartment->id,
+            'department_id' => $this->department->id,
             'is_active' => true,
         ]);
         $this->employee->roles()->attach($roleEmployee);
@@ -101,6 +101,10 @@ class FullEndToEndWorkflowTest extends TestCase
             'is_active' => true,
         ]);
         $this->accountant->roles()->attach($roleAccountant);
+        $roleSiteAccountant = Role::where('slug', 'site_accountant')->first();
+        if ($roleSiteAccountant) {
+            $this->accountant->roles()->attach($roleSiteAccountant);
+        }
 
         $this->generalManager = User::create([
             'name' => 'Khaled GM',
@@ -434,9 +438,16 @@ class FullEndToEndWorkflowTest extends TestCase
 
             ]);
         $directRouteResponse->assertStatus(200)
-            ->assertJsonPath('data.status', 'PENDING_ACCOUNTING_APPROVAL')
+            ->assertJsonPath('data.status', 'PENDING_EXECUTIVE_APPROVAL')
             ->assertJsonPath('data.direct_supplier_id', $this->activeSupplier->id)
             ->assertJsonPath('data.total_estimated_cost', '2500.00');
+
+        $this->actingAs($this->generalManager, 'sanctum')
+            ->postJson("/api/v1/general-manager/purchase-requests/{$request->id}/approve", [
+                'comment' => 'معتمد تنفيذيًا للشراء المباشر.',
+            ])
+            ->assertStatus(200)
+            ->assertJsonPath('data.status', 'PENDING_ACCOUNTING_APPROVAL');
         $this->assertDatabaseHas('purchase_requests', [
             'id' => $request->id,
             'procurement_route' => 'DIRECT',
@@ -611,7 +622,7 @@ class FullEndToEndWorkflowTest extends TestCase
             ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['financial_data.supplier_id', 'financial_data.items']);
+            ->assertJsonValidationErrors(['financial_data.items']);
         $this->assertDatabaseHas('purchase_requests', [
             'id' => $request->id,
             'status' => 'PENDING_PROCUREMENT_APPROVAL',
@@ -653,6 +664,13 @@ class FullEndToEndWorkflowTest extends TestCase
                         'unit_price' => 900,
                     ]],
                 ],
+            ])
+            ->assertStatus(200)
+            ->assertJsonPath('data.status', 'PENDING_EXECUTIVE_APPROVAL');
+
+        $this->actingAs($this->generalManager, 'sanctum')
+            ->postJson("/api/v1/general-manager/purchase-requests/{$request->id}/approve", [
+                'comment' => 'معتمد تنفيذيًا للشراء المباشر.',
             ])
             ->assertStatus(200)
             ->assertJsonPath('data.status', 'PENDING_ACCOUNTING_APPROVAL');

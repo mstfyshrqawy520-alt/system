@@ -15,6 +15,7 @@ class ReviewerUpdateHeaderRequest extends FormRequest
     {
         return [
             'date_needed' => ['nullable', 'date'],
+            'priority' => ['sometimes', 'nullable', 'string', 'in:NORMAL,HIGH,URGENT,EMERGENCY,LOW'],
             'notes' => ['nullable', 'string'],
             'parcel_reference' => ['sometimes', 'nullable', 'string', 'max:255'],
             'region' => ['sometimes', 'nullable', 'string', 'max:255'],

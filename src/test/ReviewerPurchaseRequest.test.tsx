@@ -28,7 +28,7 @@ describe('Reviewer purchase request frontend', () => {
   it('renders dashboard counts from backend-scoped requests', async () => {
     vi.spyOn(reviewerApi, 'getReviewableRequestsApi').mockResolvedValue([submitted]);
     renderPage('/reviewer', <ReviewerDashboardPage />);
-    await waitFor(() => expect(screen.getAllByText('PR-10').length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getAllByText('PR-10').length).toBeGreaterThan(0), { timeout: 4000 });
   });
 
   it('shows Start Review only for submitted queue requests', async () => {

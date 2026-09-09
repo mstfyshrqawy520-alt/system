@@ -87,10 +87,10 @@ class GeneralManagerPurchaseRequestTest extends TestCase
         ]);
     }
 
-    public function test_executive_does_not_see_direct_purchase_request_in_pending_queue(): void
+    public function test_executive_can_approve_direct_purchase_request_and_routes_to_accounting(): void
     {
         $request = PurchaseRequest::create([
-            'request_number' => 'PR-2026-DIRECT-HIDDEN-001',
+            'request_number' => 'PR-2026-DIRECT-EXEC-001',
             'user_id' => $this->employee->id,
             'department_id' => $this->department->id,
             'reviewer_user_id' => $this->reviewer->id,
@@ -105,12 +105,25 @@ class GeneralManagerPurchaseRequestTest extends TestCase
         $list = $this->actingAs($this->generalManager, 'sanctum')
             ->getJson('/api/v1/general-manager/purchase-requests');
 
-        $list->assertOk()->assertJsonMissing(['id' => $request->id]);
+        $list->assertOk()->assertJsonFragment(['id' => $request->id]);
 
         $detail = $this->actingAs($this->generalManager, 'sanctum')
             ->getJson("/api/v1/general-manager/purchase-requests/{$request->id}");
 
-        $detail->assertNotFound();
+        $detail->assertOk()->assertJsonPath('data.id', $request->id);
+
+        $approve = $this->actingAs($this->generalManager, 'sanctum')
+            ->postJson("/api/v1/general-manager/purchase-requests/{$request->id}/approve", [
+                'comment' => 'معتمد تنفيذيًا للشراء المباشر.',
+            ]);
+
+        $approve->assertOk()
+            ->assertJsonPath('data.status', 'PENDING_ACCOUNTING_APPROVAL');
+
+        $this->assertDatabaseHas('purchase_requests', [
+            'id' => $request->id,
+            'status' => 'PENDING_ACCOUNTING_APPROVAL',
+        ]);
     }
 
     public function test_executive_edit_goes_directly_to_procurement_without_reviewer_roundtrip(): void

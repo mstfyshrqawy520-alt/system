@@ -9,7 +9,7 @@ import { SupplierSelectWithQuickAdd } from '../common/SupplierSelectWithQuickAdd
 
 interface DirectAccountingReviewModalProps {
   request: PurchaseRequest | null;
-  suppliers: المورد[];
+  suppliers?: المورد[];
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (financialData: DirectAccountingFinancialData) => void;
@@ -45,7 +45,7 @@ const lineTotal = (quantity: number | string, unitPrice: number | string) => {
 
 export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalProps> = ({
   request,
-  suppliers,
+  suppliers = [],
   isOpen,
   onClose,
   onConfirm,
@@ -58,15 +58,18 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
   const [notes, setNotes] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  const safeSuppliers = Array.isArray(suppliers) ? suppliers : [];
+
   const activeSuppliers = useMemo(
-    () => suppliers.filter((supplier) => supplier.is_active),
-    [suppliers],
+    () => safeSuppliers.filter((supplier) => Boolean(supplier && supplier.is_active)),
+    [safeSuppliers],
   );
 
   useEffect(() => {
     if (!isOpen || !request) return;
 
-    setItems((request.items || []).map((item) => ({
+    const rawItems = Array.isArray(request.items) ? request.items : [];
+    setItems(rawItems.map((item) => ({
       pr_item_id: item.id,
       supplier_id: item.supplier_id || request.direct_supplier_id || request.direct_supplier?.id || '',
       item_reference: item.item_reference,
@@ -91,7 +94,7 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
     for (const item of items) {
       const sid = item.supplier_id;
       const existing = groups.get(sid);
-      const supplierName = sid ? activeSuppliers.find((s) => s.id === sid)?.company_name || `مورد #${sid}` : 'غير محدد';
+      const supplierName = sid ? activeSuppliers.find((s) => s && s.id === sid)?.company_name || `مورد #${sid}` : 'غير محدد';
       if (existing) {
         existing.total += lineTotal(item.quantity, item.unit_price);
         existing.count += 1;
@@ -272,8 +275,9 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
             <div className="flex items-center gap-2.5 flex-wrap">
               <h3 className="text-sm font-black text-slate-100">تفاصيل البنود والأسعار</h3>
               {(() => {
-                const parcel = (request.items && request.items[0]?.item_reference) || items[0]?.item_reference || '';
-                const region = (request.items && request.items[0]?.region) || items[0]?.region || '';
+                const reqItems = Array.isArray(request?.items) ? request.items : [];
+                const parcel = reqItems[0]?.item_reference || items[0]?.item_reference || '';
+                const region = reqItems[0]?.region || items[0]?.region || '';
                 return (parcel || region) ? (
                   <span className="text-xs font-bold bg-amber-950/50 text-amber-300 border border-amber-700/50 px-2.5 py-0.5 rounded-lg flex items-center gap-1.5 shadow-sm">
                     <span>🏗️</span>
@@ -341,9 +345,9 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                           }`}
                         >
                           <option value="">اختر المورد...</option>
-                          {activeSuppliers.map((supplier) => (
+                          {activeSuppliers.map((supplier) => supplier && (
                             <option key={supplier.id} value={supplier.id}>
-                              {supplier.company_name}{supplier.code ? ` — ${supplier.code}` : ''}
+                              {supplier.company_name || `مورد #${supplier.id}`}{supplier.code ? ` — ${supplier.code}` : ''}
                             </option>
                           ))}
                         </select>
@@ -427,9 +431,9 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
                     }`}
                   >
                     <option value="">اختر المورد...</option>
-                    {activeSuppliers.map((supplier) => (
+                    {activeSuppliers.map((supplier) => supplier && (
                       <option key={supplier.id} value={supplier.id}>
-                        {supplier.company_name}{supplier.code ? ` — ${supplier.code}` : ''}
+                        {supplier.company_name || `مورد #${supplier.id}`}{supplier.code ? ` — ${supplier.code}` : ''}
                       </option>
                     ))}
                   </select>

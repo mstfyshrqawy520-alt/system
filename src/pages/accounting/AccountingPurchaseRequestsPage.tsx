@@ -241,7 +241,7 @@ const AccountingPurchaseRequestsPage: React.FC = () => {
       />
       <DirectAccountingReviewModal
         request={reviewingRequest}
-        suppliers={suppliers}
+        suppliers={Array.isArray(suppliers) ? suppliers : []}
         isOpen={Boolean(reviewingRequest)}
         reviewMode="accounting"
         onConfirm={(financialData) => { if (reviewingRequest) void approve(reviewingRequest, financialData); }}

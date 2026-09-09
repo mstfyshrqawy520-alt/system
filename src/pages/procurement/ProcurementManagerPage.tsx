@@ -972,7 +972,7 @@ export const ProcurementManagerPage: React.FC = () => {
       <SupplierModal supplier={editingSupplier} isOpen={supplierModalOpen} onClose={() => { setSupplierModalOpen(false); setEditingSupplier(null); }} onSuccess={() => void loadData()} />
       <DirectAccountingReviewModal
         request={directAccountingRequest}
-        suppliers={suppliers}
+        suppliers={Array.isArray(suppliers) ? suppliers : []}
         isOpen={Boolean(directAccountingRequest)}
         onConfirm={(financialData) => { if (directAccountingRequest) void handleSendDirectToAccounting(directAccountingRequest, financialData); }}
         onClose={() => { if (!directAccountingSubmitting) { setDirectAccountingRequest(null); setDirectAccountingError(null); } }}

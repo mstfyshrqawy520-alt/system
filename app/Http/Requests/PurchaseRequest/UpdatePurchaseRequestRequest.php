@@ -22,7 +22,7 @@ class UpdatePurchaseRequestRequest extends FormRequest
             'target_department_id' => ['sometimes', 'integer', 'exists:departments,id'],
             'site_engineer_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'date_needed' => ['nullable', 'date'],
-    
+            'priority' => ['sometimes', 'nullable', 'string', 'in:NORMAL,HIGH,URGENT,EMERGENCY,LOW'],
             'notes' => ['nullable', 'string'],
             'items' => ['sometimes', 'required', 'array', 'min:1'],
             'items.*.id' => ['nullable', 'integer'],

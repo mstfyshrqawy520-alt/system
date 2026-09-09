@@ -219,7 +219,7 @@ class PurchaseRequestService
                 // never route their request to the target department manager.
                 'reviewer_user_id' => $isExecutiveRequester ? null : $assignedManager?->id,
                 'site_engineer_user_id' => $isOffice ? null : $siteEngineer?->id,
-                'priority' => 'NORMAL',
+                'priority' => $data['priority'] ?? 'NORMAL',
                 'status' => 'DRAFT',
                 'date_needed' => $this->normalizeNeededDate($data['date_needed'] ?? null),
                 'notes' => $data['notes'] ?? null,
@@ -372,7 +372,7 @@ class PurchaseRequestService
                 $updateFields['target_department_id'] = $targetDepartment->id;
                 $updateFields['reviewer_user_id'] = $isExecutiveRequester ? null : $assignedManager?->id;
             }
-            $simpleFields = ['notes'];
+            $simpleFields = ['notes', 'priority'];
             foreach ($simpleFields as $field) {
                 if (array_key_exists($field, $data)) {
                     $updateFields[$field] = is_string($data[$field]) ? trim($data[$field]) : $data[$field];

@@ -69,6 +69,16 @@ class DirectMultiSupplierPurchaseRequestTest extends TestCase
         ]);
         $this->accountant->roles()->attach($roleAccountant);
 
+        $roleGeneralManager = Role::where('slug', 'general_manager')->first();
+        $this->generalManager = User::create([
+            'name' => 'General Manager',
+            'email' => 'gm-direct@ashbiliya.com',
+            'password' => bcrypt('Password123!'),
+            'department_id' => $this->department->id,
+            'is_active' => true,
+        ]);
+        $this->generalManager->roles()->attach($roleGeneralManager);
+
         $category = Category::create([
             'code' => 'CAT-BUILD',
             'name' => 'Building Materials',
@@ -182,9 +192,16 @@ class DirectMultiSupplierPurchaseRequestTest extends TestCase
             ]);
 
         $routeResponse->assertStatus(200)
-            ->assertJsonPath('data.status', 'PENDING_ACCOUNTING_APPROVAL')
+            ->assertJsonPath('data.status', 'PENDING_EXECUTIVE_APPROVAL')
             ->assertJsonPath('data.procurement_route', 'DIRECT')
             ->assertJsonPath('data.total_estimated_cost', '259000.00');
+
+        $this->actingAs($this->generalManager, 'sanctum')
+            ->postJson("/api/v1/general-manager/purchase-requests/{$pr->id}/approve", [
+                'comment' => 'معتمد تنفيذيًا للشراء المباشر.',
+            ])
+            ->assertStatus(200)
+            ->assertJsonPath('data.status', 'PENDING_ACCOUNTING_APPROVAL');
 
         $this->assertDatabaseHas('purchase_request_items', [
             'id' => $item1->id,
@@ -369,7 +386,7 @@ class DirectMultiSupplierPurchaseRequestTest extends TestCase
             ]);
 
         $response->assertStatus(200)
-            ->assertJsonPath('data.status', 'PENDING_ACCOUNTING_APPROVAL')
+            ->assertJsonPath('data.status', 'PENDING_EXECUTIVE_APPROVAL')
             ->assertJsonPath('data.direct_supplier_id', $this->supplierA->id);
 
         $this->assertDatabaseHas('purchase_request_items', [

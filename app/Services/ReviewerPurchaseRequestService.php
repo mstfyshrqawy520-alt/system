@@ -240,7 +240,7 @@ class ReviewerPurchaseRequestService
                 throw new \RuntimeException('لا يمكن للمراجع تعديل الطلب بعد اعتماده وإرساله إلى المرحلة التالية.');
             }
 
-            $allowedFields = ['date_needed', 'notes', 'parcel_reference', 'region', 'land_parcel_id', 'requires_warehouse_receipt'];
+            $allowedFields = ['date_needed', 'priority', 'notes', 'parcel_reference', 'region', 'land_parcel_id', 'requires_warehouse_receipt'];
             $updateFields = [];
 
             foreach ($allowedFields as $field) {
