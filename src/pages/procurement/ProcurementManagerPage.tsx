@@ -152,6 +152,7 @@ export const ProcurementManagerPage: React.FC = () => {
   const [reportPrintOpen, setReportPrintOpen] = useState(false);
   const [directAccountingRequest, setDirectAccountingRequest] = useState<PurchaseRequest | null>(null);
   const [directAccountingSubmitting, setDirectAccountingSubmitting] = useState(false);
+  const [directAccountingError, setDirectAccountingError] = useState<string | null>(null);
   const [selectedPrForDetails, setSelectedPrForDetails] = useState<PurchaseRequest | null>(null);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
@@ -304,15 +305,19 @@ export const ProcurementManagerPage: React.FC = () => {
 
   const handleSendDirectToAccounting = async (request: PurchaseRequest, financialData: DirectAccountingFinancialData) => {
     setDirectAccountingSubmitting(true);
+    setDirectAccountingError(null);
     try {
       await approveProcurementPrApi(request.id, {
         use_quotes: false,
         financial_data: financialData,
       });
       setDirectAccountingRequest(null);
+      setDirectAccountingError(null);
       await loadData();
     } catch (error) {
-      setPageError(parseApiError(error).message);
+      const errMessage = parseApiError(error).message;
+      setDirectAccountingError(errMessage);
+      setPageError(errMessage);
     } finally {
       setDirectAccountingSubmitting(false);
     }
@@ -789,7 +794,10 @@ export const ProcurementManagerPage: React.FC = () => {
                             <Button
                               variant="secondary"
                               size="sm"
-                              onClick={() => setDirectAccountingRequest(request)}
+                              onClick={() => {
+                                setDirectAccountingError(null);
+                                setDirectAccountingRequest(request);
+                              }}
                               className="font-bold border-amber-700/60 text-amber-200 hover:bg-amber-950/50"
                             >
                               ⚡ إرسال للحسابات بدون عروض
@@ -967,8 +975,9 @@ export const ProcurementManagerPage: React.FC = () => {
         suppliers={suppliers}
         isOpen={Boolean(directAccountingRequest)}
         onConfirm={(financialData) => { if (directAccountingRequest) void handleSendDirectToAccounting(directAccountingRequest, financialData); }}
-        onClose={() => { if (!directAccountingSubmitting) setDirectAccountingRequest(null); }}
+        onClose={() => { if (!directAccountingSubmitting) { setDirectAccountingRequest(null); setDirectAccountingError(null); } }}
         isSubmitting={directAccountingSubmitting}
+        apiError={directAccountingError}
       />
       <ConfirmDialog
         isOpen={Boolean(supplierToDelete)}

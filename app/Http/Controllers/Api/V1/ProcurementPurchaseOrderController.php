@@ -101,10 +101,12 @@ class ProcurementPurchaseOrderController extends Controller
                             ['contact_name' => 'مورد لعملية واحدة', 'is_active' => true, 'opening_balance' => 0]
                         );
                         $items[$idx]['supplier_id'] = $sup->id;
-                    } elseif (!empty($item['supplier_id'])) {
-                        $firstItemSupplier ??= $item['supplier_id'];
+                    }
+                    if (!empty($items[$idx]['supplier_id'])) {
+                        $firstItemSupplier ??= $items[$idx]['supplier_id'];
                     } elseif ($globalSupplierId) {
                         $items[$idx]['supplier_id'] = $globalSupplierId;
+                        $firstItemSupplier ??= $globalSupplierId;
                     }
                 }
                 if (!$globalSupplierId && $firstItemSupplier) {
@@ -119,7 +121,7 @@ class ProcurementPurchaseOrderController extends Controller
             'use_quotes' => ['nullable', 'boolean'],
             'comment' => ['nullable', 'string', 'max:2000'],
             'financial_data' => ['nullable', 'array'],
-            'financial_data.supplier_id' => ['required_if:use_quotes,false', 'integer', 'exists:suppliers,id'],
+            'financial_data.supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
             'financial_data.items' => ['required_if:use_quotes,false', 'array', 'min:1'],
             'financial_data.items.*' => ['array'],
             'financial_data.items.*.pr_item_id' => ['required_if:use_quotes,false', 'integer', 'exists:purchase_request_items,id'],

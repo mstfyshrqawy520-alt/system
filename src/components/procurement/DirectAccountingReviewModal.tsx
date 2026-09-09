@@ -15,6 +15,7 @@ interface DirectAccountingReviewModalProps {
   onConfirm: (financialData: DirectAccountingFinancialData) => void;
   isSubmitting?: boolean;
   reviewMode?: 'procurement' | 'accounting';
+  apiError?: string | null;
 }
 
 type EditableFinancialItem = {
@@ -50,6 +51,7 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
   onConfirm,
   isSubmitting = false,
   reviewMode = 'procurement',
+  apiError = null,
 }) => {
   const isAccountingReview = reviewMode === 'accounting';
   const [items, setItems] = useState<EditableFinancialItem[]>([]);
@@ -259,9 +261,9 @@ export const DirectAccountingReviewModal: React.FC<DirectAccountingReviewModalPr
           </div>
         </div>
 
-        {validationError && (
+        {(validationError || apiError) && (
           <div role="alert" className="rounded-lg border border-rose-500/50 bg-rose-950/30 px-3 py-2.5 text-xs font-bold leading-6 text-rose-200">
-            {validationError}
+            {validationError || apiError}
           </div>
         )}
 

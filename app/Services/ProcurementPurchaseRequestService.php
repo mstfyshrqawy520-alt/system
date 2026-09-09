@@ -330,7 +330,7 @@ class ProcurementPurchaseRequestService
 
             $notificationService = app(NotificationService::class);
             $notificationService->queueUsers(
-                $notificationService->resolveUsersWithPermission('purchase_request.approve_executive'),
+                $notificationService->resolveUsersWithPermission('purchase_request.approve_gm'),
                 'purchase_request_pending_executive_approval',
                 'طلب شراء مباشر بانتظار اعتماد المدير التنفيذي',
                 "أرسل مدير المشتريات الطلب المباشر {$pr->request_number} بعد تحديد المورد والأسعار إلى المدير التنفيذي المهندس محمد للاعتماد.",
@@ -421,7 +421,7 @@ class ProcurementPurchaseRequestService
 
             $notificationService = app(NotificationService::class);
             $notificationService->queueUsers(
-                $notificationService->resolveUsersWithPermission('purchase_request.approve_executive'),
+                $notificationService->resolveUsersWithPermission('purchase_request.approve_gm'),
                 'purchase_request_pending_executive_approval',
                 'طلب شراء مباشر بانتظار اعتماد المدير التنفيذي',
                 "أنشأ مدير المشتريات الطلب المباشر {$pr->request_number} وهو بانتظار اعتماد المدير التنفيذي المهندس محمد.",
