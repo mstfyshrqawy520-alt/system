@@ -93,8 +93,8 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
       const isBadawy = e.id === 6 || e.name.includes('بدوي');
       return {
         value: String(e.id),
-        label: isBadawy ? `⭐ ${e.name} (المهندس أحمد بدوي / مستلم)` : e.name,
-        subLabel: e.department_name || undefined,
+        label: e.name,
+        subLabel: isBadawy ? 'مدير المشتريات / مستلم' : (e.department_name || undefined),
       };
     });
   }, [siteEngineers]);
@@ -250,7 +250,7 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-bold text-slate-200">
-                  المستلم المسؤول (مهندس الموقع / م. أحمد بدوي) <span className="text-rose-400">*</span>
+                  المستلم المسؤول بالموقع <span className="text-rose-400">*</span>
                 </label>
                 {selectedDepartmentEngineer && (
                   <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded">
@@ -262,8 +262,8 @@ export const DirectPoModal: React.FC<DirectPoModalProps> = ({ isOpen, onClose, o
                 options={engineerOptions}
                 value={siteEngineerId}
                 onChange={(val) => setSiteEngineerId(String(val))}
-                placeholder="اختر المستلم (المهندس أحمد بدوي أو مهندس الموقع)..."
-                searchPlaceholder="ابحث باسم المستلم أو مهندس الموقع..."
+                placeholder="اختر مسؤول الاستلام بالموقع..."
+                searchPlaceholder="ابحث باسم المستلم..."
                 emptyMessage="لا يوجد مستلم بهذا الاسم"
               />
             </div>
