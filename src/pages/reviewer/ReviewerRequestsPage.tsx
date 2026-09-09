@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import ErrorMessage from '../../components/ErrorMessage';
 import { TableSkeleton } from '../../components/ui/StateFeedback';
 import PurchaseRequestStatusBadge from '../../components/purchase-requests/PurchaseRequestStatusBadge';
@@ -52,6 +52,7 @@ import { ApproveRequestDialog } from '../../components/reviewer/ApproveRequestDi
 
 export const ReviewerRequestsPage: React.FC = () => {
   const { user, hasPermission, hasRole } = useAuth();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const urlStatus = searchParams.get('status');
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
@@ -62,6 +63,13 @@ export const ReviewerRequestsPage: React.FC = () => {
   const [isApproving, setIsApproving] = useState<boolean>(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (location.state && (location.state as { message?: string }).message) {
+      setSuccessMsg((location.state as { message?: string }).message || null);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const fetchRequests = async (filters: ReviewerRequestFilters = searchFilters, silent = false) => {
     if (!silent) setIsLoading(true);
@@ -148,6 +156,22 @@ export const ReviewerRequestsPage: React.FC = () => {
           <p className="text-xs text-slate-400 mt-1">جميع طلبات الشراء الواردة من الموظفين ضمن قسمك المعتمد.</p>
         </div>
       </div>
+
+      {successMsg && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/40 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200 shadow-lg shadow-emerald-950/40">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">✅</span>
+            <span className="font-bold">{successMsg}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSuccessMsg(null)}
+            className="text-emerald-400 hover:text-emerald-200 text-xs font-bold px-2.5 py-1 rounded-lg border border-emerald-500/30 hover:bg-emerald-900/40 transition-colors"
+          >
+            إغلاق ✕
+          </button>
+        </div>
+      )}
 
       <form onSubmit={submitSearch} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-4">
         <div className="flex items-center justify-between gap-3">

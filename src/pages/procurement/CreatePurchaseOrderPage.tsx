@@ -330,7 +330,7 @@ export const CreatePurchaseOrderPage: React.FC = () => {
                 <Button size="sm" variant="primary" onClick={() => navigate('/procurement/purchase-orders')}>
                   <span>📑</span> الانتقال لأوامر الشراء
                 </Button>
-                <Button size="sm" variant="secondary" onClick={() => navigate('/procurement/purchase-requests/approved')}>
+                <Button size="sm" variant="secondary" onClick={() => navigate('/procurement/approved-requests')}>
                   <span>📋</span> الطلبات المعتمدة
                 </Button>
               </div>

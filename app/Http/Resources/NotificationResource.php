@@ -61,17 +61,17 @@ class NotificationResource extends JsonResource
                         $targetUrl = '/accounting/purchase-orders';
                     }
                 } elseif ($this->notifiable_type === PurchaseRequest::class) {
-                    $targetUrl = '/accounting/purchase-requests';
+                    $targetUrl = "/accounting/purchase-requests?open={$this->notifiable_id}";
                 }
             } elseif (in_array($role, ['site_accountant', 'licenses_accountant', 'buffet_accountant'], true)) {
                 if ($this->purchase_receipt_id) {
-                    $targetUrl = "/accounting/supplier-finance?tab=invoicing&receipt_id={$this->purchase_receipt_id}";
+                    $targetUrl = "/accounting/supplier-payments?purchase_receipt_id={$this->purchase_receipt_id}&action=create_invoice";
                 } elseif ($this->type === 'purchase_order_and_receipt_ready_accounting' || $this->notifiable_type === PurchaseOrder::class || $this->purchase_order_id) {
                     $poId = $this->purchase_order_id ?: ($this->notifiable_type === PurchaseOrder::class ? $this->notifiable_id : null);
                     if ($poId) {
                         $targetUrl = "/accounting/purchase-orders/{$poId}";
                     } else {
-                        $targetUrl = "/accounting/supplier-finance?tab=invoicing";
+                        $targetUrl = "/accounting/supplier-payments";
                     }
                 } elseif ($this->notifiable_type === PurchaseRequest::class) {
                     $targetUrl = "/requests/{$this->notifiable_id}";
@@ -83,14 +83,14 @@ class NotificationResource extends JsonResource
                     $poId = $this->notifiable_type === PurchaseOrder::class ? $this->notifiable_id : $this->purchase_order_id;
                     $targetUrl = "/general-manager/purchase-orders/{$poId}";
                 } elseif ($this->notifiable_type === PurchaseRequest::class) {
-                    $targetUrl = '/general-manager/purchase-requests';
+                    $targetUrl = "/general-manager/purchase-requests?open={$this->notifiable_id}";
                 }
             } elseif ($role === 'procurement_manager') {
                 if ($this->notifiable_type === PurchaseOrder::class || $this->purchase_order_id) {
                     $poId = $this->notifiable_type === PurchaseOrder::class ? $this->notifiable_id : $this->purchase_order_id;
                     $targetUrl = "/procurement/purchase-orders/{$poId}";
                 } elseif ($this->notifiable_type === PurchaseRequest::class) {
-                    $targetUrl = '/procurement/approved-requests';
+                    $targetUrl = "/procurement/purchase-orders/create?pr={$this->notifiable_id}";
                 }
             } elseif ($role === 'reviewer') {
                 if ($this->notifiable_type === PurchaseRequest::class && $this->notifiable_id) {

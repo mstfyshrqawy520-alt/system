@@ -80,7 +80,7 @@ export const AppRoutes: React.FC = () => {
                 <Route path="/preferences" element={<UserPreferencesPage />} />
 
                 {/* ── Shared Purchase Request Routes for all operational roles ── */}
-                <Route element={<RoleRoute allowedRoles={["employee", "reviewer", "warehouse_keeper", "site_engineer", "procurement_manager", "accountant", "site_accountant", "licenses_accountant", "buffet_accountant", "general_manager"]} />}>
+                <Route element={<RoleRoute allowedRoles={["employee", "reviewer", "warehouse_keeper", "site_engineer", "procurement_manager", "accountant", "site_accountant", "licenses_accountant", "buffet_accountant", "general_manager", "admin"]} />}>
                     <Route path="/requests" element={<PurchaseRequestsPage />} />
                     <Route path="/requests/create" element={<CreatePurchaseRequestPage />} />
                     <Route path="/requests/:id" element={<PurchaseRequestDetailsPage />} />

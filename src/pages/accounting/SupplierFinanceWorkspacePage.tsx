@@ -14,11 +14,17 @@ export const SupplierFinanceWorkspacePage: React.FC = () => {
   const isPaymentsTarget =
     location.pathname.includes('supplier-payments') ||
     searchParams.has('purchase_receipt_id') ||
+    searchParams.has('receipt_id') ||
     searchParams.has('po') ||
-    searchParams.has('payment_id');
+    searchParams.has('payment_id') ||
+    searchParams.get('tab') === 'invoicing' ||
+    searchParams.get('tab') === 'payments';
 
   const defaultTab = (location.pathname.includes('supplier-accounts') || searchParams.has('supplier_id')) ? 'accounts' : 'payments';
-  const currentTab = searchParams.get('tab') || (searchParams.has('supplier_id') ? 'accounts' : defaultTab);
+  const rawTab = searchParams.get('tab');
+  const currentTab = (rawTab === 'invoicing' || rawTab === 'payments' || isPaymentsTarget) && !searchParams.has('supplier_id')
+    ? 'payments'
+    : (rawTab || (searchParams.has('supplier_id') ? 'accounts' : defaultTab));
 
   const setTab = (tab: 'accounts' | 'payments') => {
     const next = new URLSearchParams(searchParams);

@@ -155,7 +155,7 @@ export const SupplierPaymentsPage: React.FC = () => {
         loadPromises.push(refreshAccounts());
       }
       const [approvedReceipts, _invoices, loadedParcels, loadedDepts] = (await Promise.all(loadPromises)) as [ApprovedReceipt[], SupplierInvoice[], LandParcel[], Array<{ id: number; name: string; code: string }>];
-      const requestedReceiptId = Number(searchParams.get('purchase_receipt_id') || 0);
+      const requestedReceiptId = Number(searchParams.get('purchase_receipt_id') || searchParams.get('receipt_id') || 0);
       const isCreateInvoice = (searchParams.get('action') === 'create_invoice' || searchParams.get('action') === 'invoice') && isSiteAccountant;
       if (requestedReceiptId > 0) {
         const requestedReceipt = approvedReceipts.find((receipt) => receipt.id === requestedReceiptId);
