@@ -44,6 +44,7 @@ export interface ActionInboxItem {
   items_count?: number;
   items_list?: ActionInboxItemDetail[];
   requires_warehouse_receipt?: boolean;
+  next_actor?: string;
 
   // --- Direct Action Callbacks ---
   onDirectApprove?: (
@@ -544,13 +545,43 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                         <span className="truncate">{item.reason}</span>
                       </div>
                     )}
+
+                    {/* Next Actor & Overdue Status Bar */}
+                    {(() => {
+                      const isOverdue = Boolean(item.date_needed && item.date_needed < new Date().toISOString().slice(0, 10));
+                      const defaultNextActor = item.next_actor || (
+                        item.type === 'PR' ? (isReviewer ? 'المدير العام للاعتماد النهائي' : 'إدارة المشتريات') :
+                        item.type === 'QUOTE' ? 'المدير العام لاعتماد الترسية' :
+                        item.type === 'PO' ? 'المستودع والموقع للاستلام' :
+                        item.type === 'RECEIPT' ? 'إدارة الحسابات لتسجيل الفاتورة' : undefined
+                      );
+
+                      if (!defaultNextActor && !isOverdue) return null;
+
+                      return (
+                        <div className="flex items-center justify-between gap-2 text-[11px] pt-1.5 border-t border-slate-800/60 flex-wrap">
+                          {defaultNextActor && (
+                            <span className="text-cyan-300 font-medium flex items-center gap-1">
+                              <span className="text-slate-500 font-normal">⏭️ المسؤول التالي:</span>
+                              <strong className="text-cyan-300 font-bold">{defaultNextActor}</strong>
+                            </span>
+                          )}
+                          {isOverdue && (
+                            <span className="text-rose-300 font-bold bg-rose-950/70 border border-rose-800/70 px-2 py-0.5 rounded-lg flex items-center gap-1 shrink-0 animate-pulse text-[10px]">
+                              <span>⏳</span>
+                              <span>متأخر عن تاريخ الاحتياج</span>
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Actions Toolbar on the Card */}
                   <div className="space-y-2 pt-2 border-t border-slate-800/80">
                     {/* Top Action Row: Direct Approve & Direct Reject (if provided) */}
                     {(item.onDirectApprove || item.onDirectReject || item.onDirectSubmit) && (
-                      <div className="flex items-center gap-2">
+                      <div className={`flex items-center gap-2 ${(directApprovingId || isSubmitting) ? 'pointer-events-none opacity-60' : ''}`}>
                         {item.onDirectApprove && (
                           <Button
                             variant="success"

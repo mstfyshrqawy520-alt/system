@@ -479,6 +479,39 @@ const CreatePurchaseRequestPage: React.FC = () => {
         </div>
       </div>
 
+      {/* ── 3-Step Wizard Visual Progress Bar ── */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3 sm:p-4 shadow-lg">
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 font-black text-cyan-300">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 border border-cyan-400 text-cyan-300 text-xs font-mono">
+              1
+            </span>
+            <span className="hidden sm:inline">الخطوة 1:</span>
+            <span>البيانات والموقع</span>
+          </div>
+
+          <div className="h-[2px] flex-1 bg-gradient-to-r from-cyan-500/40 via-indigo-500/40 to-emerald-500/40 mx-2 sm:mx-4" />
+
+          <div className="flex items-center gap-2 font-black text-indigo-300">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 border border-indigo-400 text-indigo-300 text-xs font-mono">
+              2
+            </span>
+            <span className="hidden sm:inline">الخطوة 2:</span>
+            <span>الأصناف والمواصفات ({data.items.length})</span>
+          </div>
+
+          <div className="h-[2px] flex-1 bg-gradient-to-r from-indigo-500/40 via-emerald-500/40 to-emerald-400 mx-2 sm:mx-4" />
+
+          <div className="flex items-center gap-2 font-black text-emerald-300">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-xs font-mono">
+              3
+            </span>
+            <span className="hidden sm:inline">الخطوة 3:</span>
+            <span>المراجعة والإرسال</span>
+          </div>
+        </div>
+      </div>
+
       {/* Card 1: Basic Request Info */}
       <Card className="space-y-3.5 border-slate-800 bg-slate-900/90 p-3.5 sm:p-4 shadow-xl">
         <div className="border-b border-slate-800 pb-2.5 flex items-center justify-between">

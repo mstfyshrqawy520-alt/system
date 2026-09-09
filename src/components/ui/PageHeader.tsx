@@ -11,6 +11,7 @@ const PAGE_TITLES: Array<{ prefix: string; title: string }> = [
   { prefix: '/preferences', title: 'تفضيلات المستخدم' },
   { prefix: '/requests/create', title: 'إنشاء طلب شراء' },
   { prefix: '/requests', title: 'طلبات الشراء' },
+  { prefix: '/admin/request-tracker', title: 'مركز متابعة الطلبات والتحكم الإداري' },
   { prefix: '/admin/system-monitor', title: 'مراقبة النظام والـDeploy' },
   { prefix: '/admin', title: 'إدارة النظام' },
   { prefix: '/reviewer/purchase-quotes', title: 'ترشيح عروض الأسعار' },
@@ -65,6 +66,28 @@ export const PageHeader: React.FC = () => {
     '/protected',
   ].includes(location.pathname);
 
+  const handleSmartBack = () => {
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      const primaryRole = getPrimaryRoleSlug(user);
+      const roleHomeMap: Record<string, string> = {
+        admin: '/admin',
+        general_manager: '/general-manager',
+        accountant: '/accounting',
+        site_accountant: '/site-accountant',
+        licenses_accountant: '/site-accountant',
+        buffet_accountant: '/site-accountant',
+        procurement_manager: '/procurement',
+        reviewer: '/reviewer',
+        warehouse_keeper: '/warehouse',
+        site_engineer: '/site-engineer',
+        employee: '/employee',
+      };
+      navigate(primaryRole ? (roleHomeMap[primaryRole] || '/') : '/');
+    }
+  };
+
   return (
     <div className="mb-2.5 sm:mb-3.5 border-b border-slate-800/80 pb-2 sm:pb-2.5" dir="rtl">
       <div className="flex items-center justify-between gap-2">
@@ -83,7 +106,7 @@ export const PageHeader: React.FC = () => {
         {!isRootPage && (
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={handleSmartBack}
             className="inline-flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800/80 px-2.5 py-1 text-xs font-bold text-slate-300 hover:border-cyan-500/60 hover:text-white transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
             aria-label="العودة إلى الصفحة السابقة"
           >

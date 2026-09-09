@@ -249,10 +249,13 @@ export const resolveNotificationAction = (
   // 2. Material Receipts & Goods Received Notes (أذونات الاستلام والفحص)
   if (info.docType === 'RECEIPT' || info.receiptId || type.includes('receipt') || type.includes('grn') || type.includes('goods_received')) {
     const receiptParam = info.receiptId ? `receipt_id=${info.receiptId}` : '';
-    if (roleSlugs.includes('accountant')) {
+    const isDeptAccountant = roleSlugs.some((r) => ['site_accountant', 'licenses_accountant', 'buffet_accountant'].includes(r));
+    if (roleSlugs.includes('accountant') || isDeptAccountant) {
       return {
-        url: info.receiptId ? `/accounting/supplier-payments?purchase_receipt_id=${info.receiptId}` : '/accounting/supplier-payments',
-        actionLabel: 'تسجيل الفاتورة وسداد المستحقات',
+        url: info.receiptId
+          ? `/accounting/supplier-payments?purchase_receipt_id=${info.receiptId}${isDeptAccountant ? '&action=create_invoice' : ''}`
+          : '/accounting/supplier-payments',
+        actionLabel: isDeptAccountant ? 'تسجيل فاتورة المورد' : 'مطابقة إذن الاستلام والمديونية',
         icon: '🧾',
         badgeLabel: 'إذن استلام جاهز',
         docType: 'RECEIPT',
@@ -438,8 +441,8 @@ export const resolveNotificationAction = (
       };
     }
     return {
-      url: info.poId ? `/purchase-orders/${info.poId}` : '/procurement',
-      actionLabel: 'عرض تفاصيل أمر الشراء',
+      url: info.prId ? `/requests/${info.prId}` : (info.poId ? `/procurement/purchase-orders/${info.poId}` : '/requests'),
+      actionLabel: 'عرض تفاصيل المعاملة',
       icon: '📑',
       badgeLabel: 'أمر شراء',
       docType: 'PO',
@@ -456,7 +459,7 @@ export const resolveNotificationAction = (
 
     if (roleSlugs.includes('general_manager')) {
       return {
-        url: `/general-manager/purchase-requests`,
+        url: `/general-manager/purchase-requests?open=${info.prId}`,
         actionLabel: 'اتخاذ قرار في الطلب',
         icon: '📋',
         badgeLabel: 'طلب شراء',
@@ -469,7 +472,7 @@ export const resolveNotificationAction = (
 
     if (roleSlugs.includes('accountant')) {
       return {
-        url: `/accounting/purchase-requests`,
+        url: `/accounting/purchase-requests?open=${info.prId}`,
         actionLabel: 'مراجعة واعتماد الطلب المالي',
         icon: '⚖️',
         badgeLabel: 'طلب مباشر',

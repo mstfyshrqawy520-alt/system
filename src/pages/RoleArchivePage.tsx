@@ -195,74 +195,157 @@ export const RoleArchivePage: React.FC = () => {
             </span>
           </div>
 
-          <Card className="p-0 border-slate-800 bg-slate-900/90 overflow-hidden">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>رقم الطلب</TableHead>
-                    <TableHead>الصنف / المواد</TableHead>
-                    <TableHead>رقم قطعة الأرض</TableHead>
-                    <TableHead>المنطقة</TableHead>
-                    <TableHead>القسم</TableHead>
-                    <TableHead>تاريخ الطلب</TableHead>
-                    <TableHead>الحالة</TableHead>
-                    <TableHead className="text-center">الإجراء</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRequests.length === 0 ? (
+          {/* Desktop Table View */}
+          <div className="hidden md:block">
+            <Card className="p-0 border-slate-800 bg-slate-900/90 overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={8} className="py-12 text-center text-slate-400">
-                        لا توجد طلبات شراء مطابقة للبحث في الأرشيف.
-                      </TableCell>
+                      <TableHead>رقم الطلب</TableHead>
+                      <TableHead>الصنف / المواد</TableHead>
+                      <TableHead>رقم قطعة الأرض</TableHead>
+                      <TableHead>المنطقة</TableHead>
+                      <TableHead>القسم</TableHead>
+                      <TableHead>تاريخ الطلب</TableHead>
+                      <TableHead>الحالة</TableHead>
+                      <TableHead className="text-center">الإجراء</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredRequests.map((pr) => {
-                      const itemNames = (pr.items || []).map((i) => i.item_description || i.item?.name).filter(Boolean);
-                      const itemsSummary = itemNames.length === 0
-                        ? '—'
-                        : itemNames.length === 1
-                          ? itemNames[0]
-                          : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
+                  </TableHeader>
+                  <TableBody>
+                    {filteredRequests.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="py-12 text-center text-slate-400">
+                          لا توجد طلبات شراء مطابقة للبحث في الأرشيف.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredRequests.map((pr) => {
+                        const itemNames = (pr.items || []).map((i) => i.item_description || i.item?.name).filter(Boolean);
+                        const itemsSummary = itemNames.length === 0
+                          ? '—'
+                          : itemNames.length === 1
+                            ? itemNames[0]
+                            : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
 
-                      const parcelRefs = getSummaryParcels(pr);
-                      const regions = getSummaryRegions(pr);
+                        const parcelRefs = getSummaryParcels(pr);
+                        const regions = getSummaryRegions(pr);
 
-                      return (
-                        <TableRow key={pr.id}>
-                          <TableCell className="font-mono font-bold text-cyan-400">
-                            <Link to={`/requests/${pr.id}`} className="hover:underline">
-                              {pr.request_number}
-                            </Link>
-                          </TableCell>
-                          <TableCell className="font-semibold text-slate-100 max-w-[200px] truncate">
-                            <span title={itemNames.join('، ')}>{itemsSummary}</span>
-                          </TableCell>
-                          <TableCell className="font-mono">{parcelRefs}</TableCell>
-                          <TableCell>{regions}</TableCell>
-                          <TableCell>{pr.target_department?.name || pr.department?.name || '—'}</TableCell>
-                          <TableCell className="whitespace-nowrap font-mono text-xs text-slate-400">
-                            {pr.created_at?.split('T')[0] || '—'}
-                          </TableCell>
-                          <TableCell>
-                            <PurchaseRequestStatusBadge status={pr.status} />
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Link to={`/requests/${pr.id}`}>
-                              <Button variant="secondary" size="sm" className="px-3 py-1 text-xs">
-                                عرض الطلب
-                              </Button>
-                            </Link>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </Card>
+                        return (
+                          <TableRow key={pr.id}>
+                            <TableCell className="font-mono font-bold text-cyan-400">
+                              <Link to={`/requests/${pr.id}`} className="hover:underline">
+                                {pr.request_number}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="font-semibold text-slate-100 max-w-[200px] truncate">
+                              <span title={itemNames.join('، ')}>{itemsSummary}</span>
+                            </TableCell>
+                            <TableCell className="font-mono">{parcelRefs}</TableCell>
+                            <TableCell>{regions}</TableCell>
+                            <TableCell>{pr.target_department?.name || pr.department?.name || '—'}</TableCell>
+                            <TableCell className="whitespace-nowrap font-mono text-xs text-slate-400">
+                              {pr.created_at?.split('T')[0] || '—'}
+                            </TableCell>
+                            <TableCell>
+                              <PurchaseRequestStatusBadge status={pr.status} />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Link to={`/requests/${pr.id}`}>
+                                <Button variant="secondary" size="sm" className="px-3 py-1 text-xs">
+                                  عرض الطلب
+                                </Button>
+                              </Link>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+          </div>
+
+          {/* Mobile Cards View */}
+          <div className="space-y-3 md:hidden">
+            {filteredRequests.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/50 p-8 text-center text-xs text-slate-400">
+                لا توجد طلبات شراء مطابقة للبحث في الأرشيف.
+              </div>
+            ) : (
+              filteredRequests.map((pr) => {
+                const itemNames = (pr.items || []).map((i) => i.item_description || i.item?.name).filter(Boolean);
+                const itemsSummary = itemNames.length === 0
+                  ? '—'
+                  : itemNames.length === 1
+                    ? itemNames[0]
+                    : `${itemNames[0]} (+${itemNames.length - 1} أصناف)`;
+                const parcelRefs = getSummaryParcels(pr);
+                const regions = getSummaryRegions(pr);
+
+                return (
+                  <article
+                    key={`mobile-archive-pr-${pr.id}`}
+                    className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/90 p-4 space-y-3 shadow-lg shadow-black/40"
+                  >
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                      <Link
+                        to={`/requests/${pr.id}`}
+                        className="font-mono text-sm font-black text-cyan-400 hover:underline"
+                      >
+                        {pr.request_number}
+                      </Link>
+                      <PurchaseRequestStatusBadge status={pr.status} />
+                    </div>
+
+                    <div className="space-y-2 text-xs">
+                      <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                        <span className="text-[11px] text-slate-400 font-bold block mb-1">الصنف / المواد المطلوبة:</span>
+                        <p className="font-semibold text-slate-100 leading-snug" title={itemNames.join('، ')}>
+                          {itemsSummary}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div className="bg-slate-950/40 p-2 rounded-lg border border-slate-800/60">
+                          <span className="text-slate-500 font-bold block">رقم القطعة:</span>
+                          <span className="font-mono font-bold text-amber-300">
+                            {parcelRefs || '—'}
+                          </span>
+                        </div>
+                        <div className="bg-slate-950/40 p-2 rounded-lg border border-slate-800/60">
+                          <span className="text-slate-500 font-bold block">المنطقة:</span>
+                          <span className="font-semibold text-slate-200">
+                            {regions || '—'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] text-slate-400 px-1 pt-1">
+                        <div>
+                          <span className="text-slate-500">القسم: </span>
+                          <span className="text-slate-300 font-medium">{pr.target_department?.name || pr.department?.name || '—'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">التاريخ: </span>
+                          <span className="font-mono text-slate-400">{pr.created_at?.split('T')[0] || '—'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-800">
+                      <Link to={`/requests/${pr.id}`} className="block">
+                        <Button variant="secondary" size="sm" className="w-full text-xs font-bold py-2 justify-center">
+                          عرض تفاصيل الطلب ←
+                        </Button>
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })
+            )}
+          </div>
         </div>
       )}
 

@@ -258,9 +258,19 @@ export const PurchaseRequestDetailsPage: React.FC = () => {
               حذف
             </Button>
           )}
-          <Link to="/requests">
-            <Button variant="secondary" size="sm">← العودة</Button>
-          </Link>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              if (window.history.length > 2) {
+                navigate(-1);
+              } else {
+                navigate('/requests');
+              }
+            }}
+          >
+            ← العودة
+          </Button>
         </div>
       </div>
 

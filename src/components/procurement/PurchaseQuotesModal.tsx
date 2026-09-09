@@ -546,12 +546,12 @@ export const PurchaseQuotesModal: React.FC<PurchaseQuotesModalProps> = ({
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-[680px] w-full text-right text-sm font-bold text-slate-100">
-                <thead className="bg-slate-950 text-slate-100">
+                <thead className="bg-slate-950 text-slate-100 whitespace-nowrap">
                   <tr>
-                    <th className="px-3 py-3 font-black">الترتيب</th>
-                    <th className="px-3 py-3 font-black">المورد</th>
-                    <th className="px-3 py-3 font-black">مستند العرض</th>
-                    <th className="px-3 py-3 font-black">قيمة العرض</th>
+                    <th className="px-3 py-3 font-black whitespace-nowrap">الترتيب</th>
+                    <th className="px-3 py-3 font-black whitespace-nowrap">المورد</th>
+                    <th className="px-3 py-3 font-black whitespace-nowrap">مستند العرض</th>
+                    <th className="px-3 py-3 font-black whitespace-nowrap">قيمة العرض</th>
                   </tr>
                 </thead>
                 <tbody>

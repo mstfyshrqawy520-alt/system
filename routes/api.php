@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AccountingPurchaseOrderController;
 use App\Http\Controllers\Api\V1\AccountingPurchaseRequestController;
 use App\Http\Controllers\Api\V1\SupplierInvoiceController;
 use App\Http\Controllers\Api\V1\AdminController;
+use App\Http\Controllers\Api\V1\AdminRequestTrackerController;
 use App\Http\Controllers\Api\V1\AdminSystemMonitoringController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\GeneralManagerPurchaseOrderController;
@@ -427,4 +428,15 @@ Route::middleware(['auth:sanctum', 'permission:system.monitor.view'])->prefix('a
     Route::get('/audit-log', [AdminSystemMonitoringController::class, 'auditLog']);
     Route::get('/security-events', [AdminSystemMonitoringController::class, 'securityEvents']);
     Route::get('/data-quality', [AdminSystemMonitoringController::class, 'dataQuality']);
+});
+
+// Admin Request Tracker — full procurement workflow visibility
+Route::middleware(['auth:sanctum', 'permission:system.users.manage'])->prefix('admin/request-tracker')->group(function () {
+    Route::get('/', [AdminRequestTrackerController::class, 'index']);
+    Route::get('/stats', [AdminRequestTrackerController::class, 'stats']);
+    Route::get('/{id}', [AdminRequestTrackerController::class, 'show'])->whereNumber('id');
+    Route::post('/{id}/cancel', [AdminRequestTrackerController::class, 'cancel'])->whereNumber('id');
+    Route::post('/{id}/archive', [AdminRequestTrackerController::class, 'archive'])->whereNumber('id');
+    Route::post('/{id}/restore', [AdminRequestTrackerController::class, 'restore'])->whereNumber('id');
+    Route::post('/{id}/note', [AdminRequestTrackerController::class, 'addNote'])->whereNumber('id');
 });

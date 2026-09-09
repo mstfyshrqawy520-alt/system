@@ -17,6 +17,7 @@ import { parseApiError } from '../../utils/apiError';
 import { KpiCard, KpiPill, KpiPillsBar } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import ActionRequiredInbox, { ActionInboxItem } from '../../components/dashboard/ActionRequiredInbox';
+import QuickLauncherBar from '../../components/dashboard/QuickLauncherBar';
 
 import { useRealtimeRefresh, emitAppDataUpdated } from '../../hooks/useRealtimeRefresh';
 
@@ -156,6 +157,9 @@ export const EmployeeDashboardPage: React.FC = () => {
 
       <ErrorMessage error={error} onDismiss={() => setError(null)} />
 
+      {/* ── اختصارات الإجراءات السريعة (Quick Launcher Bar) ── */}
+      <QuickLauncherBar className="mb-2" />
+
       {/* ── صندوق الإجراءات المطلوبة منك (Employee Action Inbox) ── */}
       {(() => {
         const employeeActionItems: ActionInboxItem[] = [
@@ -172,7 +176,7 @@ export const EmployeeDashboardPage: React.FC = () => {
               amount: r.total_estimated_cost ? Number(r.total_estimated_cost) : undefined,
               urgency: 'HIGH' as const,
               reason: 'مسودة لم تُرسل بعد للمراجعة والاعتماد',
-              actionUrl: `/employee/requests/${r.id}`,
+              actionUrl: `/employee/requests/${r.id}/edit`,
               actionLabel: 'فتح وتعديل المسودة',
               timeAgo: r.created_at ? r.created_at.slice(0, 10) : undefined,
               request_type: r.request_type,

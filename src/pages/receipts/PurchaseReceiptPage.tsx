@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { TableSkeleton } from '../../components/ui/StateFeedback';
@@ -101,6 +102,7 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
 
   const today = getTodayInputDate();
   const defaultDateFrom = getDefaultDateFrom();
+  const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFrom, setDateFrom] = useState(defaultDateFrom);
   const [dateTo, setDateTo] = useState(today);
@@ -138,6 +140,27 @@ export const PurchaseReceiptPage: React.FC<{ mode: ReceiptMode }> = ({ mode }) =
   useRealtimeRefresh(() => {
     void load(true);
   });
+
+  // Auto-focus on receipt_id or po_id from deep-link
+  useEffect(() => {
+    const targetReceiptId = searchParams.get('receipt_id');
+    const targetPoId = searchParams.get('po_id');
+    if (targetReceiptId) {
+      const match = [...receipts, ...archiveReceipts].find((r) => String(r.id) === targetReceiptId);
+      if (match?.receipt_number) {
+        setSearchTerm(match.receipt_number);
+      } else {
+        setSearchTerm(String(targetReceiptId));
+      }
+    } else if (targetPoId) {
+      const orderMatch = orders.find((o) => String(o.id) === targetPoId);
+      if (orderMatch?.po_number) {
+        setSearchTerm(orderMatch.po_number);
+      } else {
+        setSearchTerm(String(targetPoId));
+      }
+    }
+  }, [searchParams, receipts, archiveReceipts, orders]);
 
   const normalizedSearch = searchTerm.trim().toLocaleLowerCase('ar-EG');
   const ignoreDefaultDateForSearch = Boolean(normalizedSearch) && isDefaultTodayRange(dateFrom, dateTo);

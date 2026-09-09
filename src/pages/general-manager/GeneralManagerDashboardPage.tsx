@@ -15,6 +15,7 @@ import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import { DashboardBars, DashboardDonut } from '../../components/ui/DashboardCharts';
 import { getDefaultDateFrom, getTodayInputDate } from '../../utils/dateFilters';
 import ActionRequiredInbox, { ActionInboxItem } from '../../components/dashboard/ActionRequiredInbox';
+import QuickLauncherBar from '../../components/dashboard/QuickLauncherBar';
 
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
 
@@ -134,6 +135,9 @@ export const GeneralManagerDashboardPage: React.FC = () => {
         </div>
       </div>
 
+      {/* ── اختصارات الإجراءات السريعة (Quick Launcher Bar) ── */}
+      <QuickLauncherBar className="mb-2" />
+
       {/* ── صندوق القرارات التنفيذية المطلوبة منك الآن (Executive Action Inbox) ── */}
       {(() => {
         const gmActionItems: ActionInboxItem[] = [
@@ -149,7 +153,7 @@ export const GeneralManagerDashboardPage: React.FC = () => {
             amount: req.total_estimated_cost ? Number(req.total_estimated_cost) : undefined,
             urgency: req.priority === 'HIGH' ? ('CRITICAL' as const) : ('HIGH' as const),
             reason: 'طلب شراء محال للإدارة العامة للاعتماد والموافقة النهائية',
-            actionUrl: `/general-manager/purchase-requests`,
+            actionUrl: `/general-manager/purchase-requests?open=${req.id}`,
             actionLabel: 'مراجعة وتعديل الطلب',
             timeAgo: req.created_at ? req.created_at.slice(0, 10) : undefined,
             request_type: req.request_type,
@@ -192,7 +196,7 @@ export const GeneralManagerDashboardPage: React.FC = () => {
               amount: q.total_estimated_cost ? Number(q.total_estimated_cost) : undefined,
               urgency: 'CRITICAL' as const,
               reason: 'عروض أسعار موصى بها من القسم المختص بانتظار اعتماد الترسية التنفيذية',
-              actionUrl: `/general-manager/purchase-quotes`,
+              actionUrl: `/general-manager/purchase-quotes?open=${q.id}`,
               actionLabel: 'البت والاعتماد التنفيذي لعروض الأسعار',
               timeAgo: q.created_at ? q.created_at.slice(0, 10) : undefined,
               items_count: q.items?.length || 0,

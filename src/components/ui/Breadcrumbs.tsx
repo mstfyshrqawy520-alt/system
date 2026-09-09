@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const LABELS: Record<string, string> = {
   admin: 'إدارة النظام',
@@ -19,6 +20,7 @@ const LABELS: Record<string, string> = {
   preferences: 'التفضيلات',
   help: 'المساعدة',
   'system-monitor': 'مراقبة النظام',
+  'request-tracker': 'مركز متابعة الطلبات',
   users: 'المستخدمون',
   roles: 'الأدوار',
   permissions: 'الصلاحيات',
@@ -42,6 +44,8 @@ const getLabel = (segment: string): string => {
 
 export const Breadcrumbs: React.FC = () => {
   const location = useLocation();
+  const { hasRole } = useAuth();
+  const isDeptAccountant = hasRole('site_accountant') || hasRole('licenses_accountant') || hasRole('buffet_accountant');
   const segments = location.pathname.split('/').filter(Boolean);
 
   return (
@@ -51,7 +55,10 @@ export const Breadcrumbs: React.FC = () => {
         <span>الرئيسية</span>
       </Link>
       {segments.map((segment, index) => {
-        const path = `/${segments.slice(0, index + 1).join('/')}`;
+        let path = `/${segments.slice(0, index + 1).join('/')}`;
+        if (index === 0 && segment === 'accounting' && isDeptAccountant) {
+          path = '/site-accountant';
+        }
         const isCurrent = index === segments.length - 1;
         return (
           <React.Fragment key={path}>

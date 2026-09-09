@@ -212,6 +212,13 @@ export const AdminDashboardPage: React.FC = () => {
             </Link>
           )}
 
+          <Link to="/admin/request-tracker">
+            <Button variant="secondary" size="sm" className="w-full h-auto py-2.5 text-xs flex flex-col gap-1 items-center border-indigo-800/60 bg-indigo-950/40 text-indigo-300 hover:border-indigo-400">
+              <span className="text-base">📋</span>
+              <span className="font-bold text-indigo-200">مركز متابعة الطلبات</span>
+            </Button>
+          </Link>
+
           <Link to="/admin/system-monitor">
             <Button variant="secondary" size="sm" className="w-full h-auto py-2.5 text-xs flex flex-col gap-1 items-center border-cyan-800/60 bg-cyan-950/30 text-cyan-300 hover:border-cyan-400">
               <span className="text-base">🖥️</span>

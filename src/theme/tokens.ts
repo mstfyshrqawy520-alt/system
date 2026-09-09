@@ -161,4 +161,10 @@ export const statusConfigs: Record<string, StatusConfig> = {
     badgeClass: 'bg-emerald-950/80 text-emerald-300 border-emerald-800/80',
     dotClass: 'bg-emerald-400',
   },
+  CANCELLED: {
+    labelAr: 'ملغي',
+    labelEn: 'Cancelled',
+    badgeClass: 'bg-gray-950/80 text-gray-400 border-gray-700/80',
+    dotClass: 'bg-gray-500',
+  },
 };

@@ -110,7 +110,7 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
   });
 
   useEffect(() => {
-    const requestId = Number(searchParams.get('open'));
+    const requestId = Number(searchParams.get('open') || searchParams.get('request_id'));
     if (!requestId || selected || loading) return;
 
     const request = requests.find((item) => item.id === requestId);

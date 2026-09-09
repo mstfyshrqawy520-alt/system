@@ -17,8 +17,8 @@ export const SupplierFinanceWorkspacePage: React.FC = () => {
     searchParams.has('po') ||
     searchParams.has('payment_id');
 
-  const defaultTab = location.pathname.includes('supplier-accounts') ? 'accounts' : 'payments';
-  const currentTab = searchParams.get('tab') || defaultTab;
+  const defaultTab = (location.pathname.includes('supplier-accounts') || searchParams.has('supplier_id')) ? 'accounts' : 'payments';
+  const currentTab = searchParams.get('tab') || (searchParams.has('supplier_id') ? 'accounts' : defaultTab);
 
   const setTab = (tab: 'accounts' | 'payments') => {
     const next = new URLSearchParams(searchParams);

@@ -112,31 +112,60 @@ export const PRWizardStep4: React.FC<Props> = ({ data, onSubmit, isSubmitting, i
       {/* Items Summary */}
       <div className="space-y-2">
         <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">📦 ملخص البنود</h3>
-        <div className="overflow-x-auto rounded-xl border border-slate-700/50">
-          <table className="w-full text-right text-xs border-collapse">
+        {/* Desktop Table View */}
+        <div className="hidden sm:block overflow-x-auto rounded-xl border border-slate-700/50">
+          <table style={{ minWidth: '550px' }} className="w-full text-right text-xs border-collapse">
             <thead className="bg-slate-900 text-slate-300">
               <tr>
-                <th className="p-2">م</th>
-                <th className="p-2">رقم قطعة الأرض</th>
-                <th className="p-2">المنطقة</th>
-                <th className="p-2">الصنف</th>
-                <th className="p-2">الكمية</th>
-                <th className="p-2">الوحدة</th>
+                <th className="p-2.5 whitespace-nowrap">م</th>
+                <th className="p-2.5 whitespace-nowrap">رقم قطعة الأرض</th>
+                <th className="p-2.5 whitespace-nowrap">المنطقة</th>
+                <th className="p-2.5 whitespace-nowrap">الصنف</th>
+                <th className="p-2.5 whitespace-nowrap">الكمية</th>
+                <th className="p-2.5 whitespace-nowrap">الوحدة</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, index) => (
                 <tr key={index} className="border-t border-slate-800/60 text-slate-200">
-                  <td className="p-2 font-mono">{index + 1}</td>
-                  <td className="p-2 font-mono">{item.item_reference || 'مطلوب'}</td>
-                  <td className="p-2">{item.region || 'مطلوبة'}</td>
-                  <td className="p-2 font-semibold">{item.item_description || '—'}</td>
-                  <td className="p-2 font-mono">{item.quantity}</td>
-                  <td className="p-2">{item.uom || '—'}</td>
+                  <td className="p-2.5 font-mono">{index + 1}</td>
+                  <td className="p-2.5 font-mono">{item.item_reference || 'مطلوب'}</td>
+                  <td className="p-2.5">{item.region || 'مطلوبة'}</td>
+                  <td className="p-2.5 font-semibold">{item.item_description || '—'}</td>
+                  <td className="p-2.5 font-mono">{item.quantity}</td>
+                  <td className="p-2.5">{item.uom || '—'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards View */}
+        <div className="space-y-2.5 sm:hidden">
+          {items.map((item, index) => (
+            <div
+              key={`wizard-step4-item-${index}`}
+              className="rounded-xl border border-slate-700/60 bg-slate-900/60 p-3 text-xs space-y-2"
+            >
+              <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                <span className="font-mono text-[11px] font-bold text-cyan-400">بند #{index + 1}</span>
+                <span className="rounded bg-slate-800 px-2 py-0.5 font-mono text-slate-200 text-xs">
+                  {item.quantity} {item.uom || ''}
+                </span>
+              </div>
+              <div className="font-semibold text-slate-100">{item.item_description || '—'}</div>
+              <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-400 pt-1">
+                <div>
+                  <span className="text-slate-500 block">رقم قطعة الأرض:</span>
+                  <span className="font-mono text-slate-300">{item.item_reference || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block">المنطقة:</span>
+                  <span className="text-slate-300">{item.region || '—'}</span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

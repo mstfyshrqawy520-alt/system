@@ -51,16 +51,17 @@ export const TableRow: React.FC<{ children: React.ReactNode; className?: string;
   );
 };
 
-export const TableHead: React.FC<{ children?: React.ReactNode; className?: string; colSpan?: number }> = ({
+export const TableHead: React.FC<{ children?: React.ReactNode; className?: string; colSpan?: number; style?: React.CSSProperties }> = ({
   children,
   className = '',
   colSpan,
+  style,
 }) => {
   return (
     <th
       scope="col"
       colSpan={colSpan}
-      style={{ whiteSpace: 'nowrap' }}
+      style={{ wordBreak: 'normal', overflowWrap: 'normal', ...style }}
       className={`whitespace-nowrap px-3.5 py-3 text-xs font-bold text-slate-300 sm:px-4 sm:py-3.5 ${className}`}
     >
       {children}
@@ -68,16 +69,17 @@ export const TableHead: React.FC<{ children?: React.ReactNode; className?: strin
   );
 };
 
-export const TableCell: React.FC<{ children?: React.ReactNode; className?: string; colSpan?: number }> = ({
+export const TableCell: React.FC<{ children?: React.ReactNode; className?: string; colSpan?: number; style?: React.CSSProperties }> = ({
   children,
   className = '',
   colSpan,
+  style,
 }) => {
   return (
     <td
       colSpan={colSpan}
-      style={{ whiteSpace: 'nowrap' }}
-      className={`whitespace-nowrap px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs text-slate-200 ${className}`}
+      style={{ wordBreak: 'normal', overflowWrap: 'break-word', ...style }}
+      className={`px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs text-slate-200 ${className}`}
     >
       {children}
     </td>

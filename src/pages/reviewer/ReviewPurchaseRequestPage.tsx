@@ -205,9 +205,19 @@ export const ReviewPurchaseRequestPage: React.FC = () => {
     return (
       <div className="space-y-4" dir="rtl">
         <ErrorMessage error={error} />
-        <Link to="/reviewer/requests">
-          <Button variant="secondary" size="sm">← العودة للقائمة</Button>
-        </Link>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            if (window.history.length > 2) {
+              navigate(-1);
+            } else {
+              navigate('/reviewer/requests');
+            }
+          }}
+        >
+          ← العودة للقائمة
+        </Button>
       </div>
     );
   }

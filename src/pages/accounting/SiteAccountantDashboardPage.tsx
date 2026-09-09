@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { Card, KpiPill, KpiPillsBar } from '../../components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/Table';
 import ActionRequiredInbox, { ActionInboxItem } from '../../components/dashboard/ActionRequiredInbox';
+import QuickLauncherBar from '../../components/dashboard/QuickLauncherBar';
 import ErrorMessage from '../../components/ErrorMessage';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { parseApiError } from '../../utils/apiError';
@@ -266,6 +267,9 @@ export const SiteAccountantDashboardPage: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* ── اختصارات الإجراءات السريعة (Quick Launcher Bar) ── */}
+      <QuickLauncherBar className="mb-2" />
 
       {/* Action Required Inbox (الأخبار والمهام العاجلة المطلوبة فوراً) */}
       <ActionRequiredInbox

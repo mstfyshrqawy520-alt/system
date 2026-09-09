@@ -95,7 +95,7 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {isDepartmentAccountant ? (
-            <Link to={`/accounting/supplier-payments?tab=payments&po=${po.po_number || po.id}${queryReceiptId ? `&purchase_receipt_id=${queryReceiptId}` : ''}`}>
+            <Link to={`/accounting/supplier-payments?tab=payments&po=${po.po_number || po.id}${queryReceiptId ? `&purchase_receipt_id=${queryReceiptId}&action=create_invoice` : ''}`}>
               <Button variant="primary" size="sm" className="font-bold shadow-md shadow-cyan-900/40">
                 <span>🧾 تسجيل فاتورة الاستلام</span>
                 <span className="mr-1">←</span>
@@ -393,7 +393,7 @@ export const AccountingPurchaseOrderDetailsPage: React.FC = () => {
                   <div className="flex items-center gap-2 flex-wrap">
                     {isDepartmentAccountant ? (
                       <Link
-                        to={`/accounting/supplier-payments?tab=payments&purchase_receipt_id=${receipt.id}&po=${po.po_number || po.id}`}
+                        to={`/accounting/supplier-payments?tab=payments&purchase_receipt_id=${receipt.id}&po=${po.po_number || po.id}&action=create_invoice`}
                       >
                         <Button variant="primary" size="sm" className="font-bold shadow-sm w-full sm:w-auto">
                           <span>🧾 تسجيل فاتورة هذا الإذن</span>

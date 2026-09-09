@@ -197,14 +197,14 @@ export const QuickPeekDrawer: React.FC<QuickPeekDrawerProps> = ({
                     </span>
                   </div>
 
-                  <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950">
-                    <table className="w-full text-right text-xs">
-                      <thead className="bg-slate-900/90 text-slate-400 font-bold border-b border-slate-800">
+                  <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950">
+                    <table style={{ minWidth: '460px' }} className="w-full text-right text-xs">
+                      <thead className="bg-slate-900/90 text-slate-400 font-bold border-b border-slate-800 whitespace-nowrap">
                         <tr>
-                          <th className="p-2.5">الصنف والمواصفات</th>
-                          <th className="p-2.5 text-center">الكمية</th>
-                          <th className="p-2.5">القطعة / المنطقة</th>
-                          {type === 'PO' && <th className="p-2.5">الإجمالي</th>}
+                          <th className="p-2.5 whitespace-nowrap">الصنف والمواصفات</th>
+                          <th className="p-2.5 text-center whitespace-nowrap">الكمية</th>
+                          <th className="p-2.5 whitespace-nowrap">القطعة / المنطقة</th>
+                          {type === 'PO' && <th className="p-2.5 whitespace-nowrap">الإجمالي</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800/60">

@@ -41,6 +41,7 @@ import { Card, KpiCard } from '../../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import { getDefaultDateFrom, getTodayInputDate, isDefaultTodayRange } from '../../utils/dateFilters';
 import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
+import QuickLauncherBar from '../../components/dashboard/QuickLauncherBar';
 
 const STATUS_LABELS: Record<string, string> = {
   PO_DRAFT: 'مسودة',
@@ -153,12 +154,14 @@ export const ProcurementManagerPage: React.FC = () => {
 
   useEffect(() => {
     const path = location.pathname;
-    if (path.includes('/purchase-requests')) setActiveTab(0);
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'approved-quotes' || tabParam === '2') setActiveTab(2);
+    else if (path.includes('/purchase-requests')) setActiveTab(0);
     else if (path.includes('/purchase-orders')) setActiveTab(1);
     else if (path.includes('/suppliers')) setActiveTab(3);
     else if (path.includes('/reports')) setActiveTab(4);
     else setActiveTab(0);
-  }, [location.pathname]);
+  }, [location.pathname, searchParams]);
 
   const loadData = async () => {
     const isInitialLoad = !hasLoadedRef.current;
@@ -466,7 +469,7 @@ export const ProcurementManagerPage: React.FC = () => {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant={activeTab === 0 ? 'primary' : 'secondary'} size="sm" onClick={() => navigate('/procurement/purchase-requests')}>الطلبات المعلقة ({queueRows.length})</Button>
-          <Button variant={activeTab === 2 ? 'primary' : 'secondary'} size="sm" onClick={() => setActiveTab(2)}>الأسعار المعتمدة ({selectedQuotePrs.length})</Button>
+          <Button variant={activeTab === 2 ? 'primary' : 'secondary'} size="sm" onClick={() => { setActiveTab(2); setSearchParams({ tab: 'approved-quotes' }, { replace: true }); }}>الأسعار المعتمدة ({selectedQuotePrs.length})</Button>
           <Button variant={activeTab === 1 ? 'primary' : 'secondary'} size="sm" onClick={() => navigate('/procurement/purchase-orders')}>أرشيف أوامر الشراء</Button>
           <Button variant={activeTab === 3 ? 'primary' : 'secondary'} size="sm" onClick={() => navigate('/procurement/suppliers')}>إدارة الموردين</Button>
           <Button variant={activeTab === 4 ? 'primary' : 'secondary'} size="sm" onClick={() => navigate('/procurement/reports')}>التقارير والتحليلات</Button>
@@ -474,6 +477,9 @@ export const ProcurementManagerPage: React.FC = () => {
       </div>
 
       {pageError && <ErrorMessage error={pageError} onDismiss={() => setPageError(null)} onRetry={() => void loadData()} />}
+
+      {/* ── اختصارات الإجراءات السريعة (Quick Launcher Bar) ── */}
+      <QuickLauncherBar className="mb-2" />
 
       {/* ── صندوق المهام والإجراءات المطلوبة من المشتريات الآن (Action Inbox) ── */}
       <div className="rounded-2xl border-2 border-cyan-500/40 bg-gradient-to-r from-slate-900 via-cyan-950/20 to-slate-900 p-4 sm:p-5 shadow-xl space-y-4">

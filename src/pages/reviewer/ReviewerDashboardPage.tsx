@@ -18,6 +18,7 @@ import { KpiCard, KpiPill, KpiPillsBar } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import ActionRequiredInbox, { ActionInboxItem } from '../../components/dashboard/ActionRequiredInbox';
+import QuickLauncherBar from '../../components/dashboard/QuickLauncherBar';
 import { getUnitLabel } from '../../utils/units';
 
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
@@ -179,7 +180,7 @@ export const ReviewerDashboardPage: React.FC = () => {
         amount: q.total_estimated_cost ? Number(q.total_estimated_cost) : undefined,
         urgency: 'HIGH' as const,
         reason: 'عروض أسعار مسجلة بانتظار التوصية الفنية لاختيار العرض الأنسب',
-        actionUrl: `/reviewer/purchase-quotes`,
+        actionUrl: `/reviewer/purchase-quotes?open=${q.id}`,
         actionLabel: 'البت وترشيح عروض الأسعار',
         timeAgo: q.created_at ? q.created_at.slice(0, 10) : undefined,
         items_count: q.items?.length || 0,
@@ -242,6 +243,9 @@ export const ReviewerDashboardPage: React.FC = () => {
       </div>
 
       <ErrorMessage error={error} onDismiss={() => setError(null)} />
+
+      {/* ── اختصارات الإجراءات السريعة (Quick Launcher Bar) ── */}
+      <QuickLauncherBar className="mb-2" />
 
       {/* ── صندوق المهام والإجراءات المطلوبة منك الآن (Action Inbox) ── */}
       <ActionRequiredInbox

@@ -99,15 +99,15 @@ export const ProcurementPurchaseRequestDetailsPage: React.FC = () => {
       <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-3 shadow-xl">
         <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">بنود الطلب المعتمدة</h3>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs">
+        <div className="hidden min-w-0 md:block overflow-x-auto">
+          <table style={{ minWidth: '600px' }} className="w-full text-right text-xs">
             <thead className="bg-slate-900 text-slate-400 font-bold uppercase border-b border-slate-800">
               <tr>
-                <th className="p-3">#</th>
-                <th className="p-3">رقم قطعة الأرض</th>
-                <th className="p-3">المنطقة</th>
-                <th className="p-3">الوصف / المواد</th>
-                <th className="p-3">الكمية</th>
+                <th className="p-3 whitespace-nowrap">#</th>
+                <th className="p-3 whitespace-nowrap">رقم قطعة الأرض</th>
+                <th className="p-3 whitespace-nowrap">المنطقة</th>
+                <th className="p-3 whitespace-nowrap">الوصف / المواد</th>
+                <th className="p-3 whitespace-nowrap">الكمية</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
@@ -122,6 +122,34 @@ export const ProcurementPurchaseRequestDetailsPage: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Items Cards */}
+        <div className="space-y-3 md:hidden">
+          {pr.items?.map((item, idx) => (
+            <article
+              key={`mobile-pr-detail-item-${item.id || idx}`}
+              className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 text-xs space-y-2.5"
+            >
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <span className="font-mono text-[11px] font-bold text-cyan-400">بند #{idx + 1}</span>
+                <span className="rounded bg-slate-800 px-2 py-0.5 font-mono text-slate-300">
+                  {item.quantity} {getUnitLabel(item.uom)}
+                </span>
+              </div>
+              <div className="text-sm font-semibold text-slate-100">{item.item_description}</div>
+              <div className="grid grid-cols-2 gap-2 text-slate-400 text-[11px] pt-1">
+                <div>
+                  <span className="text-slate-500 block">رقم قطعة الأرض:</span>
+                  <span className="font-mono text-slate-300">{item.item_reference || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block">المنطقة:</span>
+                  <span className="text-slate-300">{item.region || '—'}</span>
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
       </div>
 

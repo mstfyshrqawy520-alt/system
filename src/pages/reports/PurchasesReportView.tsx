@@ -742,7 +742,7 @@ export const PurchasesReportView: React.FC = () => {
                   </tr>
 
                   {/* 2. Formal 12-Column Title Headers from Handwritten Note */}
-                  <tr className="bg-[#f8fafc] text-slate-900 font-black text-[11.5px] border-b-2 border-slate-400">
+                  <tr className="bg-[#f8fafc] text-slate-900 font-black text-[11.5px] border-b-2 border-slate-400 whitespace-nowrap">
                     <th className="border border-slate-300 px-1 py-2 text-center w-8 bg-[#e2e8f0]">م</th>
                     <th className="border border-slate-300 px-2.5 py-2 text-center whitespace-nowrap min-w-[90px]">تاريخ التوريد</th>
                     <th className="border border-slate-300 px-2.5 py-2 text-center whitespace-nowrap min-w-[110px]">رقم أمر الشراء</th>

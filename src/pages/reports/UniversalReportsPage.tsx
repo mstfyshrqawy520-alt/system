@@ -1049,7 +1049,7 @@ export const UniversalReportsPage: React.FC = () => {
                 {filteredOrders.length > 0 ? (
                   <div className="overflow-x-auto rounded-xl border border-slate-800">
                     <table className="w-full text-right text-xs border-collapse min-w-[950px]">
-                      <thead className="bg-slate-900 border-b border-slate-700 text-slate-300 font-black">
+                      <thead className="bg-slate-900 border-b border-slate-700 text-slate-300 font-black whitespace-nowrap">
                         <tr>
                           <th className="px-3 py-2.5 text-center w-10 border-l border-slate-800">م</th>
                           <th className="px-3 py-2.5 text-center border-l border-slate-800">رقم الأمر</th>

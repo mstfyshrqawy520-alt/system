@@ -120,6 +120,27 @@ export const SupplierPaymentsPage: React.FC = () => {
     }
   };
 
+  const openInvoiceForm = (receipt: ApprovedReceipt, currentParcels: LandParcel[] = parcels, currentDepts: Array<{ id: number; name: string; code: string }> = departments) => {
+    setError(null);
+    setNotice(null);
+    setInvoiceReceipt(receipt);
+    setInvoiceAllocationError(null);
+    setInvoiceModalError(null);
+    const receiptTotal = receiptValue(receipt).toFixed(2);
+    const defaultDeptId = receipt.purchase_order?.purchase_request?.department?.id || (currentDepts.length ? currentDepts[0].id : '');
+    // #3 — Smart auto-fill: if only one parcel exists, auto-select it and fill amount
+    const defaultAllocations: LandAllocationDraft[] = currentParcels.length === 1
+      ? [{ land_parcel_id: currentParcels[0].id, department_id: defaultDeptId, amount: receiptTotal, notes: '' }]
+      : [{ land_parcel_id: '', department_id: defaultDeptId, amount: '', notes: '' }];
+    setInvoiceForm({
+      invoice_number: '',
+      invoice_date: today(),
+      due_date: '',
+      amount: receiptTotal,
+      land_allocations: defaultAllocations,
+    });
+  };
+
   const load = async () => {
     setLoading(true);
     setError(null);
@@ -133,16 +154,25 @@ export const SupplierPaymentsPage: React.FC = () => {
       if (!isSiteAccountant) {
         loadPromises.push(refreshAccounts());
       }
-      const [approvedReceipts] = (await Promise.all(loadPromises)) as [ApprovedReceipt[]];
+      const [approvedReceipts, _invoices, loadedParcels, loadedDepts] = (await Promise.all(loadPromises)) as [ApprovedReceipt[], SupplierInvoice[], LandParcel[], Array<{ id: number; name: string; code: string }>];
       const requestedReceiptId = Number(searchParams.get('purchase_receipt_id') || 0);
+      const isCreateInvoice = (searchParams.get('action') === 'create_invoice' || searchParams.get('action') === 'invoice') && isSiteAccountant;
       if (requestedReceiptId > 0) {
         const requestedReceipt = approvedReceipts.find((receipt) => receipt.id === requestedReceiptId);
         if (requestedReceipt) {
-          setDocumentPreview(requestedReceipt);
+          if (isCreateInvoice) {
+            openInvoiceForm(requestedReceipt, loadedParcels, loadedDepts);
+          } else {
+            setDocumentPreview(requestedReceipt);
+          }
         } else {
           try {
             const linkedReceipt = await getPurchaseReceiptByIdApi(requestedReceiptId);
-            setDocumentPreview(linkedReceipt as unknown as ApprovedReceipt);
+            if (isCreateInvoice) {
+              openInvoiceForm(linkedReceipt as unknown as ApprovedReceipt, loadedParcels, loadedDepts);
+            } else {
+              setDocumentPreview(linkedReceipt as unknown as ApprovedReceipt);
+            }
           } catch {
             setNotice('تم فتح شاشة الحسابات، لكن تعذر تحميل إذن الاستلام المرتبط بالرسالة.');
           }
@@ -155,7 +185,7 @@ export const SupplierPaymentsPage: React.FC = () => {
     }
   };
 
-  useEffect(() => { void load(); }, [searchParams.get('purchase_receipt_id')]);
+  useEffect(() => { void load(); }, [searchParams.get('purchase_receipt_id'), searchParams.get('action')]);
 
   const contains = (value: unknown, filter: string) => !filter || String(value ?? '').toLocaleLowerCase('ar-EG').includes(filter.toLocaleLowerCase('ar-EG'));
   const receiptHasNonDateSearch = Boolean(receiptFilters.receipt || receiptFilters.po || receiptFilters.supplier || receiptFilters.department || receiptFilters.value || receiptFilters.action);
@@ -164,27 +194,6 @@ export const SupplierPaymentsPage: React.FC = () => {
   const filteredReceipts = useMemo(() => receipts.filter((receipt) => { const receiptDate = String(receipt.received_at || '').slice(0, 10); return contains(receipt.receipt_number, receiptFilters.receipt) && contains(receipt.purchase_order?.po_number, receiptFilters.po) && contains(receipt.purchase_order?.supplier?.company_name, receiptFilters.supplier) && contains(receipt.purchase_order?.purchase_request?.department?.name, receiptFilters.department) && (receiptHasNonDateSearch || ((!receiptFilters.dateFrom || receiptDate >= receiptFilters.dateFrom) && (!receiptFilters.dateTo || receiptDate <= receiptFilters.dateTo))) && contains(receiptValue(receipt), receiptFilters.value) && contains('عرض تسجيل فاتورة', receiptFilters.action); }), [receipts, receiptFilters, receiptHasNonDateSearch]);
   const filteredAccounts = useMemo(() => accounts.filter((account) => { const activityDate = String(account.last_activity_at || '').slice(0, 10); return contains(`${account.company_name} ${account.code || ''} ${account.email || ''} ${account.phone || ''}`, accountFilters.supplier) && contains(account.total_invoiced, accountFilters.invoiced) && contains(account.total_paid, accountFilters.paid) && contains(account.balance, accountFilters.balance) && contains(account.open_invoices_count, accountFilters.open) && (accountHasNonDateSearch || ((!accountFilters.activityDateFrom || activityDate >= accountFilters.activityDateFrom) && (!accountFilters.activityDateTo || activityDate <= accountFilters.activityDateTo))) && contains('تسجيل دفعة للمورد', accountFilters.action); }), [accounts, accountFilters, accountHasNonDateSearch]);
   const filteredInvoices = useMemo(() => invoices.filter((invoice) => { const invoiceDate = String(invoice.invoice_date || '').slice(0, 10); return contains(invoice.invoice_number, invoiceFilters.invoice) && contains(invoice.supplier?.company_name, invoiceFilters.supplier) && contains(invoice.purchase_order?.po_number, invoiceFilters.po) && (invoiceHasNonDateSearch || ((!invoiceFilters.invoiceDateFrom || invoiceDate >= invoiceFilters.invoiceDateFrom) && (!invoiceFilters.invoiceDateTo || invoiceDate <= invoiceFilters.invoiceDateTo))) && contains(invoice.due_date, invoiceFilters.dueDate) && contains('مسجلة في الأرشيف', invoiceFilters.action); }), [invoices, invoiceFilters, invoiceHasNonDateSearch]);
-
-  const openInvoiceForm = (receipt: ApprovedReceipt) => {
-    setError(null);
-    setNotice(null);
-    setInvoiceReceipt(receipt);
-    setInvoiceAllocationError(null);
-    setInvoiceModalError(null);
-    const receiptTotal = receiptValue(receipt).toFixed(2);
-    const defaultDeptId = receipt.purchase_order?.purchase_request?.department?.id || (departments.length ? departments[0].id : '');
-    // #3 — Smart auto-fill: if only one parcel exists, auto-select it and fill amount
-    const defaultAllocations: LandAllocationDraft[] = parcels.length === 1
-      ? [{ land_parcel_id: parcels[0].id, department_id: defaultDeptId, amount: receiptTotal, notes: '' }]
-      : [{ land_parcel_id: '', department_id: defaultDeptId, amount: '', notes: '' }];
-    setInvoiceForm({
-      invoice_number: '',
-      invoice_date: today(),
-      due_date: '',
-      amount: receiptTotal,
-      land_allocations: defaultAllocations,
-    });
-  };
 
   const submitInvoice = async (event: FormEvent) => {
     event.preventDefault();

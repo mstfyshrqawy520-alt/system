@@ -666,24 +666,30 @@ html[data-density="compact"] .space-y-4 {
 
 :focus-visible { outline: 3px solid #22d3ee; outline-offset: 3px; }
 button, a, input, select, textarea { min-height: 2.5rem; }
+/* Arabic Typography & Layout Integrity Rules */
+th,
+td {
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.5;
+}
+
+th {
+  white-space: nowrap;
+}
+
+/* Ensure horizontal scroll containers allow smooth scrolling without squeezing tables or breaking text */
+.overflow-x-auto {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
 @media (max-width: 640px) {
-  table {
-    width: 100% !important;
-    min-width: 0 !important;
-    table-layout: fixed;
-  }
-
-  th,
-  td {
-    max-width: 100%;
-    overflow-wrap: anywhere;
-    white-space: normal !important;
-    word-break: break-word;
-  }
-
-  .overflow-x-auto {
-    max-width: 100%;
-    overflow-x: hidden !important;
+  .overflow-x-auto > table,
+  table:not(.no-min-width) {
+    min-width: 650px;
+    table-layout: auto;
   }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }

@@ -50,6 +50,8 @@ const DepartmentsPage = React.lazy(() => import("../pages/admin/DepartmentsPage"
 const CategoriesPage = React.lazy(() => import("../pages/admin/CategoriesPage"));
 const ItemsPage = React.lazy(() => import("../pages/admin/ItemsPage"));
 const SuppliersPage = React.lazy(() => import("../pages/admin/SuppliersPage"));
+const AdminRequestTrackerPage = React.lazy(() => import("../pages/admin/AdminRequestTrackerPage"));
+const AdminRequestDetailsPage = React.lazy(() => import("../pages/admin/AdminRequestDetailsPage"));
 import RoleHomeRedirect from "./RoleHomeRedirect";
 import { ForbiddenPage, NotFoundPage, ServerErrorPage } from "../pages/ErrorPages";
 
@@ -88,6 +90,8 @@ export const AppRoutes: React.FC = () => {
                 {/* ── Admin Routes ─────────────────────────────────────────── */}
                 <Route element={<RoleRoute allowedRoles={["admin"]} />}>
                     <Route path="/admin" element={<AdminDashboardPage />} />
+                    <Route path="/admin/request-tracker" element={<AdminRequestTrackerPage />} />
+                    <Route path="/admin/request-tracker/:id" element={<AdminRequestDetailsPage />} />
                     <Route path="/admin/system-monitor" element={<AdminSystemMonitoringPage />} />
                     <Route path="/admin/users" element={<UsersPage />} />
                     <Route path="/admin/roles" element={<RolesPage />} />

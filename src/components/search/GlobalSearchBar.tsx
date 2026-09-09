@@ -204,9 +204,8 @@ export const GlobalSearchBar: React.FC = () => {
         const textToSearch = `${pr.request_number} ${pr.requester?.name || ''} ${pr.department?.name || ''} ${pr.justification || ''} ${itemNames}`.toLowerCase();
         if (textToSearch.includes(q)) {
           const prUrl = primaryRole === 'reviewer' ? `/reviewer/requests/${pr.id}/review`
-            : primaryRole === 'procurement_manager' ? `/procurement/purchase-requests/${pr.id}`
-            : primaryRole === 'accountant' ? `/accounting/purchase-requests/${pr.id}`
-            : primaryRole === 'general_manager' ? `/general-manager/purchase-requests/${pr.id}`
+            : primaryRole === 'accountant' ? `/accounting/purchase-requests?open=${pr.id}`
+            : primaryRole === 'general_manager' ? `/general-manager/purchase-requests?open=${pr.id}`
             : `/requests/${pr.id}`;
 
           const firstItem = pr.items?.[0];
@@ -233,8 +232,10 @@ export const GlobalSearchBar: React.FC = () => {
         const textToSearch = `${po.po_number || ''} PO-${po.id} ${po.supplier?.company_name || ''} ${po.status || ''} ${po.currency || ''}`.toLowerCase();
         if (textToSearch.includes(q)) {
           const poUrl = primaryRole === 'general_manager' ? `/general-manager/purchase-orders/${po.id}`
-            : primaryRole === 'accountant' ? `/accounting/purchase-orders/${po.id}`
-            : `/procurement/purchase-orders/${po.id}`;
+            : isFinancialRole ? `/accounting/purchase-orders/${po.id}`
+            : isProcurementRole ? `/procurement/purchase-orders/${po.id}`
+            : primaryRole === 'warehouse_keeper' ? `/warehouse`
+            : `/requests/${po.purchase_request_id || (po.purchase_request as any)?.id || ''}`;
 
           // Only show financial amount to financial / procurement / GM / admin roles
           const amountText = (isFinancialRole || isProcurementRole)

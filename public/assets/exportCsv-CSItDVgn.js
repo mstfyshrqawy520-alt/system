@@ -1,0 +1,2 @@
+const u=({filename:o=`export_${new Date().toISOString().slice(0,10)}.csv`,headers:r,rows:s})=>{const n=e=>e==null?'""':`"${String(e).replace(/"/g,'""')}"`,i="\uFEFF"+[r.map(n).join(","),...s.map(e=>e.map(n).join(","))].join(`\r
+`),d=new Blob([i],{type:"text/csv;charset=utf-8;"}),c=URL.createObjectURL(d),t=document.createElement("a");t.setAttribute("href",c),t.setAttribute("download",o.endsWith(".csv")?o:`${o}.csv`),document.body.appendChild(t),t.click(),document.body.removeChild(t),URL.revokeObjectURL(c)};export{u as e};

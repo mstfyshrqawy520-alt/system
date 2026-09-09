@@ -12,6 +12,7 @@ import { CurrencyDisplay } from '../../components/ui/CurrencyDisplay';
 import PurchaseOrderPrintModal from '../../components/procurement/PurchaseOrderPrintModal';
 import { DashboardBars, DashboardDonut } from '../../components/ui/DashboardCharts';
 import ActionRequiredInbox, { ActionInboxItem } from '../../components/dashboard/ActionRequiredInbox';
+import QuickLauncherBar from '../../components/dashboard/QuickLauncherBar';
 
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh';
 
@@ -112,6 +113,9 @@ export const AccountingDashboardPage: React.FC = () => {
         </div>
       </div>
 
+      {/* ── اختصارات الإجراءات السريعة (Quick Launcher Bar) ── */}
+      <QuickLauncherBar className="mb-2" />
+
       {/* ── صندوق المهام والإجراءات المالية المطلوبة منك الآن (Action Inbox) ── */}
       {(() => {
         const accountingActionItems: ActionInboxItem[] = [
@@ -153,7 +157,7 @@ export const AccountingDashboardPage: React.FC = () => {
             amount: pr.total_estimated_cost ? Number(pr.total_estimated_cost) : undefined,
             urgency: pr.priority === 'HIGH' ? ('CRITICAL' as const) : ('NORMAL' as const),
             reason: 'طلب شراء بالمسار المباشر بانتظار موافقة وتحديد أسعار الحسابات',
-            actionUrl: `/accounting/purchase-requests`,
+            actionUrl: `/accounting/purchase-requests?open=${pr.id}`,
             actionLabel: 'مراجعة وتحديد الأسعار والاعتماد',
             timeAgo: pr.created_at ? pr.created_at.slice(0, 10) : undefined,
             created_at: pr.created_at || undefined,
@@ -185,7 +189,7 @@ export const AccountingDashboardPage: React.FC = () => {
             amount: q.total_estimated_cost ? Number(q.total_estimated_cost) : undefined,
             urgency: 'HIGH' as const,
             reason: 'عروض أسعار مسجلة بانتظار الرقابة والمراجعة المالية وترشيح الأسعار',
-            actionUrl: `/accounting/purchase-quotes`,
+            actionUrl: `/accounting/purchase-quotes?open=${q.id}`,
             actionLabel: 'مراجعة عروض الأسعار والترشيح',
             timeAgo: q.created_at ? q.created_at.slice(0, 10) : undefined,
             created_at: q.created_at || undefined,
