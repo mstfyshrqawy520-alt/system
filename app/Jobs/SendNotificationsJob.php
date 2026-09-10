@@ -97,6 +97,20 @@ class SendNotificationsJob implements ShouldQueue
         $id = $this->notifiable->getKey();
 
         if ($this->notifiable instanceof \App\Models\PurchaseRequest) {
+            if (str_contains($this->type, 'quote')) {
+                if ($user->hasRole('general_manager')) {
+                    return "/general-manager/purchase-quotes?open={$id}";
+                }
+                if ($user->hasRole('reviewer')) {
+                    return "/reviewer/purchase-quotes?open={$id}";
+                }
+                if ($user->hasRole('accountant')) {
+                    return "/accounting/purchase-quotes?open={$id}";
+                }
+                if ($user->hasRole('procurement_manager')) {
+                    return "/procurement/purchase-orders/create?pr={$id}";
+                }
+            }
             if ($user->hasRole('reviewer')) {
                 return "/reviewer/requests/{$id}";
             }

@@ -64,10 +64,13 @@ class ProcurementPurchaseRequestService
             $query->where('status', 'PENDING_QUOTE_RECOMMENDATIONS')
                 ->whereDoesntHave('quotes');
         } elseif ($actor?->hasRole('reviewer')) {
-            // Department reviewers must only see normal requests explicitly assigned to them where DEPARTMENT recommendation is not yet submitted.
-            // General-manager requests require accounting recommendation only.
+            // Sequential workflow: Department reviewers must only see requests where ACCOUNTING recommendation has already been submitted,
+            // and DEPARTMENT recommendation is not yet submitted.
             $query->where('status', 'PENDING_QUOTE_RECOMMENDATIONS')
                 ->whereHas('quotes')
+                ->whereHas('quotes.recommendations', function ($recommendationQuery): void {
+                    $recommendationQuery->where('role_type', 'ACCOUNTING');
+                })
                 ->whereDoesntHave('quotes.recommendations', function ($recommendationQuery): void {
                     $recommendationQuery->where('role_type', 'DEPARTMENT');
                 })
@@ -81,7 +84,7 @@ class ProcurementPurchaseRequestService
                         });
                 });
         } elseif ($actor?->hasRole('accountant')) {
-            // Accountants must only see requests where ACCOUNTING recommendation is not yet submitted.
+            // Financial Director must only see requests where ACCOUNTING recommendation is not yet submitted.
             $query->where('status', 'PENDING_QUOTE_RECOMMENDATIONS')
                 ->whereHas('quotes')
                 ->whereDoesntHave('quotes.recommendations', function ($recommendationQuery): void {
@@ -90,9 +93,11 @@ class ProcurementPurchaseRequestService
         } elseif ($actor?->hasRole('general_manager')) {
             $query->where('status', 'PENDING_EXECUTIVE_QUOTE_DECISION')
                 ->whereHas('quotes');
-        } else {
+        } elseif ($actor?->hasRole('admin')) {
             $query->whereIn('status', ['PENDING_QUOTE_RECOMMENDATIONS', 'PENDING_EXECUTIVE_QUOTE_DECISION'])
                 ->whereHas('quotes');
+        } else {
+            $query->whereRaw('1 = 0');
         }
 
         return $query->orderBy('updated_at', 'desc')->paginate($perPage);

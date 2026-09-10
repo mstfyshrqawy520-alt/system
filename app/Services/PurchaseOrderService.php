@@ -538,6 +538,12 @@ class PurchaseOrderService
             $notificationService = app(\App\Services\NotificationService::class);
             $accountants = $notificationService->resolveUsersWithPermission('purchase_order.view_accounting');
 
+            // Auto-resolve pending notifications on this PO and PR for the issuing procurement manager
+            $notificationService->markEntityNotificationsAsRead($lockedPo, $user);
+            if ($lockedPo->purchaseRequest) {
+                $notificationService->markEntityNotificationsAsRead($lockedPo->purchaseRequest, $user);
+            }
+
             $lockedPo->loadMissing('purchaseRequest.department');
             $deptCode = $lockedPo->purchaseRequest?->department?->code;
             $deptAccountants = collect();
@@ -551,15 +557,21 @@ class PurchaseOrderService
                     }
                 }
             }
-            $allAccountants = $accountants->merge($deptAccountants)->unique('id');
 
-            $notificationService->queueUsers(
-                $allAccountants,
-                'purchase_order_issued_accounting',
-                'تم إصدار أمر شراء جديد',
-                "تم إصدار أمر الشراء {$lockedPo->po_number} للاطلاع المالي وتجهيز الفواتير.",
-                $lockedPo
-            );
+            // Exclude Financial Director (role 'accountant') - notify only scoped department accountant for awareness
+            $targetAccountants = $deptAccountants->isNotEmpty()
+                ? $deptAccountants
+                : $accountants->reject(fn ($u) => $u->hasRole('accountant'));
+
+            if ($targetAccountants->isNotEmpty()) {
+                $notificationService->queueUsers(
+                    $targetAccountants,
+                    'purchase_order_issued_accounting',
+                    'تم إصدار أمر شراء جديد',
+                    "تم إصدار أمر الشراء {$lockedPo->po_number} للاطلاع المالي وتجهيز الفواتير.",
+                    $lockedPo
+                );
+            }
 
             // Notify requester if the request was created by the General Manager or user
             if ($lockedPo->purchaseRequest && $lockedPo->purchaseRequest->user_id) {

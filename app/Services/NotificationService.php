@@ -160,19 +160,32 @@ class NotificationService
             }
         }
 
-        return Notification::firstOrCreate(
-            [
-                'user_id' => $userId,
-                'type' => $type,
-                'notifiable_type' => get_class($notifiable),
-                'notifiable_id' => $notifiable->getKey(),
-            ],
-            [
+        $existing = Notification::where([
+            'user_id' => $userId,
+            'type' => $type,
+            'notifiable_type' => get_class($notifiable),
+            'notifiable_id' => $notifiable->getKey(),
+        ])->first();
+
+        if ($existing) {
+            $existing->update([
                 'title' => $title,
                 'message' => $message,
                 'read_at' => null,
-            ]
-        );
+                'created_at' => now(),
+            ]);
+            return $existing;
+        }
+
+        return Notification::create([
+            'user_id' => $userId,
+            'type' => $type,
+            'notifiable_type' => get_class($notifiable),
+            'notifiable_id' => $notifiable->getKey(),
+            'title' => $title,
+            'message' => $message,
+            'read_at' => null,
+        ]);
     }
 
     /**
@@ -262,23 +275,35 @@ class NotificationService
                 continue;
             }
 
-            Notification::firstOrCreate(
-                [
+            $existing = Notification::where([
+                'user_id' => $userId,
+                'type' => 'purchase_order_and_receipt_ready_accounting',
+                'notifiable_type' => PurchaseOrder::class,
+                'notifiable_id' => $purchaseOrder->id,
+            ])->first();
+
+            if ($existing) {
+                $existing->update([
+                    'title' => 'أمر الشراء وإذن الاستلام جاهزان للحسابات',
+                    'message' => "أمر الشراء {$purchaseOrder->po_number} وإذن الاستلام {$purchaseReceipt->receipt_number} مرتبطان بنفس العملية. افتح الرسالة لمراجعة المستندين واستكمال فاتورة المورد.",
+                    'purchase_order_id' => $purchaseOrder->id,
+                    'purchase_receipt_id' => $purchaseReceipt->id,
+                    'read_at' => null,
+                    'created_at' => now(),
+                ]);
+            } else {
+                Notification::create([
                     'user_id' => $userId,
                     'type' => 'purchase_order_and_receipt_ready_accounting',
                     'notifiable_type' => PurchaseOrder::class,
                     'notifiable_id' => $purchaseOrder->id,
                     'purchase_order_id' => $purchaseOrder->id,
                     'purchase_receipt_id' => $purchaseReceipt->id,
-                ],
-                [
                     'title' => 'أمر الشراء وإذن الاستلام جاهزان للحسابات',
                     'message' => "أمر الشراء {$purchaseOrder->po_number} وإذن الاستلام {$purchaseReceipt->receipt_number} مرتبطان بنفس العملية. افتح الرسالة لمراجعة المستندين واستكمال فاتورة المورد.",
-                    'purchase_order_id' => $purchaseOrder->id,
-                    'purchase_receipt_id' => $purchaseReceipt->id,
                     'read_at' => null,
-                ]
-            );
+                ]);
+            }
         }
     }
 

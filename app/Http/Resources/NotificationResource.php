@@ -53,7 +53,9 @@ class NotificationResource extends JsonResource
             $role = $user->roles->first()?->slug;
 
             if ($role === 'accountant') {
-                if (in_array($this->type, ['purchase_order_and_receipt_ready_accounting', 'purchase_order_and_receipt_approved_info'], true) || $this->purchase_receipt_id || $this->notifiable_type === PurchaseOrder::class || $this->purchase_order_id) {
+                if (str_contains($this->type, 'quote')) {
+                    $targetUrl = "/accounting/purchase-quotes?open={$this->notifiable_id}";
+                } elseif (in_array($this->type, ['purchase_order_and_receipt_ready_accounting', 'purchase_order_and_receipt_approved_info'], true) || $this->purchase_receipt_id || $this->notifiable_type === PurchaseOrder::class || $this->purchase_order_id) {
                     $poId = $this->purchase_order_id ?: ($this->notifiable_type === PurchaseOrder::class ? $this->notifiable_id : null);
                     if ($poId) {
                         $targetUrl = "/accounting/purchase-orders/{$poId}" . ($this->purchase_receipt_id ? "?receipt_id={$this->purchase_receipt_id}" : '');
@@ -79,25 +81,35 @@ class NotificationResource extends JsonResource
                     $targetUrl = "/accounting/supplier-finance";
                 }
             } elseif ($role === 'general_manager') {
-                if ($this->notifiable_type === PurchaseOrder::class || $this->purchase_order_id) {
+                if (str_contains($this->type, 'quote')) {
+                    $targetUrl = "/general-manager/purchase-quotes?open={$this->notifiable_id}";
+                } elseif ($this->notifiable_type === PurchaseOrder::class || $this->purchase_order_id) {
                     $poId = $this->notifiable_type === PurchaseOrder::class ? $this->notifiable_id : $this->purchase_order_id;
                     $targetUrl = "/general-manager/purchase-orders/{$poId}";
                 } elseif ($this->notifiable_type === PurchaseRequest::class) {
                     $targetUrl = "/general-manager/purchase-requests?open={$this->notifiable_id}";
                 }
             } elseif ($role === 'procurement_manager') {
-                if ($this->notifiable_type === PurchaseOrder::class || $this->purchase_order_id) {
+                if (str_contains($this->type, 'quote_decision') || $this->type === 'purchase_quote_decision_complete') {
+                    $targetUrl = "/procurement/purchase-orders/create?pr={$this->notifiable_id}";
+                } elseif ($this->type === 'purchase_request_pending_procurement') {
+                    $targetUrl = "/procurement/purchase-requests";
+                } elseif ($this->notifiable_type === PurchaseOrder::class || $this->purchase_order_id) {
                     $poId = $this->notifiable_type === PurchaseOrder::class ? $this->notifiable_id : $this->purchase_order_id;
                     $targetUrl = "/procurement/purchase-orders/{$poId}";
                 } elseif ($this->notifiable_type === PurchaseRequest::class) {
                     $targetUrl = "/procurement/purchase-orders/create?pr={$this->notifiable_id}";
                 }
             } elseif ($role === 'reviewer') {
-                if ($this->notifiable_type === PurchaseRequest::class && $this->notifiable_id) {
+                if (str_contains($this->type, 'quote')) {
+                    $targetUrl = "/reviewer/purchase-quotes?open={$this->notifiable_id}";
+                } elseif ($this->notifiable_type === PurchaseRequest::class && $this->notifiable_id) {
                     $targetUrl = "/reviewer/requests/{$this->notifiable_id}/review";
                 }
             } elseif ($role === 'warehouse_keeper') {
-                $targetUrl = '/warehouse';
+                $targetUrl = $this->purchase_receipt_id
+                    ? "/warehouse?receipt_id={$this->purchase_receipt_id}"
+                    : '/warehouse';
             } elseif ($role === 'site_engineer') {
                 $targetUrl = $this->purchase_receipt_id
                     ? "/site-engineer?receipt_id={$this->purchase_receipt_id}"

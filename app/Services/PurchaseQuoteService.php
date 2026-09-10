@@ -119,17 +119,26 @@ class PurchaseQuoteService
             ]);
 
             $notificationService = app(NotificationService::class);
-            $reviewers = !$isExecutiveRequester && $pr->reviewer_user_id
-                ? User::whereKey($pr->reviewer_user_id)->get()
-                : collect();
-            $accountants = $notificationService->resolveUsersWithPermission('purchase_quote.recommend');
+
+            // Auto-resolve pending notifications for procurement manager
+            $notificationService->markEntityNotificationsAsRead($pr, $procurementManager);
+
+            // Sequential quote workflow: Financial Director (Hasan) is notified FIRST.
+            // Exclude subsidiary department accountants.
+            $financialDirectors = User::whereHas('roles', fn ($q) => $q->where('slug', 'accountant'))
+                ->where('is_active', true)
+                ->get();
+            if ($financialDirectors->isEmpty()) {
+                $financialDirectors = $notificationService->resolveUsersWithPermission('purchase_quote.recommend');
+            }
+
             $notificationService->queueUsers(
-                $accountants->merge($reviewers)->unique('id'),
+                $financialDirectors,
                 'purchase_quote_pending_recommendation',
-                'عروض أسعار بانتظار الترشيح',
+                'عروض أسعار بانتظار التوصية المالية',
                 $isExecutiveRequester
-                    ? "أرسل مدير المشتريات {$quoteCount} عروض أسعار للطلب {$pr->request_number}. الحسابات ترشح، ثم يتخذ المدير العام القرار النهائي."
-                    : "أرسل مدير المشتريات {$quoteCount} عروض أسعار للطلب {$pr->request_number}. يرجى ترشيح العرض الأفضل.",
+                    ? "أرسل مدير المشتريات {$quoteCount} عروض أسعار للطلب {$pr->request_number}. يرجى تقديم التوصية المالية للطلب."
+                    : "أرسل مدير المشتريات {$quoteCount} عروض أسعار للطلب {$pr->request_number}. يرجى مراجعة العروض وتقديم التوصية المالية أولاً.",
                 $pr
             );
 
@@ -189,6 +198,10 @@ class PurchaseQuoteService
                 }
             }
 
+            $notificationService = app(NotificationService::class);
+            // Auto-resolve pending recommendation notification for the actor
+            $notificationService->markEntityNotificationsAsRead($request, $actor, 'purchase_quote_pending_recommendation');
+
             $requiredRoleTypes = $isExecutiveRequester ? ['ACCOUNTING'] : ['ACCOUNTING', 'DEPARTMENT'];
             $recommendationCount = PurchaseRequestQuoteRecommendation::whereHas('quote', fn ($q) => $q->where('purchase_request_id', $request->id))
                 ->whereIn('role_type', $requiredRoleTypes)
@@ -198,8 +211,8 @@ class PurchaseQuoteService
 
             if ($recommendationCount >= count($requiredRoleTypes)) {
                 $request->update(['status' => self::EXECUTIVE_DECISION_PENDING]);
-                $executives = app(NotificationService::class)->resolveUsersWithPermission('purchase_quote.decide');
-                app(NotificationService::class)->queueUsers(
+                $executives = $notificationService->resolveUsersWithPermission('purchase_quote.decide');
+                $notificationService->queueUsers(
                     $executives,
                     'purchase_quote_recommendations_ready',
                     'ترشيحات عروض الأسعار جاهزة',
@@ -208,6 +221,25 @@ class PurchaseQuoteService
                         : "اكتملت ترشيحات الحسابات ومدير القسم للطلب {$request->request_number}. القرار للمدير التنفيذي.",
                     $request
                 );
+            } elseif ($roleType === 'ACCOUNTING' && ! $isExecutiveRequester) {
+                // Sequential workflow step 2: Financial Director has recommended -> notify Department Reviewer
+                $reviewers = collect();
+                $reviewerId = $request->targetDepartment?->manager_user_id ?? $request->department?->manager_user_id ?? $request->reviewer_user_id;
+                if ($reviewerId) {
+                    $reviewer = User::find($reviewerId);
+                    if ($reviewer && $reviewer->is_active) {
+                        $reviewers->push($reviewer);
+                    }
+                }
+                if ($reviewers->isNotEmpty()) {
+                    $notificationService->queueUsers(
+                        $reviewers,
+                        'purchase_quote_pending_recommendation',
+                        'عروض أسعار بانتظار ترشيح القسم',
+                        "أتمّ المدير المالي ترشيحه للطلب {$request->request_number}. يرجى مراجعة وترشيح العرض الأنسب من جهة القسم.",
+                        $request
+                    );
+                }
             }
 
             return $request->fresh(['quotes.supplier', 'quotes.recommendations.user', 'requester.roles', 'department', 'items.item']);

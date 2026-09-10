@@ -379,8 +379,8 @@ class NotificationTest extends TestCase
         $po = app(PurchaseOrderService::class)->createPoFromPr($this->procurementManager, $pr->id, $this->supplier->id);
         app(PurchaseOrderService::class)->submitToAccounting($this->procurementManager, $po);
 
-        // Event 4: Accountant receives notification on PO issue, and GM is not spammed for view-only
-        $this->assertDatabaseHas('notifications', [
+        // Event 4: Financial Director is excluded from PO issue notifications (deferred until receipt / invoice)
+        $this->assertDatabaseMissing('notifications', [
             'user_id' => $this->accountant->id,
             'type' => 'purchase_order_issued_accounting',
         ]);
