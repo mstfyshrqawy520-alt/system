@@ -101,13 +101,21 @@ export const AdminRequestTrackerPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [listRes, statsRes] = await Promise.all([
+      const [listResult, statsResult] = await Promise.allSettled([
         getTrackerListApi(filters),
         getTrackerStatsApi(),
       ]);
-      setData(listRes.data);
-      setMeta(listRes.meta);
-      setStats(statsRes);
+
+      if (listResult.status === 'fulfilled') {
+        setData(listResult.value.data);
+        setMeta(listResult.value.meta);
+      } else {
+        throw listResult.reason;
+      }
+
+      if (statsResult.status === 'fulfilled') {
+        setStats(statsResult.value);
+      }
     } catch (err: unknown) {
       setError(parseApiError(err).message);
     } finally {

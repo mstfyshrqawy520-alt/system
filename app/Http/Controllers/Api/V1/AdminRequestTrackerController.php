@@ -120,7 +120,7 @@ class AdminRequestTrackerController extends Controller
             'department:id,name,code',
             'assignedReviewer:id,name',
             'siteEngineer:id,name',
-            'landParcel:id,name',
+            'landParcel:id,parcel_reference,region',
         ]);
 
         // ── Filters ──
@@ -241,7 +241,7 @@ class AdminRequestTrackerController extends Controller
                 'targetDepartment:id,name,code',
                 'assignedReviewer:id,name,email',
                 'siteEngineer:id,name,email',
-                'landParcel:id,name',
+                'landParcel:id,parcel_reference,region',
                 'items.item:id,name,sku',
                 'purchaseOrders:id,po_number,status,grand_total,supplier_id,created_at',
                 'purchaseOrders.supplier:id,company_name',
@@ -292,7 +292,7 @@ class AdminRequestTrackerController extends Controller
             'target_department'     => $pr->targetDepartment ? ['id' => $pr->targetDepartment->id, 'name' => $pr->targetDepartment->name] : null,
             'assigned_reviewer'     => $pr->assignedReviewer ? ['id' => $pr->assignedReviewer->id, 'name' => $pr->assignedReviewer->name] : null,
             'site_engineer'         => $pr->siteEngineer ? ['id' => $pr->siteEngineer->id, 'name' => $pr->siteEngineer->name] : null,
-            'land_parcel'           => $pr->landParcel ? ['id' => $pr->landParcel->id, 'name' => $pr->landParcel->name] : null,
+            'land_parcel'           => $pr->landParcel ? ['id' => $pr->landParcel->id, 'name' => $pr->landParcel->parcel_reference . ($pr->landParcel->region ? " ({$pr->landParcel->region})" : '')] : null,
             'direct_supplier'       => $pr->directSupplier ? ['id' => $pr->directSupplier->id, 'name' => $pr->directSupplier->company_name] : null,
             'items'                 => $pr->items->map(fn ($item) => [
                 'id'               => $item->id,
@@ -480,7 +480,7 @@ class AdminRequestTrackerController extends Controller
             'requester'           => $pr->requester ? ['id' => $pr->requester->id, 'name' => $pr->requester->name] : null,
             'department'          => $pr->department ? ['id' => $pr->department->id, 'name' => $pr->department->name, 'code' => $pr->department->code] : null,
             'assigned_reviewer'   => $pr->assignedReviewer ? ['id' => $pr->assignedReviewer->id, 'name' => $pr->assignedReviewer->name] : null,
-            'land_parcel'         => $pr->landParcel ? ['id' => $pr->landParcel->id, 'name' => $pr->landParcel->name] : null,
+            'land_parcel'         => $pr->landParcel ? ['id' => $pr->landParcel->id, 'name' => $pr->landParcel->parcel_reference . ($pr->landParcel->region ? " ({$pr->landParcel->region})" : '')] : null,
             'created_at'          => $pr->created_at?->toIso8601String(),
             'updated_at'          => $pr->updated_at?->toIso8601String(),
         ];

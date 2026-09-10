@@ -432,6 +432,7 @@ Route::middleware(['auth:sanctum', 'permission:system.monitor.view'])->prefix('a
 
 // Admin Request Tracker — full procurement workflow visibility
 Route::middleware(['auth:sanctum', 'permission:system.users.manage'])->prefix('admin/request-tracker')->group(function () {
+    Route::get('', [AdminRequestTrackerController::class, 'index']);
     Route::get('/', [AdminRequestTrackerController::class, 'index']);
     Route::get('/stats', [AdminRequestTrackerController::class, 'stats']);
     Route::get('/{id}', [AdminRequestTrackerController::class, 'show'])->whereNumber('id');
