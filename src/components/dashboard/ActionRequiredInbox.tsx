@@ -461,7 +461,7 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                             <span className="text-[10px] text-slate-500">+{item.items_count - item.items_list.length} أصناف أخرى</span>
                           )}
                         </div>
-                        <div className="space-y-1.5 max-h-44 overflow-y-auto custom-select-scrollbar pr-0.5">
+                        <div className="space-y-1.5 max-h-56 overflow-y-auto custom-select-scrollbar pr-0.5">
                           {item.items_list.map((it, idx) => {
                             const unitLabel = getUnitLabel(it.uom || '');
                             const hasPrice = it.unit_price !== undefined && it.unit_price !== null && Number(it.unit_price) > 0;
@@ -469,35 +469,44 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                             const lineTotalNum = it.line_total !== undefined && it.line_total !== null && Number(it.line_total) > 0
                               ? Number(it.line_total)
                               : (hasPrice ? Number(it.quantity) * unitPriceNum : 0);
+                            const itDesc = (it.description && String(it.description).trim()) || 'صنف غير مسمى';
 
                             return (
                               <div
                                 key={idx}
-                                className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 text-xs py-1.5 px-2.5 rounded-lg bg-slate-950/60 border border-slate-800/70 hover:border-slate-700/80 transition-colors"
+                                className="flex flex-col gap-1.5 text-xs py-2 px-2.5 rounded-lg bg-slate-950/70 border border-slate-800/80 hover:border-slate-700/80 transition-colors"
                               >
-                                <div className="flex items-center gap-1.5 min-w-0">
-                                  <span className="font-semibold text-slate-100 truncate" title={it.description}>
-                                    • {it.description}
-                                  </span>
+                                {/* السطر الأول: اسم ووصف الصنف بالكامل دون أي اقتطاع + إجمالي البند إن وجد */}
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex items-start gap-1.5 min-w-0 flex-1">
+                                    <span className="text-cyan-400 font-black mt-0.5 select-none shrink-0">•</span>
+                                    <span className="font-bold text-slate-100 text-xs sm:text-sm leading-snug break-words">
+                                      {itDesc}
+                                    </span>
+                                  </div>
+                                  {hasPrice && lineTotalNum > 0 && (
+                                    <span className="font-mono font-black text-emerald-400 text-xs shrink-0 whitespace-nowrap bg-emerald-950/70 border border-emerald-800/60 px-1.5 py-0.5 rounded shadow-xs">
+                                      {lineTotalNum.toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م
+                                    </span>
+                                  )}
                                 </div>
 
-                                <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 shrink-0 flex-wrap">
-                                  <span className="font-mono font-bold text-amber-300 text-[11px] sm:text-xs">
-                                    {it.quantity} {unitLabel}
+                                {/* السطر الثاني: شارات الكمية والوحدة وسعر الوحدة بشكل متناسق */}
+                                <div className="flex items-center gap-1.5 text-[11px] flex-wrap pr-3 text-slate-400">
+                                  <span className="font-mono font-bold text-amber-300 bg-amber-950/40 border border-amber-800/50 px-1.5 py-0.5 rounded">
+                                    الكمية: {it.quantity} {unitLabel}
                                   </span>
 
                                   {hasPrice && (
-                                    <>
-                                      <span className="text-slate-600 hidden sm:inline">•</span>
-                                      <span className="font-mono text-cyan-300 text-[10px] sm:text-[11px] bg-cyan-950/60 border border-cyan-800/50 px-1.5 py-0.5 rounded font-bold">
-                                        {unitPriceNum.toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م / {unitLabel}
-                                      </span>
-                                      {lineTotalNum > 0 && (
-                                        <span className="font-mono font-black text-emerald-400 text-[11px]">
-                                          ({lineTotalNum.toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م)
-                                        </span>
-                                      )}
-                                    </>
+                                    <span className="font-mono text-cyan-300 text-[10px] sm:text-[11px] bg-cyan-950/60 border border-cyan-800/50 px-1.5 py-0.5 rounded font-bold">
+                                      السعر: {unitPriceNum.toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م / {unitLabel}
+                                    </span>
+                                  )}
+
+                                  {it.parcel && (
+                                    <span className="text-slate-400 text-[10px] bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded">
+                                      قطعة: {it.parcel}
+                                    </span>
                                   )}
                                 </div>
                               </div>
