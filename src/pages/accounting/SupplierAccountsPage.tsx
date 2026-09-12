@@ -20,16 +20,20 @@ import { getSupplierQuoteArchiveApi } from '../../api/purchaseQuotes';
 import { PurchaseRequestQuote } from '../../types/purchaseRequest';
 import { useAuth } from '../../context/AuthContext';
 
+import { getToken } from '../../utils/authStorage';
+
 const today = getTodayInputDate;
 const money = (value: string | number | null | undefined) => `${Number(value || 0).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م`;
 const paymentMethods: Record<string, string> = { BANK_TRANSFER: 'تحويل بنكي', CASH: 'نقدي', CHEQUE: 'شيك' };
 
 const getQuoteFileUrl = (quote: { id: number; file_url?: string | null; file_path?: string | null; file_name?: string | null }) => {
   if (!quote.file_url && !quote.file_path && !quote.file_name) return null;
+  const token = getToken();
+  const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
   if (quote.file_url && !quote.file_url.includes('/storage/quotes/')) {
-    return quote.file_url;
+    return quote.file_url.includes('?') ? `${quote.file_url}&token=${encodeURIComponent(token || '')}` : `${quote.file_url}${tokenParam}`;
   }
-  return `/api/v1/purchase-quotes/${quote.id}/file`;
+  return `/api/v1/purchase-quotes/${quote.id}/file${tokenParam}`;
 };
 
 /**

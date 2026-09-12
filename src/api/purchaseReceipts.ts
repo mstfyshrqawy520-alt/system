@@ -1,4 +1,5 @@
 import apiClient from './client';
+import { getToken } from '../utils/authStorage';
 
 export interface ReceiptOrderItem {
   id: number;
@@ -60,8 +61,11 @@ export interface ReceiptRecord {
   }>;
 }
 
-export const getReceiptPhotoUrl = (receipt?: { id?: number; photo_url?: string | null } | null): string => {
+export const getReceiptPhotoUrl = (receipt: { id?: number; photo_url?: string | null }): string => {
   if (!receipt) return '';
+  const token = getToken();
+  const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
+
   if (receipt.photo_url) {
     if (receipt.photo_url.startsWith('data:') || receipt.photo_url.startsWith('blob:')) {
       return receipt.photo_url;
@@ -72,13 +76,14 @@ export const getReceiptPhotoUrl = (receipt?: { id?: number; photo_url?: string |
     if (receipt.photo_url.startsWith('/')) {
       const apiBase = import.meta.env.VITE_API_BASE_URL || '/api/v1';
       const rootHost = apiBase.replace(/\/api\/v1\/?$/, '');
-      return rootHost ? `${rootHost}${receipt.photo_url}` : receipt.photo_url;
+      const base = rootHost ? `${rootHost}${receipt.photo_url}` : receipt.photo_url;
+      return base.includes('?') ? `${base}&token=${encodeURIComponent(token || '')}` : `${base}${tokenParam}`;
     }
   }
   if (receipt.id) {
     const apiBase = import.meta.env.VITE_API_BASE_URL || '/api/v1';
     const cleanBase = apiBase.replace(/\/+$/, '');
-    return `${cleanBase}/purchase-receipts/${receipt.id}/photo`;
+    return `${cleanBase}/purchase-receipts/${receipt.id}/photo${tokenParam}`;
   }
   return receipt.photo_url || '';
 };

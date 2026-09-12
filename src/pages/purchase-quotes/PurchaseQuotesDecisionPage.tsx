@@ -13,14 +13,18 @@ import TableColumnFilters from '../../components/ui/TableColumnFilters';
 import { getDefaultDateFrom, getTodayInputDate } from '../../utils/dateFilters';
 import { UnifiedNotesCard } from '../../components/common/UnifiedNotesCard';
 
+import { getToken } from '../../utils/authStorage';
+
 type DecisionMode = 'recommend' | 'executive';
 
 const getQuoteFileUrl = (quote: { id: number; file_url?: string | null; file_path?: string | null; file_name?: string | null }) => {
   if (!quote.file_url && !quote.file_path && !quote.file_name) return null;
+  const token = getToken();
+  const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
   if (quote.file_url && !quote.file_url.includes('/storage/quotes/')) {
-    return quote.file_url;
+    return quote.file_url.includes('?') ? `${quote.file_url}&token=${encodeURIComponent(token || '')}` : `${quote.file_url}${tokenParam}`;
   }
-  return `/api/v1/purchase-quotes/${quote.id}/file`;
+  return `/api/v1/purchase-quotes/${quote.id}/file${tokenParam}`;
 };
 
 const isGeneralManagerRequest = (request: PurchaseRequest): boolean =>
