@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getPendingQuoteRequestsApi, recommendPurchaseQuoteApi, decidePurchaseQuoteApi } from '../../api/purchaseQuotes';
+import apiClient from '../../api/client';
 import { PurchaseRequest, PurchaseRequestQuote, PurchaseRequestQuoteRecommendation } from '../../types/purchaseRequest';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { Modal } from '../../components/ui/Modal';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/Table';
 import { TableSkeleton } from '../../components/ui/StateFeedback';
 import ErrorMessage from '../../components/ErrorMessage';
@@ -98,6 +100,45 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
   const [quoteFilters, setQuoteFilters] = useState({ item: '', supplier: '', unitPrice: '', total: '', currency: '', accounting: '', department: '', action: '', dateFrom: defaultDateFrom, dateTo: today });
   const [searchParams] = useSearchParams();
   const openRequestId = Number(searchParams.get('open') || 0);
+
+  const [previewQuote, setPreviewQuote] = useState<PurchaseRequestQuote | null>(null);
+  const [previewLoading, setPreviewLoading] = useState<boolean>(false);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewContentType, setPreviewContentType] = useState<string>('application/pdf');
+
+  const handlePreviewQuote = async (quote: PurchaseRequestQuote) => {
+    setPreviewQuote(quote);
+    setPreviewLoading(true);
+    setPreviewError(null);
+    if (previewBlobUrl) {
+      URL.revokeObjectURL(previewBlobUrl);
+    }
+    setPreviewBlobUrl(null);
+
+    try {
+      const res = await apiClient.get(`/purchase-quotes/${quote.id}/file`, {
+        responseType: 'blob',
+      });
+      const rawType = res.headers ? res.headers['content-type'] : null;
+      const type = typeof rawType === 'string' ? rawType : 'application/pdf';
+      setPreviewContentType(type);
+      const blob = new Blob([res.data], { type });
+      const url = URL.createObjectURL(blob);
+      setPreviewBlobUrl(url);
+    } catch {
+      // Fallback: If blob fetch fails, use direct URL with query token
+      const directUrl = getQuoteFileUrl(quote);
+      if (directUrl) {
+        window.open(directUrl, '_blank');
+        setPreviewQuote(null);
+        return;
+      }
+      setPreviewError('تعذر جلب ملف عرض السعر.');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
 
   const copy = modeCopy[mode];
   const hasNonDateQuoteFilter = Boolean(quoteFilters.item || quoteFilters.supplier || quoteFilters.unitPrice || quoteFilters.total || quoteFilters.currency || quoteFilters.accounting || quoteFilters.department || quoteFilters.action);
@@ -305,17 +346,16 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
                           <TableCell className="min-w-[190px] border-l border-slate-700/70 align-top text-sm">
                             <div className="font-black text-slate-100">{quote.supplier?.company_name || '—'}</div>
                             {pdfUrl ? (
-                              <a
-                                href={pdfUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-600/70 text-cyan-300 transition-all shadow-sm"
-                                title="فتح وتحميل ملف عرض السعر PDF"
+                              <button
+                                type="button"
+                                onClick={() => void handlePreviewQuote(quote)}
+                                className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-600/70 text-cyan-300 transition-all shadow-sm cursor-pointer"
+                                title="فتح ومعاينة ملف عرض السعر PDF"
                               >
                                 <span>📄</span>
                                 <span>معاينة PDF</span>
                                 <span className="text-[10px]">↗</span>
-                              </a>
+                              </button>
                             ) : (
                               <div className="text-[10px] text-slate-500 mt-1">لم يُرفق ملف</div>
                             )}
@@ -418,16 +458,15 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
 
                     {pdfUrl && (
                       <div>
-                        <a
-                          href={pdfUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-600/80 text-cyan-200 text-xs font-bold transition-all shadow-md active:scale-95"
+                        <button
+                          type="button"
+                          onClick={() => void handlePreviewQuote(quote)}
+                          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-600/80 text-cyan-200 text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer"
                         >
                           <span>📄</span>
                           <span>معاينة وتحميل عرض السعر PDF</span>
                           <span>↗</span>
-                        </a>
+                        </button>
                       </div>
                     )}
 
@@ -523,6 +562,88 @@ export const PurchaseQuotesDecisionPage: React.FC<PurchaseQuotesDecisionPageProp
           </Card>
         );
       })}
+
+      {previewQuote && (
+        <Modal
+          isOpen={Boolean(previewQuote)}
+          onClose={() => {
+            setPreviewQuote(null);
+            if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
+            setPreviewBlobUrl(null);
+          }}
+          title={`معاينة وتوثيق عرض السعر — ${previewQuote.supplier?.company_name || 'المورد'}`}
+          subtitle={`قيمة العرض: ${previewQuote.total_amount} ${previewQuote.currency || 'EGP'}`}
+          size="2xl"
+          footer={
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                {previewBlobUrl && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.open(previewBlobUrl, '_blank');
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-cyan-800 hover:bg-cyan-700 text-cyan-100 text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-sm"
+                    >
+                      <span>↗️</span>
+                      <span>فتح في نافذة مستقلة</span>
+                    </button>
+                    <a
+                      href={previewBlobUrl}
+                      download={`quote-${previewQuote.id}.pdf`}
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition-all"
+                    >
+                      <span>💾</span>
+                      <span>تحميل المستند</span>
+                    </a>
+                  </>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewQuote(null);
+                  if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
+                  setPreviewBlobUrl(null);
+                }}
+                className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold"
+              >
+                إغلاق
+              </button>
+            </div>
+          }
+        >
+          <div className="min-h-[60vh] max-h-[75vh] flex flex-col items-center justify-center w-full">
+            {previewLoading ? (
+              <div className="text-center p-8 space-y-3">
+                <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-sm font-bold text-slate-200">جاري تحميل وتجهيز وثيقة عرض السعر...</p>
+              </div>
+            ) : previewBlobUrl ? (
+              previewContentType.startsWith('image/') ? (
+                <div className="p-2 overflow-auto max-h-[70vh] flex items-center justify-center w-full">
+                  <img
+                    src={previewBlobUrl}
+                    alt="معاينة عرض السعر"
+                    className="max-h-[68vh] max-w-full object-contain rounded-xl border border-slate-800 shadow-inner"
+                  />
+                </div>
+              ) : (
+                <iframe
+                  src={previewBlobUrl}
+                  title="معاينة عرض السعر"
+                  className="w-full h-[70vh] rounded-xl border border-slate-800 bg-white"
+                />
+              )
+            ) : (
+              <div className="p-6 text-center space-y-3">
+                <p className="text-sm text-rose-400 font-bold">{previewError || 'تعذر تحميل ملف العرض.'}</p>
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

@@ -208,7 +208,14 @@ class PurchaseReceiptController extends Controller
 
     public function viewPhoto(Request $request, string|int $id)
     {
-        $user = $request->user();
+        $user = $request->user() ?: auth('sanctum')->user();
+        if (! $user && $request->filled('token')) {
+            $tokenModel = \Laravel\Sanctum\PersonalAccessToken::findToken($request->query('token'));
+            if ($tokenModel) {
+                $user = $tokenModel->tokenable;
+            }
+        }
+
         if (! $user) {
             abort(401, 'انتهت جلسة الدخول. يرجى تسجيل الدخول أولاً.');
         }
