@@ -11,6 +11,11 @@ describe('Arabic unit labels', () => {
 
   it('translates all standard construction units used by the forms', () => {
     expect(getUnitLabel('PCS')).toBe('قطعة');
+    expect(getUnitLabel('NO')).toBe('عدد');
+    expect(getUnitLabel('عدد')).toBe('عدد');
+    expect(getUnitLabel('THOUSAND_BRICKS')).toBe('ألف طوبة');
+    expect(getUnitLabel('ألف طوبة')).toBe('ألف طوبة');
+    expect(getUnitLabel('الالف طوبه')).toBe('ألف طوبة');
     expect(getUnitLabel('KG')).toBe('كيلو جرام');
     expect(getUnitLabel('BAG')).toBe('شيكارة');
     expect(getUnitLabel('M2')).toBe('متر مربع');
@@ -28,13 +33,18 @@ describe('Arabic unit labels', () => {
     expect(getUnitValue('متر مكعب')).toBe('M3');
     expect(getUnitValue('متر مربع')).toBe('M2');
     expect(getUnitValue('كيلو جرام')).toBe('KG');
+    expect(getUnitValue('عدد')).toBe('NO');
+    expect(getUnitValue('ألف طوبة')).toBe('THOUSAND_BRICKS');
+    expect(getUnitValue('الالف طوبه')).toBe('THOUSAND_BRICKS');
     expect(getUnitValue('M3')).toBe('M3');
   });
 
   it('builds Arabic select options without changing option values', () => {
-    expect(getUnitOptions(['M3', 'PCS'])).toEqual([
+    expect(getUnitOptions(['M3', 'PCS', 'NO', 'THOUSAND_BRICKS'])).toEqual([
       { value: 'M3', label: 'متر مكعب' },
       { value: 'PCS', label: 'قطعة' },
+      { value: 'NO', label: 'عدد' },
+      { value: 'THOUSAND_BRICKS', label: 'ألف طوبة' },
     ]);
   });
 });
