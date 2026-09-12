@@ -27,6 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // API clients must receive JSON 401 responses, never a web login redirect.
         $middleware->redirectGuestsTo(static fn (Request $request) => $request->segment(1) === 'api' ? null : '/login');
 
+        // Allow streaming PDF and photo files opened in browser with ?token=...
+        $middleware->prepend(\App\Http\Middleware\AuthenticateFromQueryToken::class);
+
         $middleware->append(\App\Http\Middleware\SetSecurityHeaders::class);
         $middleware->append(\App\Http\Middleware\ApiRequestId::class);
 

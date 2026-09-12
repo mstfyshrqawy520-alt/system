@@ -68,6 +68,10 @@ export const PurchasesReportView: React.FC = () => {
   const [colFilters, setColFilters] = useState<ColumnFilters>(initialFilters);
   const [showColumnFilters, setShowColumnFilters] = useState<boolean>(true);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(50);
+
   // Data state
   const [data, setData] = useState<PurchasesReportResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -91,6 +95,8 @@ export const PurchasesReportView: React.FC = () => {
         to_date: filterType === 'custom' ? toDate : undefined,
         department_id: selectedDepartment !== 'ALL' ? selectedDepartment : undefined,
         accounting_filter: accountingFilter,
+        page: currentPage,
+        per_page: pageSize,
       });
       setData(response);
     } catch (err) {
@@ -101,9 +107,14 @@ export const PurchasesReportView: React.FC = () => {
     }
   };
 
+  // Reset to page 1 on filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterType, selectedMonth, selectedDate, fromDate, toDate, selectedDepartment, accountingFilter]);
+
   useEffect(() => {
     void loadReport();
-  }, [filterType, selectedMonth, selectedDate, fromDate, toDate, selectedDepartment, accountingFilter]);
+  }, [filterType, selectedMonth, selectedDate, fromDate, toDate, selectedDepartment, accountingFilter, currentPage, pageSize]);
 
   // Selected Department Name for dynamic title
   const activeDepartmentName = useMemo(() => {
@@ -1027,6 +1038,56 @@ export const PurchasesReportView: React.FC = () => {
               <p className="text-xs text-slate-500 mt-1 max-w-md">
                 قم بتعديل محدد الشهر أو القسم، أو اضغط على &quot;عرض: الكل&quot; لمشاهدة كافة الأوامر الصادرة.
               </p>
+            </div>
+          )}
+
+          {/* Pagination Navigation Bar */}
+          {data?.pagination && data.pagination.last_page > 1 && (
+            <div className="bg-slate-50 border-t border-slate-300 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-700">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">صفحة</span>
+                <span className="font-mono font-bold text-slate-900 bg-white border border-slate-300 rounded px-2 py-0.5">
+                  {data.pagination.current_page}
+                </span>
+                <span>من</span>
+                <span className="font-mono font-bold text-slate-900">{data.pagination.last_page}</span>
+                <span className="text-slate-500 font-mono text-[11px] mr-2">
+                  (عرض البنود من {data.pagination.from} إلى {data.pagination.to} من أصل {data.pagination.total} مسجل)
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    const next = Number(e.target.value);
+                    setPageSize(next);
+                    setCurrentPage(1);
+                  }}
+                  className="rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:border-emerald-600 focus:outline-none"
+                >
+                  <option value={25}>25 بند بالصفحة</option>
+                  <option value={50}>50 بند بالصفحة</option>
+                  <option value={100}>100 بند بالصفحة</option>
+                </select>
+
+                <button
+                  type="button"
+                  disabled={currentPage <= 1 || refreshing}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="rounded border border-slate-300 bg-white px-3 py-1 font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  السابق
+                </button>
+                <button
+                  type="button"
+                  disabled={currentPage >= (data?.pagination?.last_page || 1) || refreshing}
+                  onClick={() => setCurrentPage((p) => Math.min(data?.pagination?.last_page || 1, p + 1))}
+                  className="rounded border border-slate-300 bg-white px-3 py-1 font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  التالي
+                </button>
+              </div>
             </div>
           )}
 

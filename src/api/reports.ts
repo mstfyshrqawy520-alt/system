@@ -57,6 +57,14 @@ export interface PurchasesReportResponse {
     accounting_filter?: string;
     date_label?: string;
   };
+  pagination?: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+  };
   metrics: PurchasesReportMetrics;
   departments: PurchasesReportDepartment[];
   rows: PurchasesReportRow[];
@@ -71,6 +79,8 @@ export interface PurchasesReportParams {
   department_id?: number | string;
   accounting_filter?: 'ALL' | 'VERIFIED_ONLY' | 'PENDING';
   search?: string;
+  page?: number;
+  per_page?: number | string;
 }
 
 export const getPurchasesReportApi = async (
@@ -88,6 +98,8 @@ export const getPurchasesReportApi = async (
   }
   if (params.accounting_filter) queryParams.set('accounting_filter', params.accounting_filter);
   if (params.search) queryParams.set('search', params.search);
+  if (params.page !== undefined) queryParams.set('page', String(params.page));
+  if (params.per_page !== undefined) queryParams.set('per_page', String(params.per_page));
 
   const response = await apiClient.get<PurchasesReportResponse>(
     `/reports/purchases?${queryParams.toString()}`

@@ -329,7 +329,17 @@ class PurchasesReportController extends Controller
         $uniqueParcels = count(array_unique(array_filter(array_column($reportRows, 'parcel_reference'), fn ($p) => $p && $p !== '—')));
         $verifiedCount = count(array_filter($reportRows, fn ($r) => ($r['accounting_status'] ?? '') === 'VERIFIED'));
 
-        // 6. List of available active departments for the filter dropdown
+        // 6. Pagination calculation (Default 50 rows per page, supports per_page=ALL for full export)
+        $page = max(1, (int) $request->query('page', 1));
+        $perPageParam = $request->query('per_page');
+        $isAll = $perPageParam === 'ALL' || $perPageParam === 'all' || (is_numeric($perPageParam) && (int) $perPageParam <= 0);
+        $perPage = $isAll ? max(1, count($reportRows)) : (is_numeric($perPageParam) ? max(1, (int) $perPageParam) : 50);
+
+        $totalRows = count($reportRows);
+        $lastPage = $isAll ? 1 : max(1, (int) ceil($totalRows / $perPage));
+        $slicedRows = $isAll ? $reportRows : array_values(array_slice($reportRows, ($page - 1) * $perPage, $perPage));
+
+        // 7. List of available active departments for the filter dropdown
         $allDepartments = Department::query()
             ->orderBy('name')
             ->get(['id', 'name', 'code']);
@@ -345,6 +355,14 @@ class PurchasesReportController extends Controller
                 'accounting_filter' => $accountingFilter,
                 'date_label' => $dateLabel,
             ],
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $totalRows,
+                'last_page' => $lastPage,
+                'from' => $totalRows > 0 ? (($page - 1) * $perPage + 1) : 0,
+                'to' => min($page * $perPage, $totalRows),
+            ],
             'metrics' => [
                 'total_amount' => $totalAmount,
                 'total_quantity' => $totalQuantity,
@@ -355,7 +373,7 @@ class PurchasesReportController extends Controller
                 'verified_items_count' => $verifiedCount,
             ],
             'departments' => $allDepartments,
-            'rows' => $reportRows,
+            'rows' => $slicedRows,
         ]);
     }
 }

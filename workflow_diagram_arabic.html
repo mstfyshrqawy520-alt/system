@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>مخطط دورة حياة ومسارات طلبات الشراء - شركة الإشبيليّة</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap');
+
+  @page {
+    size: A3 portrait;
+    margin: 8mm;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: #ffffff;
+    color: #0f172a;
+    font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .container {
+    width: 980px;
+    max-width: 100%;
+    background: #ffffff;
+  }
+  .header {
+    text-align: center;
+    padding-bottom: 12px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #0f172a;
+  }
+  .title { font-size: 24px; font-weight: 900; color: #0f172a; }
+  .subtitle { font-size: 13.5px; font-weight: 700; color: #475569; margin-top: 3px; }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="title">مخطط دورة حياة طلبات الشراء والاعتمادات — شركة الإشبيليّة</div>
+    <div class="subtitle">مسارات تدفق الطلبات من الإنشاء حتى الفحص والاستلام والمطابقة والفوترة</div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="dot" style="background:#334155;"></span> مسار عام مشترك</div>
+    <div class="legend-item"><span class="dot" style="background:#0284c7;"></span> مسار الشراء المباشر</div>
+    <div class="legend-item"><span class="dot" style="background:#d97706;"></span> مسار الشراء التجاري (مناقصات/عروض)</div>
+    <div class="legend-item"><span class="dot" style="background:#dc2626;"></span> مسار الرفض</div>
+    <div class="legend-item"><span class="dot" style="background:#16a34a;"></span> الإغلاق والاكتمال</div>
+  </div>
+
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 1620" width="100%" height="100%">
+    <defs>
+      <marker id="arr-gray" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#334155" />
+      </marker>
+      <marker id="arr-blue" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#0284c7" />
+      </marker>
+      <marker id="arr-amber" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#d97706" />
+      </marker>
+      <marker id="arr-red" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626" />
+      </marker>
+      <marker id="arr-green" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a" />
+      </marker>
+    </defs>
+
+    <style>
+      .box { fill: #ffffff; stroke: #0f172a; stroke-width: 2.2; rx: 8px; }
+      .box-blue { fill: #f0f9ff; stroke: #0284c7; stroke-width: 2.2; rx: 8px; }
+      .box-amber { fill: #fffbeb; stroke: #d97706; stroke-width: 2.2; rx: 8px; }
+      .box-danger { fill: #fef2f2; stroke: #dc2626; stroke-width: 2.4; rx: 8px; }
+      .box-success { fill: #f0fdf4; stroke: #16a34a; stroke-width: 2.4; rx: 8px; }
+
+      .txt-node { fill: #0f172a; font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 800; text-anchor: middle; dominant-baseline: central; }
+      .txt-node-danger { fill: #dc2626; font-family: 'Cairo', sans-serif; font-size: 14.5px; font-weight: 900; text-anchor: middle; dominant-baseline: central; }
+      .txt-node-success { fill: #15803d; font-family: 'Cairo', sans-serif; font-size: 14.5px; font-weight: 900; text-anchor: middle; dominant-baseline: central; }
+
+      .lbl { fill: #0f172a; font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 800; text-anchor: middle; }
+      .lbl-sub { fill: #475569; font-family: 'Cairo', sans-serif; font-size: 11px; font-weight: 700; text-anchor: middle; }
+
+      .line-gray { fill: none; stroke: #334155; stroke-width: 1.9; }
+      .line-blue { fill: none; stroke: #0284c7; stroke-width: 2.2; }
+      .line-amber { fill: none; stroke: #d97706; stroke-width: 2.2; }
+      .line-red { fill: none; stroke: #dc2626; stroke-width: 2; }
+      .line-green { fill: none; stroke: #16a34a; stroke-width: 2.2; }
+    </style>
+
+    <!-- ================= LEVEL 0: START ================= -->
+    <circle cx="500" cy="30" r="11" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+    <text x="500" y="52" class="lbl">إنشاء الطلب</text>
+    <path d="M 500 42 L 500 70" class="line-gray" marker-end="url(#arr-gray)"/>
+
+    <!-- ================= LEVEL 1: DRAFT (مسودة) ================= -->
+    <rect x="415" y="72" width="170" height="42" class="box"/>
+    <text x="500" y="93" class="txt-node">مسودة</text>
+
+    <!-- مسودة -> تم التقديم (إرسال من موظف عادي) -->
+    <path d="M 445 114 L 350 162" class="line-gray" marker-end="url(#arr-gray)"/>
+    <text x="340" y="132" class="lbl">إرسال من موظف عادي</text>
+
+    <!-- مسودة -> بانتظار الاعتماد التنفيذي (إرسال من رئيس قسم لنفس قسمه) -->
+    <path d="M 530 114 Q 575 180 620 242" class="line-gray" marker-end="url(#arr-gray)"/>
+    <text x="600" y="180" class="lbl">إرسال من رئيس قسم لنفس قسمه</text>
+
+    <!-- مسودة -> بانتظار اعتماد المشتريات (إرسال من المدير العام) -->
+    <path d="M 585 93 Q 810 100 810 338" class="line-gray" marker-end="url(#arr-gray)"/>
+    <text x="770" y="215" class="lbl">إرسال من المدير العام</text>
+
+    <!-- ================= LEVEL 2: SUBMITTED (تم تقديم الطلب) ================= -->
+    <rect x="265" y="165" width="170" height="40" class="box"/>
+    <text x="350" y="185" class="txt-node">تم تقديم الطلب</text>
+
+    <!-- تم التقديم -> قيد المراجعة والتدقيق -->
+    <path d="M 350 205 L 350 242" class="line-gray" marker-end="url(#arr-gray)"/>
+    <text x="350" y="226" class="lbl">بدء المراجعة والتدقيق</text>
+
+    <!-- ================= LEVEL 3: UNDER_REVIEW & PENDING_EXECUTIVE_APPROVAL ================= -->
+    <!-- قيد المراجعة والتدقيق (x=235, w=190) -->
+    <rect x="235" y="245" width="190" height="42" class="box"/>
+    <text x="330" y="266" class="txt-node">قيد المراجعة والتدقيق</text>
+
+    <!-- قيد المراجعة -> بانتظار الاعتماد التنفيذي -->
+    <path d="M 425 266 L 530 266" class="line-gray" marker-end="url(#arr-gray)"/>
+    <text x="478" y="252" class="lbl">اعتماد المراجع</text>
+
+    <!-- قيد المراجعة -> مُعاد للتعديل -->
+    <path d="M 330 287 L 330 332" class="line-gray" marker-end="url(#arr-gray)"/>
+    <text x="375" y="312" class="lbl">إرجاع للتعديل</text>
+
+    <!-- قيد المراجعة -> رفض الطلب -->
+    <path d="M 235 275 Q 180 340 365 460" class="line-red" marker-end="url(#arr-red)"/>
+    <text x="310" y="420" class="lbl" fill="#dc2626">رفض الطلب</text>
+
+    <!-- مُعاد للتعديل (x=225, w=210) -->
+    <rect x="225" y="335" width="210" height="40" class="box"/>
+    <text x="330" y="355" class="txt-node">مُعاد لمُقدم الطلب للتعديل</text>
+
+    <!-- بانتظار الاعتماد التنفيذي (x=535, w=235) -->
+    <rect x="535" y="245" width="235" height="42" class="box"/>
+    <text x="652" y="266" class="txt-node">بانتظار الاعتماد التنفيذي</text>
+
+    <!-- بانتظار الاعتماد التنفيذي -> رفض تنفيذي -->
+    <path d="M 590 287 L 460 452" class="line-red" marker-end="url(#arr-red)"/>
+    <text x="555" y="375" class="lbl" fill="#dc2626">رفض تنفيذي</text>
+
+    <!-- بانتظار الاعتماد التنفيذي -> بانتظار اعتماد المشتريات (مسار تجاري) -->
+    <path d="M 750 287 Q 820 305 820 338" class="line-amber" marker-end="url(#arr-amber)"/>
+    <text x="880" y="315" class="lbl" fill="#b45309">اعتماد مسار تجاري</text>
+
+    <!-- بانتظار الاعتماد التنفيذي -> بانتظار الاعتماد المالي (مسار مباشر) -->
+    <path d="M 535 275 Q 120 300 120 562" class="line-blue" marker-end="url(#arr-blue)"/>
+    <text x="120" y="425" class="lbl" fill="#0284c7">اعتماد مسار مباشر</text>
+
+    <!-- ================= NODE: REJECTED (طلب مرفوض) ================= -->
+    <rect x="350" y="455" width="150" height="40" class="box-danger"/>
+    <text x="425" y="475" class="txt-node-danger">طلب مرفوض</text>
+
+    <!-- ================= COMMERCIAL TRACK (المسار التجاري - اليمين) ================= -->
+    <!-- بانتظار اعتماد المشتريات -->
+    <rect x="690" y="340" width="240" height="42" class="box-amber"/>
+    <text x="810" y="361" class="txt-node">بانتظار اعتماد المشتريات</text>
+
+    <!-- -> استدراج عروض الأسعار -->
+    <path d="M 810 382 L 810 428" class="line-amber" marker-end="url(#arr-amber)"/>
+    <text x="810" y="408" class="lbl">بدء استدراج عروض الأسعار</text>
+
+    <!-- استدراج وترشيح عروض الأسعار -->
+    <rect x="680" y="430" width="260" height="44" class="box-amber"/>
+    <text x="810" y="452" class="txt-node">استدراج وترشيح العروض</text>
+
+    <!-- ترشيح الحسابات أولاً (Loop) -->
+    <path d="M 915 474 Q 960 530 895 570 Q 855 570 855 477" class="line-amber" marker-end="url(#arr-amber)"/>
+    <text x="935" y="530" class="lbl">ترشيح الحسابات أولاً</text>
+
+    <!-- -> بانتظار قرار المدير العام (ترشيح القسم ثانياً) -->
+    <path d="M 740 474 L 685 565" class="line-amber" marker-end="url(#arr-amber)"/>
+    <text x="700" y="515" class="lbl">ترشيح القسم ثانياً</text>
+
+    <!-- بانتظار قرار المدير العام (الترسية) -->
+    <rect x="525" y="568" width="280" height="42" class="box-amber"/>
+    <text x="665" y="589" class="txt-node">بانتظار قرار المدير العام (الترسية)</text>
+
+    <!-- -> معتمد من المشتريات -->
+    <path d="M 665 610 L 665 658" class="line-amber" marker-end="url(#arr-amber)"/>
+    <text x="665" y="638" class="lbl">قرار المدير العام (اختيار العرض الأنسب)</text>
+
+    <!-- معتمد من المشتريات -->
+    <rect x="555" y="660" width="220" height="42" class="box-amber"/>
+    <text x="665" y="681" class="txt-node">معتمد من المشتريات</text>
+
+    <!-- -> مسودة أمر الشراء (من المسار التجاري) -->
+    <path d="M 630 702 L 530 768" class="line-amber" marker-end="url(#arr-amber)"/>
+    <text x="635" y="735" class="lbl">إنشاء أمر الشراء التجاري</text>
+
+    <!-- ================= DIRECT TRACK (المسار المباشر - اليسار) ================= -->
+    <!-- بانتظار الاعتماد المالي -->
+    <rect x="35" y="565" width="245" height="42" class="box-blue"/>
+    <text x="157" y="586" class="txt-node">بانتظار الاعتماد المالي</text>
+
+    <!-- -> معتمد من الحسابات -->
+    <path d="M 157 607 L 157 655" class="line-blue" marker-end="url(#arr-blue)"/>
+    <text x="157" y="635" class="lbl">اعتماد مالي وتخصيص البنود والمورد</text>
+
+    <!-- معتمد من الحسابات -->
+    <rect x="40" y="657" width="235" height="42" class="box-blue"/>
+    <text x="157" y="678" class="txt-node">معتمد من الحسابات</text>
+
+    <!-- -> مسودة أمر الشراء (من المسار المباشر) -->
+    <path d="M 215 699 L 415 768" class="line-blue" marker-end="url(#arr-blue)"/>
+    <text x="260" y="738" class="lbl">إنشاء أمر الشراء المباشر</text>
+
+    <!-- ================= LEVEL 7: PO_DRAFT (نقطة الالتقاء: مسودة أمر الشراء) ================= -->
+    <rect x="385" y="765" width="170" height="44" class="box"/>
+    <text x="470" y="787" class="txt-node">مسودة أمر الشراء</text>
+
+    <!-- مسودة أمر الشراء -> أمر شراء رسمي صادر -->
+    <path d="M 470 809 L 470 855" class="line-gray" marker-end="url(#arr-gray)"/>
+    <text x="470" y="835" class="lbl">إصدار وتعميد أمر الشراء الرسمي</text>
+
+    <!-- ================= LEVEL 8: ISSUED (أمر شراء صادر ورسمي) ================= -->
+    <rect x="375" y="857" width="190" height="40" class="box"/>
+    <text x="470" y="877" class="txt-node">أمر شراء صادر ورسمي</text>
+
+    <!-- صادر -> بانتظار فحص مهندس الموقع (تسجيل استلام المخزن) -->
+    <path d="M 495 897 L 545 952" class="line-gray" marker-end="url(#arr-gray)"/>
+    <text x="580" y="920" class="lbl">تسجيل الاستلام بالمخزن</text>
+    <text x="580" y="935" class="lbl-sub">(مواد المشاريع والمستودعات)</text>
+
+    <!-- صادر -> محضر استلام معتمد (استلام مكتبي مباشر) -->
+    <path d="M 430 897 Q 340 950 370 1055" class="line-gray" marker-end="url(#arr-gray)"/>
+    <text x="315" y="965" class="lbl">استلام مكتبي مباشر</text>
+    <text x="315" y="980" class="lbl-sub">(مستلزمات مكتبية وإدارية)</text>
+
+    <!-- ================= LEVEL 9: PENDING_SITE_ENGINEER (بانتظار فحص مهندس الموقع) ================= -->
+    <rect x="460" y="955" width="220" height="42" class="box"/>
+    <text x="570" y="976" class="txt-node">بانتظار فحص مهندس الموقع</text>
+
+    <!-- بانتظار مهندس الموقع -> محضر استلام معتمد -->
+    <path d="M 545 997 L 495 1055" class="line-gray" marker-end="url(#arr-gray)"/>
+    <text x="560" y="1025" class="lbl">فحص واعتماد مهندس الموقع</text>
+
+    <!-- ================= LEVEL 10: APPROVED_RECEIPT (محضر استلام معتمد) ================= -->
+    <rect x="365" y="1057" width="210" height="42" class="box"/>
+    <text x="470" y="1078" class="txt-node">محضر استلام معتمد</text>
+
+    <!-- محضر استلام معتمد -> فاتورة مورد مسجلة -->
+    <path d="M 470 1099 L 470 1145" class="line-gray" marker-end="url(#arr-gray)"/>
+    <text x="470" y="1125" class="lbl">تسجيل فاتورة المورد</text>
+
+    <!-- ================= LEVEL 11: INVOICE_OPEN (فاتورة مورد مسجلة) ================= -->
+    <rect x="375" y="1147" width="190" height="40" class="box"/>
+    <text x="470" y="1167" class="txt-node">فاتورة مورد مسجلة</text>
+
+    <!-- فاتورة مفتوحة -> مطابقة ثلاثية -->
+    <path d="M 470 1187 L 470 1235" class="line-gray" marker-end="url(#arr-gray)"/>
+    <text x="470" y="1215" class="lbl">إجراء المطابقة الثلاثية</text>
+
+    <!-- ================= LEVEL 12: INVOICE_MATCHED (مطابقة ثلاثية معتمدة) ================= -->
+    <rect x="365" y="1237" width="210" height="42" class="box"/>
+    <text x="470" y="1258" class="txt-node">مطابقة ثلاثية معتمدة</text>
+
+    <!-- مطابقة ثلاثية -> مكتمل ومغلق -->
+    <path d="M 470 1279 L 470 1335" class="line-green" marker-end="url(#arr-green)"/>
+    <text x="470" y="1310" class="lbl" fill="#15803d">سداد دفعة المورد وإغلاق الدورة بالكامل</text>
+
+    <!-- ================= LEVEL 13: COMPLETED (مكتمل ومغلق نهائياً) ================= -->
+    <rect x="375" y="1337" width="190" height="44" class="box-success"/>
+    <text x="470" y="1359" class="txt-node-success">مكتمل ومغلق نهائياً</text>
+
+    <!-- مكتمل -> نهاية المخطط -->
+    <path d="M 470 1381 L 470 1425" class="line-green" marker-end="url(#arr-green)"/>
+    <circle cx="470" cy="1440" r="14" fill="none" stroke="#0f172a" stroke-width="2.5"/>
+    <circle cx="470" cy="1440" r="7" fill="#0f172a"/>
+  </svg>
+</div>
+</body>
+</html>

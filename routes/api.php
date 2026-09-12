@@ -346,11 +346,11 @@ Route::middleware('auth:sanctum')->prefix('purchase-receipts')->group(function (
         ->middleware('permission:purchase_receipt.approve');
 });
 
-// Receipt direct photo stream (public/browser view)
-Route::get('/purchase-receipts/{id}/photo', [PurchaseReceiptController::class, 'viewPhoto']);
+// Receipt direct photo stream (authenticated & permission-checked)
+Route::middleware(['auth:sanctum', 'permission:purchase_receipt.view_assigned|accounting.invoice.view'])->get('/purchase-receipts/{id}/photo', [PurchaseReceiptController::class, 'viewPhoto']);
 
-// Quote direct file stream (public for browser PDF viewer)
-Route::get('/purchase-quotes/{id}/file', [PurchaseQuoteController::class, 'viewFile']);
+// Quote direct file stream (authenticated & permission-checked)
+Route::middleware(['auth:sanctum', 'permission:purchase_quote.view|purchase_request.view_own'])->get('/purchase-quotes/{id}/file', [PurchaseQuoteController::class, 'viewFile']);
 
 Route::middleware('auth:sanctum')->prefix('purchase-quotes')->group(function () {
     Route::get('/suppliers/{id}/archive', [PurchaseQuoteController::class, 'supplierQuotes']);

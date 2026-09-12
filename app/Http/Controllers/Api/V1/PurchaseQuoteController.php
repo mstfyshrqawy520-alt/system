@@ -148,9 +148,29 @@ class PurchaseQuoteController extends Controller
         return response()->json(['data' => $quotes]);
     }
 
-    public function viewFile(int $id)
+    public function viewFile(Request $request, int $id)
     {
-        $quote = PurchaseRequestQuote::findOrFail($id);
+        $user = $request->user();
+        if (! $user) {
+            abort(401, 'انتهت جلسة الدخول. يرجى تسجيل الدخول أولاً.');
+        }
+
+        $quote = PurchaseRequestQuote::with('purchaseRequest')->findOrFail($id);
+
+        // Cross-department access control:
+        // Global administrative roles have full oversight.
+        // Departmental reviewers and employees are strictly scoped to their department requests.
+        if (! $user->hasAnyRole(['admin', 'general_manager', 'procurement_manager', 'accountant'])) {
+            $pr = $quote->purchaseRequest;
+            if ($pr) {
+                $allowed = ($user->id === $pr->user_id)
+                    || ($user->department_id === $pr->department_id)
+                    || ($user->department_id === $pr->target_department_id);
+                if (! $allowed) {
+                    abort(403, 'غير مصرح لك باستعراض وثائق عروض الأسعار لهذا القسم.');
+                }
+            }
+        }
 
         if (! $quote->file_path) {
             return response(

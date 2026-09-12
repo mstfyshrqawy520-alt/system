@@ -303,4 +303,61 @@ class PurchasesReportTest extends TestCase
         $this->assertEquals('أسمنت تنفيذ', $rows[0]['item_name']);
         $this->assertEquals('التنفيذ', $rows[0]['department_name']);
     }
+
+    public function test_purchases_report_pagination_supports_page_and_per_page(): void
+    {
+        Sanctum::actingAs($this->accountant);
+
+        $pr = PurchaseRequest::create([
+            'request_number' => 'PR-2026-PAG',
+            'request_type' => 'PROJECT_MATERIALS',
+            'department_id' => $this->executionDept->id,
+            'user_id' => $this->accountant->id,
+            'status' => 'APPROVED_BY_GENERAL_MANAGER',
+            'parcel_reference' => '55',
+            'region' => 'حي الأندلس',
+        ]);
+
+        $po = PurchaseOrder::create([
+            'po_number' => 'PO-2026-PAG-01',
+            'purchase_request_id' => $pr->id,
+            'supplier_id' => $this->supplier->id,
+            'created_by_user_id' => $this->accountant->id,
+            'status' => 'APPROVED_BY_ACCOUNTING',
+            'subtotal' => 10000,
+            'grand_total' => 10000,
+            'actual_delivery_date' => '2026-07-10',
+        ]);
+
+        for ($i = 1; $i <= 5; $i++) {
+            PurchaseOrderItem::create([
+                'purchase_order_id' => $po->id,
+                'item_description' => "صنف ترقيم {$i}",
+                'quantity' => 10,
+                'uom' => 'متر',
+                'unit_price' => 200,
+                'line_total' => 2000,
+            ]);
+        }
+
+        // Test page 1 with per_page = 2
+        $response1 = $this->getJson('/api/v1/reports/purchases?month=2026-07&per_page=2&page=1');
+        $response1->assertStatus(200);
+        $response1->assertJsonPath('pagination.current_page', 1);
+        $response1->assertJsonPath('pagination.per_page', 2);
+        $response1->assertJsonPath('pagination.total', 5);
+        $response1->assertJsonPath('pagination.last_page', 3);
+        $this->assertCount(2, $response1->json('rows'));
+
+        // Test page 3 with per_page = 2 (remaining 1 item)
+        $response3 = $this->getJson('/api/v1/reports/purchases?month=2026-07&per_page=2&page=3');
+        $response3->assertStatus(200);
+        $response3->assertJsonPath('pagination.current_page', 3);
+        $this->assertCount(1, $response3->json('rows'));
+
+        // Test per_page = ALL returns all 5 items
+        $responseAll = $this->getJson('/api/v1/reports/purchases?month=2026-07&per_page=ALL');
+        $responseAll->assertStatus(200);
+        $this->assertCount(5, $responseAll->json('rows'));
+    }
 }

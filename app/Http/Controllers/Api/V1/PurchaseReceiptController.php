@@ -206,9 +206,47 @@ class PurchaseReceiptController extends Controller
         ], 201);
     }
 
-    public function viewPhoto(string|int $id)
+    public function viewPhoto(Request $request, string|int $id)
     {
-        $receipt = PurchaseReceipt::findOrFail((int) $id);
+        $user = $request->user();
+        if (! $user) {
+            abort(401, 'انتهت جلسة الدخول. يرجى تسجيل الدخول أولاً.');
+        }
+
+        $receipt = PurchaseReceipt::with(['purchaseOrder.purchaseRequest.department', 'purchaseOrder.purchaseRequest.targetDepartment', 'purchaseRequest.department', 'purchaseRequest.targetDepartment'])->findOrFail((int) $id);
+
+        // Departmental and Site Isolation:
+        // Central roles have global oversight: admin, general_manager, procurement_manager, accountant, warehouse_keeper
+        if (! $user->hasAnyRole(['admin', 'general_manager', 'procurement_manager', 'accountant', 'warehouse_keeper'])) {
+            $pr = $receipt->purchaseOrder?->purchaseRequest ?: $receipt->purchaseRequest;
+            if ($pr) {
+                if ($user->hasRole('site_accountant')) {
+                    $allowedDepts = ['EXECUTION', 'FINISHING', 'BUILDINGS'];
+                    $deptCode = $pr->department?->code ?: $pr->targetDepartment?->code;
+                    if ($deptCode && ! in_array($deptCode, $allowedDepts, true)) {
+                        abort(403, 'غير مصرح لك باستعراض صور استلام هذا القسم.');
+                    }
+                } elseif ($user->hasRole('licenses_accountant')) {
+                    $deptCode = $pr->department?->code ?: $pr->targetDepartment?->code;
+                    if ($deptCode !== 'LICENSES') {
+                        abort(403, 'غير مصرح لك باستعراض صور استلام هذا القسم.');
+                    }
+                } elseif ($user->hasRole('buffet_accountant')) {
+                    $deptCode = $pr->department?->code ?: $pr->targetDepartment?->code;
+                    if ($deptCode !== 'BUFFET') {
+                        abort(403, 'غير مصرح لك باستعراض صور استلام هذا القسم.');
+                    }
+                } elseif ($user->hasRole('site_engineer')) {
+                    if ($receipt->site_engineer_user_id && $receipt->site_engineer_user_id !== $user->id) {
+                        abort(403, 'غير مصرح لك باستعراض استلام غير مسند إليك.');
+                    }
+                } elseif ($user->hasRole('reviewer')) {
+                    if ($user->department_id !== $pr->department_id && $user->department_id !== $pr->target_department_id) {
+                        abort(403, 'غير مصرح لك باستعراض استلامات أقسام أخرى.');
+                    }
+                }
+            }
+        }
 
         if (! $receipt->photo_path) {
             abort(404, 'لم يتم إرفاق صورة لهذا الإذن.');

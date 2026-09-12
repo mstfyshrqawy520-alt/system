@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>مخطط دورة حياة طلبات الشراء - النسخة المظلمة</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap');
+
+  @page {
+    size: A3 portrait;
+    margin: 6mm;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: #121212;
+    color: #f0f6fc;
+    font-family: 'Cairo', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .container {
+    width: 960px;
+    max-width: 100%;
+    background: #121212;
+  }
+  .header {
+    text-align: center;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed #30363d;
+  }
+  .title { font-size: 22px; font-weight: 900; color: #f0f6fc; }
+  .subtitle { font-size: 13px; font-weight: 700; color: #8b949e; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="title">مخطط دورة حياة طلبات الشراء والاعتمادات — شركة الإشبيليّة</div>
+    <div class="subtitle">النسخة المظلمة الأصلية (Original Dark Blueprint Edition)</div>
+  </div>
+
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1620" width="100%" height="100%">
+    <defs>
+      <marker id="arr-d" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#8b949e" />
+      </marker>
+    </defs>
+
+    <style>
+      .box-d { fill: #161616; stroke: #e6edf3; stroke-width: 1.6; rx: 4px; }
+      .txt-d { fill: #f0f6fc; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+      .lbl-d { fill: #c9d1d9; font-family: 'Cairo', sans-serif; font-size: 11.5px; font-weight: 600; text-anchor: middle; }
+      .line-d { fill: none; stroke: #8b949e; stroke-width: 1.5; }
+    </style>
+
+    <!-- Start Node -->
+    <circle cx="500" cy="30" r="10" fill="#f0f6fc" stroke="#30363d" stroke-width="2"/>
+    <text x="500" y="52" class="lbl-d">إنشاء الطلب</text>
+    <path d="M 500 40 L 500 70" class="line-d" marker-end="url(#arr-d)"/>
+
+    <!-- DRAFT -->
+    <rect x="425" y="72" width="150" height="42" class="box-d"/>
+    <text x="500" y="93" class="txt-d">DRAFT</text>
+
+    <!-- DRAFT -> SUBMITTED -->
+    <path d="M 460 114 L 380 162" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="360" y="134" class="lbl-d">إرسال من موظف عادي</text>
+
+    <!-- DRAFT -> PENDING_EXECUTIVE_APPROVAL -->
+    <path d="M 525 114 Q 545 190 550 252" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="580" y="195" class="lbl-d">إرسال من رئيس قسم لنفس قسمه</text>
+
+    <!-- DRAFT -> PENDING_PROCUREMENT_APPROVAL -->
+    <path d="M 575 93 Q 785 100 785 338" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="745" y="215" class="lbl-d">إرسال من المدير العام</text>
+
+    <!-- SUBMITTED -->
+    <rect x="300" y="165" width="160" height="40" class="box-d"/>
+    <text x="380" y="185" class="txt-d">SUBMITTED</text>
+
+    <!-- SUBMITTED -> UNDER_REVIEW -->
+    <path d="M 380 205 L 380 242" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="380" y="226" class="lbl-d">بدء المراجعة (Reviewer)</text>
+
+    <!-- UNDER_REVIEW -->
+    <rect x="290" y="245" width="180" height="42" class="box-d"/>
+    <text x="380" y="266" class="txt-d">UNDER_REVIEW</text>
+
+    <!-- UNDER_REVIEW -> PENDING_EXECUTIVE_APPROVAL -->
+    <path d="M 470 266 L 508 266" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="495" y="252" class="lbl-d">اعتماد المراجع</text>
+
+    <!-- UNDER_REVIEW -> RETURNED_TO_REQUESTER -->
+    <path d="M 380 287 L 380 332" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="415" y="312" class="lbl-d">إرجاع للتعديل</text>
+
+    <!-- UNDER_REVIEW -> REJECTED -->
+    <path d="M 300 280 Q 230 330 388 462" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="260" y="365" class="lbl-d">رفض الطلب</text>
+
+    <!-- RETURNED_TO_REQUESTER -->
+    <rect x="275" y="335" width="210" height="40" class="box-d"/>
+    <text x="380" y="355" class="txt-d">RETURNED_TO_REQUESTER</text>
+
+    <!-- PENDING_EXECUTIVE_APPROVAL -->
+    <rect x="510" y="245" width="225" height="42" class="box-d"/>
+    <text x="622" y="266" class="txt-d">PENDING_EXECUTIVE_APPROVAL</text>
+
+    <!-- PENDING_EXECUTIVE_APPROVAL -> REJECTED -->
+    <path d="M 570 287 L 465 452" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="545" y="370" class="lbl-d">رفض تنفيذي</text>
+
+    <!-- PENDING_EXECUTIVE_APPROVAL -> PENDING_PROCUREMENT_APPROVAL (COMMERCIAL) -->
+    <path d="M 720 287 Q 785 305 785 338" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="835" y="308" class="lbl-d">اعتماد مسار تجاري (COMMERCIAL)</text>
+
+    <!-- PENDING_EXECUTIVE_APPROVAL -> PENDING_ACCOUNTING_APPROVAL (DIRECT) -->
+    <path d="M 510 275 Q 220 310 220 562" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="220" y="430" class="lbl-d">اعتماد مسار مباشر (DIRECT)</text>
+
+    <!-- REJECTED NODE -->
+    <rect x="365" y="455" width="130" height="40" class="box-d"/>
+    <text x="430" y="475" class="txt-d">REJECTED</text>
+
+    <!-- PENDING_PROCUREMENT_APPROVAL -->
+    <rect x="670" y="340" width="230" height="42" class="box-d"/>
+    <text x="785" y="361" class="txt-d">PENDING_PROCUREMENT_APPROVAL</text>
+
+    <!-- -> PENDING_QUOTE_RECOMMENDATIONS -->
+    <path d="M 785 382 L 785 428" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="785" y="408" class="lbl-d">بدء عروض الأسعار</text>
+
+    <!-- PENDING_QUOTE_RECOMMENDATIONS -->
+    <rect x="660" y="430" width="250" height="44" class="box-d"/>
+    <text x="785" y="452" class="txt-d">PENDING_QUOTE_RECOMMENDATIONS</text>
+
+    <!-- Quote Loop -->
+    <path d="M 880 474 Q 920 530 855 570 Q 820 570 820 477" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="900" y="530" class="lbl-d">ترشيح الحسابات أولاً</text>
+
+    <!-- -> PENDING_EXECUTIVE_QUOTE_DECISION -->
+    <path d="M 720 474 L 660 565" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="675" y="515" class="lbl-d">ترشيح القسم ثانياً</text>
+
+    <!-- PENDING_EXECUTIVE_QUOTE_DECISION -->
+    <rect x="525" y="568" width="255" height="42" class="box-d"/>
+    <text x="652" y="589" class="txt-d">PENDING_EXECUTIVE_QUOTE_DECISION</text>
+
+    <!-- -> APPROVED_BY_PROCUREMENT -->
+    <path d="M 652 610 L 652 658" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="652" y="638" class="lbl-d">قرار المدير العام (اختيار العرض)</text>
+
+    <!-- APPROVED_BY_PROCUREMENT -->
+    <rect x="550" y="660" width="205" height="42" class="box-d"/>
+    <text x="652" y="681" class="txt-d">APPROVED_BY_PROCUREMENT</text>
+
+    <!-- -> PO_DRAFT -->
+    <path d="M 620 702 L 525 768" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="620" y="732" class="lbl-d">إنشاء أمر الشراء التجاري</text>
+
+    <!-- DIRECT TRACK (LEFT) -->
+    <!-- PENDING_ACCOUNTING_APPROVAL -->
+    <rect x="100" y="565" width="240" height="42" class="box-d"/>
+    <text x="220" y="586" class="txt-d">PENDING_ACCOUNTING_APPROVAL</text>
+
+    <!-- -> APPROVED_BY_ACCOUNTING -->
+    <path d="M 220 607 L 220 655" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="220" y="635" class="lbl-d">اعتماد مالي وتخصيص البنود والمورد</text>
+
+    <!-- APPROVED_BY_ACCOUNTING -->
+    <rect x="110" y="657" width="220" height="42" class="box-d"/>
+    <text x="220" y="678" class="txt-d">APPROVED_BY_ACCOUNTING</text>
+
+    <!-- -> PO_DRAFT -->
+    <path d="M 260 699 L 415 768" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="270" y="735" class="lbl-d">إنشاء أمر الشراء المباشر</text>
+
+    <!-- PO_DRAFT -->
+    <rect x="395" y="765" width="150" height="44" class="box-d"/>
+    <text x="470" y="787" class="txt-d">PO_DRAFT</text>
+
+    <!-- PO_DRAFT -> ISSUED -->
+    <path d="M 470 809 L 470 855" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="470" y="835" class="lbl-d">إصدار أمر الشراء الرسمي</text>
+
+    <!-- ISSUED -->
+    <rect x="405" y="857" width="130" height="40" class="box-d"/>
+    <text x="470" y="877" class="txt-d">ISSUED</text>
+
+    <!-- ISSUED -> PENDING_SITE_ENGINEER -->
+    <path d="M 490 897 L 540 952" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="565" y="920" class="lbl-d">تسجيل الاستلام بالمخزن (مواد مشاريع)</text>
+
+    <!-- ISSUED -> APPROVED_RECEIPT -->
+    <path d="M 430 897 Q 345 950 375 1055" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="325" y="965" class="lbl-d">استلام مكتبي مباشر (مستلزمات مكتبية)</text>
+
+    <!-- PENDING_SITE_ENGINEER -->
+    <rect x="470" y="955" width="200" height="42" class="box-d"/>
+    <text x="570" y="976" class="txt-d">PENDING_SITE_ENGINEER</text>
+
+    <!-- PENDING_SITE_ENGINEER -> APPROVED_RECEIPT -->
+    <path d="M 540 997 L 490 1055" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="550" y="1025" class="lbl-d">فحص واعتماد مهندس الموقع</text>
+
+    <!-- APPROVED_RECEIPT -->
+    <rect x="370" y="1057" width="200" height="42" class="box-d"/>
+    <text x="470" y="1078" class="txt-d">APPROVED_RECEIPT</text>
+
+    <!-- APPROVED_RECEIPT -> INVOICE_OPEN -->
+    <path d="M 470 1099 L 470 1145" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="470" y="1125" class="lbl-d">تسجيل فاتورة المورد</text>
+
+    <!-- INVOICE_OPEN -->
+    <rect x="385" y="1147" width="170" height="40" class="box-d"/>
+    <text x="470" y="1167" class="txt-d">INVOICE_OPEN</text>
+
+    <!-- INVOICE_OPEN -> INVOICE_MATCHED -->
+    <path d="M 470 1187 L 470 1235" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="470" y="1215" class="lbl-d">المطابقة الثلاثية</text>
+
+    <!-- INVOICE_MATCHED -->
+    <rect x="375" y="1237" width="190" height="42" class="box-d"/>
+    <text x="470" y="1268" class="txt-d">INVOICE_MATCHED</text>
+
+    <!-- INVOICE_MATCHED -> COMPLETED -->
+    <path d="M 470 1279 L 470 1335" class="line-d" marker-end="url(#arr-d)"/>
+    <text x="470" y="1310" class="lbl-d">سداد دفعة المورد وإغلاق الدورة</text>
+
+    <!-- COMPLETED -->
+    <rect x="390" y="1337" width="160" height="44" class="box-d"/>
+    <text x="470" y="1359" class="txt-d">COMPLETED</text>
+
+    <!-- COMPLETED -> END -->
+    <path d="M 470 1381 L 470 1425" class="line-d" marker-end="url(#arr-d)"/>
+    <circle cx="470" cy="1440" r="14" fill="none" stroke="#f0f6fc" stroke-width="2"/>
+    <circle cx="470" cy="1440" r="7" fill="#f0f6fc"/>
+  </svg>
+</div>
+</body>
+</html>
