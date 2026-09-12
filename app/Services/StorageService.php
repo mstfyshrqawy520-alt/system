@@ -174,18 +174,42 @@ class StorageService
         }
 
         // Fallback checks in local filesystem paths
+        $baseName = basename($path);
+        $fileBaseName = basename($fileName);
         $localPaths = [
             storage_path('app/public/' . $path),
             storage_path('app/private/' . $path),
             storage_path('app/' . $path),
             public_path('storage/' . $path),
             public_path($path),
+            public_path('demo-assets/quotes/' . $baseName),
+            public_path('demo-assets/quotes/' . $fileBaseName),
+            public_path('storage/quotes/' . $baseName),
+            public_path('storage/quotes/' . $fileBaseName),
+            storage_path('app/public/quotes/' . $baseName),
+            storage_path('app/public/quotes/' . $fileBaseName),
+            base_path($path),
+            base_path($baseName),
+            base_path($fileBaseName),
         ];
 
         foreach ($localPaths as $localPath) {
-            if (file_exists($localPath)) {
+            if (file_exists($localPath) && ! is_dir($localPath)) {
+                $resolvedMime = $mimeType;
+                if (! $resolvedMime || $resolvedMime === 'application/octet-stream') {
+                    $ext = strtolower(pathinfo($localPath, PATHINFO_EXTENSION));
+                    $resolvedMime = match ($ext) {
+                        'png' => 'image/png',
+                        'jpg', 'jpeg' => 'image/jpeg',
+                        'webp' => 'image/webp',
+                        'gif' => 'image/gif',
+                        'pdf' => 'application/pdf',
+                        'html', 'htm' => 'text/html',
+                        default => 'application/pdf',
+                    };
+                }
                 return response()->file($localPath, [
-                    'Content-Type' => $mimeType,
+                    'Content-Type' => $resolvedMime,
                     'Content-Disposition' => ($download ? 'attachment' : 'inline') . '; filename="' . $fileName . '"',
                 ]);
             }

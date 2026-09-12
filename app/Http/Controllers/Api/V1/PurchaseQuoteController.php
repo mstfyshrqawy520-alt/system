@@ -186,12 +186,13 @@ class PurchaseQuoteController extends Controller
             }
         }
 
-        if ($quote->file_path) {
+        if ($quote->file_path || $quote->file_name) {
+            $path = $quote->file_path ?: ('quotes/' . $quote->file_name);
             try {
                 return \App\Services\StorageService::streamResponse(
-                    $quote->file_path,
-                    $quote->file_name,
-                    $quote->mime_type ?: 'application/pdf',
+                    $path,
+                    $quote->file_name ?: basename($path),
+                    $quote->mime_type,
                     false
                 );
             } catch (\Throwable) {
@@ -233,7 +234,10 @@ class PurchaseQuoteController extends Controller
                 false
             );
         } catch (\Throwable) {
-            $quote = PurchaseRequestQuote::with(['purchaseRequest.items.item', 'supplier'])->where('file_path', 'like', "%{$filename}%")->first();
+            $quote = PurchaseRequestQuote::with(['purchaseRequest.items.item', 'supplier'])
+                ->where('file_path', 'like', "%{$filename}%")
+                ->orWhere('file_name', 'like', "%{$filename}%")
+                ->first();
             if ($quote) {
                 return response(
                     $this->renderCommercialQuoteDocumentHtml($quote),
