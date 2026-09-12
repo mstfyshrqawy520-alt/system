@@ -395,25 +395,25 @@ const CreatePurchaseRequestPage: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-3 pb-24" dir="rtl">
-      {/* Sticky Action Header on Scroll */}
-      <div className="sticky top-2 z-40 rounded-2xl border border-slate-700/80 bg-slate-950/90 p-3 shadow-2xl backdrop-blur-md transition-all">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-cyan-500/40 text-lg shadow-inner shrink-0">
+    <div className="mx-auto max-w-6xl space-y-2.5 sm:space-y-3 pb-28 sm:pb-24 px-1 sm:px-0" dir="rtl">
+      {/* Top Header - Static on Mobile to free vertical viewport, Sticky on Desktop */}
+      <div className="static sm:sticky sm:top-2 z-40 rounded-xl sm:rounded-2xl border border-slate-700/80 bg-slate-950/90 p-2.5 sm:p-3 shadow-xl backdrop-blur-md transition-all">
+        <div className="flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-cyan-500/40 text-base sm:text-lg shadow-inner shrink-0">
               ✍️
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-black text-slate-100">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs sm:text-sm font-black text-slate-100 truncate">
                   {isGeneralManager ? 'طلب شراء تنفيذي جديد' : 'إنشاء وإرسال طلب شراء'}
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-900 border border-slate-700 text-slate-300">
-                  <span className={`h-2 w-2 rounded-full ${requestHasErrors ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}`} />
-                  {requestHasErrors ? 'بانتظار استكمال الحقول' : 'جاهز للإرسال'}
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-slate-900 border border-slate-700 text-slate-300 shrink-0">
+                  <span className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${requestHasErrors ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}`} />
+                  {requestHasErrors ? 'استكمال الحقول' : 'جاهز للإرسال'}
                 </span>
               </div>
-              <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-0.5">
+              <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-slate-400 mt-0.5">
                 <span>📦 البنود: <strong className="text-cyan-300">{data.items.length} صنف</strong></span>
                 <span className="text-slate-600">•</span>
                 <span>
@@ -425,10 +425,10 @@ const CreatePurchaseRequestPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Link to="/requests">
-              <Button type="button" variant="secondary" size="sm" className="text-xs">
-                ← أرشيف طلباتي
+              <Button type="button" variant="secondary" size="sm" className="text-[11px] sm:text-xs px-2.5 py-1 sm:px-3">
+                ← <span className="hidden sm:inline">أرشيف</span> طلباتي
               </Button>
             </Link>
           </div>
@@ -436,58 +436,76 @@ const CreatePurchaseRequestPage: React.FC = () => {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-800/80 bg-rose-950/40 p-3 text-xs font-bold text-rose-200 shadow-lg" role="alert">
+        <div className="rounded-xl border border-rose-800/80 bg-rose-950/40 p-2.5 sm:p-3 text-xs font-bold text-rose-200 shadow-lg" role="alert">
           ⚠️ {error}
         </div>
       )}
 
-      {/* Request Type Segmented Bar (Ultra-Compact & Clear) */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/95 p-2.5 sm:p-3 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-300">نوع الطلب والغرض منه:</span>
-          <span className="text-[10px] text-slate-500">
-            (الافتراضي: مشتريات مواقع)
+      {/* Request Type Segmented Bar (Ultra-Compact & Mobile-Optimized) */}
+      <div className="rounded-xl sm:rounded-2xl border border-slate-800 bg-slate-900/95 p-2 sm:p-3 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-2.5">
+        <div className="flex items-center justify-between sm:justify-start gap-2">
+          <span className="text-xs font-bold text-slate-300">نوع الطلب والغرض:</span>
+          <span className="text-[10px] text-slate-400 sm:text-slate-500">
+            (الافتراضي: مواقع)
           </span>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80">
+        <div className="grid grid-cols-2 gap-1 sm:flex sm:items-center sm:gap-2 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80">
           <button
             type="button"
             onClick={() => setData({ ...data, request_type: 'PROJECT' })}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
               !isOffice
                 ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
             }`}
           >
             <span>🏗️</span>
-            <span>مشتريات مشروعات ومواقع</span>
+            <span className="truncate">مشروعات ومواقع</span>
           </button>
 
           <button
             type="button"
             onClick={() => setData({ ...data, request_type: 'OFFICE_SUPPLIES' })}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
               isOffice
                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
             }`}
           >
             <span>🏢</span>
-            <span>مستلزمات مكتبية وإدارية</span>
+            <span className="truncate">مستلزمات مكتبية</span>
           </button>
         </div>
       </div>
 
-      {/* ── 3-Step Wizard Visual Progress Bar ── */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3 sm:p-4 shadow-lg">
-        <div className="flex items-center justify-between gap-2 text-xs">
+      {/* ── 3-Step Wizard Visual Progress Bar (Compact on Mobile) ── */}
+      <div className="rounded-xl sm:rounded-2xl border border-slate-800/80 bg-slate-900/80 p-2 sm:p-4 shadow-lg">
+        {/* Mobile Compact Step Indicator */}
+        <div className="flex sm:hidden items-center justify-between text-[11px] font-bold">
+          <div className="flex items-center gap-1 text-cyan-300">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500/20 border border-cyan-400 text-[10px] font-mono">1</span>
+            <span>البيانات</span>
+          </div>
+          <span className="text-slate-600">←</span>
+          <div className="flex items-center gap-1 text-indigo-300">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500/20 border border-indigo-400 text-[10px] font-mono">2</span>
+            <span>الأصناف ({data.items.length})</span>
+          </div>
+          <span className="text-slate-600">←</span>
+          <div className="flex items-center gap-1 text-emerald-300">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-400 text-[10px] font-mono">3</span>
+            <span>المراجعة</span>
+          </div>
+        </div>
+
+        {/* Desktop Full Step Bar */}
+        <div className="hidden sm:flex items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2 font-black text-cyan-300">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 border border-cyan-400 text-cyan-300 text-xs font-mono">
               1
             </span>
-            <span className="hidden sm:inline">الخطوة 1:</span>
-            <span>البيانات والموقع</span>
+            <span>الخطوة 1: البيانات والموقع</span>
           </div>
 
           <div className="h-[2px] flex-1 bg-gradient-to-r from-cyan-500/40 via-indigo-500/40 to-emerald-500/40 mx-2 sm:mx-4" />
@@ -496,8 +514,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 border border-indigo-400 text-indigo-300 text-xs font-mono">
               2
             </span>
-            <span className="hidden sm:inline">الخطوة 2:</span>
-            <span>الأصناف والمواصفات ({data.items.length})</span>
+            <span>الخطوة 2: الأصناف والمواصفات ({data.items.length})</span>
           </div>
 
           <div className="h-[2px] flex-1 bg-gradient-to-r from-indigo-500/40 via-emerald-500/40 to-emerald-400 mx-2 sm:mx-4" />
@@ -506,8 +523,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-xs font-mono">
               3
             </span>
-            <span className="hidden sm:inline">الخطوة 3:</span>
-            <span>المراجعة والإرسال</span>
+            <span>الخطوة 3: المراجعة والإرسال</span>
           </div>
         </div>
       </div>
@@ -1073,9 +1089,30 @@ const CreatePurchaseRequestPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Bottom Submit & Action Bar */}
-      <div className="sticky bottom-3 z-30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-slate-700/80 bg-slate-950/95 p-4 shadow-2xl backdrop-blur-md">
-        <div className="flex flex-wrap items-center gap-4 text-xs">
+      {/* Bottom Submit & Action Bar - Streamlined, Compact Mobile Floating Dock */}
+      <div className="sticky bottom-2 sm:bottom-3 z-30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 rounded-xl sm:rounded-2xl border border-slate-700/80 bg-slate-950/95 p-2 sm:p-4 shadow-2xl backdrop-blur-md">
+        {/* Mobile Mini Meta Bar */}
+        <div className="flex sm:hidden items-center justify-between text-[11px] px-1 text-slate-400 font-semibold">
+          <div className="flex items-center gap-2">
+            <span>📦 الأصناف: <strong className="text-cyan-300 font-mono">{data.items.length}</strong></span>
+            <span className="text-slate-600">•</span>
+            <span>الكميات: <strong className="text-amber-300 font-mono">{data.items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0)}</strong></span>
+          </div>
+          {draftMessage ? (
+            <span className="text-emerald-400 font-bold text-[10px]">✓ {draftMessage}</span>
+          ) : isDirty ? (
+            <button
+              type="button"
+              onClick={handleClearDraft}
+              className="text-slate-400 hover:text-rose-300 underline text-[10px]"
+            >
+              مسح المسودة
+            </button>
+          ) : null}
+        </div>
+
+        {/* Desktop Full Info Bar */}
+        <div className="hidden sm:flex flex-wrap items-center gap-4 text-xs">
           <div className="flex items-center gap-3 bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-xl">
             <span className="text-slate-400 font-bold">إجمالي الأصناف:</span>
             <span className="font-mono font-black text-cyan-300 text-sm">{data.items.length}</span>
@@ -1102,16 +1139,19 @@ const CreatePurchaseRequestPage: React.FC = () => {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Action Buttons: Unified Single Row on Mobile */}
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <Button
             type="button"
             variant="secondary"
-            size="md"
+            size="sm"
             onClick={handleSaveDraft}
             disabled={isSubmitting || isSavingDraft}
             isLoading={isSavingDraft}
+            className="text-xs shrink-0 py-2 sm:py-2.5 px-3"
           >
-            💾 حفظ كمسودة
+            <span className="sm:hidden">💾 مسودة</span>
+            <span className="hidden sm:inline">💾 حفظ كمسودة</span>
           </Button>
 
           <Button
@@ -1121,7 +1161,7 @@ const CreatePurchaseRequestPage: React.FC = () => {
             onClick={() => void handleSubmit()}
             disabled={isSubmitting || isSavingDraft}
             isLoading={isSubmitting}
-            className="px-6 shadow-lg shadow-cyan-600/30 text-xs sm:text-sm font-bold"
+            className="flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 shadow-lg shadow-cyan-600/30 text-xs sm:text-sm font-bold justify-center"
           >
             🚀 {isGeneralManager ? 'إرسال مباشر للمشتريات' : 'إرسال طلب الشراء فوراً'}
           </Button>
