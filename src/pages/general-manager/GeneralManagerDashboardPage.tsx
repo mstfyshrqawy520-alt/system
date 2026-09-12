@@ -168,6 +168,8 @@ export const GeneralManagerDashboardPage: React.FC = () => {
               uom: it.uom,
               parcel: it.item_reference,
               region: it.region,
+              unit_price: it.estimated_unit_price,
+              line_total: it.estimated_line_total,
             })),
             onDirectApprove: async (_item: any, comment?: string) => {
               await approveGeneralManagerPurchaseRequestApi(req.id, comment);
@@ -206,6 +208,8 @@ export const GeneralManagerDashboardPage: React.FC = () => {
                 uom: it.uom,
                 parcel: it.item_reference,
                 region: it.region,
+                unit_price: it.estimated_unit_price,
+                line_total: it.estimated_line_total,
               })),
             })),
 
@@ -233,6 +237,8 @@ export const GeneralManagerDashboardPage: React.FC = () => {
                 description: it.item_description || it.item?.name || 'بند توريد',
                 quantity: it.quantity,
                 uom: it.uom,
+                unit_price: it.unit_price,
+                line_total: it.line_total,
               })),
             })),
         ];

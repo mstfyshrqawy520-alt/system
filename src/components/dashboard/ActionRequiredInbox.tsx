@@ -13,6 +13,8 @@ export interface ActionInboxItemDetail {
   uom?: string | null;
   parcel?: string | null;
   region?: string | null;
+  unit_price?: number | string | null;
+  line_total?: number | string | null;
 }
 
 export interface ActionInboxItem {
@@ -459,20 +461,48 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                             <span className="text-[10px] text-slate-500">+{item.items_count - item.items_list.length} أصناف أخرى</span>
                           )}
                         </div>
-                        <div className="space-y-1.5 max-h-36 overflow-y-auto custom-select-scrollbar pr-0.5">
-                          {item.items_list.map((it, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-center justify-between gap-2 text-xs py-1.5 px-2.5 rounded-lg bg-slate-950/60 border border-slate-800/70 hover:border-slate-700/80 transition-colors"
-                            >
-                              <span className="font-semibold text-slate-100 truncate" title={it.description}>
-                                • {it.description}
-                              </span>
-                              <span className="font-mono font-bold text-amber-300 text-xs shrink-0">
-                                {it.quantity} {getUnitLabel(it.uom || '')}
-                              </span>
-                            </div>
-                          ))}
+                        <div className="space-y-1.5 max-h-44 overflow-y-auto custom-select-scrollbar pr-0.5">
+                          {item.items_list.map((it, idx) => {
+                            const unitLabel = getUnitLabel(it.uom || '');
+                            const hasPrice = it.unit_price !== undefined && it.unit_price !== null && Number(it.unit_price) > 0;
+                            const unitPriceNum = hasPrice ? Number(it.unit_price) : 0;
+                            const lineTotalNum = it.line_total !== undefined && it.line_total !== null && Number(it.line_total) > 0
+                              ? Number(it.line_total)
+                              : (hasPrice ? Number(it.quantity) * unitPriceNum : 0);
+
+                            return (
+                              <div
+                                key={idx}
+                                className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 text-xs py-1.5 px-2.5 rounded-lg bg-slate-950/60 border border-slate-800/70 hover:border-slate-700/80 transition-colors"
+                              >
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <span className="font-semibold text-slate-100 truncate" title={it.description}>
+                                    • {it.description}
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 shrink-0 flex-wrap">
+                                  <span className="font-mono font-bold text-amber-300 text-[11px] sm:text-xs">
+                                    {it.quantity} {unitLabel}
+                                  </span>
+
+                                  {hasPrice && (
+                                    <>
+                                      <span className="text-slate-600 hidden sm:inline">•</span>
+                                      <span className="font-mono text-cyan-300 text-[10px] sm:text-[11px] bg-cyan-950/60 border border-cyan-800/50 px-1.5 py-0.5 rounded font-bold">
+                                        {unitPriceNum.toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م / {unitLabel}
+                                      </span>
+                                      {lineTotalNum > 0 && (
+                                        <span className="font-mono font-black text-emerald-400 text-[11px]">
+                                          ({lineTotalNum.toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م)
+                                        </span>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     ) : (

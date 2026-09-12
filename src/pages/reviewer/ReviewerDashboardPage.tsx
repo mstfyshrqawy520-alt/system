@@ -142,6 +142,8 @@ export const ReviewerDashboardPage: React.FC = () => {
           uom: it.uom,
           parcel: it.item_reference,
           region: it.region,
+          unit_price: it.estimated_unit_price,
+          line_total: it.estimated_line_total,
         })),
         requires_warehouse_receipt: req.requires_warehouse_receipt ?? true,
         onDirectApprove: hasPermission('purchase_request.review')

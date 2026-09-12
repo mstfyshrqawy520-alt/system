@@ -143,6 +143,8 @@ export const SiteAccountantDashboardPage: React.FC = () => {
           uom: it.purchase_order_item?.uom,
           parcel: it.purchase_order_item?.item_reference,
           region: it.purchase_order_item?.region,
+          unit_price: it.purchase_order_item?.unit_price,
+          line_total: Number(it.received_quantity) * Number(it.purchase_order_item?.unit_price || 0),
         })),
       });
     }
