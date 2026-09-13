@@ -17,15 +17,35 @@ class PurchaseOrderService
 {
     /**
      * Generate sequential unique Purchase Order number (PO-YYYY-XXXXX).
+     * Uses MAX extraction from existing numbers to avoid duplicates after record deletions.
      */
     public function generatePoNumber(): string
     {
         $year = date('Y');
-        $count = PurchaseOrder::withTrashed()
-            ->whereYear('created_at', $year)
-            ->count() + 1;
+        $prefix = "PO-{$year}-";
 
-        return sprintf('PO-%s-%05d', $year, $count);
+        // Extract the highest existing sequence number from the database
+        $maxNumber = PurchaseOrder::withTrashed()
+            ->where('po_number', 'like', $prefix . '%')
+            ->selectRaw("MAX(CAST(SUBSTRING(po_number, ?) AS UNSIGNED)) as max_seq", [strlen($prefix) + 1])
+            ->value('max_seq');
+
+        $nextSeq = ($maxNumber ?? 0) + 1;
+
+        // Retry loop to handle rare race conditions
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            $candidate = sprintf('PO-%s-%05d', $year, $nextSeq);
+            $exists = PurchaseOrder::withTrashed()
+                ->where('po_number', $candidate)
+                ->exists();
+
+            if (! $exists) {
+                return $candidate;
+            }
+            $nextSeq++;
+        }
+
+        return sprintf('PO-%s-%05d', $year, $nextSeq);
     }
 
     /**

@@ -17,15 +17,36 @@ class PurchaseRequestService
 {
     /**
      * Generate sequential unique Purchase Request number (PR-YYYY-XXXXX).
+     * Uses MAX extraction from existing numbers to avoid duplicates after record deletions.
      */
     public function generateRequestNumber(): string
     {
         $year = date('Y');
-        $count = PurchaseRequest::withTrashed()
-            ->whereYear('created_at', $year)
-            ->count() + 1;
+        $prefix = "PR-{$year}-";
 
-        return sprintf('PR-%s-%05d', $year, $count);
+        // Extract the highest existing sequence number from the database
+        $maxNumber = PurchaseRequest::withTrashed()
+            ->where('request_number', 'like', $prefix . '%')
+            ->selectRaw("MAX(CAST(SUBSTRING(request_number, ?) AS UNSIGNED)) as max_seq", [strlen($prefix) + 1])
+            ->value('max_seq');
+
+        $nextSeq = ($maxNumber ?? 0) + 1;
+
+        // Retry loop to handle rare race conditions
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            $candidate = sprintf('PR-%s-%05d', $year, $nextSeq);
+            $exists = PurchaseRequest::withTrashed()
+                ->where('request_number', $candidate)
+                ->exists();
+
+            if (! $exists) {
+                return $candidate;
+            }
+            $nextSeq++;
+        }
+
+        // Absolute fallback: use timestamp to guarantee uniqueness
+        return sprintf('PR-%s-%05d', $year, $nextSeq);
     }
 
     /**

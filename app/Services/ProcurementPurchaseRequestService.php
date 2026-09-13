@@ -352,8 +352,20 @@ class ProcurementPurchaseRequestService
     public function createDirectPurchaseRequest(User $procurementManager, array $data): PurchaseRequest
     {
         return DB::transaction(function () use ($procurementManager, $data): PurchaseRequest {
-            $prCount = PurchaseRequest::withTrashed()->lockForUpdate()->count() + 1;
-            $prNumber = sprintf('PR-DIRECT-%s-%05d', date('Y'), $prCount);
+            $year = date('Y');
+            $prefix = "PR-DIRECT-{$year}-";
+            $maxNumber = PurchaseRequest::withTrashed()
+                ->where('request_number', 'like', $prefix . '%')
+                ->selectRaw("MAX(CAST(SUBSTRING(request_number, ?) AS UNSIGNED)) as max_seq", [strlen($prefix) + 1])
+                ->value('max_seq');
+            $nextSeq = ($maxNumber ?? 0) + 1;
+
+            // Retry to avoid duplicates
+            $prNumber = sprintf('PR-DIRECT-%s-%05d', $year, $nextSeq);
+            while (PurchaseRequest::withTrashed()->where('request_number', $prNumber)->exists()) {
+                $nextSeq++;
+                $prNumber = sprintf('PR-DIRECT-%s-%05d', $year, $nextSeq);
+            }
             $total = 0.0;
 
             foreach ($data['items'] as $item) {
