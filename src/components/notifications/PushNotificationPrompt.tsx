@@ -24,6 +24,13 @@ export const PushNotificationPrompt: React.FC<PushNotificationPromptProps> = ({
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
   const [isConfigured, setIsConfigured] = useState(true);
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return localStorage.getItem('ashbiliya_push_banner_dismissed') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     setIsSupported(getPushSupportStatus());
@@ -82,6 +89,10 @@ export const PushNotificationPrompt: React.FC<PushNotificationPromptProps> = ({
   };
 
   if (permission === 'granted') {
+    if (dismissed) {
+      return null;
+    }
+
     return (
       <div className="rounded-2xl border border-emerald-800/60 bg-gradient-to-r from-slate-900 via-emerald-950/20 to-slate-900 p-4 shadow-lg space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -113,6 +124,21 @@ export const PushNotificationPrompt: React.FC<PushNotificationPromptProps> = ({
               <span>🔔</span>
               <span>إرسال إشعار تجريبي لاختبار الهاتف</span>
             </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setDismissed(true);
+                try {
+                  localStorage.setItem('ashbiliya_push_banner_dismissed', 'true');
+                } catch {
+                  // ignore
+                }
+              }}
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors cursor-pointer"
+              title="إخفاء التنبيه"
+            >
+              ✕
+            </button>
           </div>
         </div>
 

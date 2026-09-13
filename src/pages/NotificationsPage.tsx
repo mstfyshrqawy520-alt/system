@@ -303,12 +303,40 @@ export const NotificationsPage: React.FC = () => {
     const informational: Notification[] = [];
     const archive: Notification[] = [];
 
-    notifications.forEach((n) => {
+    // Sort newest first to ensure the latest action state for each document is prioritized
+    const sorted = [...notifications].sort((a, b) => {
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    const seenActionDocs = new Set<string>();
+
+    sorted.forEach((n) => {
       const status = getItemStatus(n);
 
       if (status === 'resolved' || status === 'archived') {
         archive.push(n);
       } else if (status === 'needs_action' || status === 'failed') {
+        const info = extractDocumentInfo(n);
+        const docKey = info.prId
+          ? `PR-${info.prId}`
+          : (info.poId
+            ? `PO-${info.poId}`
+            : (info.receiptId
+              ? `REC-${info.receiptId}`
+              : (info.docNumber ? `${info.docType}-${info.docNumber}` : null)));
+
+        if (docKey) {
+          if (seenActionDocs.has(docKey)) {
+            // Superseded prior workflow step for this same document!
+            // Move it to archive so it doesn't duplicate or clutter "Action Required"
+            archive.push(n);
+            return;
+          }
+          seenActionDocs.add(docKey);
+        }
+
         actionRequired.push(n);
       } else {
         informational.push(n);
@@ -753,6 +781,17 @@ export const NotificationsPage: React.FC = () => {
                           </span>
                         )}
 
+                        {/* Stage Badge for PRs & POs */}
+                        {action.badgeLabel === 'راجع من المشتريات' ? (
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-lg bg-emerald-950/90 text-emerald-300 border border-emerald-700/70 shadow-xs">
+                            📥 راجع من المشتريات (مسعر)
+                          </span>
+                        ) : action.badgeLabel === 'رايح للمشتريات' ? (
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-lg bg-sky-950/90 text-sky-300 border border-sky-700/70 shadow-xs">
+                            🛫 رايح للمشتريات (طلب جديد)
+                          </span>
+                        ) : null}
+
                         {isUnread ? (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 px-2.5 py-0.5 text-[10px] font-black shadow-xs">
                             <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
@@ -783,44 +822,71 @@ export const NotificationsPage: React.FC = () => {
                         )}
                       </div>
 
-                      <p className={`text-xs leading-relaxed ${isUnread ? 'text-slate-100 font-medium' : 'text-slate-400'}`}>
-                        {notification.message}
-                      </p>
-
-                      {/* Operational Core 4 Fields Strip (القطعة، المنطقة، الصنف، الكمية) */}
+                      {/* Clean Message & Operational Details Badges (Without Text Duplication) */}
                       {(() => {
+                        const rawMsg = notification.message || '';
+                        const cleanMsg = rawMsg.includes(' • ') ? rawMsg.split(' • ')[0].trim() : rawMsg;
+
                         const data = (notification as any).data || {};
                         let parcel = data.parcel_reference;
                         let region = data.region;
                         let item = data.item_description;
                         let qty = data.quantity;
 
-                        if (!parcel && notification.message) {
-                          const parcelMatch = notification.message.match(/القطعة:\s*([^|•\n]+)/);
+                        if (!parcel && rawMsg) {
+                          const parcelMatch = rawMsg.match(/القطعة:\s*([^|•\n]+)/);
                           if (parcelMatch) parcel = parcelMatch[1].trim();
                         }
-                        if (!region && notification.message) {
-                          const regionMatch = notification.message.match(/المنطقة:\s*([^|•\n]+)/);
+                        if (!region && rawMsg) {
+                          const regionMatch = rawMsg.match(/المنطقة:\s*([^|•\n]+)/);
                           if (regionMatch) region = regionMatch[1].trim();
                         }
-                        if (!item && notification.message) {
-                          const itemMatch = notification.message.match(/الصنف:\s*([^|•\n]+)/);
+                        if (!item && rawMsg) {
+                          const itemMatch = rawMsg.match(/الصنف:\s*([^|•\n]+)/);
                           if (itemMatch) item = itemMatch[1].trim();
                         }
-                        if (!qty && notification.message) {
-                          const qtyMatch = notification.message.match(/الكمية:\s*([^|•\n]+)/);
+                        if (!qty && rawMsg) {
+                          const qtyMatch = rawMsg.match(/الكمية:\s*([^|•\n]+)/);
                           if (qtyMatch) qty = qtyMatch[1].trim();
                         }
 
-                        if (!parcel && !region && !item && !qty) return null;
+                        const hasDetails = Boolean(parcel || region || item || qty);
 
                         return (
-                          <div className="flex items-center gap-2 flex-wrap text-xs bg-slate-900/95 border border-slate-700/80 rounded-xl px-3 py-1.5 text-slate-200 shadow-sm my-1">
-                            {parcel && <span className="text-cyan-300 font-mono font-bold">🏷️ القطعة: {parcel}</span>}
-                            {region && <span className="text-amber-300 font-bold">📍 المنطقة: {region}</span>}
-                            {item && <span className="text-slate-100 font-bold">📦 الصنف: {item}</span>}
-                            {qty && <span className="text-emerald-300 font-mono font-bold">⚖️ الكمية: {qty}</span>}
-                          </div>
+                          <>
+                            <p className={`text-xs leading-relaxed ${isUnread ? 'text-slate-100 font-medium' : 'text-slate-400'}`}>
+                              {cleanMsg}
+                            </p>
+
+                            {hasDetails && (
+                              <div className="flex items-center gap-1.5 flex-wrap text-xs pt-0.5 pb-0.5">
+                                {parcel && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-cyan-300 font-mono shadow-2xs">
+                                    <span className="text-slate-500 font-sans">القطعة:</span>
+                                    <strong>{parcel}</strong>
+                                  </span>
+                                )}
+                                {region && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-amber-300 shadow-2xs">
+                                    <span className="text-slate-500">المنطقة:</span>
+                                    <strong>{region}</strong>
+                                  </span>
+                                )}
+                                {item && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-700/80 text-[11px] text-slate-100 shadow-2xs">
+                                    <span className="text-slate-400">الصنف:</span>
+                                    <strong className="truncate max-w-[240px]">{item}</strong>
+                                  </span>
+                                )}
+                                {qty && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-emerald-400 font-mono shadow-2xs">
+                                    <span className="text-slate-500 font-sans">الكمية:</span>
+                                    <strong>{qty}</strong>
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </>
                         );
                       })()}
 
@@ -880,7 +946,13 @@ export const NotificationsPage: React.FC = () => {
                         }}
                         isLoading={isThisExecuting}
                         disabled={isThisExecuting}
-                        className="text-xs font-bold"
+                        className={`text-xs font-black shadow-md ${
+                          action.actionLabel.includes('اعتماد تنفيذي')
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40 ring-1 ring-emerald-400/40'
+                            : action.actionLabel.includes('إرسال للمشتريات')
+                            ? 'bg-sky-600 hover:bg-sky-500 text-white shadow-sky-950/40 ring-1 ring-sky-400/40'
+                            : ''
+                        }`}
                       >
                         <span>{isThisExecuting ? 'جارٍ التنفيذ...' : action.actionLabel}</span>
                         <span className="mr-1">←</span>

@@ -234,11 +234,52 @@ export const resolveNotificationAction = (
       }
     }
 
+    // Determine intelligent, human-friendly action labels and icons
+    let actionLabel = isActionable ? 'متابعة الإجراء المطلوب' : 'عرض ومتابعة الطلب';
+    let icon = isActionable ? '⚡' : '📋';
+    let badgeLabel = isActionable ? 'مطلوب إجراء' : 'إشعار';
+
+    if (info.prId) {
+      if (roleSlugs.includes('general_manager')) {
+        targetUrl = `/general-manager/purchase-requests?open=${info.prId}`;
+        const isReturned = title.includes('مباشر') || title.includes('مسعر') || message.includes('مدير المشتريات') || type.includes('direct');
+        actionLabel = isReturned ? 'اعتماد تنفيذي نهائي' : 'موافقة وإرسال للمشتريات';
+        badgeLabel = isReturned ? 'راجع من المشتريات' : 'رايح للمشتريات';
+        icon = isReturned ? '👑' : '📤';
+      } else if (roleSlugs.includes('reviewer')) {
+        targetUrl = `/reviewer/requests/${info.prId}`;
+        actionLabel = 'مراجعة واعتماد الطلب';
+        icon = '📋';
+        badgeLabel = 'مراجعة طلب';
+      } else if (roleSlugs.includes('procurement_manager')) {
+        targetUrl = `/procurement/purchase-orders/create?pr=${info.prId}`;
+        actionLabel = 'إصدار أمر الشراء';
+        icon = '📑';
+        badgeLabel = 'جاهز للإصدار';
+      } else if (roleSlugs.includes('accountant')) {
+        targetUrl = `/accounting/purchase-requests?open=${info.prId}`;
+        actionLabel = 'مراجعة واعتماد الطلب المالي';
+        icon = '💳';
+        badgeLabel = 'اعتماد مالي';
+      }
+    } else if (info.poId) {
+      if (roleSlugs.includes('general_manager')) {
+        targetUrl = `/general-manager/purchase-orders/${info.poId}`;
+        actionLabel = 'اعتماد أمر الشراء';
+        icon = '📑';
+        badgeLabel = 'أمر شراء';
+      } else if (roleSlugs.includes('procurement_manager')) {
+        actionLabel = 'عرض وتعديل أمر الشراء';
+        icon = '📦';
+        badgeLabel = 'أمر شراء';
+      }
+    }
+
     return {
       url: targetUrl,
-      actionLabel: isActionable ? 'متابعة الإجراء المطلوب' : 'عرض ومتابعة الطلب',
-      icon: isActionable ? '⚡' : '📋',
-      badgeLabel: isActionable ? 'مطلوب إجراء' : 'إشعار',
+      actionLabel,
+      icon,
+      badgeLabel,
       docType: info.docType,
       docNumber: info.docNumber,
       isActionable,
