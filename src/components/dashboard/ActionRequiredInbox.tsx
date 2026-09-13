@@ -58,8 +58,16 @@ export interface ActionInboxItem {
   onDirectReject?: (item: ActionInboxItem, reason: string) => Promise<void> | void;
   onDirectSubmit?: (item: ActionInboxItem) => Promise<void> | void;
   directApproveLabel?: string;
+  directApproveClassName?: string;
+  directApproveIcon?: React.ReactNode;
   directRejectLabel?: string;
+  directRejectClassName?: string;
   requireApproveModal?: boolean;
+  stageBadge?: {
+    text: string;
+    icon?: string;
+    className?: string;
+  };
 }
 
 export interface ActionRequiredInboxProps {
@@ -405,6 +413,17 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                           {item.code}
                         </span>
 
+                        {item.stageBadge && (
+                          <span
+                            className={`text-[11px] font-black px-2.5 py-0.5 rounded-lg border flex items-center gap-1 shadow-xs ${
+                              item.stageBadge.className || 'bg-slate-800 text-slate-200 border-slate-700'
+                            }`}
+                          >
+                            {item.stageBadge.icon && <span>{item.stageBadge.icon}</span>}
+                            <span>{item.stageBadge.text}</span>
+                          </span>
+                        )}
+
                         {isOffice ? (
                           <span className="text-[11px] font-bold bg-indigo-950/90 text-indigo-300 border border-indigo-800/70 px-2.5 py-1 rounded-xl flex items-center gap-1">
                             <span>🏢</span> مستلزمات مكتبية للمقر
@@ -627,9 +646,11 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                             size="sm"
                             disabled={directApprovingId === item.id}
                             onClick={() => handleApproveClick(item)}
-                            className="flex-1 text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/40"
+                            className={`flex-1 text-xs font-black text-white shadow-md transition-all ${
+                              item.directApproveClassName || 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-950/40'
+                            }`}
                           >
-                            <span>✓</span>
+                            <span>{item.directApproveIcon ?? '✓'}</span>
                             <span>{directApprovingId === item.id ? 'جاري الاعتماد...' : (item.directApproveLabel || 'اعتماد فوري')}</span>
                           </Button>
                         )}
@@ -651,7 +672,9 @@ export const ActionRequiredInbox: React.FC<ActionRequiredInboxProps> = ({
                             variant="danger"
                             size="sm"
                             onClick={() => setRejectModal({ isOpen: true, item, reason: '', isSubmitting: false, error: undefined })}
-                            className="text-xs font-bold px-3 bg-rose-950/80 text-rose-300 border-rose-800/60 hover:bg-rose-900/80"
+                            className={`text-xs font-bold px-3 transition-all ${
+                              item.directRejectClassName || 'bg-rose-950/80 text-rose-300 border-rose-800/60 hover:bg-rose-900/80'
+                            }`}
                           >
                             <span>✕</span>
                             <span>{item.directRejectLabel || 'رفض'}</span>

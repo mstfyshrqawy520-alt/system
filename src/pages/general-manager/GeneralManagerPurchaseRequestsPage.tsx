@@ -40,6 +40,16 @@ const toDraftItems = (request: PurchaseRequest): DraftItemState[] =>
     isExcluded: false,
   }));
 
+export const isPrReturnedFromProcurement = (request: PurchaseRequest | null | undefined): boolean => {
+  if (!request) return false;
+  return (
+    request.procurement_route === 'DIRECT' ||
+    Boolean(request.direct_supplier_id || request.direct_supplier) ||
+    Number(request.total_estimated_cost || 0) > 0 ||
+    Boolean(request.items?.some((it) => Number(it.estimated_unit_price || 0) > 0))
+  );
+};
+
 export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
   const [selected, setSelected] = useState<PurchaseRequest | null>(null);
@@ -62,7 +72,12 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
     setNotice(null);
     try {
       await approveGeneralManagerPurchaseRequestApi(request.id, 'تم الاعتماد المباشر من المدير التنفيذي.');
-      setNotice(`تم اعتماد طلب الشراء (${request.request_number}) بنجاح وتحويله للمشتريات لإصدار أمر الشراء.`);
+      const isReturned = isPrReturnedFromProcurement(request);
+      setNotice(
+        isReturned
+          ? `تم اعتماد طلب الشراء (${request.request_number}) نهائياً بنجاح وتحويله للإدارة المالية للموافقة وإصدار أمر الشراء.`
+          : `تم اعتماد طلب الشراء (${request.request_number}) بنجاح وإرساله لإدارة المشتريات للبدء في التسعير.`
+      );
       await loadRequests(true);
     } catch (err) {
       setError(parseApiError(err).message);
@@ -156,11 +171,13 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
       request.request_number.toLowerCase().includes(search) ||
       (request.requester?.name || '').toLowerCase().includes(search) ||
       (request.direct_supplier?.company_name || '').toLowerCase().includes(search);
+    
+    const isReturned = isPrReturnedFromProcurement(request);
     const matchesRoute =
       routeFilter === 'ALL' ||
-      (routeFilter === 'DIRECT'
-        ? request.procurement_route === 'DIRECT'
-        : request.procurement_route !== 'DIRECT');
+      (routeFilter === 'RETURNED' && isReturned) ||
+      (routeFilter === 'DISPATCH' && !isReturned) ||
+      (routeFilter === 'QUOTES' && request.procurement_route === 'QUOTES');
     return matchesSearch && matchesRoute;
   });
 
@@ -284,11 +301,13 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
         searchPlaceholder="بحث برقم الطلب أو الموظف أو المورد..."
         selects={[
           {
-            label: 'مسار الطلب',
+            label: 'نوع وتدفق الطلب',
             value: routeFilter,
             onChange: setRouteFilter,
             options: [
-              { value: 'ALL', label: 'كل المسارات' },
+              { value: 'ALL', label: 'كل الطلبات' },
+              { value: 'RETURNED', label: '📥 راجع من المشتريات (مسعر)' },
+              { value: 'DISPATCH', label: '🛫 رايح للمشتريات (طلب جديد)' },
               { value: 'QUOTES', label: 'عروض أسعار' },
             ],
           },
@@ -336,8 +355,19 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
 
                   return (
                     <tr key={request.id} className="border-t border-slate-800 text-slate-200 hover:bg-slate-900/40">
-                      <td className="px-4 py-3 font-bold text-cyan-300 font-mono whitespace-nowrap">
-                        {request.request_number}
+                      <td className="px-4 py-3 font-bold font-mono whitespace-nowrap">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-cyan-300">{request.request_number}</span>
+                          {isPrReturnedFromProcurement(request) ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-950/90 text-emerald-300 border border-emerald-700/60 w-fit">
+                              <span>📥</span> راجع مسعر
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-950/90 text-sky-300 border border-sky-700/60 w-fit">
+                              <span>🛫</span> رايح للمشتريات
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 max-w-[260px]">
                         {firstItem ? (
@@ -394,13 +424,17 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                             type="button"
                             size="sm"
                             variant="success"
-                            className="font-bold flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white"
+                            className={`font-bold flex items-center gap-1 text-white shadow-sm ${
+                              isPrReturnedFromProcurement(request)
+                                ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-950/40'
+                                : 'bg-sky-600 hover:bg-sky-500 shadow-sky-950/40'
+                            }`}
                             isLoading={directApprovingId === request.id}
                             disabled={actionLoading || directApprovingId !== null}
                             onClick={() => void handleDirectApprove(request)}
                           >
-                            <span>✓</span>
-                            <span>اعتماد مباشر</span>
+                            <span>{isPrReturnedFromProcurement(request) ? '👑✓' : '📤'}</span>
+                            <span>{isPrReturnedFromProcurement(request) ? 'اعتماد نهائي' : 'إرسال للمشتريات'}</span>
                           </Button>
                         </div>
                       </td>
@@ -425,9 +459,20 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                   className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 space-y-3"
                 >
                   <div className="flex min-w-0 items-start justify-between gap-3">
-                    <span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">
-                      {request.request_number}
-                    </span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="min-w-0 break-normal font-mono text-sm font-black text-cyan-300">
+                        {request.request_number}
+                      </span>
+                      {isPrReturnedFromProcurement(request) ? (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-950/90 text-emerald-300 border border-emerald-700/60">
+                          📥 راجع مسعر
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-950/90 text-sky-300 border border-sky-700/60">
+                          🛫 رايح للمشتريات
+                        </span>
+                      )}
+                    </div>
                     <span className="shrink-0 rounded-md border border-amber-700/50 bg-amber-950/30 px-2 py-1 text-[11px] font-bold text-amber-200">
                       {request.items?.length || 0} بنود
                     </span>
@@ -491,13 +536,21 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                       type="button"
                       size="sm"
                       variant="success"
-                      className="w-full text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+                      className={`w-full text-xs font-bold text-white shadow-sm ${
+                        isPrReturnedFromProcurement(request)
+                          ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-950/40'
+                          : 'bg-sky-600 hover:bg-sky-500 shadow-sky-950/40'
+                      }`}
                       isLoading={directApprovingId === request.id}
                       disabled={actionLoading || directApprovingId !== null}
                       onClick={() => void handleDirectApprove(request)}
                     >
-                      <span>✓</span>
-                      <span>اعتماد مباشر</span>
+                      <span>{isPrReturnedFromProcurement(request) ? '👑✓' : '📤'}</span>
+                      <span>
+                        {isPrReturnedFromProcurement(request)
+                          ? 'اعتماد تنفيذي نهائي (للحسابات)'
+                          : 'موافقة وإرسال للمشتريات'}
+                      </span>
                     </Button>
                   </div>
                 </article>
@@ -539,10 +592,16 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
                     variant="primary"
                     isLoading={actionLoading}
                     onClick={() => void performAction('approve')}
-                    className="text-xs font-black bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-slate-950 shadow-md"
-                    title="اعتماد البنود المحددة فوراً"
+                    className={`text-xs font-black shadow-md ${
+                      isPrReturnedFromProcurement(selected)
+                        ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-slate-950'
+                        : 'bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 text-slate-950'
+                    }`}
+                    title={isPrReturnedFromProcurement(selected) ? 'اعتماد نهائي وإحالة للحسابات' : 'موافقة وإرسال للمشتريات'}
                   >
-                    ✓ اعتماد ({activeApprovedItems.length})
+                    {isPrReturnedFromProcurement(selected)
+                      ? `👑✓ اعتماد نهائي للحسابات (${activeApprovedItems.length})`
+                      : `📤 موافقة وإرسال للمشتريات (${activeApprovedItems.length})`}
                   </Button>
                   <Button
                     type="button"

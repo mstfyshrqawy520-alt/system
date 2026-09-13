@@ -141,48 +141,89 @@ export const GeneralManagerDashboardPage: React.FC = () => {
       {/* ── صندوق القرارات التنفيذية المطلوبة منك الآن (Executive Action Inbox) ── */}
       {(() => {
         const gmActionItems: ActionInboxItem[] = [
-          ...requests.map((req) => ({
-            id: `req-${req.id}`,
-            rawId: req.id,
-            type: 'PR' as const,
-            code: req.request_number,
-            title: req.justification || (req.request_type === 'OFFICE_SUPPLIES' ? 'طلب مستلزمات مكتبية' : 'طلب مواد مشروعات'),
-            subtitle: req.justification ? (req.request_type === 'OFFICE_SUPPLIES' ? 'مستلزمات مكتبية' : 'مشتريات مواقع') : undefined,
-            department: req.department?.name,
-            requester: req.requester?.name,
-            amount: req.total_estimated_cost ? Number(req.total_estimated_cost) : undefined,
-            urgency: req.priority === 'HIGH' ? ('CRITICAL' as const) : ('HIGH' as const),
-            reason: 'طلب شراء محال للإدارة العامة للاعتماد والموافقة النهائية',
-            actionUrl: `/general-manager/purchase-requests?open=${req.id}`,
-            actionLabel: 'مراجعة وتعديل الطلب',
-            timeAgo: req.created_at ? req.created_at.slice(0, 10) : undefined,
-            request_type: req.request_type,
-            date_needed: req.date_needed || undefined,
-            priority: req.priority,
-            parcel_number: req.items?.[0]?.item_reference || undefined,
-            region: req.items?.[0]?.region || undefined,
-            items_count: req.items?.length || 0,
-            items_list: req.items?.map((it) => ({
-              description: it.item_description || it.item?.name || 'صنف',
-              quantity: it.quantity,
-              uom: it.uom,
-              parcel: it.item_reference,
-              region: it.region,
-              unit_price: it.estimated_unit_price,
-              line_total: it.estimated_line_total,
-            })),
-            onDirectApprove: async (_item: any, comment?: string) => {
-              await approveGeneralManagerPurchaseRequestApi(req.id, comment);
-              await loadData(true);
-            },
-            onDirectReject: async (_item: any, reason: string) => {
-              await rejectGeneralManagerPurchaseRequestApi(req.id, reason);
-              await loadData(true);
-            },
-            directApproveLabel: 'اعتماد تنفيذي نهائي',
-            directRejectLabel: 'رفض الطلب',
-            requireApproveModal: false,
-          })),
+          ...requests.map((req) => {
+            const isReturnedFromProcurement =
+              req.procurement_route === 'DIRECT' ||
+              Boolean(req.direct_supplier_id || req.direct_supplier) ||
+              Number(req.total_estimated_cost || 0) > 0 ||
+              Boolean(req.items?.some((it) => Number(it.estimated_unit_price || 0) > 0));
+
+            return {
+              id: `req-${req.id}`,
+              rawId: req.id,
+              type: 'PR' as const,
+              code: req.request_number,
+              title: req.justification || (req.request_type === 'OFFICE_SUPPLIES' ? 'طلب مستلزمات مكتبية' : 'طلب مواد مشروعات'),
+              subtitle: req.justification ? (req.request_type === 'OFFICE_SUPPLIES' ? 'مستلزمات مكتبية' : 'مشتريات مواقع') : undefined,
+              department: req.department?.name,
+              requester: req.requester?.name,
+              amount: req.total_estimated_cost ? Number(req.total_estimated_cost) : undefined,
+              supplier: req.direct_supplier?.company_name,
+              urgency: req.priority === 'HIGH' ? ('CRITICAL' as const) : ('HIGH' as const),
+
+              // Stage badge differentiation
+              stageBadge: isReturnedFromProcurement
+                ? {
+                    text: 'راجع من المشتريات (مسعر)',
+                    icon: '📥',
+                    className: 'bg-emerald-950/90 text-emerald-300 border-emerald-600/70 shadow-emerald-950/40',
+                  }
+                : {
+                    text: 'رايح للمشتريات (طلب جديد)',
+                    icon: '🛫',
+                    className: 'bg-sky-950/90 text-sky-300 border-sky-600/70 shadow-sky-950/40',
+                  },
+
+              reason: isReturnedFromProcurement
+                ? 'طلب شراء مسعر من إدارة المشتريات ومحدد المورد — بانتظار اعتمادك النهائي للإحالة للحسابات'
+                : 'طلب شراء جديد معتمد من المراجع — بانتظار موافقتك لإحالته لإدارة المشتريات للبدء في التسعير',
+
+              next_actor: isReturnedFromProcurement
+                ? 'الإدارة المالية (الحسابات)'
+                : 'إدارة المشتريات',
+
+              actionUrl: `/general-manager/purchase-requests?open=${req.id}`,
+              actionLabel: isReturnedFromProcurement
+                ? 'مراجعة الأسعار والمورد وتعديل الطلب'
+                : 'مراجعة وتعديل الطلب',
+
+              timeAgo: req.created_at ? req.created_at.slice(0, 10) : undefined,
+              request_type: req.request_type,
+              date_needed: req.date_needed || undefined,
+              priority: req.priority,
+              parcel_number: req.items?.[0]?.item_reference || undefined,
+              region: req.items?.[0]?.region || undefined,
+              items_count: req.items?.length || 0,
+              items_list: req.items?.map((it) => ({
+                description: it.item_description || it.item?.name || 'صنف',
+                quantity: it.quantity,
+                uom: it.uom,
+                parcel: it.item_reference,
+                region: it.region,
+                unit_price: it.estimated_unit_price,
+                line_total: it.estimated_line_total,
+              })),
+              onDirectApprove: async (_item: any, comment?: string) => {
+                await approveGeneralManagerPurchaseRequestApi(req.id, comment);
+                await loadData(true);
+              },
+              onDirectReject: async (_item: any, reason: string) => {
+                await rejectGeneralManagerPurchaseRequestApi(req.id, reason);
+                await loadData(true);
+              },
+
+              // Differentiated action buttons
+              directApproveLabel: isReturnedFromProcurement
+                ? 'اعتماد تنفيذي نهائي'
+                : 'موافقة وإرسال للمشتريات',
+              directApproveIcon: isReturnedFromProcurement ? '👑✓' : '📤',
+              directApproveClassName: isReturnedFromProcurement
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/40 ring-1 ring-emerald-400/40'
+                : 'bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-950/40 ring-1 ring-sky-400/40',
+              directRejectLabel: 'رفض الطلب',
+              requireApproveModal: false,
+            };
+          }),
           // 2. Pending Executive Quote Decisions
           ...quoteRequests
             .filter((q) => q.status === 'PENDING_EXECUTIVE_QUOTE_DECISION')
