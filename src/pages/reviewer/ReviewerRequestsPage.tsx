@@ -246,7 +246,7 @@ export const ReviewerRequestsPage: React.FC = () => {
         </div>
       ) : (
         <>
-        <div className="hidden overflow-x-auto md:block">
+        <div className="hidden overflow-x-auto xl:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -326,7 +326,7 @@ export const ReviewerRequestsPage: React.FC = () => {
         </Table>
         </div>
 
-        <div className="space-y-3 md:hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 xl:hidden">
           {filteredRequests.map((request) => {
             const itemNames = request.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
             const parcelsDisplay = getSummaryParcels(request);

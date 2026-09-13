@@ -345,8 +345,8 @@ export const AuthenticatedLayout: React.FC = () => {
         >
             {/* Header */}
             <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md text-white shadow-xl border-b border-slate-800/80">
-                                    <div className="max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8">
-                        <div className="flex items-center justify-between min-h-16 py-2">
+                <div className="max-w-[1800px] mx-auto w-full px-3 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between min-h-16 py-2">
 
                         {/* Sidebar Toggle + Company Logo & Title */}
                         <div className="flex items-center gap-2 sm:gap-3">
@@ -355,7 +355,7 @@ export const AuthenticatedLayout: React.FC = () => {
                                 onClick={() => { setSidebarOpen(current => !current); setMobileMenuOpen(false); }}
                                 aria-label={sidebarOpen ? 'إخفاء القائمة الجانبية' : 'إظهار القائمة الجانبية'}
                                 aria-expanded={sidebarOpen}
-                                className="flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-700 bg-slate-800/80 px-2 text-lg text-cyan-300 shadow-inner hover:border-cyan-700 hover:bg-slate-800"
+                                className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-slate-700 bg-slate-800/80 px-2.5 text-lg text-cyan-300 shadow-inner hover:border-cyan-700 hover:bg-slate-800 active:scale-95 transition-transform"
                             >
                                 {sidebarOpen ? '‹' : '☰'}
                             </button>
@@ -378,7 +378,7 @@ export const AuthenticatedLayout: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Global Search Bar (Desktop Center) */}
+                        {/* Global Search Bar (Tablet Landscape & Desktop Center) */}
                         <div className="hidden md:flex flex-1 justify-center px-4 max-w-lg">
                             <GlobalSearchBar />
                         </div>
@@ -412,7 +412,7 @@ export const AuthenticatedLayout: React.FC = () => {
                             </button>
                         </div>
 
-                        {/* Mobile Toggle Button & User Quick Nav */}
+                        {/* Mobile & Small Tablet Quick Nav */}
                         <div className="md:hidden flex items-center gap-1.5 sm:gap-2">
                             <GlobalSearchBar />
                             <NotificationBell />
@@ -461,7 +461,14 @@ export const AuthenticatedLayout: React.FC = () => {
 
             {/* Container */}
             <div className="relative flex-1 flex flex-col md:flex-row max-w-[1800px] w-full mx-auto px-2 sm:px-3 lg:px-4 py-2 sm:py-3 gap-2 sm:gap-3">
-                {mobileMenuOpen && sidebarOpen && <button type="button" aria-label="إغلاق القائمة الجانبية" onClick={closeMobileMenu} className="fixed inset-0 z-30 bg-slate-950/70 backdrop-blur-[1px] md:hidden" />}
+                {mobileMenuOpen && sidebarOpen && (
+                    <button
+                        type="button"
+                        aria-label="إغلاق القائمة الجانبية"
+                        onClick={closeMobileMenu}
+                        className="fixed inset-0 z-30 bg-slate-950/70 backdrop-blur-[1px] md:hidden"
+                    />
+                )}
                 {/* Sidebar Nav */}
                 <aside
                     className={`fixed inset-x-2 bottom-2 top-[4.75rem] z-40 max-h-[calc(100dvh-5.5rem)] w-auto overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900/95 p-3 shadow-xl backdrop-blur-sm transition-all duration-200 md:relative md:inset-auto md:bottom-auto md:top-auto md:max-h-none md:w-64 md:overflow-visible md:p-4 ${
@@ -479,7 +486,7 @@ export const AuthenticatedLayout: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={closeMobileMenu}
-                                className="md:hidden flex items-center justify-center w-7 h-7 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 hover:text-rose-300 hover:border-rose-500/60 hover:bg-rose-950/40 transition-colors"
+                                className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 hover:text-rose-300 hover:border-rose-500/60 hover:bg-rose-950/40 transition-colors"
                                 aria-label="إغلاق القائمة"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -536,7 +543,7 @@ export const AuthenticatedLayout: React.FC = () => {
                 </aside>
 
                 {/* Main Content Area */}
-                <main className="flex-1 min-w-0 w-full bg-slate-900/70 border border-slate-800/80 rounded-2xl shadow-2xl p-3 sm:p-4 lg:p-5 pb-20 sm:pb-4 lg:pb-5 min-h-[calc(100dvh-6rem)] backdrop-blur-sm overflow-visible flex flex-col">
+                <main className="flex-1 min-w-0 w-full bg-slate-900/70 border border-slate-800/80 rounded-2xl shadow-2xl p-3 sm:p-5 lg:p-6 pb-24 sm:pb-8 min-h-[calc(100dvh-6rem)] backdrop-blur-sm overflow-visible flex flex-col">
                     {sessionExpired && (
                         <div className="mb-4 flex flex-col gap-2 rounded-xl border border-amber-700/70 bg-amber-950/30 px-4 py-3 text-xs text-amber-200 sm:flex-row sm:items-center sm:justify-between" role="alert" aria-live="assertive">
                             <span>انتهت جلسة الدخول. احفظ أي بيانات محلية، ثم سجّل الدخول مرة أخرى للمتابعة.</span>

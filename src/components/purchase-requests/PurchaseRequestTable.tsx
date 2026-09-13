@@ -81,7 +81,7 @@ export const PurchaseRequestTable: React.FC<Props> = ({
 
   return (
     <>
-      <div className="hidden overflow-x-auto md:block">
+      <div className="hidden overflow-x-auto xl:block">
     <Table>
       <TableHeader>
         <TableRow>
@@ -189,7 +189,7 @@ export const PurchaseRequestTable: React.FC<Props> = ({
     </Table>
       </div>
 
-      <div className="space-y-2.5 md:hidden">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 xl:hidden">
         {requests.map((pr) => {
           const isDraft = pr.status === 'DRAFT';
           const canEdit = REQUESTER_EDITABLE_STATUSES.includes(pr.status) && hasPermission('purchase_request.edit_own');

@@ -131,7 +131,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   const modal = (
     <div
-      className="modal-top-viewport fixed inset-0 z-[9999] flex min-h-screen items-center justify-center overflow-y-auto bg-slate-950/85 p-2 sm:p-4 backdrop-blur-sm"
+      className="modal-top-viewport fixed inset-0 z-[9999] flex min-h-[100dvh] items-center justify-center overflow-y-auto bg-slate-950/85 p-2 sm:p-4 md:p-6 backdrop-blur-sm"
       dir="rtl"
       role="presentation"
       onMouseDown={(event) => {
@@ -139,7 +139,7 @@ export const Modal: React.FC<ModalProps> = ({
       }}
     >
       <section
-        className={`relative flex min-h-0 w-full ${sizeClasses[size]} max-h-[calc(100vh-1rem)] sm:max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl sm:rounded-2xl border border-slate-700 bg-slate-900 shadow-[0_24px_80px_rgba(0,0,0,0.55)]`}
+        className={`relative flex min-h-0 w-full ${sizeClasses[size]} max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-xl sm:rounded-2xl border border-slate-700 bg-slate-900 shadow-[0_24px_80px_rgba(0,0,0,0.55)]`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

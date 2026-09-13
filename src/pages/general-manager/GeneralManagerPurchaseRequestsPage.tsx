@@ -328,7 +328,7 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
         </div>
       ) : (
         <>
-          <div className="hidden min-w-0 md:block overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/60">
+          <div className="hidden min-w-0 xl:block overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/60">
             <table className="min-w-[950px] w-full text-right text-xs">
               <thead className="bg-slate-900 text-slate-300">
                 <tr>
@@ -445,7 +445,7 @@ export const GeneralManagerPurchaseRequestsPage: React.FC = () => {
             </table>
           </div>
 
-          <div className="space-y-3 md:hidden">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 xl:hidden">
             {filteredRequests.map((request) => {
               const firstItem = request.items?.[0];
               const otherItemsCount = (request.items?.length || 0) - 1;

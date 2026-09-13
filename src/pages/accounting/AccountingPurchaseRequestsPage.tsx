@@ -149,7 +149,7 @@ const AccountingPurchaseRequestsPage: React.FC = () => {
             <h2 className="font-bold text-amber-300">طلبات شراء مباشرة بانتظار الحسابات ({filteredRequests.length} من {requests.length})</h2>
             <span className="text-xs text-slate-500">الموافقة تعيد الطلب إلى مدير المشتريات لإنشاء أمر الشراء</span>
           </div>
-          <div className="hidden min-w-0 md:block">
+          <div className="hidden min-w-0 xl:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -205,7 +205,7 @@ const AccountingPurchaseRequestsPage: React.FC = () => {
             </Table>
           </div>
 
-          <div className="space-y-3 md:hidden">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 xl:hidden">
             {filteredRequests.map(request => {
               const itemNames = request.items?.map((item) => item.item_description || item.item?.name).filter(Boolean) || [];
               const parcelsDisplay = getSummaryParcels(request);
