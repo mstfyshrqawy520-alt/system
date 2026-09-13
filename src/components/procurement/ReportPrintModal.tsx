@@ -77,8 +77,8 @@ export const ReportPrintModal: React.FC<ReportPrintModalProps> = ({ data, isOpen
         </div>
 
         {/* Printable Report Body */}
-        <div className="flex-1 overflow-y-auto p-8 bg-slate-900 print:bg-white print:text-slate-900 print:p-0">
-          <div className="print-document bg-slate-950 print:bg-white border border-slate-800 print:border-none p-8 rounded-xl shadow-inner space-y-6 max-w-3xl mx-auto font-sans">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-8 bg-slate-900 print:bg-white print:text-slate-900 print:p-0">
+          <div className="print-document bg-slate-950 print:bg-white border border-slate-800 print:border-none p-4 sm:p-8 rounded-xl shadow-inner space-y-6 max-w-3xl mx-auto font-sans">
             
             {/* Report Header */}
             <div className="flex items-center justify-between pb-4 border-b-2 border-slate-700 print:border-slate-300">
@@ -96,6 +96,7 @@ export const ReportPrintModal: React.FC<ReportPrintModalProps> = ({ data, isOpen
             {/* Recent Orders List */}
             <div>
               <h3 className="text-sm font-bold text-slate-300 print:text-slate-900 mb-2">أحدث أوامر الشراء</h3>
+              <div className="overflow-x-auto print:overflow-visible">
               <table className="w-full text-right text-xs border-collapse border border-slate-800 print:border-slate-300">
                 <thead>
                   <tr className="bg-slate-900 print:bg-slate-100 font-bold border-b border-slate-800 print:border-slate-300">
@@ -120,6 +121,7 @@ export const ReportPrintModal: React.FC<ReportPrintModalProps> = ({ data, isOpen
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
 
           </div>

@@ -58,8 +58,8 @@ export const PurchaseRequestPrintModal: React.FC<PurchaseRequestPrintModalProps>
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-slate-900 p-4 sm:p-6 print:overflow-visible print:bg-white print:p-0">
-          <div className="print-document mx-auto max-w-5xl bg-white p-6 text-slate-900 print:max-w-none print:p-3">
+        <div className="min-h-0 flex-1 overflow-y-auto bg-slate-900 p-3 sm:p-6 print:overflow-visible print:bg-white print:p-0">
+          <div className="print-document mx-auto max-w-5xl bg-white p-3 sm:p-6 text-slate-900 print:max-w-none print:p-3">
             <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4 border-b-2 border-slate-900 pb-3">
               <div className="space-y-1 text-right text-sm font-bold">
                 <div>التاريخ: <span className="font-normal">{formatDate(pr.created_at)}</span></div>
@@ -82,6 +82,7 @@ export const PurchaseRequestPrintModal: React.FC<PurchaseRequestPrintModalProps>
               </div>
             </div>
 
+            <div className="overflow-x-auto print:overflow-visible">
             <table className="mt-3 w-full border-collapse border border-slate-900 text-right text-[10px]">
               <thead>
                 <tr className="bg-slate-100 font-black">
@@ -122,6 +123,7 @@ export const PurchaseRequestPrintModal: React.FC<PurchaseRequestPrintModalProps>
                 })}
               </tbody>
             </table>
+            </div>
 
           </div>
         </div>
